@@ -1,0 +1,12 @@
+/**
+ * @file
+ * style phenotypes/upload stage 03 - save spreadsheet
+ */
+
+/* import global css */
+@import 'rawpheno_upload_stages.css';
+@import 'rawpheno_upload_style.css';
+
+a.button:hover {
+  background: #DEDEDE none repeat scroll 0% 0%;
+}

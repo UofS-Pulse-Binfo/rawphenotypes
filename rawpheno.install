@@ -1,0 +1,268 @@
+<?php
+
+/**
+ * @file
+ * implements hook schema
+ */
+ 
+function rawpheno_schema() {
+  //PHENO PLANT
+  //since the plant can be described in many different ways, we
+  //are using a prop-like table to describe the plant. this allows
+  //for the flexibility needed to describe both greenhouse and field pots.
+  $schema['pheno_plant'] = array(
+    'description' => 'table for phenotype plant',
+    'fields' => array(
+      'plant_id' => array(
+        'description' => 'plant id field',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+      
+      'stock_id' => array(
+        'description' => 'stock id field',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),), 
+  );
+  //
+  
+  //PHENO PLANT PROP
+  //type shoud include entry, plot, rep and location
+  $schema['pheno_plantprop'] = array(
+    'description' => 'table for phenotype plantprop',
+    'fields' => array(
+      'plantprop_id' => array(
+        'description' => 'primary key of phenotype plant prop',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+        
+      'plant_id' => array(
+        'description' => 'holds {pheno_plant.plant_id}',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' =>  TRUE,),
+        
+      'type_id' => array(
+        'description' => 'type id field',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+        
+      'value' => array(
+        'description' => 'value field',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,),),
+        
+    'primary key' => array('plantprop_id'),
+    //
+    'foreign keys' => array('pheno_plant' => array(
+      'table' => 'pheno_plant',
+      'columns' => array('plant_id' => 'plant_id')),),
+  );
+  //
+  
+  //PHENO SCALE MEMBER
+  //modified is the timestamp that it was last modified. this
+  //allows us to determine when values were updated
+  $schema['pheno_scale_member'] = array(
+    'description' => 'table for pheno scale member',
+    'fields' => array(
+      'member_id' => array(
+        'description' => 'primary key of scale member',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+      
+      'scale_id' => array(
+        'description' => 'scale id field',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+      
+      'code' => array(
+        'description' => 'code used in {pheno_measurements}',
+        'type' => 'varchar',
+        'length' => 255,),
+      
+      'value' => array(
+        'description' => 'text description of code',
+        'type' => 'text',
+        'not null' => TRUE,),),
+    'primary key' => array('member_id'),
+  );
+  //
+    
+  //PHENO MEASUREMENTS
+  //the scale code is what is written in the spreadsheet whereas
+  //the value is what is actually represents.
+  $schema['pheno_measurements'] = array(
+    'description' => 'table for phenotype measurements',
+    'fields' => array(
+      'measurement_id' => array(
+        'description' => 'primary key of phenotype measurements',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+        
+      'plant_id' => array(
+        'description' => 'holds {pheno_plant.plant_id}',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+        
+      'type_id' => array(
+        'description' => 'type id field',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+        
+      'unit_id' => array(
+        'description' => 'unit id field',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,),
+        
+      'value' => array(
+        'description' => 'value field',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,),
+        
+      'cvalue_id' => array(
+        'description' => 'c value id field',
+        'type' => 'char',
+        'length' => 10,
+        'not null' => FALSE,),
+        
+      'modified' => array(
+        'description' => 'timestamp of last modification',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE),),
+    'primary key' => array('measurement_id'),
+    //
+    'foreign keys' => array('pheno_plant' => array(
+      'table' => 'pheno_plant',
+      'columns' => array('plant_id' => 'plant_id')),),
+  );
+  //
+    
+  return $schema;
+}
+
+//add terms to cvterm
+function rawpheno_install() {
+  //plant property terms
+  $pp_terms = array('plot'     => 'Plot', 
+                    'entry'    => 'Entry', 
+                    'rep'      => 'Rep', 
+                    'location' => 'Location');
+  
+  //measurement types terms
+  $mt_terms = array('planting_date' => 'Planting Date (date)',
+                    '#_of_seeds_planted' => '# of Seeds Planted (count)',
+                    'days_to_emergence' => 'Days to Emergence (days)',
+                    '#_of_emerged_plants' => '# of Emerged Plants (count)',
+                    'days_till_10%_of_plants_have_elongated_tendrils' => 'Days till 10% of Plants have Elongated Tendrils (days)',
+                    'days_till_10%_of_plants_have_one_open_flower' => 'Days till 10% of Plants have One Open Flower (R1; days)',
+                    '#_nodes_on_primary_stem_at_r1_1st' => '# Nodes on Primary Stem at R1 (1st; count)',
+                    '#_nodes_on_primary_stem_at_r1_2nd' => '# Nodes on Primary Stem at R1 (2nd; count)',
+                    'days_till_10%_of_plants_have_pods' => 'Days till 10% of Plants have Pods (R3; days)',
+                    'days_till_10%_of_plants_have_fully_swollen_pods' => 'Days till 10% of Plants have fully Swollen Pods (R5; days)',
+                    'days_till_10%_of_plants_have_1/2_pods_mature' => 'Days till 10% of Plants have 1/2 Pods Mature (R7; days)',
+                    'r7_traits:_lowest_pod_height_1st' => 'R7 Traits: Lowest Pod Height (1st; cm)',
+                    'r7_traits:_lowest_pod_height_2nd' => 'R7 Traits: Lowest Pod Height (2nd; cm)',
+                    'r7_traits:_canopy_height_1st' => 'R7 Traits: Canopy Height (1st; cm)',
+                    'r7_traits:_canopy_height_2nd' => 'R7 Traits: Canopy Height (2nd; cm)',
+                    'days_till_harvest' => 'Days till Harvest (days)',
+                    'diseases_present' => 'Diseases Present (y/n/?)',
+                    'disease-specific_comments' => 'Disease-specific Comments',
+                    'lodging' => 'Lodging (Scale: 1-5) upright - lodged',
+                    'subset_traits:_#_peduncles' => 'Subset Traits: # Peduncles (count)',
+                    'subset_traits:_#_pods' => 'Subset Traits: # Pods (count)',
+                    'subset_traits:_#_seeds' => 'Subset Traits: # Seeds (count)',
+                    'straw_biomass' => 'Straw Biomass (g)',
+                    'total_seed_mass' => 'Total Seed Mass (g)',
+                    'total_#_of_seeds' => 'Total # of Seeds (count)',
+                    '100_seed_mass' => '100 Seed Mass (g)',
+                    'comments' => 'Comments');
+  
+  //measurement units terms
+  $mu_terms = array('date'  => '(date)',
+                    'count' => '(count)',
+                    'days'  => '(days)',
+                    'cm'    => '(cm)',
+                    'y/n/?' => '(y/n/?)',
+                    'scale' => '(Scale: 1-5)',
+                    'g'     => '(g)',
+                    'text'  => '(text)');
+                    
+  //vocabularies
+  $cv_vocabulary = array('phenotype_plant_property_types', 
+                         'phenotype_measurement_types', 
+                         'phenotype_measurement_units');
+                         
+  //add terms
+  foreach ( $cv_vocabulary as $cv_i => $cv_name ) {
+    $arr_terms = array();
+    
+    if ($cv_i == 0) 
+      $arr_terms = $pp_terms;
+    elseif ($cv_i == 1)
+      $arr_terms = $mt_terms;
+    elseif ($cv_i == 2)
+      $arr_terms = $mu_terms;  
+  
+    foreach($arr_terms as $term_name => $term_def) {
+      $arr_terms_param = array('id'         => 'tripal:'.$term_name,
+                               'name'       => $term_name,
+                               'definition' => $term_def,
+                               'cv_name'    => $cv_name);
+                               
+      tripal_insert_cvterm($arr_terms_param);  
+    }
+  }
+  
+  //add materialized view
+  $mv_name = 'rawpheno_rawdata_summary';
+  $mv_module = 'tripal_core';
+  $mv_comment = 'Materialized view used by rawpheno module to generate heat map in raw data page';
+
+  //creates - plant_id, Location, Rep, (summary of traits: trait id = trait value, ....) rows
+  $mv_sql = "SELECT t1.plant_id,
+               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'location' THEN t1.value ELSE '' END), '') AS location,
+               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'rep' THEN t1.value ELSE '' END), '') AS rep,
+               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t3.value <> '' THEN CONCAT(t3.type_id, ' = ', t3.value) ELSE null END), ':') AS measurement
+             FROM pheno_plantprop AS t1 
+               INNER JOIN chado.cvterm as t2 on t1.type_id = t2.cvterm_id
+               INNER JOIN pheno_measurements as t3 on t1.plant_id = t3.plant_id
+             WHERE t2.name in ('location', 'rep') 
+             GROUP BY t1.plant_id  
+             ORDER BY location, rep, t1.plant_id, measurement ASC";
+  
+  //schema array
+  $mv_schema = array (
+    'table' => 'rawpheno_rawdata_mview',
+    'fields' => array (
+    'plant_id' => array (
+      'type' => 'varchar',
+      'length' => 20),
+
+    'location' => array (
+      'type' => 'varchar',
+      'length' => 20),
+
+    'rep' => array (
+      'type' => 'varchar',
+      'length' => 5),
+
+    'measurement' => array (
+      'type' => 'text'),
+    )
+  );
+  
+  triapal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+}

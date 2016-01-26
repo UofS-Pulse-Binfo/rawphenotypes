@@ -1,0 +1,45 @@
+/**
+ * @file 
+ * style phenotypes/download page
+ */
+ 
+#field-container {
+  background-color: #FAFAFA;
+}
+ 
+#field-container .fieldset-wrapper {
+  text-align: center;
+  width: 620px;
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+#field-container div.frm-cell {
+  text-align: left;
+  width: 380px;
+  float: left;
+}
+
+#field-container div.frm-cell:nth-child(odd) {
+  width: 110px;
+}
+
+#field-container div.frm-cell:nth-last-child(2) {
+  margin-top: 90px;
+}
+
+#edit-download-submit-download {
+  margin: 15px 0;
+}
+
+#field-container label {
+  margin: 10px 0;
+}
+
+#field-container select:nth-child(even) {
+  width: 350px;
+}
+
+#field-container .frm-cell:first-child select {
+  width: 60px;
+}

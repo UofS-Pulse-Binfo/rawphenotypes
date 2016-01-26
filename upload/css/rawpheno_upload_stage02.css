@@ -1,0 +1,30 @@
+/**
+ * @file
+ * style phenotypes/upload stage 02 - describe additional trait
+ */
+
+/* import global css */
+@import 'rawpheno_upload_stages.css';
+@import 'rawpheno_upload_style.css';
+
+label.option {
+  background-color: #FFFFFF;
+  border: 1px solid #969696;
+  cursor: pointer;
+  font-weight: normal;
+  margin: 3px 1px;
+  padding: 2px 7px;
+  text-align: center;
+}
+
+label.option:hover {
+  -moz-box-shadow:    1px 1px 1px 1px #CCCCCC;
+  -webkit-box-shadow: 1px 1px 1px 1px #CCCCCC;
+  box-shadow:         1px 1px 1px 1px #CCCCCC;
+  
+  border: 1px solid #666666;
+}
+
+#stage02-window-error {
+  display: none;
+}

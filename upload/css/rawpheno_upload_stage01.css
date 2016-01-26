@@ -1,0 +1,57 @@
+/**
+ * @file
+ * style phenotypes/upload stage 01 - validate spreadsheet
+ */
+
+/* import global css */
+@import 'rawpheno_upload_stages.css';
+@import 'rawpheno_upload_style.css';
+
+.dragndrop-example-api, .dragndrop-example-element-mirror, #droppable-dnd {
+  background-color: #FAFAFA; 
+  
+  border: 1px dashed #999999;
+  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
+  box-shadow:         1px 1px 5px 1px #EAEAEA;
+  
+  color: #000000;
+  font-size: 0.99em;
+  height: 270px;
+  line-height: 200px;  
+  margin: 10px 10px 10px 0;
+  padding: 60px 0 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+#droppable-dnd:hover {
+  background-color: #F7F7F7;
+  border: 1px dashed #333333;
+}
+
+#edit-dnd-upload  {
+  position: relative;
+}
+
+div.droppable-controls {
+  padding-top: 20px;
+}
+
+a.button:hover {
+  background: #DEDEDE none repeat scroll 0% 0%;
+}
+
+#edit-dnd-remove-button { 
+  width: 0; 
+  display: none; 
+}
+
+.file { 
+  width: 0; 
+  display: none; 
+}
+
+#edit-stage01-submit-save, #edit-stage01-submit-review, #edit-stage01-button-close {
+  display: none;
+}

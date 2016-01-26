@@ -1,0 +1,87 @@
+/**
+ * @file
+ * style phenotypes/upload progress indicator
+ */
+ 
+.progress-container {
+  margin: 0 auto;
+  text-align: center;
+  width: 100%;
+}
+
+.progress-meter, .region-content ul, .region-content ol {
+  padding: 0;
+}
+
+ol.progress-meter {
+  list-style-type: none;
+  padding-bottom: 9.5px;
+  padding: 0!important;
+  text-indent: 0;
+}
+
+ol.progress-meter li {
+  border-bottom-width: 4px;
+  border-bottom-style: solid;
+  display: inline-block;
+  font-size: 12px;
+  height: 36px;
+  text-align: center;
+  text-indent: -19px;
+  width: 28.99%;
+}
+
+ol.progress-meter li:before {
+  float: left;
+  left: -webkit-calc(50% - 9.5px);
+  left: -moz-calc(50% - 9.5px);
+  left: -ms-calc(50% - 9.5px);
+  left: -o-calc(50% - 9.5px);
+  left: calc(50% - 9.5px);
+  position: relative;
+  text-indent: 0;
+}
+
+ol.progress-meter li.done {
+  font-size: 12px;
+}
+
+ol.progress-meter li.done:before {
+  content: "\2713";
+  bottom: -28.175px;
+  border: none;
+  border-radius: 19px;
+  height: 19px;
+  line-height: 21.85px; 
+  width: 19px;
+}
+
+ol.progress-meter li.todo {
+  font-size: 12px;
+}
+
+ol.progress-meter li.todo:before {
+  content: "\2B24";
+  bottom: -26.95px;
+  font-size: 17.1px;
+  line-height: 18.05px;
+}
+
+ol.progress-meter li.done {
+  border-bottom-color: yellowgreen;
+  color: black;
+}
+
+ol.progress-meter li.done:before {
+  background-color: yellowgreen;
+  color: white;
+}
+
+ol.progress-meter li.todo {
+  border-bottom-color: silver;
+  color: silver;
+}
+
+ol.progress-meter li.todo:before {
+  color: silver;
+}

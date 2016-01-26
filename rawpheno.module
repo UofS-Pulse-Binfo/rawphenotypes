@@ -1,0 +1,205 @@
+<?php
+
+/**
+ * @file
+ * the main functionality for this module.
+ * credits to: http://public-action.org/content/drupal-7-form-api-dependent-lists-and-ajax-form-submission
+ *             http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
+ *             https://github.com/nuovo/spreadsheet-reader
+ *             http://www.d3js.org
+ */
+
+//path to rawpheno module
+$p = drupal_get_path('module', 'rawpheno');
+define('RAWPHENO_PATH', $p);
+    
+/**
+ * implements hook menu
+ * 
+ * @return type
+ */
+function rawpheno_menu() {
+  $items = array();
+  
+  //RAW DATA PAGE - home phenotypes page
+  $items['phenotypes/raw/rawdata'] = array(
+    'title' => 'Raw Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_rawdata'),
+    'access arguments' => array('access content'),
+    'file' => 'rawdata/include/rawpheno_rawdata_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+    //create data for heat map
+    $items['rawdata'] = array(
+      'access callback'   => true, 
+      'page callback'     => 'create_rawdata', 
+      'delivery callback' => 'drupal_json_output',
+    );
+    ///
+  
+  //INSTRUCTIONS PAGE
+  $items['phenotypes/raw/instructions'] = array(
+    'title' => 'Instructions',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_instructions'),
+    'access arguments' => array('access content'),
+    'file' => 'instructions/include/rawpheno_instructions_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+    //autocomplete search
+    $items['autocomplete'] = array(
+      'page callback' => 'autocomplete_search',
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+    );
+  ///  
+  
+  //DOWNLOADS PAGE
+  $items['phenotypes/raw/download'] = array(
+    'title' => 'Download Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_download'),
+    'access arguments' => array('access content'),
+    'file' => 'download/include/rawpheno_download_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //DRAG AND DROP UPLOAD PAGE
+  $items['phenotypes/raw/upload'] = array(
+    'title' => 'Upload Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_element'),
+    'access arguments' => array('access content'),
+	  'file' => 'upload/include/rawpheno_upload_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  return $items;
+}
+
+/**
+ * menu callback to autocomplete textfield
+ * in phenotypes/instructions page
+ *
+ * @return array
+ */
+function autocomplete_search($key) {
+  $list = array();
+  
+  //list of traits available in standard phenotyping instruction
+  $traits = array('Planting Date (date)',
+                  'Days to Emergence (days)',
+                  '# Emerged Plants (count)',
+                  'Days Till 10% of Plants Have Elongated Tendril (days)',
+                  'Days Till 10% of Plants Have One Open Flower (R1; days)',
+                  'Days Till 10% of Plants Have Pods (R3; days)',
+                  'Days Till 10% of Plants Have Swollen Seeds in Pods (R5; days)',
+                  'Days Till 10% of Plants Have 1/2 Their Pods Mature (R7; days)',
+                  'Days Till Harvest (days)',
+                  'Diseases Present (y/n/?)',
+                  //optional 10 - 19
+                  'Number of Nodes on Primary Stem at R1 (count)',
+                  'R7 Trait: Lowest Pod Height (cm)',
+                  'R7 Traits: Canopy Height (cm)',
+                  'R7 Traits: Canopy Width (cm)',
+                  'R7 Traits: Plant Length (cm)',
+                  'Lodging (Scale: 1-5)',
+                  'Straw Biomass (g)',
+                  'Total Seed Mass (g)',
+                  'Total Number of Seeds (count)',
+                  '100 Seed Mass (g)',
+                  //subset traits 20 - 22
+                  'Subset Traits: # Peduncles (count)',
+                  'Subset Traits: # Pods (count)',
+                  'Subset Traits: # Seeds (count)');
+  
+  //create list key => value
+  foreach($traits as $val) {
+    if (stristr($val, $key)) {
+      $list[$val] = $val;
+    } 
+  }
+  
+  drupal_json_output($list);
+}
+
+/**
+ * menu call back to generate data for heat map
+ * in phenotypes/rawdata page
+ *
+ * @return string
+ */
+function create_rawdata() {
+  //get planting date cvterm id
+  $planting_date = tripal_get_cvterm(array('name' => 'planting_date')); 
+  
+  //select all location from materialized view
+  $data = db_query("SELECT DISTINCT location 
+                    FROM {chado.rawpheno_rawdata_mview} 
+                    ORDER BY location ASC");
+  
+  if ($data) {
+    //data arrays
+    $json = array();
+    $arr_year = array(2017, 2016, 2015);
+    $arr_rep   = array(1, 2, 3);
+
+    //construct data set per location
+    //location x - year 1 - rep 1 - # traits
+    //location x - year 1 - rep 2 - # traits
+    //location x - year 1 - rep 3 - # traits
+    //location x - year 2 - rep 1 - # traits
+    //location x - year 2 - rep 2 - # traits
+    //location x - year 2 - rep 3 - # traits
+    //location x - year 3 - rep 1 - # traits
+    //location x - year 3 - rep 2 - # traits
+    //location x - year 3 - rep 3 - # traits
+    
+    while($r = $data->fetchAssoc()) {
+      $d_location = $r['location'];
+      
+      //loop each year and each rep
+      foreach($arr_year as $y) {
+        foreach($arr_rep as $r) {
+        ///  
+          //seach traits based on location, year and rep
+          $sql = "SELECT measurement FROM {chado.rawpheno_rawdata_mview}
+                  WHERE measurement LIKE '%$y%'
+                  AND rep = '$r' AND location = '$d_location'
+                  LIMIT 1";
+          $traits = db_query($sql)->fetchField();
+         
+          if (isset($traits) && !empty($traits)) {
+            //record found, count traits
+            $measurements = explode(':', $traits);
+            $d_count = 0;
+            foreach($measurements as $m) {
+              list($type_id, $value) = explode(' = ', $m);
+              if ($type_id != $planting_date->cvterm_id) {
+                //count all traits - excluding planting date
+                $d_count++;
+              }
+            } 
+          }
+          else {
+            //no record - reconstruct location's missing year and rep
+            $d_count = 0;
+          }
+          
+          //create a json entry
+          $json[] = array('location' => $d_location,
+                          'year' => $y,
+                          'rep' => $r,
+                          'trait' => $d_count);
+        ///  
+        }
+      }
+    }
+  }
+  else {
+    $json = 'no data';
+  } 
+
+  return $json;
+}

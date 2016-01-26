@@ -1,0 +1,59 @@
+/**
+ * @file
+ * style phenotypes/rawdata
+ */
+ 
+#rawdata-container {
+  background-color: #FAFAFA;
+  padding: 20px;
+  max-width: 100%;
+  min-width: 850px;
+  text-align: center;
+}
+
+.chart-title {
+  font-family: sans-serif;
+  font-size: 18px;
+  text-anchor: middle;
+}
+
+.chart-axes {
+  font-style: italic;
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  padding: 0;
+  stroke: none;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+}
+
+.legend-text {
+  font-size: 9px;
+  font-family: sans-serif;
+  font-weight: 300;
+  stroke: none;
+}
+
+div.tool-tip {   
+  background: lightgreen;   
+  border: 1px solid #000000;      
+  border-radius: 2px;           
+  font: 12px sans-serif;        
+  padding: 10px;             
+  position: absolute;           
+  pointer-events: none;     
+  text-align: center;                       
+}
+
+rect {
+  cursor: pointer;    
+}
