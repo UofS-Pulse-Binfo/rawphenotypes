@@ -70,8 +70,8 @@ function rawpheno_file_validate($file, $form_state) {
     } 
     else {
       //save new header and path to file in the server
-      variable_set(RAWPHENO_UPLOAD_XLS_FILE, drupal_realpath($file->destination));
-      rawpheno_function_newheader(RAWPHENO_UPLOAD_NEW_HEADER, $arr_usercols[0]);
+      variable_set('rawpheno_xls_file', drupal_realpath($file->destination));
+      rawpheno_function_newheader('rawpheno_new_header', $arr_usercols[0]);
     }
     // 
   }  
@@ -85,7 +85,7 @@ function rawpheno_file_validate($file, $form_state) {
  */
 function rawpheno_file_presave($file) {
   if (isset($file)) {
-    $new_header = variable_get(RAWPHENO_UPLOAD_NEW_HEADER); 
+    $new_header = variable_get('rawpheno_new_header'); 
     if (count($new_header) > 0) {
       $txt_header = rawpheno_function_format('In Worksheet Measurements:', 'em');
       $h = 'Found '.count($new_header).' additional column headers/traits that require more information.';
@@ -118,9 +118,9 @@ function rawpheno_file_presave($file) {
  */
 function rawpheno_validate_review($form, &$form_state) {
   //include css
-  $form['#attached']['css'] = array(RAWPHENO_PATH . '/upload/css/rawpheno_upload_style.css');
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_style.css');
   //new headers
-  $new_header = variable_get(RAWPHENO_UPLOAD_NEW_HEADER);
+  $new_header = variable_get('rawpheno_new_header');
   
   if (isset($new_header) && count($new_header) > 0) {
     foreach($new_header as $k => $v) {

@@ -13,8 +13,6 @@
  * @return type
  */
 function rawpheno_instructions($form, &$form_state) {
-  $form = array();
-  
   //apply template
   $form['instructions'] = array(
     '#theme' => 'instructions_template',
@@ -31,8 +29,8 @@ function rawpheno_instructions($form, &$form_state) {
   );
   
   //attach required css and js
-  $form['#attached']['css'] = array(RAWPHENO_PATH . '/instructions/css/rawpheno_instructions_style.css');
-  $form['#attached']['js'] = array(RAWPHENO_PATH . '/instructions/js/rawpheno_instructions_script.js');
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/css/rawpheno_instructions_style.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/js/rawpheno_instructions_script.js');
   
   //attach jquery ui libraries
   $form['#attached']['library'][] = array('system', 'ui.tabs');

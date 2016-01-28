@@ -12,16 +12,16 @@
  * @param type $form_state
  */
 function rawpheno_download_submit($form, &$form_state) {
-  //which submit trigger submit action
+  //which submit buttons trigger submit action
   $btn_submit = $form_state['triggering_element']['#value'];   
   //direct user to the right page
   switch($btn_submit) {
-    case RAWPHENO_DOWNLOAD_BTN_DOWNLOAD_02:
+    case 'Download another file':
       //upload another spreadsheet
       drupal_goto('phenotypes/raw/download');
       break;
   
-    case RAWPHENO_DOWNLOAD_BTN_HOME:
+    case 'Go to home KnowPulse':
       //home KnowPulse
       drupal_goto('<front>');
       break;

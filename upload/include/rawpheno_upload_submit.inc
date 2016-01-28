@@ -17,17 +17,17 @@ function rawpheno_element_submit($form, &$form_state) {
   //which button is clicked
   $btn_submit = $form_state['triggering_element']['#value'];   
   switch($btn_submit) {
-    case RAWPHENO_UPLOAD_BTN_SAVE:
+    case 'Save spreadheet':
       //save spreadsheet
       rawpheno_submit_review($form, $form_state);
       break;
   
-    case RAWPHENO_UPLOAD_BTN_UPLOAD:
+    case 'Upload another spreadsheet':
       //upload another spreadsheet
       drupal_goto('phenotypes/raw/upload');
       break;
   
-    case RAWPHENO_UPLOAD_BTN_HOME:
+    case 'Go to home KnowPulse':
       //home KnowPulse
       drupal_goto('<front>');
       break;
@@ -53,7 +53,7 @@ function rawpheno_element_submit($form, &$form_state) {
  */
 function rawpheno_submit_review($form, &$form_state) {
   ///ADDITIONAL COLUMN HEADERS
-  $new_header = variable_get(RAWPHENO_UPLOAD_NEW_HEADER);
+  $new_header = variable_get('rawpheno_new_header');
   
   if (isset($new_header) && count($new_header) > 0) {
     foreach( $new_header as $i => $term ) {  
@@ -96,7 +96,7 @@ function rawpheno_submit_review($form, &$form_state) {
   /// 
   
   ///SPREADSHEET
-  $xls_file = variable_get(RAWPHENO_UPLOAD_XLS_FILE); 
+  $xls_file = variable_get('rawpheno_xls_file'); 
   
   if (isset($xls_file) && !empty($xls_file)) {
     $arr_usercols = rawpheno_function_read($xls_file);
@@ -151,7 +151,7 @@ function rawpheno_submit_review($form, &$form_state) {
             $type_id = tripal_get_cvterm(array('definition' => $cell_colheader));
             //extract the text unit
             $unit = rawpheno_function_unit($cell_colheader);
-            $unit_id = tripal_get_cvterm(array('name' => $unit, 'cv_id' => RAWPHENO_UPLOAD_MEASUREMENT_UNIT)); 
+            $unit_id = tripal_get_cvterm(array('name' => $unit, 'cv_id' => 523)); 
               
             if ($unit == 'scale') {
               //get pheno scale member code 
@@ -181,7 +181,7 @@ function rawpheno_submit_review($form, &$form_state) {
     }
   
     //delete variable get and variable set
-    if ($form_state['triggering_element']['#value'] == RAWPHENO_UPLOAD_BTN_SAVE) {
+    if ($form_state['triggering_element']['#value'] == 'Save spreadheet') {
       //reset relevant persistent variable
       rawpheno_function_resetvar();
     }

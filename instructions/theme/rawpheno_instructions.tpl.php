@@ -296,9 +296,12 @@
         <div id="gallery-container">   
           <div class="side-nav"><a href="javascript:void();"><</a></div>
           <div class="gallery-img">
-            <input type="hidden" id="path" value="../../<?php echo RAWPHENO_PATH; ?>/instructions/img/appendix/">
+            <?php
+              $path = drupal_get_path('module', 'rawpheno');
+            ?>
+            <input type="hidden" id="path" value="../../<?php echo $path; ?>/instructions/img/appendix/">
             <input type="hidden" id="cur-img" value="0">
-            <img src="../../<?php echo RAWPHENO_PATH; ?>/instructions/img/appendix/01-tendrils-no-elongation.jpg">
+            <img src="../../<?php echo $path; ?>/instructions/img/appendix/01-tendrils-no-elongation.jpg">
             <br /><em>No elongation</em>
           </div>
           <div class="side-nav"><a href="javascript:void();">></a></div>

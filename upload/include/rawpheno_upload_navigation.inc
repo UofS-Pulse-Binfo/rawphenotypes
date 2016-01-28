@@ -53,7 +53,7 @@ function rawpheno_next_page($form, &$form_state) {
     case 'check':
       //stage check - go to save (stage 03) or review (stage 02)
       $btn_submit = $form_state['triggering_element']['#value'];
-      return ($btn_submit == RAWPHENO_UPLOAD_BTN_SAVE) ? 'save' : 'review';
+      return ($btn_submit == 'Save spreadheet') ? 'save' : 'review';
       break;
 
     case 'review':

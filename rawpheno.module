@@ -2,27 +2,24 @@
 
 /**
  * @file
- * the main functionality for this module.
- * credits to: http://public-action.org/content/drupal-7-form-api-dependent-lists-and-ajax-form-submission
- *             http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
- *             https://github.com/nuovo/spreadsheet-reader
- *             http://www.d3js.org
+ * The main functionality for this module.
+ * Credits to: 
+ *   http://public-action.org/content/drupal-7-form-api-dependent-lists-and-ajax-form-submission
+ *   http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
+ *   https://github.com/nuovo/spreadsheet-reader
+ *   http://www.d3js.org
  */
 
-//path to rawpheno module
-$p = drupal_get_path('module', 'rawpheno');
-define('RAWPHENO_PATH', $p);
-    
 /**
- * implements hook menu
+ * Implements hook_menu()
  * 
  * @return type
  */
 function rawpheno_menu() {
   $items = array();
   
-  //RAW DATA PAGE - home phenotypes page
-  $items['phenotypes/raw/rawdata'] = array(
+  //RAW DATA PAGE
+  $items['phenotypes/raw'] = array(
     'title' => 'Raw Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_rawdata'),
@@ -30,13 +27,14 @@ function rawpheno_menu() {
     'file' => 'rawdata/include/rawpheno_rawdata_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-    //create data for heat map
+    //Menu callback which generates the summary data in JSON,
+    //required by the heatmap/chart in rawdata page.
     $items['rawdata'] = array(
-      'access callback'   => true, 
-      'page callback'     => 'create_rawdata', 
+      'access callback' => true, 
+      'page callback' => 'rawpheno_rawdata_summary_json', 
       'delivery callback' => 'drupal_json_output',
+      'type' => MENU_CALLBACK,
     );
-    ///
   
   //INSTRUCTIONS PAGE
   $items['phenotypes/raw/instructions'] = array(
@@ -47,13 +45,13 @@ function rawpheno_menu() {
     'file' => 'instructions/include/rawpheno_instructions_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-    //autocomplete search
+    //Menu callback which generates a key - value data in JSON,
+    //used to autocomplete a search field in instructions page.
     $items['autocomplete'] = array(
-      'page callback' => 'autocomplete_search',
+      'page callback' => 'rawpheno_instructions_autocomplete_search',
       'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
     );
-  ///  
   
   //DOWNLOADS PAGE
   $items['phenotypes/raw/download'] = array(
@@ -79,15 +77,33 @@ function rawpheno_menu() {
 }
 
 /**
- * menu callback to autocomplete textfield
- * in phenotypes/instructions page
+ * Implements hook_libraries_info() for SpreadsheetReader.
  *
  * @return array
  */
-function autocomplete_search($key) {
+function rawpheno_libraries_info() {
+  $libraries['spreadsheet_reader'] = array(
+    'name' => 'NUOVO Spreadsheet - Reader XLS 2',
+    'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
+    'download url' => 'https://github.com/nuovo/spreadsheet-reader',
+    'path' => 'sites/all/libraries/spreadsheet-reader/',
+    'files' => array(),
+  );
+  
+  return $libraries;
+}
+
+/**
+ * Menu callback to autocomplete textfield
+ * in phenotypes/instructions page.
+ * 
+ * @param string $key
+ * @return object
+ */
+function rawpheno_instructions_autocomplete_search($key) {
   $list = array();
   
-  //list of traits available in standard phenotyping instruction
+  //List of traits available in standard phenotyping instruction.
   $traits = array('Planting Date (date)',
                   'Days to Emergence (days)',
                   '# Emerged Plants (count)',
@@ -130,7 +146,7 @@ function autocomplete_search($key) {
  *
  * @return string
  */
-function create_rawdata() {
+function rawpheno_rawdata_summary_json() {
   //get planting date cvterm id
   $planting_date = tripal_get_cvterm(array('name' => 'planting_date')); 
   

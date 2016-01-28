@@ -12,11 +12,14 @@
  * @return array
  */
 function rawpheno_function_read($file) {
+  $xls_lib = libraries_load('spreadsheet_reader');
+  $lib_path = $xls_lib['path']; 
+
   //include parser library. DO NOT ALTER ORDER!!!
-  include_once RAWPHENO_PATH . '/upload/include/spreadsheet-reader/php-excel-reader/excel_reader2.php';
-  include_once RAWPHENO_PATH . '/upload/include/spreadsheet-reader/SpreadsheetReader_XLSX.php';
-  include_once RAWPHENO_PATH . '/upload/include/spreadsheet-reader/SpreadsheetReader.php';  
-  
+  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
+  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
+  include_once $lib_path . 'SpreadsheetReader.php';  
+
   if (gettype($file) == 'string') {
     //read actual file in the server in stage 03
     $xls_file = $file;
@@ -34,7 +37,7 @@ function rawpheno_function_read($file) {
   } 
   else {
     //needs this library exclusive to xls file version 
-    include_once RAWPHENO_PATH . '/upload/include/spreadsheet-reader/SpreadsheetReader_XLS.php';
+    include_once $lib_path . 'SpreadsheetReader_XLS.php';
     $xls_obj = new SpreadsheetReader_XLS($xls_file);
   }
   
@@ -255,7 +258,7 @@ function rawpheno_function_chkunit($unit, $cell_val) {
   switch( $unit ) {
     case 'date':
       //at least 3 characters 
-      if (!empty($cell_val) && preg_match('/[0-9]{2}-[0-9]{2}-[0-9]{4}/', $cell_val) == 0) {
+      if (!empty($cell_val) && preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $cell_val) == 0) {
         $pass = 0;
       }
       
@@ -385,13 +388,13 @@ function rawpheno_function_newheader($name, $header) {
  * clear variables
  */
 function rawpheno_function_resetvar() {
-  if (variable_get(RAWPHENO_UPLOAD_NEW_HEADER)) {
+  if (variable_get('rawpheno_new_header')) {
     //hold new headers
-    variable_del(RAWPHENO_UPLOAD_NEW_HEADER);
+    variable_del('rawpheno_new_header');
   }
   
-  if (variable_get(RAWPHENO_UPLOAD_XLS_FILE)) {
+  if (variable_get('rawpheno_xls_file')) {
     //holds the filename and location of spreadsheet uploaded
-    variable_del(RAWPHENO_UPLOAD_XLS_FILE);
+    variable_del('rawpheno_xls_file');
   }
 }

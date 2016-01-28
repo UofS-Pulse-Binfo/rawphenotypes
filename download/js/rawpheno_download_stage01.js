@@ -5,7 +5,9 @@
       /////  
         $('#edit-download-submit-download').click(function(e) { 
           var win = $('#rawdata-window-download');
-          if(!win.length) {  
+          var loc = $('#edit-location').val().toLowerCase();
+          
+          if(!win.length && $('#edit-sel-'+loc).val() != null) {  
             //add window with timer
             $('#rawpheno-download').prepend('<div id="rawdata-window-download" class="messages status">Download will start <span> </span></div>');
           }
@@ -16,8 +18,7 @@
             alert('File download is in progress');
           } 
           else {
-            var loc = $('#edit-location').val().toLowerCase();
-            if ($('#edit-sel-'+loc).val()) {
+            if ($('#edit-sel-'+loc).val() != null) {
               var sec = 3;  
               var timer = setInterval(function() {
                 $('#rawdata-window-download span').text(sec);  

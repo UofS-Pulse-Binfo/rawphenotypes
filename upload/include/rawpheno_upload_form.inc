@@ -11,17 +11,6 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_validate'
 //handle parsing of spreadsheet file
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function');
 
-//button labels
-define('RAWPHENO_UPLOAD_BTN_SAVE', 'Save spreadheet');
-define('RAWPHENO_UPLOAD_BTN_DESCRIBE', 'Describe additional traits/column headers');
-define('RAWPHENO_UPLOAD_BTN_UPLOAD', 'Upload another spreadsheet');
-define('RAWPHENO_UPLOAD_BTN_HOME', 'Go to home KnowPulse');
-//variable name
-define('RAWPHENO_UPLOAD_NEW_HEADER', 'rawpheno_new_header');
-define('RAWPHENO_UPLOAD_XLS_FILE', 'rawpheno_xls_file');
-//cvterm measurements id number
-define('RAWPHENO_UPLOAD_MEASUREMENT_UNIT', 523);
- 
 /**
  * master form which calls an individual form for each step.
  * 
@@ -86,13 +75,13 @@ function rawpheno_form_check($form, &$form_state) {
   //save spreadsheet - go to stage 03
   $form['stage01_submit_save'] = array(
     '#type' => 'submit',
-    '#value' => RAWPHENO_UPLOAD_BTN_SAVE,
+    '#value' => 'Save spreadheet',
   );
   
   //describe trait - go to stage 02
   $form['stage01_submit_review'] = array(
     '#type' => 'submit',
-    '#value' => RAWPHENO_UPLOAD_BTN_DESCRIBE,
+    '#value' => 'Describe additional traits/column headers',
   );
   
   //close error window button
@@ -102,8 +91,8 @@ function rawpheno_form_check($form, &$form_state) {
   );
   
   //attach required css and js
-  $form['#attached']['css'] = array(RAWPHENO_PATH . '/upload/css/rawpheno_upload_stage01.css');
-  $form['#attached']['js'] = array(RAWPHENO_PATH . '/upload/js/rawpheno_upload_stage01.js');
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage01.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/upload/js/rawpheno_upload_stage01.js');
 
   return $form;  
 }
@@ -132,7 +121,7 @@ function rawpheno_form_review($form, &$form_state) {
   );
   
   //read all new column headers
-  $new_header = variable_get(RAWPHENO_UPLOAD_NEW_HEADER);
+  $new_header = variable_get('rawpheno_new_header');
   if (isset($new_header) && count($new_header) > 0) {
     ///create form elements to each trait
     foreach($new_header as $i => $k) {
@@ -190,7 +179,7 @@ function rawpheno_form_review($form, &$form_state) {
     //save spreadsheet - go to stage 03
     $form['stage02_submit_save'] = array(
       '#type' => 'submit',
-      '#value' => RAWPHENO_UPLOAD_BTN_SAVE,
+      '#value' => 'Save spreadheet',
     );
   } 
   else {
@@ -198,13 +187,13 @@ function rawpheno_form_review($form, &$form_state) {
     //upload another spreadsheet button - go to stage 01
     $form['stage02_submit_save'] = array(
       '#type' => 'submit',
-      '#value' => RAWPHENO_UPLOAD_BTN_UPLOAD,
+      '#value' => 'Upload another spreadsheet',
     );
   }
   
   //attach required css and js
-  $form['#attached']['css'] = array(RAWPHENO_PATH . '/upload/css/rawpheno_upload_stage02.css');
-  $form['#attached']['js'] = array(RAWPHENO_PATH . '/upload/js/rawpheno_upload_stage02.js');
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage02.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/upload/js/rawpheno_upload_stage02.js');
   
   return $form;
 }
@@ -229,17 +218,17 @@ function rawpheno_form_save($form, &$form_state) {
   //upload another spreadsheet button - go to stage 01
   $form['stage03_submit_save'] = array(
     '#type' => 'submit',
-    '#value' => RAWPHENO_UPLOAD_BTN_UPLOAD,
+    '#value' => 'Upload another spreadsheet',
   );
   
   //home button
   $form['stage03_submit_home'] = array(
     '#type' => 'submit',
-    '#value' => RAWPHENO_UPLOAD_BTN_HOME,
+    '#value' => 'Go to home KnowPulse',
   );
   
   //attach required css and js
-  $form['#attached']['css'] = array(RAWPHENO_PATH . '/upload/css/rawpheno_upload_stage03.css');
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage03.css');
 
   return $form;
 }
