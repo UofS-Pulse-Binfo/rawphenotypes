@@ -18,6 +18,12 @@
 function rawpheno_menu() {
   $items = array();
   
+  //Default in Navigation menu block
+  //RAW DATA
+  // -DOWNLOAD DATA
+  // -INSTRUCTIONS
+  // -UPLOAD DATA
+  
   //RAW DATA PAGE
   $items['phenotypes/raw'] = array(
     'title' => 'Raw Data',
@@ -62,7 +68,7 @@ function rawpheno_menu() {
     'file' => 'download/include/rawpheno_download_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-
+    
   //DRAG AND DROP UPLOAD PAGE
   $items['phenotypes/raw/upload'] = array(
     'title' => 'Upload Data',
@@ -82,6 +88,13 @@ function rawpheno_menu() {
  * @return array
  */
 function rawpheno_libraries_info() {
+  //Files key is empty since library files are included
+  //individually using include_once().
+  //files in: sites/all/libraries/spreadsheet-reader
+  //  - SpreadsheetReader.php
+  //  - SpreadsheetReaderXLSX.php
+  //  - SpreadsheetReaderXLS.php
+  //  - php-excel-reader/excel_reader2.php
   $libraries['spreadsheet_reader'] = array(
     'name' => 'NUOVO Spreadsheet - Reader XLS 2',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
@@ -94,16 +107,19 @@ function rawpheno_libraries_info() {
 }
 
 /**
- * Menu callback to autocomplete textfield
+ * Callback function to autocomplete keyword/trait
  * in phenotypes/instructions page.
- * 
+ * See hook_menu() implementation above. 
+ *
  * @param string $key
  * @return object
  */
 function rawpheno_instructions_autocomplete_search($key) {
+  //$key contains search key
   $list = array();
   
   //List of traits available in standard phenotyping instruction.
+  //Suggest these traits to user as they type in search field.
   $traits = array('Planting Date (date)',
                   'Days to Emergence (days)',
                   '# Emerged Plants (count)',
@@ -114,7 +130,6 @@ function rawpheno_instructions_autocomplete_search($key) {
                   'Days Till 10% of Plants Have 1/2 Their Pods Mature (R7; days)',
                   'Days Till Harvest (days)',
                   'Diseases Present (y/n/?)',
-                  //optional 10 - 19
                   'Number of Nodes on Primary Stem at R1 (count)',
                   'R7 Trait: Lowest Pod Height (cm)',
                   'R7 Traits: Canopy Height (cm)',
@@ -125,32 +140,35 @@ function rawpheno_instructions_autocomplete_search($key) {
                   'Total Seed Mass (g)',
                   'Total Number of Seeds (count)',
                   '100 Seed Mass (g)',
-                  //subset traits 20 - 22
                   'Subset Traits: # Peduncles (count)',
                   'Subset Traits: # Pods (count)',
                   'Subset Traits: # Seeds (count)');
   
-  //create list key => value
+  //Create list key => value to suggest to user based on $key.
   foreach($traits as $val) {
     if (stristr($val, $key)) {
       $list[$val] = $val;
     } 
   }
   
+  //Return a json list of traits that contains $key.
   drupal_json_output($list);
 }
 
 /**
- * menu call back to generate data for heat map
+ * Callback function to generate data for heat map
  * in phenotypes/rawdata page
  *
  * @return string
  */
 function rawpheno_rawdata_summary_json() {
-  //get planting date cvterm id
+  //Get the cvterm_id/type_id of planting date trait.
+  //The id will be used determine if planting date is present
+  //in the list of measurements. The final trait count will be
+  //deducted by 1 if present.
   $planting_date = tripal_get_cvterm(array('name' => 'planting_date')); 
   
-  //select all location from materialized view
+  //Select all location from materialized view and construct data set.
   $data = db_query("SELECT DISTINCT location 
                     FROM {chado.rawpheno_rawdata_mview} 
                     ORDER BY location ASC");

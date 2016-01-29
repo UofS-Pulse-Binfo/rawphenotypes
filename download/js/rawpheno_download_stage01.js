@@ -2,23 +2,24 @@
   Drupal.behaviors.rawphenoSelTrait = {
     attach: function (context, settings) {
       $(document).ready(function() {
-      /////  
-        $('#edit-download-submit-download').click(function(e) { 
+      ///// 
+        /*
+        var selTrait = $("[name='traits[]']"); 
+        $('#edit-download-submit-download').click(function(e) {
           var win = $('#rawdata-window-download');
-          var loc = $('#edit-location').val().toLowerCase();
           
-          if(!win.length && $('#edit-sel-'+loc).val() != null) {  
+          if(!win.length && selTrait.val() != null) {  
             //add window with timer
             $('#rawpheno-download').prepend('<div id="rawdata-window-download" class="messages status">Download will start <span> </span></div>');
           }
           
           if(win.length) {
-            //if timer is present, prevent user from 
-            //downloading 
+            //if timer is present, prevent user from
+            //downloading
             alert('File download is in progress');
-          } 
+          }
           else {
-            if ($('#edit-sel-'+loc).val() != null) {
+            if (selTrait.val() != null) {
               var sec = 3;  
               var timer = setInterval(function() {
                 $('#rawdata-window-download span').text(sec);  
@@ -34,27 +35,28 @@
             }
           }
         });
+        */
         
-        //ref to location field
-        var location = $('#edit-location');
-        //ref checkbox
+        //
         var chkb = $('#field-container .frm-cell input:checkbox');
-  
+        var selTrait = $("[name='traits[]']");
         chkb.click(function() {
           //select all options
-          var fld = '#edit-sel-'+location.val().toLowerCase();
           var state = ($(this).is(':checked')) ? 'selected' : '';
-          resetFld(fld, state);          
+          resetFld(selTrait, state);          
           //focus on select
-          $(fld).focus();
+          $(selTrait).focus();
         });
         
-        //reset select
-        location.change(function() { 
-          var fld = '#edit-sel-'+location.val().toLowerCase();
-          resetFld(fld, '');
-          //uncheck checkbox
-          chkb.attr('checked', false);    
+        //Disable all form elements when ajax request in progress.
+        $(document).ajaxStart(function() {
+          //ajax start
+          chkb.attr('checked', false); 
+          $(':input').attr('disabled', 'disabled');
+        }).ajaxComplete(function() {
+          //ajax end
+          resetFld(selTrait, '');
+          $(':input').removeAttr('disabled');
         });
       /////    
       });
@@ -65,7 +67,7 @@
           $(this).attr('selected', state);
         });
         //scroll back to top
-        $(select).scrollTop(0); 
+        $(select).scrollTop(0);
       }
     }
   };

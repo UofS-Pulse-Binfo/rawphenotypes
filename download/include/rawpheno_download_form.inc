@@ -43,75 +43,112 @@ function rawpheno_download($form, &$form_state) {
  * @return type
  */
 function rawpheno_download_traits_form($form, $form_state) {
+  //Fieldset container for download form.
   $form['download_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Select location and traits that you want to download'),
     '#attributes' => array('id' => 'field-container'),
   );
   
-  //populate locations
-  $sql = "SELECT DISTINCT t1.value, t1.value as location
-          FROM {pheno_plantprop} as t1 INNER JOIN {chado.cvterm} as t2
-          ON t1.type_id = t2.cvterm_id
-          WHERE t2.name = 'location'
-          ORDER BY location ASC";        
-
-  $location = db_query($sql)->fetchAllKeyed();
- 
-  //primary select
-  //container div to contain all the form elements
+  //Query all locations available.
+  $d = db_query("SELECT DISTINCT t1.value, t1.value as location FROM {pheno_plantprop} as t1
+                 INNER JOIN {chado.cvterm} as t2 ON t1.type_id = t2.cvterm_id
+                 WHERE t2.name = 'location' ORDER BY t1.value ASC");
+  
+  $location = db_query($d)->fetchAllKeyed();
+  
+  //Primary select field with ajax option. 
   $form['download_fldset']['location'] = array(
-    '#type' => 'select',
     '#title' => t('Location'),
-    '#size' => 15,
+    '#type' => 'select',
     '#options' => $location,
     '#default_value' => reset($location),
+    '#multiple' => TRUE,
+    '#size' => 15,
     '#prefix' => '<div class="frm-cell">',
     '#suffix' => '</div>',
+    '#ajax' => array(
+      'event' => 'change',
+      'callback' => 'rawpheno_download_measurements',
+      'wrapper' => 'div-measurements',
+      'progress' => array('type'=>'throbber', 'message'=>'')
+    ),
   );
+  
+  //Div wrapper for ajax result.
+  $form['download_fldset']['wrapper'] = array(
+    '#prefix' => '<div id="div-measurements">',
+    '#suffix' => '</div>'
+  );
+  
+  //Populate location and traits fields.
+  if (isset($form_state['values']['location'])) {
+    //When user has selected a location.
+    $loc = $form_state['values']['location'];
+    $loc = implode("','",$loc);
 
-  //wrap select in div
-  $form['download_fldset']['begin_div'] = array('#markup' => '<div class="frm-cell">');  
-  //create chained select of traits per location
-  foreach($location as $key => $val) {
-    //select all available traits for download
-    $sql = "SELECT DISTINCT t1.type_id AS trait_id, t3.definition AS trait
-            FROM {pheno_measurements} AS t1 
-            INNER JOIN {pheno_plantprop} AS t2 ON t1.plant_id = t2.plant_id
-            INNER JOIN {chado.cvterm} AS t3 ON t1.type_id = t3.cvterm_id
-            WHERE t2.value  = '$key' and t1.value <> ''
-            ORDER BY t1.type_id ASC";        
- 
-    $traits = db_query($sql)->fetchAllKeyed();
-    
-    $form['download_fldset']['sel-'.$key] = array(
-      '#type' => 'select',
-      '#title' => count($traits).' Traits available for location '.$val,
-      '#states' => array(
-          'visible' => array(
-              ':input[name="location"]' => array('value' => $key),
-          ),
-      ),
-      '#options' => $traits,
-      '#size' => 15,
-      '#multiple' => TRUE,
-    );
+    $traits = rawpheno_download_measurement_set($loc);
   }
-  $form['download_fldset']['end_div'] = array('#markup' => '</div>');
+  else {
+    $loc = reset($location);
+    //Default location to the first location available in primary select field.
+    $traits = rawpheno_download_measurement_set($loc);
+  }
+  
+  //Secondary select field showing all available traits.
+  $form['download_fldset']['wrapper']['traits'] = array(
+    '#title' => count($traits).' Traits available',
+    '#type' => 'select',
+    '#options' => $traits,
+    '#multiple' => TRUE,
+    '#size' => 35,
 
-  //submit button
+  );
+  
   $form['download_fldset']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
     '#prefix' => '<div class="frm-cell"><input type="checkbox"> Select all traits',
     '#suffix' => '</div><div style="clear: both;"></div>',
-  );   
+  );
+
   
   //attach css and js
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/download/css/rawpheno_download_style.css');
   $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/download/js/rawpheno_download_stage01.js');
   
   return $form;
+}
+
+/**
+ * AJAX function callback in primary select (locations).
+ *
+ * @param type $form
+ * @param type $form_state
+ * @return array
+ */
+function rawpheno_download_measurements($form, $form_state) {
+  return $form['download_fldset']['wrapper'];
+}
+
+/**
+ * Query all available traits based on location selected
+ *
+ * @param string $location
+ * @param string $trait
+ * @return array
+ */
+function rawpheno_download_measurement_set($location) {
+  $t = "SELECT DISTINCT t1.type_id AS trait_id, t3.definition AS trait
+        FROM {pheno_measurements} AS t1 
+          INNER JOIN {pheno_plantprop} AS t2 ON t1.plant_id = t2.plant_id
+          INNER JOIN {chado.cvterm} AS t3 ON t1.type_id = t3.cvterm_id
+        WHERE t2.value IN ('$location') 
+          AND t1.value <> '' 
+        ORDER BY t1.type_id ASC";   
+  
+  //Return trait id => trait definition array.                 
+  return db_query($t)->fetchAllKeyed();
 }
 
 /**
@@ -123,66 +160,28 @@ function rawpheno_download_traits_form($form, $form_state) {
  */
 function rawpheno_download_autodownload_form($form, $form_state) {
   //delay download for 4 sec
-  sleep(4);
+  //sleep(4);
   
   //create csv file for download
   $location = $form_state['values']['location'];
-  $select = 'sel-'.$location;
-  $traits = $form_state['values'][$select];
+  $location = implode("','",$location);
+  
   //include plantprop traits
-  $plantprop_traits = "'plot','entry','rep','location'";
+  $plantprop_traits = 'Plot,Entry,Name,Rep,Location';
+  
   //list of traits to search
+  $traits = $form_state['values']['traits'];
   $traits = implode(',', $traits);
   
-  //get stock name of the plant id based on given location
-  $n = db_query("SELECT t2.name, t1.plant_id, t3.value AS location
-                 FROM {pheno_plant} AS t1
-                  INNER JOIN {chado.stock} AS t2 USING(stock_id)
-                  INNER JOIN {pheno_plantprop} AS t3 ON t1.plant_id = t3.plant_id
-                 WHERE t3.value = '$location'
-                 ORDER BY t1.plant_id ASC");
+  $t = db_query("SELECT ARRAY_TO_STRING(ARRAY_AGG(definition),',') 
+                 FROM {chado.cvterm} 
+                 WHERE cvterm_id IN ($traits)");
   
-  if ($n) {
-    //create the headers - Name is inserted after rep
-    //order is based on the selected traits
-    $h = db_query("SELECT ARRAY_TO_STRING(ARRAY_AGG(CASE WHEN name = 'rep' 
-                   THEN CONCAT(definition, ',Name') ELSE TRIM(definition) END), ',') 
-                   FROM {chado.cvterm}
-                   WHERE name IN ($plantprop_traits) OR cvterm_id IN ($traits)");
-
-    $h = $h->fetchField()."\n";
- 
-    $raw = '';
-    while($row = $n->fetchAssoc()) {
-      //each measurements based on plant_id
-      
-      $plant_id = $row['plant_id'];
-      $stock = $row['name'];
-      
-      //plantprop in this order (plot, entry, name, rep, location) 
-      $p = db_query("SELECT ARRAY_TO_STRING(ARRAY_AGG(CONCAT(
-                      CASE WHEN t2.name = 'entry' THEN t1.value ELSE null END,
-                      CASE WHEN t2.name = 'plot' THEN t1.value ELSE null END,
-                      CASE WHEN t2.name = 'rep' THEN concat(t1.value, ',$stock') ELSE null END,
-                      CASE WHEN t2.name = 'location' THEN concat(t1.value,',') ELSE null END
-                      )),',') as plantprop
-                     FROM pheno_plantprop AS t1 
-                      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
-                     WHERE t1.plant_id = '$plant_id'
-                     GROUP BY t1.plant_id LIMIT 1");
-      
-      $raw .= $p->fetchField();
+  $h = $plantprop_traits.','.$t->fetchField();
   
-      //measurement values - in the same order as selected traits
-      $m = db_query("SELECT array_to_string(array_agg(CASE WHEN t1.value = '' THEN 'NA' ELSE trim(t1.value) END), ',') as value
-                     FROM {pheno_measurements} as t1
-                     WHERE t1.type_id IN ($traits) AND t1.plant_id = '$plant_id'
-                     GROUP BY t1.plant_id");
-      
-      $raw .= $m->fetchField()."\n"; 
-    }    
-  }
+  dpm($h);
   
+  /*
   //file  
   $file_name = 'rawpheno' . $location.'csv' . time() . '.csv';
   $file_csv = file_save_data($h.$raw, 'public://' . $file_name);
@@ -205,6 +204,7 @@ function rawpheno_download_autodownload_form($form, $form_state) {
   }
 
   file_transfer($path, $http_headers);
+  */
   
   return $form;
 }
