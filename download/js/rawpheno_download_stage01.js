@@ -3,43 +3,27 @@
     attach: function (context, settings) {
       $(document).ready(function() {
       ///// 
-        /*
-        var selTrait = $("[name='traits[]']"); 
-        $('#edit-download-submit-download').click(function(e) {
-          var win = $('#rawdata-window-download');
-          
-          if(!win.length && selTrait.val() != null) {  
-            //add window with timer
-            $('#rawpheno-download').prepend('<div id="rawdata-window-download" class="messages status">Download will start <span> </span></div>');
-          }
-          
-          if(win.length) {
-            //if timer is present, prevent user from
-            //downloading
-            alert('File download is in progress');
-          }
-          else {
-            if (selTrait.val() != null) {
-              var sec = 3;  
-              var timer = setInterval(function() {
-                $('#rawdata-window-download span').text(sec);  
-                if (sec == 0) {
-                  //timer done - clear timer present
-                  clearInterval(timer);
-                  $('#rawdata-window-download').fadeOut(2000, function() { $(this).remove(); });
-                }
-                else {
-                  sec = sec - 1;
-                }
-              }, 1000);
-            }
-          }
-        });
-        */
-        
-        //
         var chkb = $('#field-container .frm-cell input:checkbox');
         var selTrait = $("[name='traits[]']");
+        var btnSubmit = $('#edit-download-submit-download');
+        
+        btnSubmit.click(function(e) { 
+          if (selTrait.val() && btnSubmit.val() == 'Download') {
+            btnSubmit.val('Download in 3');
+            var sec = 2;
+            var timer = setInterval(function() {
+              btnSubmit.val('Download in ' + sec);
+              if (sec < 0) {
+                clearInterval(timer);
+                btnSubmit.val('Download');
+              }
+              else {
+                sec = sec - 1;
+              }
+            }, 1000);
+          }
+        });
+
         chkb.click(function() {
           //select all options
           var state = ($(this).is(':checked')) ? 'selected' : '';

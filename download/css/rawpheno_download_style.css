@@ -16,33 +16,28 @@
 
 #field-container div.frm-cell, #div-measurements {
   text-align: left;
-  width: 380px;
+  padding: 10px 8px;
   float: left;
 }
 
-#field-container div.frm-cell:nth-child(odd) {
-  width: 110px;
-}
-
-#field-container div.frm-cell:nth-last-child(2) {
-  margin-top: 90px;
-}
-
-#edit-download-submit-download {
-  margin: 15px 0;
-}
-
-#field-container label {
-  margin: 10px 0;
-}
-
-/*
-#field-container select:nth-child(even) {
+#div-measurements select {
   width: 350px;
 }
 
-#field-container .frm-cell:first-child select {
-  width: 85px;
+#field-container div.frm-cell:first-child select {
+  width: 100px;
 }
-*/
 
+#field-container div.frm-cell:nth-child(3) {
+  width: 110px;
+  margin-top: 90px;
+  margin-left: 5px;
+}
+
+select:disabled {
+  background-color: #F7F7F7;
+}
+
+#edit-download-submit-download {
+  margin: 20px 0;
+}
