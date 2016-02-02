@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Manage behaviors in instructions page.
+ */
 (function($) {
   Drupal.behaviors.rawphenoInstructionsTab = {
     attach: function (context, settings) {

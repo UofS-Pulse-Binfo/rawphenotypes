@@ -2,9 +2,12 @@
 
 /**
  * @file
- * implements hook schema
+ * Create database tables and fields required by this module
  */
  
+/**
+ * Implements hook_schema()
+ */ 
 function rawpheno_schema() {
   //PHENO PLANT
   //since the plant can be described in many different ways, we
@@ -153,15 +156,18 @@ function rawpheno_schema() {
   return $schema;
 }
 
-//add terms to cvterm
+/**
+ * Implements hook_install()
+ * Insert these records after tables are created
+ */
 function rawpheno_install() {
-  //plant property terms
-  $pp_terms = array('plot'     => 'Plot', 
-                    'entry'    => 'Entry', 
-                    'rep'      => 'Rep', 
+  //Plant property terms array.
+  $pp_terms = array('plot' => 'Plot', 
+                    'entry' => 'Entry', 
+                    'rep' => 'Rep', 
                     'location' => 'Location');
   
-  //measurement types terms
+  //Measurement type terms array.
   $mt_terms = array('planting_date' => 'Planting Date (date)',
                     '#_of_seeds_planted' => '# of Seeds Planted (count)',
                     'days_to_emergence' => 'Days to Emergence (days)',
@@ -190,25 +196,26 @@ function rawpheno_install() {
                     '100_seed_mass' => '100 Seed Mass (g)',
                     'comments' => 'Comments');
   
-  //measurement units terms
-  $mu_terms = array('date'  => '(date)',
+  //Measurement unit terms array.
+  $mu_terms = array('date' => '(date)',
                     'count' => '(count)',
-                    'days'  => '(days)',
-                    'cm'    => '(cm)',
+                    'days' => '(days)',
+                    'cm' => '(cm)',
                     'y/n/?' => '(y/n/?)',
                     'scale' => '(Scale: 1-5)',
-                    'g'     => '(g)',
-                    'text'  => '(text)');
+                    'g' => '(g)',
+                    'text' => '(text)');
                     
-  //vocabularies
+  //Vocabulary terms array.
   $cv_vocabulary = array('phenotype_plant_property_types', 
                          'phenotype_measurement_types', 
                          'phenotype_measurement_units');
                          
-  //add terms
-  foreach ( $cv_vocabulary as $cv_i => $cv_name ) {
+  //Insert all data array.
+  foreach($cv_vocabulary as $cv_i => $cv_name) {
     $arr_terms = array();
     
+    //Insert 1. plant property, 2. measurment type and 3. measurement unit.
     if ($cv_i == 0) 
       $arr_terms = $pp_terms;
     elseif ($cv_i == 1)
@@ -226,12 +233,14 @@ function rawpheno_install() {
     }
   }
   
-  //add materialized view
+  //Create materialized view used in phenotypes/rawdata,
+  //using Tripal: tripal_add_mview().
   $mv_name = 'rawpheno_rawdata_summary';
   $mv_module = 'tripal_core';
   $mv_comment = 'Materialized view used by rawpheno module to generate heat map in raw data page';
 
-  //creates - plant_id, Location, Rep, (summary of traits: trait id = trait value, ....) rows
+  //Create a summary of data in the following format
+  //plant_id, Location, Rep, (summary of traits: trait id = trait value, ....) rows.
   $mv_sql = "SELECT t1.plant_id,
                ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'location' THEN t1.value ELSE '' END), '') AS location,
                ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'rep' THEN t1.value ELSE '' END), '') AS rep,
@@ -243,22 +252,19 @@ function rawpheno_install() {
              GROUP BY t1.plant_id  
              ORDER BY location, rep, t1.plant_id, measurement ASC";
   
-  //schema array
+  //Schema array.
   $mv_schema = array (
     'table' => 'rawpheno_rawdata_mview',
     'fields' => array (
     'plant_id' => array (
       'type' => 'varchar',
       'length' => 20),
-
     'location' => array (
       'type' => 'varchar',
       'length' => 20),
-
     'rep' => array (
       'type' => 'varchar',
       'length' => 5),
-
     'measurement' => array (
       'type' => 'text'),
     )

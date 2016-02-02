@@ -2,7 +2,7 @@
 
 /**
  * @file
- * The main functionality for phenotypes/download.
+ * Contains all implementations of hook_form().
  */
  
 module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_submit');
@@ -69,7 +69,6 @@ function rawpheno_download($form, &$form_state) {
   }
   
   //When location is established, query all available traits per location.
-  //https://www.drupal.org/node/310072 - implement placeholder tomorrow
   $t = db_query(sprintf("SELECT DISTINCT t1.type_id, t2.definition 
                  FROM {pheno_measurements} AS t1
                    INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id

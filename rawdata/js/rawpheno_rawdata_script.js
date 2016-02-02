@@ -1,37 +1,41 @@
+/**
+ * @file
+ * Create graphical representation of phenotypic data.
+ */
 (function($) {
   Drupal.behaviors.rawphenoRawData = {
     attach: function (context, settings) {
       $(document).ready(function() {
       /////
-        //default bg color of chart on load
+        //Default bg color of chart on load;
         var startColour = 'green';
-        //number of reps  
+        //Number of reps.  
         var rep = 3;
         
-        //colour map
+        //Colour map chart.
         var color = d3.scale.ordinal()
           .domain([0, 5, 10, 15, 20, 25, 30])
           .range(['#EAEAEA', '#E2EFDA', '#C6E0BA', '#A9D08E', '#70AD47', '#548235', '#375623']);
           
-        //bar/rect properties
+        //Bar/rect properties.
         var barBorder = 1;
         var barWidth = 30 - (barBorder * 2); //less 2px for borders
         var barHeight = 100 - (barBorder * 2); 
         
-        //margin and dimension
+        //Margins and dimension
         var margin = {top: 30, right: 10, bottom: 20, left: 65};
         var height = 425 - margin.top - margin.bottom;
         var width  = 830 - margin.left - margin.right;
         
-        //tool tip container
+        //Tool tip container.
         var div = d3.select('body').append('div')   
           .attr('class', 'tool-tip')               
           .style('opacity', 0);
         
-        //svg canvas
+        //Main SVG canvas.
         var svg = d3.select('.data-chart')
         
-        //legend
+        //Legend information.
         var legend = svg.append('g')
           .attr('transform', 'translate(' + margin.left + ', '+ (height + margin.top) +')')
           .attr('id', 'g-legend');
@@ -60,7 +64,7 @@
         }
         //
         
-        //add title/caption
+        //Title and caption.
         var captions = svg.append('g').attr('id', 'g-captions');
         captions.append('text')
           .attr('class', 'chart-title')
@@ -69,7 +73,7 @@
           })
           .text('Number of Trials per Location');
         
-        //growing season - y axis
+        //Growing season - y axis
         captions.append('text')
           .attr('class', 'chart-axes')
           .attr('transform', function() {
@@ -77,7 +81,7 @@
           })
           .text('Growing Season (year)');
         
-        //location
+        //Location - x axis
         captions.append('text')
           .attr('class', 'chart-axes')
           .attr('transform', function() {
@@ -100,8 +104,8 @@
           .scale(y0)
           .orient('left');
 
-        //create g on margin top and margin left position
-        //to contain the heat map chart
+        //Create g on margin top and margin left position,
+        //to contain chart
         var chart = svg
           .attr('height', height + margin.top + margin.bottom)
           .attr('width', width + margin.left + margin.right)
@@ -109,18 +113,18 @@
             .attr('id', 'g-locations')
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
        
-        //
         //json file
-        //http://knowpulse.usask.ca/dev/../rawdata
         var file = $('#rawdata-json').val();
         //
         
-        //begin chart
+        //Begin chart
         d3.json(file, function(error, data) {
-          //error reading file
+          //Error reading file
           if (error) throw error;
           
-          //data /location/year/rep - values
+          //Group data with location as primary key.
+          //year as secondary key and rep as tertiary.
+          //data /location/year/rep - values.
           var dataByLocation = d3.nest()
             .key(function(d) { return d.location; })
             .key(function(d) { return d.year; })
@@ -132,13 +136,13 @@
             })
             .entries(data);
           
-          //compute dimensions based on number of record to chart
+          //Compute dimensions based on number of records to chart.
           var numberOfLocation = dataByLocation.length;
           var containerWidth = round(width/numberOfLocation);
           var barWidth = round(containerWidth/rep);
           
-          //container g for each location
-          // /location
+          //Container g for each location.
+          // /location - read primary keys
           var g = chart.selectAll('g')
             .data(dataByLocation)
             .enter()
@@ -148,8 +152,8 @@
                  return 'translate('+ (i * containerWidth) +', 0)';      
               });
 
-          //container g for each year
-          // /location/year
+          //Container g for each year.
+          // /location/year - read primary key then secondary key.
           var y = g.selectAll('g')
             .data(function(d) { return d.values })
             .enter()
@@ -159,8 +163,11 @@
               return 'translate(0, '+ (i * barHeight) +')';
             });
           
-          //rect inside a g per rep
-          // /location/year/rep 
+          
+          //Insert g and in it are 3 rect representing
+          //3 reps done per year per location.
+          // /location/year/rep - read primary key then secondary key 
+          //followed by tertiary key.
           y.selectAll('rect')
             .data(function(d) { return d.values; })
             .enter()
@@ -190,7 +197,7 @@
             .attr('y', 0)
             .attr('id', function(d) { return 't' + d.values; });
          
-          //wrap each location set in rect with border
+          //Wrap each location in rect with border.
           g.append('rect')
             .attr('stroke', '#000000')
             .attr('stroke-width', (barBorder + 1))
@@ -198,21 +205,20 @@
             .attr('width', containerWidth)
             .attr('height', barHeight * 3);
          
-          //data for y axis
+          //Create data for y axis.
           var dataByYear = d3.nest()
             .key(function(d) { return d.year })
             .sortKeys(d3.descending)
             .entries(data);  
             
-          //add y axis (year)
+          //Add y axis (year).
           y0.domain(dataByYear.map(function(d) { return d.key; }));
           chart.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(1,0)')
             .call(yAxis);
-        
           
-          //add x axis (location)
+          //Add x axis (location).
           x0.domain(dataByLocation.map(function(d) { return d.key; }));
           chart.append('g')
             .attr('class', 'axis')
@@ -220,23 +226,25 @@
             .call(xAxis);
    
         });
-       
-        //convert to integer
+         
+        //List of functions required.
+        
+        //Function to convert to integer.
         function type(n) {
           return parseInt(n);
         }
        
-        //get half/center position
+        //Function to compute half/center position.
         function center(m) {
           return Math.round(m/2);
         }
         
-        //round
+        //Function to round of values.
         function round(n) {
           return Math.round(n);
         }
         
-        //map number of trait to colour code
+        //Map number of trait to colour code.
         function mapColour(c) {
           var ccode;
           

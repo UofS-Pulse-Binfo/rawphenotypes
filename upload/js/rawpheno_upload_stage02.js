@@ -1,6 +1,11 @@
+/**
+ * @file
+ * Managed form behaviors in stage 02 - review new traits.
+ */
 (function($) {
   Drupal.behaviors.rawphenoUploadStage02 = {
     attach: function (contex, settings) {
+      //Reference to checkbox element.
       var chkNewTrait = $('input.form-checkbox');
       chkNewTrait.each(function () {
         if( this.checked ) {
@@ -10,7 +15,7 @@
         }
       });
       
-      //on error, if checkbox is checked, default to open
+      //On error, if checkbox is checked, default form to open.
       chkNewTrait.click(function () {
         var x = this.getAttribute('id');
         x = '#div-'+x;
@@ -20,8 +25,9 @@
           $(x).hide();
       });
       
+      //Show error message window close to user.
       if( document.getElementById('messages') ) {
-        //check for durpal error message
+        //Check for durpal error message.
         $('#messages').remove();
         $('#stage02-window-error').show();
       }

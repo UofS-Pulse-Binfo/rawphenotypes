@@ -4,7 +4,6 @@
  * @file
  * The main functionality for this module.
  * Credits to: 
- *   http://public-action.org/content/drupal-7-form-api-dependent-lists-and-ajax-form-submission
  *   http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
  *   https://github.com/nuovo/spreadsheet-reader
  *   http://www.d3js.org
@@ -51,7 +50,7 @@ function rawpheno_menu() {
     'file' => 'instructions/include/rawpheno_instructions_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-    //Menu callback which generates a key - value data in JSON,
+    //Menu callback which generates a key => value data in JSON,
     //used to autocomplete a search field in instructions page.
     $items['autocomplete'] = array(
       'page callback' => 'rawpheno_instructions_autocomplete_search',
@@ -88,7 +87,7 @@ function rawpheno_menu() {
  * @return array
  */
 function rawpheno_libraries_info() {
-  //Files key is empty since library files are included
+  //Files option is empty since library files are included
   //individually using include_once().
   //files in: sites/all/libraries/spreadsheet-reader
   //  - SpreadsheetReader.php
@@ -115,11 +114,12 @@ function rawpheno_libraries_info() {
  * @return object
  */
 function rawpheno_instructions_autocomplete_search($key) {
-  //$key contains search key
+  //$key contains search keywords to match in the following
+  //list of traits.
   $list = array();
   
   //List of traits available in standard phenotyping instruction.
-  //Suggest these traits to user as they type in search field.
+  //Suggest these traits to user as they type in letters in search field.
   $traits = array('Planting Date (date)',
                   'Days to Emergence (days)',
                   '# Emerged Plants (count)',
@@ -151,7 +151,7 @@ function rawpheno_instructions_autocomplete_search($key) {
     } 
   }
   
-  //Return a json list of traits that contains $key.
+  //Return a json list of traits that has $key.
   drupal_json_output($list);
 }
 
@@ -159,27 +159,31 @@ function rawpheno_instructions_autocomplete_search($key) {
  * Callback function to generate data for heat map
  * in phenotypes/rawdata page
  *
- * @return string
+ * @return object
  */
 function rawpheno_rawdata_summary_json() {
   //Get the cvterm_id/type_id of planting date trait.
-  //The id will be used determine if planting date is present
+  //The id will be used to determine if planting date is present
   //in the list of measurements. The final trait count will be
-  //deducted by 1 if present.
+  //deducted by 1 if planting date is present.
   $planting_date = tripal_get_cvterm(array('name' => 'planting_date')); 
   
-  //Select all location from materialized view and construct data set.
+  //Select all locations from materialized view and construct data set.
   $data = db_query("SELECT DISTINCT location 
                     FROM {chado.rawpheno_rawdata_mview} 
                     ORDER BY location ASC");
   
   if ($data) {
-    //data arrays
+    //Data arrays
     $json = array();
+    //Given years to search.
     $arr_year = array(2017, 2016, 2015);
+    //Reps per year.
     $arr_rep   = array(1, 2, 3);
 
-    //construct data set per location
+    //Construct data set per location in the following format,
+    //based on materialized views which is a summary of 
+    //location,year,rep and measurements.
     //location x - year 1 - rep 1 - # traits
     //location x - year 1 - rep 2 - # traits
     //location x - year 1 - rep 3 - # traits
@@ -197,31 +201,36 @@ function rawpheno_rawdata_summary_json() {
       foreach($arr_year as $y) {
         foreach($arr_rep as $r) {
         ///  
-          //seach traits based on location, year and rep
+          //Seach traits based on location, year and rep,
+          //if none is found, gap is filled in for that particular year
+          //to ensure by the end of this iteration, a location has 9 rows
+          //of data (3 rep X 3 planting years).
           $sql = "SELECT measurement FROM {chado.rawpheno_rawdata_mview}
                   WHERE measurement LIKE '%$y%'
-                  AND rep = '$r' AND location = '$d_location'
-                  LIMIT 1";
+                  AND rep = '$r' AND location = '$d_location' LIMIT 1";
           $traits = db_query($sql)->fetchField();
          
           if (isset($traits) && !empty($traits)) {
-            //record found, count traits
+            //Determine if planting date is present 
+            //and compute actual number of traits.
             $measurements = explode(':', $traits);
             $d_count = 0;
             foreach($measurements as $m) {
               list($type_id, $value) = explode(' = ', $m);
               if ($type_id != $planting_date->cvterm_id) {
-                //count all traits - excluding planting date
+                //Count all traits - excluding planting date
                 $d_count++;
               }
             } 
           }
           else {
-            //no record - reconstruct location's missing year and rep
+            //No record - reconstruct location's missing year and rep.
             $d_count = 0;
           }
           
-          //create a json entry
+          //Create a json entry with the following keys
+          //location, year, rep and trait
+          //[{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}]
           $json[] = array('location' => $d_location,
                           'year' => $y,
                           'rep' => $r,
@@ -232,8 +241,11 @@ function rawpheno_rawdata_summary_json() {
     }
   }
   else {
+    //No data to process.
     $json = 'no data';
   } 
-
+  
+  //Send data to D3 and generate heatmap located in:
+  //http://knowpulse.usask.ca/dev/.../rawdata
   return $json;
 }

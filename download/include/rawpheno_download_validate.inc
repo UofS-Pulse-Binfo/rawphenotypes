@@ -2,7 +2,7 @@
 
 /**
  * @file
- * implements hook validate in phenotypes/download page
+ * Implements hook_validate()
  */
  
 /**

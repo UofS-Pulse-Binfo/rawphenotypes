@@ -1,7 +1,7 @@
 <?php
  
 /**
- * Implements a hook_form_submit()
+ * Implements hook_form_submit().
  *
  * @param type $form
  * @param type $form_state

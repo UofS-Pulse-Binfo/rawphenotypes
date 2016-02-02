@@ -2,37 +2,37 @@
 
 /**
  * @file
- * implements hook submit in phenotypes/upload page
+ * Contains all implementations of hook_form_submit().
  */
  
 /**
- * master submit
- * handles what to do with the submitted form depending on what stage has been
- * completed.
+ * Master submit to handle form submit.
  * 
  * @param type $form
  * @param type $form_state 
  */
 function rawpheno_element_submit($form, &$form_state) {
-  //which button is clicked
+  //Which button triggers a submit action.
   $btn_submit = $form_state['triggering_element']['#value'];   
+  
   switch($btn_submit) {
     case 'Save spreadheet':
-      //save spreadsheet
+      //Save Spreadsheet button
       rawpheno_submit_review($form, $form_state);
       break;
   
     case 'Upload another spreadsheet':
-      //upload another spreadsheet
+      //Upload another spreadsheet button
       drupal_goto('phenotypes/raw/upload');
       break;
   
     case 'Go to home KnowPulse':
-      //home KnowPulse
+      //Go to home KnowPulse button
       drupal_goto('<front>');
       break;
   }
   
+  //Drupal rebuild form.
   if(isset($form_state['multistep_values']['form_build_id'])) {
     $form_state['values']['form_build_id'] = $form_state['multistep_values']['form_build_id'];
   }
@@ -46,7 +46,7 @@ function rawpheno_element_submit($form, &$form_state) {
 }
   
 /**
- * save spreadsheet to database
+ * Save spreadsheet to database.
  *
  * @param type $form
  * @param type $form_state
@@ -56,7 +56,7 @@ function rawpheno_submit_review($form, &$form_state) {
   $new_header = variable_get('rawpheno_new_header');
   
   if (isset($new_header) && count($new_header) > 0) {
-    foreach( $new_header as $i => $term ) {  
+    foreach($new_header as $i => $term) {  
       if ($form_state['values']['chk_'.$i] == 1) {  
         $cv_unit        = $form_state['values']['txt_unit_' . $i];
         $cv_term        = $form_state['values']['txt_header_' . $i];
@@ -76,13 +76,13 @@ function rawpheno_submit_review($form, &$form_state) {
                                    'name'       => $cv_name,
                                    'definition' => $t,
                                    'cv_name'    => $voc);  
-          $ins_cvterm = tripal_insert_cvterm($arr_term_params);
+          $ins_cvterm[$m] = tripal_insert_cvterm($arr_term_params);
           
           //insert description to cvtermprop
           if ($m == 1) {
             $temp = db_insert('chado.cvtermprop')
-              ->fields(array('cvterm_id' => $ins_cvterm->cvterm_id, 
-                             'type_id'   => '523', //not sure
+              ->fields(array('cvterm_id' => $ins_cvterm[1]->cvterm_id, 
+                             'type_id'   => 523,
                              'value'     => $cv_description,
                              'rank'      => 0))
               ->execute();
@@ -90,6 +90,13 @@ function rawpheno_submit_review($form, &$form_state) {
           
           $m++;
         }
+        
+        //Relate term with unit in chado.cvterm_relationship
+        $ins = db_insert('chado.cvterm_relationship')
+          ->fields(array('type_id' =>  523,
+                         'subject_id' => $ins_cvterm[0]->cvterm_id,
+                         'object_id' => $ins_cvterm[1]->cvterm_id))
+          ->execute();
       }
     } 
   }
@@ -100,41 +107,42 @@ function rawpheno_submit_review($form, &$form_state) {
   
   if (isset($xls_file) && !empty($xls_file)) {
     $arr_usercols = rawpheno_function_read($xls_file);
-    //find the index number of name header in the spreadsheet
+    //Find the index number of name header in the spreadsheet.
     $name_index = array_search('name', array_map('strtolower', $arr_usercols[0]));
     
     for($ix = 0; $ix < count($arr_usercols); $ix++) {
-      //rearrange array to make sure name is the first element
-      //and generate a plant_id number for the rest of the entries
+      //Rearrange array to make sure name is the first element,
+      //and generate a plant_id number for the rest of the entries.
       $name_col = $arr_usercols[$ix][$name_index];
       unset($arr_usercols[$ix][$name_index]);
       array_unshift($arr_usercols[$ix], $name_col);
         
-      //skip row with index 0 - header column row
+      //Skip row with index 0 - header column row
       if ($ix == 0) continue;
         
       foreach($arr_usercols[$ix] as $cell_index => $cell_entry) {
-        //loop each cells
+        //Loop for each cells.
         if ($cell_index == 0) {
-          //always the name column header - into pheno_plant
-          $result = chado_select_record('stock', array('stock_id'), array('name' => $cell_entry));
+          //Always the name column header - into pheno_plant.
+          //Check if stock name exists.
+          $stock_id = rawpheno_function_instock($cell_entry);
           
-          if (isset($result[0]->stock_id)) {
-            //plant_id for this row
+          if (isset($stock_id) && $stock_id > 0) {
+            //Plant_id for this row.
             $pheno_plantid = db_insert('pheno_plant')
-              ->fields(array('stock_id' => $result[0]->stock_id))
+              ->fields(array('stock_id' => $stock_id))
               ->execute();
           } else {
-            //next row if stock name does not exist
+            //Next row if stock name does not exist.
             break;
           }
         } 
         else {
-          //cell column header of the current cell
+          //Cell column header of the current cell.
           $cell_colheader = strtolower(trim($arr_usercols[0][$cell_index]));
             
           if (in_array($cell_colheader, array('plot', 'entry', 'rep', 'location')) && !empty($cell_colheader)) {
-            //plot, entry, rep, location into pheno_plantprop
+            //Traits: plot, entry, rep, location into pheno_plantprop.
             $type_id = tripal_get_cvterm(array('name' => $cell_colheader));
           
             if(isset($type_id->cvterm_id)) {
@@ -146,30 +154,60 @@ function rawpheno_submit_review($form, &$form_state) {
             }
           } 
           elseif (!empty($cell_colheader)) {
-            //everything else into pheno_measurements
-            $cell_colheader = preg_replace('!\s+!', ' ', $arr_usercols[0][$cell_index]);
-            $type_id = tripal_get_cvterm(array('definition' => $cell_colheader));
-            //extract the text unit
-            $unit = rawpheno_function_unit($cell_colheader);
-            $unit_id = tripal_get_cvterm(array('name' => $unit, 'cv_id' => 523)); 
+            //Everything else into pheno_measurements.
+            
+            //Extract the text unit.
+            if (count($new_header) > 0 && in_array($cell_colheader, $new_header)) {
+              //New column header
+              //Replace any extra spaces to underscore and create an exact match of
+              //cvterm name inserted into cvterm table.
+              $cell_colheader = rawpheno_function_nonewline($cell_colheader);
+              $cv_name = str_replace(' ', '_', $cell_colheader);
+              $type_id = tripal_get_cvterm(array('name' => $cv_name));
               
+              //Query corresponding unit for this new trait based on cvterm_id
+              $u = db_query("SELECT object_id FROM {chado.cvterm_relationship} 
+                             WHERE subject_id = :code LIMIT 1", 
+                             array(':code' => trim($type_id->cvterm_id)))->fetchField(); 
+              
+              $unit_id = $u;
+              $unit = '';
+            }
+            else {
+              //Existing column header
+              //Replace extra spaces to single space
+              $cell_colheader = preg_replace('!\s+!', ' ', $arr_usercols[0][$cell_index]);
+              //Get cvterm_id of this trait.
+              $type_id = tripal_get_cvterm(array('definition' => $cell_colheader));
+              
+              $unit = rawpheno_function_unit($cell_colheader);
+              $unit_id = tripal_get_cvterm(array('name' => $unit, 'cv_id' => 523)); 
+              $unit_id = $unit_id->cvterm_id;
+            }
+            //
+            
+            //When unit is scale, find code equivalent in pheno_scale_member table.  
             if ($unit == 'scale') {
-              //get pheno scale member code 
+              //Get pheno scale member code 
               $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
                                      WHERE code = :code LIMIT 1", 
-                                    array(':code' => trim($cell_entry)))->fetchField(); 
+                                     array(':code' => trim($cell_entry)))->fetchField(); 
+              //Use default value in the cell if query to find scale member code 
+              //has no equivalent value.
               $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
             } 
             else {
-              //no value for the rest of traits
+              //No scale member value for the rest of traits.
               $cvalue_id = '';
             }
-              
-            if (isset($type_id->cvterm_id) && isset($unit_id->cvterm_id)) {
+            //
+            
+            //Insert trait.  
+            if (isset($type_id->cvterm_id) && isset($unit_id)) {
               $temp = db_insert('pheno_measurements')
                 ->fields(array('plant_id'  => $pheno_plantid, 
                                'type_id'   => $type_id->cvterm_id, 
-                               'unit_id'   => $unit_id->cvterm_id, 
+                               'unit_id'   => $unit_id, 
                                'cvalue_id' => $cvalue_id,
                                'value'     => $cell_entry,
                                'modified'  => date("D M d, Y h:i:s a", time())))
@@ -180,9 +218,8 @@ function rawpheno_submit_review($form, &$form_state) {
       }
     }
   
-    //delete variable get and variable set
+    //After saving process, reset all variables.
     if ($form_state['triggering_element']['#value'] == 'Save spreadheet') {
-      //reset relevant persistent variable
       rawpheno_function_resetvar();
     }
   }
