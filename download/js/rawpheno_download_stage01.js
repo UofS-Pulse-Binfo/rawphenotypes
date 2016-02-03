@@ -1,12 +1,18 @@
+/**
+ * @file 
+ * Manage behavior in download form
+ */
 (function($) {
   Drupal.behaviors.rawphenoSelTrait = {
     attach: function (context, settings) {
       $(document).ready(function() {
-      ///// 
+      /////
+        //Reference form elements.
         var chkb = $('#field-container .frm-cell input:checkbox');
         var selTrait = $("[name='traits[]']");
         var btnSubmit = $('#edit-download-submit-download');
         
+        //Submit button event
         btnSubmit.click(function(e) { 
           if (selTrait.val() && btnSubmit.val() == 'Download') {
             btnSubmit.val('Download in 3');
@@ -24,11 +30,12 @@
           }
         });
 
+        //Checkbox form element
         chkb.click(function() {
-          //select all options
+          //Select all options when checked.
           var state = ($(this).is(':checked')) ? 'selected' : '';
           resetFld(selTrait, state);          
-          //focus on select
+          //When clicked, focus secondary select box.
           $(selTrait).focus();
         });
         
@@ -45,12 +52,12 @@
       /////    
       });
       
-      //select/deselect select fld
+      //Reset select field when user selects another location.
       function resetFld(select, state) {
         $(select).find('option').each(function() {
           $(this).attr('selected', state);
         });
-        //scroll back to top
+        //Auto scroll to top of list in select.
         $(select).scrollTop(0);
       }
     }

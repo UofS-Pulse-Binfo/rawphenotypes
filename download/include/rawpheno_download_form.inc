@@ -19,7 +19,7 @@ function rawpheno_download($form, &$form_state) {
   //Fieldset container for download form.
   $form['download_fldset'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Select location and traits that you want to download'),
+    '#title' => t('Select locations and traits that you want to download'),
     '#attributes' => array('id' => 'field-container'),
   );
   
@@ -39,7 +39,7 @@ function rawpheno_download($form, &$form_state) {
     '#options' => $location,
     '#default_value' => reset($location),
     '#multiple' => TRUE,
-    '#size' => 15,
+    '#size' => 17,
     '#prefix' => '<div class="frm-cell">',
     '#suffix' => '</div>',
     '#ajax' => array(
@@ -69,12 +69,15 @@ function rawpheno_download($form, &$form_state) {
   }
   
   //When location is established, query all available traits per location.
+  //Note: planting date is excluded from the list in the same manner it is
+  //excluded from the rawdata heat map.
   $t = db_query(sprintf("SELECT DISTINCT t1.type_id, t2.definition 
                  FROM {pheno_measurements} AS t1
                    INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
                  WHERE t1.plant_id IN 
                    (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (%s))
                    AND t1.value <> ''
+                   AND t2.name <> 'planting_date'
                  ORDER BY t1.type_id ASC", $loc));   
   
   //Return trait id => trait definition array.                 
@@ -86,7 +89,7 @@ function rawpheno_download($form, &$form_state) {
     '#type' => 'select',
     '#options' => $traits,
     '#multiple' => TRUE,
-    '#size' => 15,
+    '#size' => 17,
   );
   
   //Submit button.

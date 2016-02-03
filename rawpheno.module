@@ -114,7 +114,7 @@ function rawpheno_libraries_info() {
  * @return object
  */
 function rawpheno_instructions_autocomplete_search($key) {
-  //$key contains search keywords to match in the following
+  //$key - Contains search keywords to match in the following
   //list of traits.
   $list = array();
   
@@ -151,7 +151,11 @@ function rawpheno_instructions_autocomplete_search($key) {
     } 
   }
   
-  //Return a json list of traits that has $key.
+  //Return a json list of traits that contains $key.
+  //[{"Traits":"Traits"}] where the first Trait
+  //becomes the field value when selected, while 
+  //the second Trait is the option presented to the user
+  //in the autocomplete search field.
   drupal_json_output($list);
 }
 
@@ -181,9 +185,7 @@ function rawpheno_rawdata_summary_json() {
     //Reps per year.
     $arr_rep   = array(1, 2, 3);
 
-    //Construct data set per location in the following format,
-    //based on materialized views which is a summary of 
-    //location,year,rep and measurements.
+    //Construct data set per location in the following format.
     //location x - year 1 - rep 1 - # traits
     //location x - year 1 - rep 2 - # traits
     //location x - year 1 - rep 3 - # traits
@@ -201,7 +203,7 @@ function rawpheno_rawdata_summary_json() {
       foreach($arr_year as $y) {
         foreach($arr_rep as $r) {
         ///  
-          //Seach traits based on location, year and rep,
+          //Search traits based on location, year and rep,
           //if none is found, gap is filled in for that particular year
           //to ensure by the end of this iteration, a location has 9 rows
           //of data (3 rep X 3 planting years).
@@ -230,7 +232,7 @@ function rawpheno_rawdata_summary_json() {
           
           //Create a json entry with the following keys
           //location, year, rep and trait
-          //[{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}]
+          //{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}
           $json[] = array('location' => $d_location,
                           'year' => $y,
                           'rep' => $r,
@@ -245,7 +247,9 @@ function rawpheno_rawdata_summary_json() {
     $json = 'no data';
   } 
   
-  //Send data to D3 and generate heatmap located in:
-  //http://knowpulse.usask.ca/dev/.../rawdata
+  //Return JSON.
+  //[{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}, ...]
+  //Send data to D3 and generate heatmap.
+  //See rawdata menu callback in hook_menu().
   return $json;
 }

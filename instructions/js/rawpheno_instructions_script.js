@@ -7,10 +7,13 @@
     attach: function (context, settings) {
       $(document).ready(function() {
       /////  
-        //file
+        //IMAGE GALLERY
+        //Array to hold all image file.
         var gallery = new Array(0, 1);
-		    //caption
+		    //Array to hold all relevant captions.
 		    var caption = new Array(0, 1);
+		    
+		    //Gallery elements set 1.
 		    gallery[0] = ['01-tendrils-no-elongation', 
 		                  '02-tendrils-no-elongation', 
 		                  '01-tendrils-elongation'];
@@ -19,7 +22,7 @@
 		                  'No elongation', 
 		                  'Elongation'];
 		    
-		    //
+		    //Gallery elements set 2.
 		    gallery[1] = ['01-pods-emerged', 
 		                  '02-pods-emerged', 
 		                  '01-pods-variation', 
@@ -30,35 +33,46 @@
 		                  'Sample of the pod variation', 
 		                  'Sample of the pod variation'];
 		
+		    //Path to appendix folder.
         var imgPath = $('#path').val();
 		
+		    //Attach behavior to tap Photo Appendix.
 		    $('#fragment-5 a').click(function(){
+		      //Option select containing topics.
 	        var topic = $('#fragment-5 select').val();
+	        //Image container - showing default image.
 		      var curImg = $('#cur-img').val();
 		      
+		      //Hold the index of the current image shown.
 		      curImg = parseInt(curImg);
-          //prev and next image link
+		      
+          //Determine if user clicks on next or prev link
+          //in the image gallery.
           var showImg = ($(this).text() == '<') ? curImg - 1 : curImg + 1;
 		      
-		      //load image and caption
+		      //Replace the image src to show the next or prev image in the topic.
 		      if (gallery[topic][showImg]) {
 			      $('#fragment-5 img').attr('src', imgPath+gallery[topic][showImg]+'.jpg'); 
 			      $('#fragment-5 em').contents().replaceWith(caption[topic][showImg]); 
 			      $('#cur-img').val(showImg);
 		      }
 		    });
-		
+	      
+	      //When user will change topic, load default or first item in the 
+	      //image and caption array.	
 		    $('#fragment-5 select').change(function(){ 
 	        var topic = $(this).val();
 		      $('#fragment-5 img').attr('src', imgPath+gallery[topic][0]+'.jpg');
 		      $('#fragment-5 em').contents().replaceWith(caption[topic][0]); 
 		      $('#cur-img').val(0);
 		    });
-		
-		    //ref to txt field
+		    
+		    //SEARCH FUNCTIONALITY
+		    //Reference to search textbox.
         var txtField = $('#edit-search');
         
-        //include field label as the default value of the field
+        //Create a label as default value in the search text field.
+        //When selected will clear the value.
         txtField.focus(function() {  
         if (this.value == 'Search Trait') { 
           this.value = ''; 
@@ -67,10 +81,10 @@
           this.value = 'Search Trait';
         }});
 
-        //start tabs ui and enable tab view button
+        //Initialize JQuery Tabs.
         $('#tabs').tabs({delay:0}); 
         
-        //traits array
+        //Array of traits.
         var availableTrait = [
             //essentials 0 - 9
             'Planting Date (date)',
@@ -99,7 +113,7 @@
             'Subset Traits: # Pods (count)',
             'Subset Traits: # Seeds (count)'];
         
-        //ref to search button
+        //Reference to Search button.
         var btnSearch = $("#btn_submit");
         btnSearch.click(function() { 
           if (txtField.val() == null || txtField.val().trim() == '') {
@@ -107,9 +121,10 @@
             alert('Trait field is empty');
           }
           else {
-            //searching trait keyword
+            //Compare user input against the array of traits to see
+            //if trait is available.
             if ( btnSearch.val() == 'Search' ) {
-              //get the index of selected trait
+              //Get the index of the trait.
               var traitIndex = null;
               for( var i = 0; i < availableTrait.length; i++ ) {
                 if (availableTrait[i].toLowerCase() == txtField.val().toLowerCase()) {
@@ -120,10 +135,12 @@
               //
               
               if( traitIndex != null ) {
-                //go search
+                //If search is successful - replace Search button value
+                //to Clear Search to allow user to reset search.
                 btnSearch.val('Clear search');
               
-                //figure the tab and trait category
+                //Determine which category the trait is in.
+                //Include category in search result.
                 var traitCategory = '';
                 if (traitIndex >= 0 && traitIndex <= 9) {
                   traitCategory = 'Essential Trait';
@@ -135,7 +152,7 @@
                   traitCategory = 'Subset Trait';
                 } 
                 
-                //find the table row with this trait in
+                //Find the table the trait is in.
                 var traitType = '<p>* This trait is '+traitCategory+'</p>';
                 var countLi = $('#tabs tr').size();
                 for(var x = 0; x < countLi; x++) {
@@ -146,7 +163,8 @@
                   }
                 } 
                 
-                //create the search result
+                //When table is found.
+                //Copy the table row <tr> with the trait information.
                 var traitRow = $('#tabs table').find('tr').eq(traitTrIndex).html();
                 var tableHeader = $('table').eq(1).find('tr').eq(0).html();
                 var newDiv = traitType+'<table><tr>'+tableHeader+'</tr><tr>'+traitRow+'</tr></table>';
@@ -158,10 +176,10 @@
               }            
             }
             else {
-              //reset search
+              //Reset search.
               btnSearch.val('Search');
               txtField.val('Search Trait');
-              //remove the search result
+              //Remove search result.
               $('#container-option table, #container-option p').hide('slow').remove();
             }  
           }  

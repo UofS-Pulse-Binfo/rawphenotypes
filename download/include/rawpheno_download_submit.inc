@@ -11,7 +11,7 @@ function rawpheno_download_submit($form, &$form_state) {
   //A counter in front-end in sync whith this delay.
   sleep(4);
  
-  //Location selected by user.
+  //Location or locations selected by user.
   $location = $form_state['values']['location'];
   $location = "'".implode("','", $location)."'";
  
@@ -19,6 +19,12 @@ function rawpheno_download_submit($form, &$form_state) {
   $traits = $form_state['values']['traits'];
   $traits = implode(',', $traits);
  
+  //Query to join data from different tables.
+  //Result: plant_id, trait_id, definition, data, and a grouping string
+  //The result is sorted by plant_id and the grouping string ensuring that the first
+  //row is Name - containing the stock name.
+  //The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
+  //when creating the cvs file.
   $d = db_query("SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS data, 'A' as grp
                  FROM {chado.stock} AS t1
                    INNER JOIN {pheno_plant} AS t2 USING(stock_id)
@@ -39,38 +45,54 @@ function rawpheno_download_submit($form, &$form_state) {
                  AND cvterm_id IN ($traits)
                  ORDER BY id, grp, tid ASC");
  
-  //Create csv data
+  //Create header row and data row of the csv file.
   if ($d) {
+    //Array to hold column headers.
     $data_header = array();
+    //Array to hold data rows
     $data_row = array();
+    
     while($r = $d->fetchAssoc()) {
+      //Determine if the column header is in the array of column headers
       if (!in_array($r['def'], $data_header)) {
+        //Not in the array of column headers. - Add this header.
         array_push($data_header, $r['def']);   
       }
       
+      //Determine if data has a value or not.
+      //Assign NA - Not Applicable when data is NULL
       $m  = (empty($r['data'])) ? 'NA' : $r['data'];
+      //Create an array of data with plant_id as the index.
       $data_row[$r['id']][] = trim($m);
     }
   }
- 
+  
+  //Array to hold the string-comma-separated values 
   $traits = array();
+  //Read each rows of data.
   foreach($data_row as $i=>$h) {
-    $o = array_splice($h, 0, 1);
-    array_splice($h, 2, 0, $o);
+    //Splice name element.
+    $name_element = array_splice($h, 0, 1);
+    //Insert name data in between entry and rep.
+    array_splice($h, 2, 0, $name_element);
+    //Convert the array into string-comma-separated.
     $traits[] = implode(',', $h);
   }
  
-  $out = array_splice($data_header, 0, 1);
-  array_splice($data_header, 2, 0, $out);
+  //Splice name header.
+  $name_header = array_splice($data_header, 0, 1);
+  //Insert in between entry and rep.
+  array_splice($data_header, 2, 0, $name_header);
 
-  //file  
+  //Create filename, with date and time information.  
   $file_name = 'rawpheno_csv' . date('d-m-Y') . time() . '.csv';
   $file_csv = file_save_data(implode(',', $data_header) . "\n" .
                              implode("\n", $traits), 'public://' . $file_name);
  
-  //set header and save file
+  //Include directory path to the filename.
   $path = 'public://'.$file_name;
  
+  //Set page headers.
   $http_headers = array(
     'Content-Type' => 'text/csv',
     'Content-Disposition' => 'attachment; filename="' . 'rawdata.csv' . '"',
@@ -85,5 +107,6 @@ function rawpheno_download_submit($form, &$form_state) {
     $http_headers['Pragma'] = 'no-cache';
   }
 
+  //Call drupal file_transfer() function.
   file_transfer($path, $http_headers);
 }

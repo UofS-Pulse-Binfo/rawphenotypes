@@ -30,8 +30,8 @@
 
 #field-container div.frm-cell:nth-child(3) {
   width: 110px;
-  margin-top: 90px;
-  margin-left: 5px;
+  margin-top: 110px;
+  margin-left: 7px;
 }
 
 select:disabled {
@@ -40,4 +40,15 @@ select:disabled {
 
 #edit-download-submit-download {
   margin: 20px 0;
+}
+
+#field-container label {
+  margin: 15px -1px 0 0;
+  background-color: #CCCCCC;
+  width: 60px;
+  padding: 10px;
+}
+
+#div-measurements label{
+  width: 170px;
 }
