@@ -118,12 +118,15 @@ function rawpheno_function_chkheader($header) {
   //Array to hold all missing headers found.
   $missing_header = array();
   //Get array of expected column headers.
-  $arr_header = rawpheno_function_header('expected');
+  $a = rawpheno_function_headers('expected');
+ 
+  //Set all traits to 0 not found.
+  $a2 = array_map('strtolower', $a);
+  $arr_header = array_fill_keys($a2, 0);
   
   //Read each cell in header row.
   foreach($header as $h_val) {
     $h_temp = rawpheno_function_nonewline($h_val);
-    
     //Compare each required column header to the column header in the spreadsheet.
     if (array_key_exists($h_temp, $arr_header) && !empty($h_val)) {
       //Each reequired column header in the array is set to false by default (not found),
@@ -214,7 +217,8 @@ function rawpheno_function_id($header) {
   //$header - Contains column header from the spreadsheet.
   
   //Array to hold required column headers.
-  $arr_required = rawpheno_function_header('required');
+  $a = rawpheno_function_headers('required');
+  $arr_required = array_map('strtolower', $a);
   //Array to hold index of required column headers in the spreadsheet.
   $arr_index = array();
   
@@ -243,62 +247,6 @@ function rawpheno_function_nonewline($data) {
 
 	//Return string.
 	return strtolower(trim($new_data));  
-}
-
-/**
- * Function to create array of headers.
- *
- * @param string $request
- * @return array
- */
-function rawpheno_function_header($request) {
-  //$request - Contains the type of header required (expected, required)
-  
-  //Array of required headers.
-  //column header => flag (1 found - 0 not found)
-  $arr_expectedcols = array('plot' => 0, 
-                            'entry' => 0,
-                            'name' => 0,
-                            'rep' => 0,
-                            'location' => 0,
-                            'planting date (date)' => 0,
-                            '# of seeds planted (count)' => 0,
-                            'days to emergence (days)' => 0,
-                            '# of emerged plants (count)' => 0,
-                            'days till 10% of plants have elongated tendrils (days)' => 0,
-                            'days till 10% of plants have one open flower (r1; days)'  => 0,
-                            '# nodes on primary stem at r1 (1st; count)' => 0,
-                            '# nodes on primary stem at r1 (2nd; count)' => 0,
-                            'days till 10% of plants have pods (r3; days)' => 0,
-                            'days till 10% of plants have fully swollen pods (r5; days)' => 0,
-                            'days till 10% of plants have 1/2 pods mature (r7; days)' => 0,
-                            'r7 traits: lowest pod height (1st; cm)' => 0,
-                            'r7 traits: lowest pod height (2nd; cm)' => 0,
-                            'r7 traits: canopy height (1st; cm)' => 0,
-                            'r7 traits: canopy height (2nd; cm)' => 0,
-                            'days till harvest (days)' => 0,
-                            'diseases present (y/n/?)' => 0,
-                            'disease-specific comments' => 0,
-                            'lodging (scale: 1-5) upright - lodged' => 0,
-                            //NOTE THESE COLUMN HEADERS ARE HIDDEN
-                            //Default value of # Peduncles is 20
-                            'subset traits: # peduncles (count)' => 0,
-                            'subset traits: # pods (count)' => 0,
-                            'subset traits: # seeds (count)' => 0,
-                            //
-                            'straw biomass (g)' => 0,
-                            'total seed mass (g)' => 0,
-                            'total # of seeds (count)' => 0,
-                            '100 seed mass (g)' => 0,
-                            'comments' => 0);
-    
-                                
-  //LIST OF REQUIRED HEADERS - this column headers must have value.
-  $arr_requiredcols = array('entry', 'plot', 'name', 'rep', 'location');
-  
-  //Return array.
-  //array(header 1, header 2, ....)
-  return ( $request == 'expected' ) ? $arr_expectedcols : $arr_requiredcols;
 }
 
 /**
@@ -470,7 +418,9 @@ function rawpheno_function_newheader($name, $header) {
   //$header - Contains column header from the spreadsheet.
 
   //Array to hold epected column headers.
-  $arr_expectedcols = rawpheno_function_header('expected');
+  $a = rawpheno_function_headers('expected');
+  $arr_expectedcols = array_map('strtolower', $a);
+  
   //Array to hold new column headers.
   $arr_newcols = array();
   
@@ -479,7 +429,7 @@ function rawpheno_function_newheader($name, $header) {
     foreach($header as $key => $val) {
       $cell_value = rawpheno_function_nonewline($val);
       //Determine if column header exists in the expected column headers.
-      if (!array_key_exists($cell_value, $arr_expectedcols) && !empty($val)) {
+      if (!in_array($cell_value, $arr_expectedcols) && !empty($val)) {
         //Not in expected column headers, save it as new header.
         array_push($arr_newcols, $cell_value);
       }

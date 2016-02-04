@@ -22,6 +22,13 @@ function rawpheno_instructions($form, &$form_state) {
     '#default_value' => t('Search Trait'),
     '#autocomplete_path' => 'autocomplete',
   );
+
+  //Hidden field containing url to json.
+  $form['json_url'] = array(
+    '#type' => 'hidden',
+    '#value' => $GLOBALS['base_url'] . '/autocomplete',
+    '#attributes' => array('id' => array('traits-json'))
+  );  
   
   //Attach CSS and JavaScript
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/css/rawpheno_instructions_style.css');

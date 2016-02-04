@@ -47,7 +47,7 @@
   background-color: #F7F7F7;
 }
 
-#tabs .error-message-cells, #lists .error-message-cells {
+#tabs .data-cells, #lists .data-cells {
   background-color: #FFFFFF;
   border: 1px solid #969696;
   font-weight: normal;

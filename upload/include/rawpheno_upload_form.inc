@@ -20,6 +20,8 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function'
  * @return type
  */
 function rawpheno_element($form, &$form_state) {
+  $d = rawpheno_function_headers('expected');
+  
   //On the first load of the page.
   if (!isset($form_state['stage'])) {
     //Reset variables before starting.
@@ -74,7 +76,7 @@ function rawpheno_form_check($form, &$form_state) {
     '#upload_location' => 'public://',
     '#upload_event' => 'manual',
   );
-  
+   
   //Save spreadsheet button - go to stage 03.
   $form['stage01_submit_save'] = array(
     '#type' => 'submit',

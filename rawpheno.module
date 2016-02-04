@@ -17,11 +17,12 @@
 function rawpheno_menu() {
   $items = array();
   
-  //Default in Navigation menu block
+  //The following menu items will default in 
+  //Navigation menu block
   //RAW DATA
-  // -DOWNLOAD DATA
-  // -INSTRUCTIONS
-  // -UPLOAD DATA
+  // - DOWNLOAD DATA
+  // - INSTRUCTIONS
+  // - UPLOAD DATA
   
   //RAW DATA PAGE
   $items['phenotypes/raw'] = array(
@@ -81,6 +82,9 @@ function rawpheno_menu() {
   return $items;
 }
 
+//Include function to manage list of traits/measurements.
+module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
+
 /**
  * Implements hook_libraries_info() for SpreadsheetReader.
  *
@@ -113,42 +117,33 @@ function rawpheno_libraries_info() {
  * @param string $key
  * @return object
  */
-function rawpheno_instructions_autocomplete_search($key) {
+function rawpheno_instructions_autocomplete_search($key = '') {
   //$key - Contains search keywords to match in the following
+    
   //list of traits.
   $list = array();
   
   //List of traits available in standard phenotyping instruction.
   //Suggest these traits to user as they type in letters in search field.
-  $traits = array('Planting Date (date)',
-                  'Days to Emergence (days)',
-                  '# Emerged Plants (count)',
-                  'Days Till 10% of Plants Have Elongated Tendril (days)',
-                  'Days Till 10% of Plants Have One Open Flower (R1; days)',
-                  'Days Till 10% of Plants Have Pods (R3; days)',
-                  'Days Till 10% of Plants Have Swollen Seeds in Pods (R5; days)',
-                  'Days Till 10% of Plants Have 1/2 Their Pods Mature (R7; days)',
-                  'Days Till Harvest (days)',
-                  'Diseases Present (y/n/?)',
-                  'Number of Nodes on Primary Stem at R1 (count)',
-                  'R7 Trait: Lowest Pod Height (cm)',
-                  'R7 Traits: Canopy Height (cm)',
-                  'R7 Traits: Canopy Width (cm)',
-                  'R7 Traits: Plant Length (cm)',
-                  'Lodging (Scale: 1-5)',
-                  'Straw Biomass (g)',
-                  'Total Seed Mass (g)',
-                  'Total Number of Seeds (count)',
-                  '100 Seed Mass (g)',
-                  'Subset Traits: # Peduncles (count)',
-                  'Subset Traits: # Pods (count)',
-                  'Subset Traits: # Seeds (count)');
-  
+  $traits = rawpheno_function_headers('phenotyping');
+
   //Create list key => value to suggest to user based on $key.
   foreach($traits as $val) {
-    if (stristr($val, $key)) {
-      $list[$val] = $val;
-    } 
+    //Determine if json list is for autocomplete search or
+    //for JavaScript handling the search.
+    if (empty($key)) {
+      //This will create a list of traits to be submitted
+      //to JavaScript required in processing a search action.
+      //{"trait":[trait 1, trait 2, ...]}
+      array_push($list, $val);
+    }
+    else {  
+      //This will filter the list of traits to only show
+      //traits that has the $key in it.
+      if (stristr($val, $key)) {
+        $list[$val] = $val;
+      }
+    }   
   }
   
   //Return a json list of traits that contains $key.

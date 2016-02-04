@@ -127,6 +127,10 @@ function rawpheno_submit_review($form, &$form_state) {
   $xls_file = variable_get('rawpheno_xls_file'); 
   
   if (isset($xls_file) && !empty($xls_file)) {
+    //Array of required traits excluding Name.
+    $a = reawpheno_function_headers('plantprop');
+    $arr_plantprop = array_map('strtolower', $a);
+          
     //Read excel file and load rows into this array.
     $arr_usercols = rawpheno_function_read($xls_file);
     //Find the index number of name header in the spreadsheet.
@@ -168,9 +172,9 @@ function rawpheno_submit_review($form, &$form_state) {
           //OTHER
           //The rest of the data array.
           $cell_colheader = strtolower(trim($arr_usercols[0][$cell_index]));
-         
+          
           //Determine if column header is required
-          if (in_array($cell_colheader, array('plot', 'entry', 'rep', 'location')) && !empty($cell_colheader)) {
+          if (in_array($cell_colheader, $arr_plantprop) && !empty($cell_colheader)) {
             //PLOT, ENTRY, REP and LOCATION
             //Cells containing column headers that are required.
             //Traits: plot, entry, rep, location into pheno_plantprop.

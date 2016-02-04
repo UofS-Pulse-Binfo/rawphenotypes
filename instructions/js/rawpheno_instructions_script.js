@@ -85,33 +85,16 @@
         $('#tabs').tabs({delay:0}); 
         
         //Array of traits.
-        var availableTrait = [
-            //essentials 0 - 9
-            'Planting Date (date)',
-            'Days to Emergence (days)',
-            '# Emerged Plants (count)',
-            'Days Till 10% of Plants Have Elongated Tendril (days)',
-            'Days Till 10% of Plants Have One Open Flower (R1; days)',
-            'Days Till 10% of Plants Have Pods (R3; days)',
-            'Days Till 10% of Plants Have Swollen Seeds in Pods (R5; days)',
-            'Days Till 10% of Plants Have 1/2 Their Pods Mature (R7; days)',
-            'Days Till Harvest (days)',
-            'Diseases Present (y/n/?)',
-            //optional 10 - 19
-            'Number of Nodes on Primary Stem at R1 (count)',
-            'R7 Trait: Lowest Pod Height (cm)',
-            'R7 Traits: Canopy Height (cm)',
-            'R7 Traits: Canopy Width (cm)',
-            'R7 Traits: Plant Length (cm)',
-            'Lodging (Scale: 1-5)',
-            'Straw Biomass (g)',
-            'Total Seed Mass (g)',
-            'Total Number of Seeds (count)',
-            '100 Seed Mass (g)',
-            //subset traits 20 - 22
-            'Subset Traits: # Peduncles (count)',
-            'Subset Traits: # Pods (count)',
-            'Subset Traits: # Seeds (count)'];
+        var availableTrait = new Array();
+        
+        //Access JSON List of traits created by function callback
+        //in instructions page.
+        var pathJSON = $('#traits-json').val();
+        var objTraits = $.getJSON(pathJSON, function(result) {
+          $.each(result, function(i, field) {
+            availableTrait[i] = field;
+          })
+        });
         
         //Reference to Search button.
         var btnSearch = $("#btn_submit");
