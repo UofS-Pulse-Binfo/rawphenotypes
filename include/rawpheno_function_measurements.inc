@@ -1,48 +1,15 @@
 <?php
 /**
  * @file
- * Contains function to manage trait/measurement information
- * used in this module.
+ * Master function to managed measurement types.
  *
  * @params string $type
  * @return array
  */
 function rawpheno_function_headers($type) {  
   //$type - Contains the type of trait set requested.
-  //        values: phenotyping, required, expected, plantprop, cvterm
+  //        values: phenotyping, required, expected, plantprop
             
-  //Determine the type of request.
-  switch($type) {
-    case 'phenotyping':
-      //List of trait ids used in standard phenotyping instructions page.
-      //Used in: Instructions page.
-      $type_id = array(5,7,8,9,10,11,13,14,15,16,
-                       18,20,21,23,24,25,26,27,28,29,30);
-      break;
-    
-    case 'required':
-      //List of trait ids required - these traits must have a value.
-      //Used in: Upload Data - validate spreadsheet.
-      $type_id = array(0,1,2,3,4);
-      break;
-      
-    case 'expected':
-      //List of trait ids expected to be present in spreadsheet submitted.
-      //Used in: Upload Data - validate spreadsheet.
-      $type_id = array(0,1,2,3,4,5,6,7,8,9,10,
-                       11,12,13,14,15,16,17,18,19,20,
-                       21,22,23,24,25,26,27,28,29,30,
-                       31);
-      break;
-    
-    case 'plantprop':
-      //List of trait ids required but excluding name - Plant Prop Traits.
-      //Used in: Upload Data - Save spreadsheet.
-      //         .install file - Create cvterms  
-      $type_id = array(0,1,3,4);
-      break;  
-  }
-  
   //List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
   //TRAIT/MEASUREMENT ---------------------------------------- INDEX
   //Order is the same order as in the spreadsheet file. 
@@ -83,6 +50,35 @@ function rawpheno_function_headers($type) {
   'Comments'                                                    //31
   );
   
+  //Determine the type of request.
+  switch($type) {
+    case 'phenotyping':
+      //List of trait used in standard phenotyping instructions page.
+      //Used in: Instructions page.
+      $type_id = array(5,7,8,9,10,11,13,14,15,16,18,20,21,23,24,25,26,27,28,29,30);
+      break;
+    
+    case 'required':
+      //List of required traits - these traits must have a value.
+      //Used in: Upload Data - validate spreadsheet.
+      $type_id = array(0,1,2,3,4);
+      break;
+      
+    case 'expected':
+      //List of trait ids expected to be present in spreadsheet submitted.
+      //Used in: Upload Data - validate spreadsheet.
+      //         .install file of this module.
+      $type_id = array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
+                       24,25,26,27,28,29,30,31);
+      break;
+    
+    case 'plantprop':
+      //List of required traits excluding name - Plant Prop Traits.
+      //Used in: Upload Data - Save spreadsheet.
+      $type_id = array(0,1,3,4);
+      break;  
+  } 
+  
   $arr_requested_trait = array();
   //Create the array of traits based on requested trait ids.
   foreach($type_id as $id) {
@@ -94,4 +90,4 @@ function rawpheno_function_headers($type) {
   //Array of traits based on trait ids requested.
   //array(Trait 1, Trait 2, ...)
   return $arr_requested_trait;
-} 
+}

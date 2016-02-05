@@ -10,21 +10,17 @@
  */
 
 /**
- * Implements hook_menu()
- * 
- * @return type
+ * Implements hook_menu().
  */
 function rawpheno_menu() {
-  $items = array();
+  // The following menu items will default in Navigation menu block.
+  // RAW DATA
+  //  - DOWNLOAD DATA
+  //  - INSTRUCTIONS
+  //  - UPLOAD DATA
   
-  //The following menu items will default in 
-  //Navigation menu block
-  //RAW DATA
-  // - DOWNLOAD DATA
-  // - INSTRUCTIONS
-  // - UPLOAD DATA
-  
-  //RAW DATA PAGE
+  // RAW DATA PAGE
+  // A summary page of the raw data currently available.
   $items['phenotypes/raw'] = array(
     'title' => 'Raw Data',
     'page callback' => 'drupal_get_form',
@@ -33,16 +29,18 @@ function rawpheno_menu() {
     'file' => 'rawdata/include/rawpheno_rawdata_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-    //Menu callback which generates the summary data in JSON,
-    //required by the heatmap/chart in rawdata page.
+    // Menu callback which generates the summary data in JSON,
+    // required by the heatmap in rawdata page.
     $items['rawdata'] = array(
-      'access callback' => true, 
       'page callback' => 'rawpheno_rawdata_summary_json', 
+      'access callback' => true, 
       'delivery callback' => 'drupal_json_output',
       'type' => MENU_CALLBACK,
     );
   
-  //INSTRUCTIONS PAGE
+  // INSTRUCTIONS PAGE
+  // A page containing standard phenotyping proceedure and
+  // providing data collection spreadsheet.
   $items['phenotypes/raw/instructions'] = array(
     'title' => 'Instructions',
     'page callback' => 'drupal_get_form',
@@ -51,15 +49,17 @@ function rawpheno_menu() {
     'file' => 'instructions/include/rawpheno_instructions_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-    //Menu callback which generates a key => value data in JSON,
-    //used to autocomplete a search field in instructions page.
+    // Menu callback which generates a list of headers in JSON,
+    // used to autocomplete a search field and process search action
+    // in instructions page.
     $items['autocomplete'] = array(
       'page callback' => 'rawpheno_instructions_autocomplete_search',
       'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
     );
   
-  //DOWNLOADS PAGE
+  // DOWNLOADS PAGE
+  // A page providing export data options.
   $items['phenotypes/raw/download'] = array(
     'title' => 'Download Data',
     'page callback' => 'drupal_get_form',
@@ -69,7 +69,8 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
     
-  //DRAG AND DROP UPLOAD PAGE
+  // DRAG AND DROP UPLOAD PAGE
+  // A page for uploading and validating data collection spreadsheet.
   $items['phenotypes/raw/upload'] = array(
     'title' => 'Upload Data',
     'page callback' => 'drupal_get_form',
@@ -82,22 +83,20 @@ function rawpheno_menu() {
   return $items;
 }
 
-//Include function to manage list of traits/measurements.
+// Include function to manage column headers.
 module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
 
 /**
- * Implements hook_libraries_info() for SpreadsheetReader.
- *
- * @return array
+ * Implements hook_libraries_info().
  */
 function rawpheno_libraries_info() {
-  //Files option is empty since library files are included
-  //individually using include_once().
-  //files in: sites/all/libraries/spreadsheet-reader
-  //  - SpreadsheetReader.php
-  //  - SpreadsheetReaderXLSX.php
-  //  - SpreadsheetReaderXLS.php
-  //  - php-excel-reader/excel_reader2.php
+  // Files option is empty since library files are included
+  // individually using include_once().
+  // files in: sites/all/libraries/spreadsheet-reader
+  //   - SpreadsheetReader.php
+  //   - SpreadsheetReaderXLSX.php
+  //   - SpreadsheetReaderXLS.php
+  //   - php-excel-reader/excel_reader2.php
   $libraries['spreadsheet_reader'] = array(
     'name' => 'NUOVO Spreadsheet - Reader XLS 2',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
@@ -110,141 +109,140 @@ function rawpheno_libraries_info() {
 }
 
 /**
- * Callback function to autocomplete keyword/trait
- * in phenotypes/instructions page.
+ * Function callback to autocomplete search field.
  * See hook_menu() implementation above. 
  *
  * @param string $key
- * @return object
  */
 function rawpheno_instructions_autocomplete_search($key = '') {
-  //$key - Contains search keywords to match in the following
+  // $key - Contains search keywords.
     
-  //list of traits.
+  // Array to hold list of traits.
   $list = array();
   
-  //List of traits available in standard phenotyping instruction.
-  //Suggest these traits to user as they type in letters in search field.
+  // Array of column headers available in standard phenotyping instructions page.
   $traits = rawpheno_function_headers('phenotyping');
 
-  //Create list key => value to suggest to user based on $key.
-  foreach($traits as $val) {
-    //Determine if json list is for autocomplete search or
-    //for JavaScript handling the search.
-    if (empty($key)) {
-      //This will create a list of traits to be submitted
-      //to JavaScript required in processing a search action.
-      //{"trait":[trait 1, trait 2, ...]}
-      array_push($list, $val);
-    }
-    else {  
-      //This will filter the list of traits to only show
-      //traits that has the $key in it.
+  // Determine if keyword is provided.
+  if (empty($key)) {
+    // No keywords - Return all headers for JavaScript processing the search.
+    $list = $traits;
+  }
+  else {
+    // With keywords - Select only the headers with keywords in it.
+    // These headers will then be suggested to the user as they type keywords.
+    foreach($traits as $val) {
       if (stristr($val, $key)) {
         $list[$val] = $val;
-      }
-    }   
+      } 
+    } 
   }
-  
-  //Return a json list of traits that contains $key.
-  //[{"Traits":"Traits"}] where the first Trait
-  //becomes the field value when selected, while 
-  //the second Trait is the option presented to the user
-  //in the autocomplete search field.
+ 
+  // Return JSON.
+  // When keyword is available: [{"Header":"Header"},...] 
+  // No keyword: [{"traits 1, traits 2,..."}]
   drupal_json_output($list);
 }
 
 /**
- * Callback function to generate data for heat map
- * in phenotypes/rawdata page
+ * Function callback to generate data for the heatmap.
+ * See hook_menu() implementation above. 
  *
- * @return object
+ * @return array
  */
 function rawpheno_rawdata_summary_json() {
-  //Get the cvterm_id/type_id of planting date trait.
-  //The id will be used to determine if planting date is present
-  //in the list of measurements. The final trait count will be
-  //deducted by 1 if planting date is present.
-  $planting_date = tripal_get_cvterm(array('name' => 'planting_date')); 
+  // Get the cvterm_id of planting date trait.
+  // The id will be used to determine if planting date is present in the list of headers. 
+  // The final trait count will be deducted by 1 if planting date is present.
+  $planting_date = tripal_get_cvterm(array('name' => 'planting_date'))
+                   ->cvterm_id; 
   
-  //Select all locations from materialized view and construct data set.
-  $data = db_query("SELECT DISTINCT location 
-                    FROM {chado.rawpheno_rawdata_mview} 
-                    ORDER BY location ASC");
+  // Select all locations from materialized view.
+  $sql = "SELECT DISTINCT location 
+    FROM {chado.rawpheno_rawdata_mview} 
+    ORDER BY location ASC";
+  $locations = db_query($sql);
   
-  if ($data) {
-    //Data arrays
-    $json = array();
-    //Given years to search.
+  if ($locations) {
+    // Array to hold the JSON.
+    $arr_json = array();
+    // Array of planting years.
     $arr_year = array(2017, 2016, 2015);
-    //Reps per year.
-    $arr_rep   = array(1, 2, 3);
+    // Array of rep per year.
+    $arr_rep = array(1, 2, 3);
 
-    //Construct data set per location in the following format.
-    //location x - year 1 - rep 1 - # traits
-    //location x - year 1 - rep 2 - # traits
-    //location x - year 1 - rep 3 - # traits
-    //location x - year 2 - rep 1 - # traits
-    //location x - year 2 - rep 2 - # traits
-    //location x - year 2 - rep 3 - # traits
-    //location x - year 3 - rep 1 - # traits
-    //location x - year 3 - rep 2 - # traits
-    //location x - year 3 - rep 3 - # traits
+    // Data set format per location.
+    // location x - year 1 - rep 1 - # traits
+    // location x - year 1 - rep 2 - # traits
+    // location x - year 1 - rep 3 - # traits
+    // location x - year 2 - rep 1 - # traits
+    // location x - year 2 - rep 2 - # traits
+    // location x - year 2 - rep 3 - # traits
+    // location x - year 3 - rep 1 - # traits
+    // location x - year 3 - rep 2 - # traits
+    // location x - year 3 - rep 3 - # traits
     
-    while($r = $data->fetchAssoc()) {
-      $d_location = $r['location'];
-      
-      //loop each year and each rep
-      foreach($arr_year as $y) {
-        foreach($arr_rep as $r) {
-        ///  
-          //Search traits based on location, year and rep,
-          //if none is found, gap is filled in for that particular year
-          //to ensure by the end of this iteration, a location has 9 rows
-          //of data (3 rep X 3 planting years).
-          $sql = "SELECT measurement FROM {chado.rawpheno_rawdata_mview}
-                  WHERE measurement LIKE '%$y%'
-                  AND rep = '$r' AND location = '$d_location' LIMIT 1";
-          $traits = db_query($sql)->fetchField();
-         
+    //Read each location available and construct data set.
+    while($data = $locations->fetchAssoc()) {
+      //In each location, read each planting year.
+      foreach($arr_year as $year) {
+        //In each year, read each rep.
+        foreach($arr_rep as $rep) {
+          //Each location in the materialized view
+          $location = $data['location'];
+          
+          // Get traits summary based on location, year and rep,
+          // if none is found, gap is filled in for that particular year
+          // and rep to ensure that by the end of this iteration, each location
+          // has a total of 9 rows of data (3 reps X 3 planting years) - shown above.
+          $sql = "SELECT measurement 
+            FROM {chado.rawpheno_rawdata_mview}
+            WHERE measurement LIKE :year
+              AND rep = :rep 
+              AND location = :location 
+            LIMIT 1";  
+          $traits = db_query($sql, array(':year' => '%'.$year.'%', 
+                                         ':rep' => $rep, 
+                                         ':location' => $location))
+                    ->fetchField();
+
           if (isset($traits) && !empty($traits)) {
-            //Determine if planting date is present 
-            //and compute actual number of traits.
-            $measurements = explode(':', $traits);
-            $d_count = 0;
-            foreach($measurements as $m) {
-              list($type_id, $value) = explode(' = ', $m);
-              if ($type_id != $planting_date->cvterm_id) {
-                //Count all traits - excluding planting date
-                $d_count++;
+            // This particular year and rep have data collected.
+            // Compute the total traits measured excluding planting date.
+            $trait_count = 0;
+            // From the materialized view: measurement field contains data
+            // in the following format:
+            //trait1 id=trait1 value:trait2 id=trait2 value:...
+            $trait_summary = explode(':', $traits);
+            
+            //Read each trait id=trait value combination.
+            foreach($trait_summary as $entry) {
+              list($type_id, $value) = explode('=', $entry);
+              //Count all traits except planting date.
+              if ($type_id != $planting_date) {
+                $trait_count++;
               }
             } 
           }
           else {
-            //No record - reconstruct location's missing year and rep.
-            $d_count = 0;
+            // This particular year and rep have no data collected.
+            $trait_count = 0;
           }
           
-          //Create a json entry with the following keys
-          //location, year, rep and trait
-          //{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}
-          $json[] = array('location' => $d_location,
-                          'year' => $y,
-                          'rep' => $r,
-                          'trait' => $d_count);
-        ///  
+          // Create a json entry with the following keys:
+          // location, year, rep and trait.
+          $arr_json[] = array('location' => $location,
+                              'year' => $year,
+                              'rep' => $rep,
+                              'trait' => $trait_count);
         }
       }
     }
   }
-  else {
-    //No data to process.
-    $json = 'no data';
-  } 
   
-  //Return JSON.
-  //[{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}, ...]
-  //Send data to D3 and generate heatmap.
-  //See rawdata menu callback in hook_menu().
-  return $json;
+  // Return Array.
+  // Final value is JSON Data.
+  // [{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"},
+  //  {"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}, ...]
+  return $arr_json;
 }

@@ -5,8 +5,9 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadStage02 = {
     attach: function (contex, settings) {
-      //Reference to checkbox element.
+      // Reference checkbox element.
       var chkNewTrait = $('input.form-checkbox');
+      // Show form for collecting more information.
       chkNewTrait.each(function () {
         if( this.checked ) {
           var x = this.getAttribute('id');
@@ -15,7 +16,7 @@
         }
       });
       
-      //On error, if checkbox is checked, default form to open.
+      // On error, if checkbox is checked, show form.
       chkNewTrait.click(function () {
         var x = this.getAttribute('id');
         x = '#div-'+x;
@@ -25,9 +26,9 @@
           $(x).hide();
       });
       
-      //Show error message window close to user.
+      // Show error near the stage indicator.
       if( document.getElementById('messages') ) {
-        //Check for durpal error message.
+        // Check for durpal error message.
         $('#messages').remove();
         $('#stage02-window-error').show();
       }

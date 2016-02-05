@@ -5,11 +5,11 @@
  * Contains all implementations of hook_form().
  */
 
-//Include other implementations, hook_submit() and hook_validate().
+// Include other implementations of hook_submit() and hook_validate().
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_navigation');
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_submit');
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_validate');
-//Include functions required in processing spreadsheet file.
+// Include functions required in processing spreadsheet file.
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function');
 
 /**
@@ -19,36 +19,33 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function'
  * @param type $form_state
  * @return type
  */
-function rawpheno_element($form, &$form_state) {
-  $d = rawpheno_function_headers('expected');
-  
-  //On the first load of the page.
+function rawpheno_element($form, &$form_state) {  
+  // Reset variables before starting.
   if (!isset($form_state['stage'])) {
-    //Reset variables before starting.
     rawpheno_function_resetvar();
-    //Default to stage 01 - upload and validate spreadsheet.
+    // Default to stage 01
     $form_state['stage'] = 'check';
   }
   
   $form = array();
   
-  //Create a page title based on the current stage.
+  // Create a page title based on the current stage.
   $form = rawpheno_get_header($form, $form_state);
   
-  //Load corresponding interface or form.
+  // Load corresponding interface or form.
   switch($form_state['stage']) {
     case 'check':
-      //Stage 01 - form drag and drop uploader.
+      // Stage 01 - upload and check spreadsheet.
       return rawpheno_form_check($form, $form_state);
       break;
 
     case 'review':
-      //Stage 02 - describe form, optional, only when there is additional trait.
+      // Stage 02 - describe form (only when there is additional trait).
       return rawpheno_form_review($form, $form_state);
       break;
 	 
     case 'save':
-      //Stage 03 - success page.
+      // Stage 03 - save to databse and success page.
       return rawpheno_form_save($form, $form_state);
       break;
   }
@@ -57,19 +54,18 @@ function rawpheno_element($form, &$form_state) {
 }
 
 /**
- * Form stage 01 - upload spreadsheet and perform
- * a basic compliance test.
+ * Form stage 01 - upload spreadsheet and perform a basic compliance test.
  * 
  * @param type $form
  * @param type $form_state
  * @return type
  */
 function rawpheno_form_check($form, &$form_state) {
-  //Create an instance of DragNDrop Upload with the following settings:
-  //SETTINGS:
-  //file_upload_max_size: max file size allowed
-  //upload location: destination of file
-  //upload event: manual - show an upload button or auto - uploads after drag drop
+  // Create an instance of DragNDrop Upload.
+  // SETTINGS:
+  //  file_upload_max_size: max file size allowed
+  //  upload location: destination of file
+  //  upload event: manual - show an upload button or auto - uploads after drag drop
   $form['dnd'] = array(
     '#type' => 'dragndrop_upload',
     '#file_upload_max_size' => '10M',
@@ -77,25 +73,25 @@ function rawpheno_form_check($form, &$form_state) {
     '#upload_event' => 'manual',
   );
    
-  //Save spreadsheet button - go to stage 03.
+  // Save spreadsheet button - go to stage 03.
   $form['stage01_submit_save'] = array(
     '#type' => 'submit',
     '#value' => 'Save spreadheet',
   );
   
-  //Describe trait button - go to stage 02.
+  // Describe trait button - go to stage 02.
   $form['stage01_submit_review'] = array(
     '#type' => 'submit',
     '#value' => 'Describe additional traits/column headers',
   );
   
-  //Close error window button
+  // Close error window button
   $form['stage01_button_close'] = array(
     '#markup' => '<br /><a class="button" id="edit-stage01-button-close" href="javascript:void();">
                   Close error and try again</a>',
   );
   
-  //Attach CSS and JavaScript.
+  // Attach CSS and JavaScript.
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage01.css');
   $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/upload/js/rawpheno_upload_stage01.js');
 
@@ -104,55 +100,54 @@ function rawpheno_form_check($form, &$form_state) {
 
 /**
  * Form stage 02 - review new traits found.
- * Allow user to describe and save a additional trait/s found
- * in the spreadsheet.
+ * Allow user to describe and save a additional trait/s found.
  *
  * @param type $form
  * @param type $form_state
  * @return form
  */
 function rawpheno_form_review($form, &$form_state) {
-  //This is the error message used in lieu of Drupal form_set_error().
-  //This error message will be in close proximity to the interface.
+  // This is the error message used in lieu of Drupal form_set_error().
+  // This error message will be in close proximity to the interface.
   $h = 'Error in checked column headers/traits. Please review form for any empty fields';
   $h = rawpheno_function_format($h, 'em');
   $form['stage02_window_error'] = array(
     '#markup' => '<div id="stage02-window-error" class="messages error">Required fields empty.<pre>'.$h.
                  '</pre></div>',
   );
-  //
   
-  //Main fieldset container for form elements 
+  // Main fieldset container for form elements 
   $form['xls_review_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Check the traits that you want to describe and save'),
   );
   
-  //Read variable containing new headers found in stage 01.
-  //Based on these new traits, construct form required to describe traits.
+  // Read variable containing new headers found in stage 01.
+  // Based on these new traits, construct form to allow user to describe each new traits.
   $new_header = variable_get('rawpheno_new_header');
+  
+  // Create form only when there is new traits.
   if (isset($new_header) && count($new_header) > 0) {
-    ///Build form only when new trait variable has value.
     foreach($new_header as $i => $k) {
       if (isset($k) && !empty($k)) {
-        //Fieldset to contain a set of trait with corresponding form elements.
+        // Fieldset to contain a set of trait and corresponding form elements.
         $form['xls_review_fldset']['fldset_' . $i] = array(
           '#type' => 'fieldset',
           '#title' => '',
         );
-          //All fields are required.
-          //CHECKBOX to let user select a trait to describe and save.
+          // All fields are required.
+          // CHECKBOX to let user select a trait to describe and save.
           $form['xls_review_fldset']['fldset_' . $i]['chk_' . $i] = array(
             '#type' => 'checkbox',
             '#title' => t(ucwords($k)),
           );
-          //TERM NAME/TRAIT/HEADER
+          // TERM NAME/TRAIT/HEADER
           $form['xls_review_fldset']['fldset_' . $i]['txt_header_' . $i] = array(
             '#type' => 'hidden',
             '#value' => $k,
           ); 
-            //These fields are hidden by default - show only when check.
-            //TERM DEFINITION
+            // These fields are hidden by default - show only when checked.
+            // TERM DEFINITION
             $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i] = array(
               '#type' => 'textfield',
               '#title' => t('Definition*'),
@@ -160,7 +155,7 @@ function rawpheno_form_review($form, &$form_state) {
               '#maxlength' => 150,
               '#prefix' => '<div id="div-edit-chk-'. $i .'" style="display: none;">',
             );
-            //UNIT
+            // UNIT
             $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
               '#type' => 'textfield',
               '#title' => t('Unit*'),
@@ -168,31 +163,29 @@ function rawpheno_form_review($form, &$form_state) {
               '#size' => 30,
               '#maxlength' => 100,
             );
-            //DESCRIPTION - describe the trait including the unit used.
+            // DESCRIPTION - describe the trait.
             $form['xls_review_fldset']['fldset_' . $i]['txtarea_describe_' . $i] = array(
               '#type' => 'textarea',
               '#title' => t('Describe the method used*'),
               '#description' => t('Describe the method used to collect this data if you used a scale, be specific'),
             );
-            //Note indicating fields must have a value.
+            // Note indicating fields are required.
             $form['xls_review_fldset']['fldset_' . $i]['required_mark'] = array(
               '#markup' => '<small>* means required</small>',
               '#suffix' => '</div>',
             );
       }
     } 
-    ///
   
-    //Save spreadsheet button - go to stage 03
+    // Save spreadsheet button - go to stage 03
     $form['stage02_submit_save'] = array(
       '#type' => 'submit',
       '#value' => 'Save spreadheet',
     );
   } 
   else {
-    //Prevent any processes in case user will navigate
-    //using the browser's back and forward button. 
-    //Lead user to stage 01.
+    // Direct user to stage 01 in case user will navigate
+    // using back and forward button of the browser. 
     $form['stage02_submit_save'] = array(
       '#type' => 'submit',
       '#value' => 'Upload another spreadsheet',
@@ -207,36 +200,35 @@ function rawpheno_form_review($form, &$form_state) {
 }
 
 /**
- * Form stage 03 - final stage - save the spreadsheet to database.
+ * Form stage 03 - save the spreadsheet to database.
  *
  * @param type $form
  * @param type $form_state
  * @return type
  */
 function rawpheno_form_save($form, &$form_state) {
-  //Success message to display.
+  // Success message to display.
   $h = 'Thank you! your file has been submitted';
   $h = rawpheno_function_format($h, 'em');
   $form['stage03_window_success'] = array(
     '#markup' => '<div id="stage03-window-success" class="messages status">Spreadsheet submitted<pre>'.$h.
                  '</pre></div><br />',
   );
-  //
   
-  //Buttons to lead user to other parts of the site.
-  //Upload another spreadsheet button - go to stage 01.
+  // Buttons to lead user to other parts of the site.
+  // Upload another spreadsheet button - go to stage 01.
   $form['stage03_submit_save'] = array(
     '#type' => 'submit',
     '#value' => 'Upload another spreadsheet',
   );
   
-  //Home buttons - go to home KnowPulse.
+  // Home buttons - go to home KnowPulse.
   $form['stage03_submit_home'] = array(
     '#type' => 'submit',
     '#value' => 'Go to home KnowPulse',
   );
   
-  //Attach CSS.
+  // Attach CSS.
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage03.css');
 
   return $form;

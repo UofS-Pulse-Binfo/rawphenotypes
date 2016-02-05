@@ -2,256 +2,300 @@
 
 /**
  * @file
- * Contains all schema api implementations required by this module.
+ * Contains all schema api and hook_install()/hook_uninstall()
+ * implementations required by this module.
  */
-
-//Include function to manage list of traits/measurements.
-module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
  
 /**
  * Implements hook_schema().
- */ 
+ *
+ * @return array
+ */
 function rawpheno_schema() {
-  //PHENO PLANT
-  //since the plant can be described in many different ways, we
-  //are using a prop-like table to describe the plant. this allows
-  //for the flexibility needed to describe both greenhouse and field pots.
+  // PHENO PLANT
+  // Since the plant can be described in many different ways,
+  // we are using a prop-like table to describe the plant.
+  // This allows for the flexibility needed to describe both
+  // greenhouse and field pots.
   $schema['pheno_plant'] = array(
-    'description' => 'table for phenotype plant',
+    'description' => t('Table for phenotype plant.'),
     'fields' => array(
       'plant_id' => array(
-        'description' => 'plant id field',
+        'description' => t('A unique ID for each data collection.'),
         'type' => 'serial',
         'unsigned' => TRUE,
-        'not null' => TRUE,),
-      
+        'not null' => TRUE,
+      ),
       'stock_id' => array(
-        'description' => 'stock id field',
+        'description' => t('A unique ID for a stock name.'),
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE,),), 
+        'not null' => TRUE,),
+      ),
   );
-  //
-  
-  //PHENO PLANT PROP
-  //type shoud include entry, plot, rep and location
+
+  // PHENO PLANT PROP
+  // Type shoud include entry, plot, rep and location.
   $schema['pheno_plantprop'] = array(
-    'description' => 'table for phenotype plantprop',
+    'description' => t('Table for phenotype plantprop.'),
     'fields' => array(
       'plantprop_id' => array(
-        'description' => 'primary key of phenotype plant prop',
+        'description' => t('Primary key: A unique ID for each plantprop record.'),
         'type' => 'serial',
         'unsigned' => TRUE,
-        'not null' => TRUE),
-        
+        'not null' => TRUE
+      ),
       'plant_id' => array(
-        'description' => 'holds {pheno_plant.plant_id}',
+        'description' => t('Holds plant ID number.'),
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' =>  TRUE,),
-        
+        'not null' =>  TRUE,
+      ),
       'type_id' => array(
-        'description' => 'type id field',
+        'description' => t('Term ID number of trait inserted.'),
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE),
-        
+        'not null' => TRUE
+      ),
       'value' => array(
-        'description' => 'value field',
+        'description' => t('The value of the trait measured.'),
         'type' => 'varchar',
         'length' => 255,
-        'not null' => TRUE,),),
-        
+        'not null' => TRUE
+      ,)
+    ,),
     'primary key' => array('plantprop_id'),
-    //
-    'foreign keys' => array('pheno_plant' => array(
-      'table' => 'pheno_plant',
-      'columns' => array('plant_id' => 'plant_id')),),
+    'foreign keys' => array(
+      'pheno_plant' => array(
+        'table' => 'pheno_plant',
+        'columns' => array('plant_id' => 'plant_id')),),
   );
-  //
   
-  //PHENO SCALE MEMBER
-  //modified is the timestamp that it was last modified. this
-  //allows us to determine when values were updated
+  // PHENO SCALE MEMBER
+  // Modified is the timestamp that it was last modified. 
+  // This allows us to determine when values were updated.
   $schema['pheno_scale_member'] = array(
-    'description' => 'table for pheno scale member',
+    'description' => t('Table for pheno scale member.'),
     'fields' => array(
       'member_id' => array(
-        'description' => 'primary key of scale member',
+        'description' => t('Primary key: A unique ID for each scale value.'),
         'type' => 'serial',
         'unsigned' => TRUE,
-        'not null' => TRUE,),
-      
+        'not null' => TRUE,
+      ),
       'scale_id' => array(
-        'description' => 'scale id field',
+        'description' => t('Scale ID number of a scale value.'),
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => TRUE,),
-      
+        'not null' => TRUE,
+      ),
       'code' => array(
-        'description' => 'code used in {pheno_measurements}',
-        'type' => 'varchar',
-        'length' => 255,),
-      
-      'value' => array(
-        'description' => 'text description of code',
-        'type' => 'text',
-        'not null' => TRUE,),),
-    'primary key' => array('member_id'),
-  );
-  //
-    
-  //PHENO MEASUREMENTS
-  //the scale code is what is written in the spreadsheet whereas
-  //the value is what is actually represents.
-  $schema['pheno_measurements'] = array(
-    'description' => 'table for phenotype measurements',
-    'fields' => array(
-      'measurement_id' => array(
-        'description' => 'primary key of phenotype measurements',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,),
-        
-      'plant_id' => array(
-        'description' => 'holds {pheno_plant.plant_id}',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,),
-        
-      'type_id' => array(
-        'description' => 'type id field',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE),
-        
-      'unit_id' => array(
-        'description' => 'unit id field',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,),
-        
-      'value' => array(
-        'description' => 'value field',
+        'description' => t('Corresponding code for each scale ID.'),
         'type' => 'varchar',
         'length' => 255,
-        'not null' => TRUE,),
-        
+      ),
+      'value' => array(
+        'description' => t('Description of a scale value.'),
+        'type' => 'text',
+        'not null' => TRUE
+      ,)
+    ,),
+    'primary key' => array('member_id'),
+  );
+    
+  // PHENO MEASUREMENTS
+  // The scale code is what is written in the spreadsheet, 
+  // whereas the value is what it actually represents.
+  $schema['pheno_measurements'] = array(
+    'description' => t('Table for phenotype measurements'),
+    'fields' => array(
+      'measurement_id' => array(
+        'description' => t('Primary key: A unique ID for each trait measured.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'plant_id' => array(
+        'description' => t('Holds plant ID number.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type_id' => array(
+        'description' => t('Term ID number of trait inserted.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'unit_id' => array(
+        'description' => t('Unit ID number of trait inserted.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => t('The value of the trait measured.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
       'cvalue_id' => array(
-        'description' => 'c value id field',
-        'type' => 'char',
+        'description' => t('Scale member code number when unit is scale.'),
+        'type' => 'varchar',
         'length' => 10,
-        'not null' => FALSE,),
-        
+        'not null' => FALSE,
+      ),
       'modified' => array(
-        'description' => 'timestamp of last modification',
+        'description' => t('timestamp of the last modification.'),
         'type' => 'varchar',
         'length' => 30,
-        'not null' => TRUE),),
+        'not null' => TRUE,
+      )
+    ,),
     'primary key' => array('measurement_id'),
-    //
-    'foreign keys' => array('pheno_plant' => array(
-      'table' => 'pheno_plant',
-      'columns' => array('plant_id' => 'plant_id')),),
+    'foreign keys' => array(
+      'pheno_plant' => array(
+        'table' => 'pheno_plant',
+        'columns' => array('plant_id' => 'plant_id')),),
   );
   //
     
   return $schema;
 }
 
+// Include function to manage column headers.
+module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
+
 /**
  * Implements hook_install().
- * Insert these records after tables are created
  */
 function rawpheno_install() {
-  //Array to hold array of cvterms.
+  // After custom tables are created, perform the following:
+  // 1. Populate pheno_scale_member table.
+  // 2. Insert cvterms property type, measurement unit and measurement types. 
+  // 3. Create materialized view.
+  
+  // 1.
+  // From standard phenotype data collection, scale is 1 - 5.
+  $scale_value = array(1 => 'Vertical/upright', 
+                       2 => 'Leaning',
+                       3 => 'Most plants at 45 degrees angle',
+                       4 => 'All plants 10-45 degrees from ground',
+                       5 => 'Most plants flat/prostrate');
+  
+  // Insert scale values 1 - 5                    
+  foreach($scale_value as $i => $value) {
+    $tmp = db_insert('pheno_scale_member')
+      ->fields(array('member_id' => $i, 
+                     'scale_id' => $i, 
+                     'code' => $i, 
+                     'value' => $value))
+      ->execute();
+  }
+  
+  // 2.
+  // Create cvterm entry for each traits.
+  // Array to hold array of cvterms.
   $pp_terms = array();
   $mt_terms = array();
-
-  //Get all measurements/traits.
-  $arr_traits = rawpheno_function_headers('expected');  
-  //Index number of Plot, Entry, Rep and Location in measurement/traits array.
+  
+  // Get relevant trait set required, in this case all column headers
+  // with the exception of Name.
+  $expected_header = rawpheno_function_headers('expected');  
+  // Index number of Plot, Entry, Rep and Location in traits array.
+  // These id set is inserted into {chado.cvterm} as property types.
   $pp_id = array(0,1,3,4);
   
-  //Create cvterm name and cvterm definition array.
-  foreach($arr_traits as $i => $term) {
+  // Read each header and create cvterm name and cvterm definition.
+  foreach($expected_header as $i => $term) {
     $tmp_term = $term;
-    //Remove unit from the term and convert to lower case
-    $t = trim(strtolower(preg_replace('/\([^)]+\)/', '', $tmp_term)));
+    // cvterm name - Remove unit from the term and convert to lower case.
+    $cvterm_name = trim(strtolower(preg_replace('/\([^)]+\)/', '', $tmp_term)));
 
-    //Skip if Name trait.
-    if ($term == 'name') { 
+    // Skip column header if it is Name.
+    if ($term == 'Name') { 
       continue;
     }
     
-    //Determine type of terms.
+    // Determine type of terms and create an array of
+    // cvterm name => cvterm definition values.
     if (in_array($i, $pp_id)) {
-      //Term is Plot, Entry, Rep and Location
-      $pp_terms[$t] = $term;      
+      // Term is Plot, Entry, Rep and Location.
+      // Term is property type.
+      $pp_terms[$cvterm_name] = $term;      
     }
     else {
-      //Term is measurement type.
-      $mt_terms[$t] = $term;
+      // The rest of the terms.
+      // Term is measurement type.
+      $mt_terms[$cvterm_name] = $term;
     }
   }
   
-  //Measurement unit terms array.
-  $mu_terms = array('date' => 'Date',
+  // Measurement unit terms array.
+  $mu_terms = array('date'  => 'Date',
                     'count' => 'Count',
-                    'days' => 'Days',
-                    'cm' => 'Centimeters',
+                    'days'  => 'Days',
+                    'cm'    => 'Centimeters',
                     'y/n/?' => 'Yes, No or ? - Not sure',
                     'scale' => 'Scale: 1-5',
-                    'g' => 'Grams (g)',
-                    'text' => 'Alphanumeric');
+                    'g'     => 'Grams (g)',
+                    'text'  => 'Alphanumeric');
                     
-  //Vocabulary terms array.
+  // Vocabulary terms array.
   $cv_vocabulary = array('phenotype_plant_property_types', 
                          'phenotype_measurement_types', 
                          'phenotype_measurement_units');
-                         
-  //Insert all data array.
-  foreach($cv_vocabulary as $cv_i => $cv_name) {
-    $arr_terms = array();
-    
-    //Insert 1. plant property, 2. measurment type and 3. measurement unit.
-    if ($cv_i == 0) 
-      $arr_terms = $pp_terms;
-    elseif ($cv_i == 1)
-      $arr_terms = $mt_terms;
-    elseif ($cv_i == 2)
-      $arr_terms = $mu_terms;  
   
-    foreach($arr_terms as $term_name => $term_def) {
+  // Insert 0. plant property, 1. measurment type and 2. measurement unit.
+  $arr_terms = array($pp_terms, $mt_terms, $mu_terms);
+  // Insert all terms by cvterm vocabulary.
+  foreach($cv_vocabulary as $cv_i => $cv_name) {
+    // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
+    foreach($arr_terms[$cv_i] as $term_name => $term_def) {
       $arr_terms_param = array('id'         => 'tripal:'.$term_name,
                                'name'       => $term_name,
                                'definition' => $term_def,
                                'cv_name'    => $cv_name);
-                               
+      
+      // Insert cvterm.                         
       tripal_insert_cvterm($arr_terms_param);  
     }
   }
-  
-  //Create materialized view used in phenotypes/rawdata,
-  //using Tripal: tripal_add_mview().
-  $mv_name = 'rawpheno_rawdata_summary';
-  $mv_module = 'tripal_core';
-  $mv_comment = 'Materialized view used by rawpheno module to generate heat map in raw data page';
 
-  //Create a summary of data in the following format
-  //plant_id, Location, Rep, (summary of traits: trait id = trait value, ....) rows.
+  // 3.
+  // Create materialized view used in phenotypes/rawdata.
+  // Using Tripal: tripal_add_mview().
+  $mv_name = 'rawpheno_rawdata_summary';
+  $mv_module = 'rawpheno';
+  $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
+
+  // Create a summary of data in the following format:
+  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ....
+  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ....
+  // ...
+  // Summary of traits will be processed and counted to become the trait count,
+  // excluding planting date. This summary will also provide the year.
   $mv_sql = "SELECT t1.plant_id,
-               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'location' THEN t1.value ELSE '' END), '') AS location,
-               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t2.name = 'rep' THEN t1.value ELSE '' END), '') AS rep,
-               ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t3.value <> '' THEN CONCAT(t3.type_id, ' = ', t3.value) ELSE null END), ':') AS measurement
-             FROM pheno_plantprop AS t1 
-               INNER JOIN chado.cvterm as t2 on t1.type_id = t2.cvterm_id
-               INNER JOIN pheno_measurements as t3 on t1.plant_id = t3.plant_id
-             WHERE t2.name in ('location', 'rep') 
-             GROUP BY t1.plant_id  
-             ORDER BY location, rep, t1.plant_id, measurement ASC";
+      ARRAY_TO_STRING(
+        ARRAY_AGG(
+          DISTINCT CASE WHEN t2.name = 'location' 
+            THEN t1.value ELSE '' END), '') AS location,
+      ARRAY_TO_STRING(
+        ARRAY_AGG(
+          DISTINCT CASE WHEN t2.name = 'rep' 
+            THEN t1.value ELSE '' END), '') AS rep,
+      ARRAY_TO_STRING(
+        ARRAY_AGG(
+          DISTINCT CASE WHEN t3.value <> '' 
+            THEN CONCAT(t3.type_id, '=', t3.value) ELSE null END), ':') AS measurement
+    FROM {pheno_plantprop} AS t1 
+      INNER JOIN {chado.cvterm} as t2 on t1.type_id = t2.cvterm_id
+      INNER JOIN {pheno_measurements} as t3 on t1.plant_id = t3.plant_id
+    WHERE t2.name IN ('location', 'rep') 
+    GROUP BY t1.plant_id  
+    ORDER BY location, rep, t1.plant_id, measurement ASC";
   
-  //Schema array.
+  // Schema array.
   $mv_schema = array (
     'table' => 'rawpheno_rawdata_mview',
     'fields' => array (
@@ -269,15 +313,21 @@ function rawpheno_install() {
     )
   );
   
+  // Create materialized view.
   triapal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rawpheno_uninstall() { 
+  // Remove materialized view on uninstall.
+  // Using tripal: tripal_delete_mview().
+  // Get mview id of materilaized view created by hook_install().
+  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
+  $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
+              ->fetchField();
   
-  //Insert scale measurement units.
-  for($i = 1; $i <= 6; $i++) {
-    $temp = db_insert('pheno_scale_member')
-      ->fields(array('member_id' => $i, 
-                     'scale_id' => $i, 
-                     'code' => $i, 
-                     'value' => $i))
-      ->execute();
-  }
+  // Delete materialized view.
+  tripal_delete_mview($mview_id);
 }
