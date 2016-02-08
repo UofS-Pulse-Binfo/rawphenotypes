@@ -14,10 +14,6 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function'
 
 /**
  * Master form which calls an individual form for each step.
- * 
- * @param type $form
- * @param type $form_state
- * @return type
  */
 function rawpheno_element($form, &$form_state) {  
   // Reset variables before starting.
@@ -55,10 +51,6 @@ function rawpheno_element($form, &$form_state) {
 
 /**
  * Form stage 01 - upload spreadsheet and perform a basic compliance test.
- * 
- * @param type $form
- * @param type $form_state
- * @return type
  */
 function rawpheno_form_check($form, &$form_state) {
   // Create an instance of DragNDrop Upload.
@@ -101,10 +93,6 @@ function rawpheno_form_check($form, &$form_state) {
 /**
  * Form stage 02 - review new traits found.
  * Allow user to describe and save a additional trait/s found.
- *
- * @param type $form
- * @param type $form_state
- * @return form
  */
 function rawpheno_form_review($form, &$form_state) {
   // This is the error message used in lieu of Drupal form_set_error().
@@ -201,10 +189,6 @@ function rawpheno_form_review($form, &$form_state) {
 
 /**
  * Form stage 03 - save the spreadsheet to database.
- *
- * @param type $form
- * @param type $form_state
- * @return type
  */
 function rawpheno_form_save($form, &$form_state) {
   // Success message to display.

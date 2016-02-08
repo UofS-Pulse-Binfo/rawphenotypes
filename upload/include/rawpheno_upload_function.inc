@@ -8,12 +8,13 @@
 /**
  * Function to read excel file (xls and xlsx).
  *
- * @param string/object $file
- * @return array
+ * @param $file
+ *   A string containing the path to a spreadsheet file.
+ *
+ * @return
+ *   An array containing all data and column header rows in the spreadsheet.
  */
 function rawpheno_function_read($file) {
-  // $file - Contains the path to xls or xlsx file.
-  
   // Function call libraries_load() base on the implementation
   // of hook_libraries_info() in rawpheno.module.
   $xls_lib = libraries_load('spreadsheet_reader');
@@ -59,20 +60,20 @@ function rawpheno_function_read($file) {
     $xls_obj = new SpreadsheetReader_XLS($xls_file);
   }
   
-  // Array to hold each rows found in submitted file.
-  $arr_usercols = array();
+  // Array to hold each row found in the spreadsheet.
+  $arr_xls_rows = array();
   
   // Locate measurement sheet.
   $xls_sheets = $xls_obj->Sheets();
-  foreach($xls_sheets as $sheet_key => $sheet_val) {
+  foreach($xls_sheets as $sheet_key => $sheet_value) {
     $xls_obj->ChangeSheet($sheet_key);
-    
+
     // Start saving rows when in measurements sheet.
-    if (strtolower(trim($sheet_val)) == 'measurements') {
+    if (rawpheno_function_delformat($sheet_value) == 'measurements') {
       // Begin saving first 11 rows, which will contain
       // first, last or 10th row required in performing 
       // basic compliance test.
-      
+
       // This increment variable $i is required since xls and xlsx
       // parsers assign array index differently. 
       // XLS starts at 1, while XLSX at 0;
@@ -82,9 +83,9 @@ function rawpheno_function_read($file) {
         // This will exclude empty rows.        
         if (strlen(trim(implode('', $row))) > 2) {
           // Save row into the array.
-          $arr_usercols[] = $row;
+          $arr_xls_rows[] = $row;
         }
-        
+
         // Exit loop when there is at least 11 rows, or all rows when there is less than 11 rows.
         // If request to read file is from stage 03, all rows will be saved into the array.
         if ($i == 11 && gettype($file) != 'string') {        
@@ -98,54 +99,68 @@ function rawpheno_function_read($file) {
       break;  
     }     
   }
-  
-  // Return array.
-  // array(array(row 0), array(row 1), ...)
-  return $arr_usercols;
+
+  return $arr_xls_rows;
 }
 
 /**
- * Function to validate column headers.
+ * Function to remove all formatting from a cell value.
  *
- * @param array $xls_header
- * @return array
+ * @param $xls_cell_value
+ *   Contains a value of a cell.
+ *
+ * @return 
+ *   Contains a cell value with all formatting removed.
  */
-function rawpheno_function_chkheader($xls_header) {
-  // $xls_header - Contains column header row from the spreadsheet.
-  
+function rawpheno_function_delformat($xls_cell_value) {
+  // Remove any extra spaces, new lines, leading and trainling spaces
+  // and covert the final result to lowercase.
+  return trim(strtolower(preg_replace('!\s+!', ' ', $xls_cell_value)));
+}
+
+/**
+ * Function to verify all expected column headers exist in the spreadsheet.
+ *
+ * @param $xls_headers
+ *   An array containing all column headers in the spreadsheet.
+ *  
+ * @return
+ *   An array containing all column headers not found in the spreadsheet.
+ */
+function rawpheno_function_chkheader($xls_headers) {
   // Array to hold all missing headers found.
-  $missing_header = array();
+  $arr_missing_headers = array();
   // Get array of expected column headers.
-  $expected_header = rawpheno_function_headers('expected');
+  $arr_expected_headers = rawpheno_function_headers('expected');
+  //Remove any formatting in each column headers.
+  $xls_headers = array_map('rawpheno_function_delformat', $xls_headers);
   
   // Read each expected column headers and compare it against
   // the column headers from the spreadsheet.
-  foreach($expected_header as $header) {
-    $h = rawpheno_function_nonewline($header);
-    $temp_header = strtolower($h);
+  foreach($arr_expected_headers as $header) {
+    $temp_header = rawpheno_function_delformat($header);
       
-    if (!in_array($temp_header, $xls_header) && !empty($header)) {
+    if (!in_array($temp_header, $xls_headers) && !empty($header)) {
       // An expected column header is not found. Save it.
-      array_push($missing_header, $header);
+      array_push($arr_missing_headers, $header);
     }
   }
   
-  // Return array.
-  // array(header 1, header 2, ...)
-  return $missing_header;
+  return $arr_missing_headers;
 }
 
 /**
- * Function to validate non-column headers.
+ * Function to validate non column header rows.
  *
- * @param array $xls_row
- * @param array $xls_header
+ * @param $xls_row
+ *   An array containing a non column header row from the spreadsheet.    
+ * @param $xls_headers
+ *   An array containing all column headers in the spreadsheet.  
+ *
  * @return array
+ *   An array containing all cells with error.
  */
-function rawpheno_function_chkrow($xls_row, $xls_header) {
-  // $xls_row - Contains a non-column header row from the spreadsheet.
-  // $xls_header - Contains column header row from the spreadsheet.
-
+function rawpheno_function_chkrow($xls_row, $xls_headers) {
   // Array to hold required cells that are empty.
   $arr_cell = array();
   // Array to hold cells with value that do not match the unit.
@@ -153,40 +168,36 @@ function rawpheno_function_chkrow($xls_row, $xls_header) {
   // Array to hold cells with stock name that does not exist.
   $arr_stock = array();
   // Array to hold index number of required column headers.
-  $arr_required_id = rawpheno_function_id($xls_header);
+  $arr_required_id = rawpheno_function_id($xls_headers);
   
   //Read each cell in non-column header row.
   foreach($xls_row as $index => $value) {
-    //Determine if cell is required or not.
+    // Determine if cell is required or not.
     if (array_key_exists($index, $arr_required_id)) {
-		  //Required - Cell belongs to either plot, name, entry, rep and location column.
+		  // Required - Cell belongs to either plot, name, entry, rep and location column.
 		  if (empty($value)) {
 		    //Required cell is empty.
 		    $arr_cell[] = $arr_required_id[$index];
 		  } 
-		  elseif (strtolower($xls_header[$index]) == 'name' && rawpheno_function_instock($value) <= 0) {
-		    //Name with stock name that does not exist.
+		  elseif (rawpheno_function_delformat($xls_headers[$index]) == 'name' &&
+		          rawpheno_function_instock($value) <= 0) {
+		    // Name with stock name that does not exist.
 		    $arr_stock[] = 'Name: '.$value;
 		  }
     }
     else {
-      //Not required.
-      //Match value to the unit.
-      //Extract the unit in the column header and test the value against the unit.
-      $unit = rawpheno_function_unit($xls_header[$index]);
+      // Not required.
+      // Match value to the unit.
+      // Extract the unit in the column header and test the value against the unit.
+      $unit = rawpheno_function_unit($xls_headers[$index]);
       
       if (rawpheno_function_chkunit($unit, $value) == 0 && !empty($value)) {
-        //Does not match - create an error message about this cell.
-        $arr_unit[] = $xls_header[$index] .' - ('.$value.') not a valid ('.$unit.')';
+        // Does not match - create an error message about this cell.
+        $arr_unit[] = $xls_headers[$index] .' - ('.$value.') not a valid ('.$unit.')';
       }
     }
   }
  
- // Return array.
- // array of empty required cells,
- // array of cells with value that do not match the unit,
- // array of cell with stock that does not exist.
- // array(array(), array(), array())
  return array($arr_cell, $arr_unit, $arr_stock); 
 }
 
@@ -194,27 +205,28 @@ function rawpheno_function_chkrow($xls_row, $xls_header) {
  * Function to find the index of required headers from the spreadsheet.
  * This will help locate required column headers in case user alters the order of columns.
  *
- * @param array $xls_header
+ * @param $xls_headers
+ *   An array containing all column headers in the spreadsheet.  
+ *
  * @return array
+ *   An array containing index numbers of each required column headers in the spreadsheet. 
  */
-function rawpheno_function_id($xls_header) {
-  // $xls_header - Contains column header row from the spreadsheet.
-  
+function rawpheno_function_id($xls_headers) {  
   // Array to hold required column headers.
   // plot, entry, name, rep, location
-  $required_header = rawpheno_function_headers('required');
+  $arr_required_headers = rawpheno_function_headers('required');
   // Array to hold index number of required column headers.
   $arr_required_id = array();
-  
-  // Find the actual index number in the spreadsheet.
-  foreach($required_header as $header) {
-    $temp_header = strtolower($header);
-    $index = array_search($temp_header, array_map('strtolower', $xls_header));   
+  // Remove any formatting in each column headers.
+  $xls_headers = array_map('rawpheno_function_delformat', $xls_headers);
+    
+  // Find the actual index number of column header in the spreadsheet.
+  foreach($arr_required_headers as $header) {
+    $temp_header = rawpheno_function_delformat($header);
+    $index = array_search($temp_header, $xls_headers);   
     $arr_required_id[$index] = $header;
   }
   
-  // Return array.
-  // array('plot' => index #, 'entry' => index #, ...)
   return $arr_required_id;
 }
 
@@ -235,39 +247,44 @@ function rawpheno_function_nonewline($xls_cell_value) {
 /**
  * Function to extract the unit from the column header.
  *
- * @param string $header
- * @return string
+ * @param $xls_header_cell
+ *   A string containing a column header.
+ *
+ * @return
+ *   A string containing the unit found from the column header.
  */
 function rawpheno_function_unit($xls_header_cell) {
-  // $xls_header - Contains the value of a column header cell from the spreadsheet.
-  
-  $temp_value = rawpheno_function_nonewline($xls_header_cell);
+  // Remove all formatting.  
+  $temp_value = rawpheno_function_delformat($xls_header_cell);
+  // Remove the following characters.
   $cell_value = str_replace(array(';', '1st', '2nd', 'r1', 'r3', 'r5', 'r7', ': 1-5'), '', $temp_value);
+  // Extract text information inside the parenthesis.
   preg_match("/.*\(([^)]*)\)/", $cell_value, $match);
   
-  // Return string.
   // Return unit found, or default to text if no unit.
   return (isset($match[1])) ? trim($match[1]) : 'text';
 }
 
 /**
- * Function to match a value to unit.
+ * Function to validate a cell has a value that matches the unit
+ * in the column header.
  *
- * @param string $unit
- * @param string $value
- * @return int
+ * @param $xls_unit
+ *   A string containing the unit extracted from the column header.
+ * @param $xls_cell_value
+ *   Contains the value of the cell.
+ *
+ * @return 
+ *   Bo0lean true = 1 or false = 0;
  */
-function rawpheno_function_chkunit($unit, $value) {
-  //$unit - Contains the unit extracted from the column header
-  //$value - Contains the value of the cell.
-  
-  //All values match the unit by default. Unless proven otherwise.
+function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
+  // All values match the unit by default. Unless proven otherwise.
   $is_valid = 1;
   
-  switch($unit) {
+  switch($xls_unit) {
     case 'date':
       // Date must be YYYY-MM-DD format.
-      if (!empty($value) && preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $value) == 0) {
+      if (!empty($xls_cell_value) && preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $xls_cell_value) == 0) {
         $is_valid = 0;
       }
       break;
@@ -277,148 +294,151 @@ function rawpheno_function_chkunit($unit, $value) {
     case 'cm':
     case 'g':
       // Measurements - if it is numeric, then it must be greater than or equals to 0.
-      if (!empty($value) && is_numeric($value) && $value < 0) {
+      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) && $xls_cell_value < 0) {
         $is_valid = 0;      
       }
       break;
     
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (!empty($value) && strlen($value) == 1 && !in_array($value, array('y','n','?'))) {
+      if (!empty($xls_cell_value) && strlen($xls_cell_value) == 1 && 
+          !in_array($xls_cell_value, array('y','n','?'))) {
         $is_valid = 0;
       }
       break;
     
     case 'scale':
       // Scale - if numeric, check if 1-5 range, inclusive.
-      if (!empty($value) && is_numeric($value) && !($value >= 1 && $value < 6)) {
+      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) &&
+          !($xls_cell_value >= 1 && $xls_cell_value < 6)) {
         $is_valid = 0;    
       } 
       break;
   }
   
-  // Return 0 or 1.
   return $is_valid;
 }
 
 /**
- * Function to summarize all errors found.
+ * Function to summarize all errors found. Each error is converted to
+ * html form and displayed to the user.
  *
- * @param array $arr_error
- * @param int $row_count
- * @return string
+ * @param $xls_errors
+ *   An array containing all errors found in the spreadsheet.
+ * @param $row_count
+ *   An integer containing the total number of rows parsed.
+ *
+ * @return
+ *   A string containing all errors.
  */
-function rawpheno_function_error($arr_error, $row_count) {
-  // $arr_error - Contains an array or errors found in the spreadsheet.
-  // $row_count - Contains the total number or rows.
-  
-  // Variable to hold errors.
-  $txt_error = '';
+function rawpheno_function_error($xls_errors, $row_count) {
+  // Variable to hold errors after each error in the array
+  // is converted into html.
+  $txt_errors = '';
   
   // Read each array.
-  for($i = 0; $i < count($arr_error); $i++) {
-    // Determine if array has values.
-    if (count($arr_error[$i]) > 0) {
+  for($i = 0; $i < count($xls_errors); $i++) {
+    //Determine if array column header or data row.
+    if (count($xls_errors[$i]) > 0) {
       if ($i == 0) {
+        // Column header row.
         // TITLE FOR MISSING COLUMN HEADERS.
         $h = 'Missing required traits/column headers';
-        $txt_error .= rawpheno_function_format($h, 'text'); 
-      }
-      
-      // Read each error in the array.
-      foreach($error[$i] as $c_key => $c_val) {
-        if ($i == 0) {
-          // DATA FOR MISSING COLUMN HEADERS.
+        $txt_errors .= rawpheno_function_format($h, 'text');
+        // DATA FOR MISSING COLUMN HEADERS.
+        foreach($xls_errors[$i] as $value) {
           // List column headers that are missing.
-          $txt_error .= rawpheno_function_format($c_val, 'cell');
-        } 
-        elseif (count($c_val) > 0){
-          // TITLE FOR EMPTY CELL AND INVALID VALUE
-          // Determine the type of error.
-          if ($c_key == 0) {
-            $err_type = 'Required cells have no data.';
-          }
-          elseif ($c_key == 1) {
-            $err_type = 'Data that do not match the unit.';
-          } 
-          elseif ($c_key == 2) {
-            $err_type = 'Stock name does not exist.';
-          }
-                                        
-          $txt_error .= rawpheno_function_format($err_type, 'text'); 
+          $txt_errors .= rawpheno_function_format($value, 'cell');
+        }
+      } 
+      else {
+        // Data rows.
+        // TITLE FOR CELLS WITH ERROR.
+        // Determine which row has error.
+        if ($i == 1) {
+          $in_row = '* In First Row';
+        }
+        else {
+          $in_row = ($row_count > 11) ? '* In 10th Row' : '* In Last Row';
+        }
+
+        foreach($xls_errors[$i] as $key => $value) {
+          if (count($value) > 0) {  
+            // Determine the type of error.
+            if ($key == 0) {
+              $error_type = 'Required cells have no data.';
+            }
+            elseif ($key == 1) {
+              $error_type = 'Data that do not match the unit.';
+            }
+            elseif ($key == 2) {
+              $error_type = 'Stock name does not exist.';
+            }
           
-          // Determine which row has error.
-          if ($i == 1) {
-            $in_row = '* In First Row';
-          }
-          else {
-            $in_row = ($count > 11) ? '* In 10th Row' : '* In Last Row';
-          } 
+            $txt_errors .= rawpheno_function_format($error_type, 'text');  
+            $txt_errors .= rawpheno_function_format($in_row, 'text'); 
           
-          // Format the error and append it to text
-          $txt_error .= rawpheno_function_format($in_row, 'text');
-          
-          // DATA FOR EMPTY CELL AND INVALID VALUE
-          foreach($c_val as $c) {
-            $txt_error .= rawpheno_function_format($c, 'cell');
+            // DATA FOR CELLS WITH ERROR.
+            foreach($value as $cell_value) {
+              $txt_errors .= rawpheno_function_format($cell_value, 'cell');
+            }
           }
-        } 
-      }
-    } 
+        }
+      } 
+    }    
   }
   
-  // Return string.
-  return (strlen(trim($txt_error)) > 0) ? $txt_error : null;
+  return (strlen(trim($txt_errors)) > 0) ? $txt_errors : null;
 }
 
 /**
  * Function to format errors in html.
  *
- * @param string $text
- * @param string $class 
+ * @param $text
+ *   A string containing a text information to format.
+ * @param $class
+ *   A string containing the css name. 
+ *
  * @return string
+ *   A string containing the text wrapped in html with class
+ *   attribute equals to the specified class name.
  */
 function rawpheno_function_format($text, $class) {
-  //$text - Contains string/text to format
-  //$class - Contains css name (text or cell).
-  
   $css_class = 'error-message-'.$class;
   $text = ($class == 'cell') ? ucwords($text) : $text;
   
-  //Return string.
   return '<span class="'.$css_class.'">'.$text.'</span>'; 
 }
 
 /**
  * Function to find new headers.
  *
- * @param string $name
- * @param array $header
+ * @param $var_name
+ *   An string containing the name of the variable to hold new headers found.
+ * @param $xls_headers
+ *   An array containing all column headers in the spreadsheet.
  */
-function rawpheno_function_newheader($var_name, $xls_header) {
-  // $var_name - Contains the name of the variable to hold new headers found.
-  // $xls_header - Contains the value of a column header cell from the spreadsheet.
-
+function rawpheno_function_newheader($var_name, $xls_headers) {
   // Array to hold epected column headers.
-  $expected_header = array_map('strtolower', rawpheno_function_headers('expected'));
+  $arr_expected_headers = rawpheno_function_headers('expected');
+  // Remove any formatting in each column headers.
+  $arr_expected_headers = array_map('rawpheno_function_delformat', $arr_expected_headers);
   // Array to hold new column headers.
-  $new_header = array();
+  $arr_new_headers = array();
   
-  if (count($xls_header) > 0) {
+  if (count($xls_headers) > 0) {
     // Read each column header and compare against expected column headers.
-    foreach($xls_header as $value) {
-      $temp_value = rawpheno_function_nonewline($value);
+    foreach($xls_headers as $value) {
+      $temp_value = rawpheno_function_delformat($value);
       // Determine if column header exists in the expected column headers.
-      if (!in_array($temp_value, $expected_header) && !empty($value)) {
+      if (!in_array($temp_value, $arr_expected_headers) && !empty($value)) {
         // Not in expected column headers, save it as new header.
-        array_push($new_header, $value);
+        array_push($arr_new_headers, $value);
       }
     }
   }
-  
-  // Store new headers found.
-  // $new_header = array('new header 1', 'new header 2', ...)
-  variable_set($name, $arr_newcols);
+
+  variable_set($var_name, $arr_new_headers);
 }
 
 /**
@@ -439,14 +459,13 @@ function rawpheno_function_resetvar() {
 /**
  * Function to varify existence of stock name
  *
- * @param string $xls_name
+ * @param $xls_name
+ *   A string containing the name of the stock to look up.  
+ *
  * @return int
+ *   An interger containing the stock id number of the stock name.
  */
 function rawpheno_function_instock($xls_name) {
-  //$xls_name - Contains the cell value under Name column header.
   $stock = chado_select_record('stock', array('stock_id'), array('name' => $name));
- 
-  //Return int.
-  //stock_id number.
   return (isset($stock[0]->stock_id)) ? $stock[0]->stock_id : 0;
 }

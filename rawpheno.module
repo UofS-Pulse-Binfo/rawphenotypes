@@ -30,7 +30,7 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
     // Menu callback which generates the summary data in JSON,
-    // required by the heatmap in rawdata page.
+    // required by the heat map in rawdata page.
     $items['rawdata'] = array(
       'page callback' => 'rawpheno_rawdata_summary_json', 
       'access callback' => true, 
@@ -39,7 +39,7 @@ function rawpheno_menu() {
     );
   
   // INSTRUCTIONS PAGE
-  // A page containing standard phenotyping proceedure and
+  // A page containing standard phenotyping procedure and
   // providing data collection spreadsheet.
   $items['phenotypes/raw/instructions'] = array(
     'title' => 'Instructions',
@@ -90,7 +90,7 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements')
  * Implements hook_libraries_info().
  */
 function rawpheno_libraries_info() {
-  // Files option is empty since library files are included
+  // File option is empty since library files are included
   // individually using include_once().
   // files in: sites/all/libraries/spreadsheet-reader
   //   - SpreadsheetReader.php
@@ -109,46 +109,50 @@ function rawpheno_libraries_info() {
 }
 
 /**
- * Function callback to autocomplete search field.
- * See hook_menu() implementation above. 
+ * Function callback; autocomplete search field.
  *
- * @param string $key
+ * @see hook_menu()
+ * 
+ * @param $key
+ *   A string containing the search keywords entered in the search field.
+ *
+ * @return 
+ *   A JSON where each trait is both the key and the value. The key is what is 
+ *   sent to JavaScript processing the search, while the value is what is suggested
+ *   to user while typing in the seach field.
  */
 function rawpheno_instructions_autocomplete_search($key = '') {
-  // $key - Contains search keywords.
-    
   // Array to hold list of traits.
-  $list = array();
-  
+  $arr_headers = array();
   // Array of column headers available in standard phenotyping instructions page.
-  $traits = rawpheno_function_headers('phenotyping');
+  $arr_phenotyping_headers = rawpheno_function_headers('phenotyping');
 
   // Determine if keyword is provided.
   if (empty($key)) {
     // No keywords - Return all headers for JavaScript processing the search.
-    $list = $traits;
+    $arr_headers = $arr_phenotyping_headers;
   }
   else {
     // With keywords - Select only the headers with keywords in it.
     // These headers will then be suggested to the user as they type keywords.
-    foreach($traits as $val) {
-      if (stristr($val, $key)) {
-        $list[$val] = $val;
+    foreach($arr_phenotyping_headers as $header) {
+      if (stristr($header, $key)) {
+        $arr_headers[$header] = $header;
       } 
     } 
   }
  
-  // Return JSON.
-  // When keyword is available: [{"Header":"Header"},...] 
-  // No keyword: [{"traits 1, traits 2,..."}]
   drupal_json_output($list);
 }
 
 /**
- * Function callback to generate data for the heatmap.
- * See hook_menu() implementation above. 
+ * Function callback; generate data for the heat map.
  *
- * @return array
+ * @see hook_menu()
+ *
+ * @return
+ *   A JSON with each member has the following objects:
+ *   location, year, rep, # traits.
  */
 function rawpheno_rawdata_summary_json() {
   // Get the cvterm_id of planting date trait.
@@ -182,13 +186,13 @@ function rawpheno_rawdata_summary_json() {
     // location x - year 3 - rep 2 - # traits
     // location x - year 3 - rep 3 - # traits
     
-    //Read each location available and construct data set.
+    // Read each location available and construct data set.
     while($data = $locations->fetchAssoc()) {
-      //In each location, read each planting year.
+      // In each location, read each planting year.
       foreach($arr_year as $year) {
-        //In each year, read each rep.
+        // In each year, read each rep.
         foreach($arr_rep as $rep) {
-          //Each location in the materialized view
+          // Each location in the materialized view
           $location = $data['location'];
           
           // Get traits summary based on location, year and rep,
@@ -212,10 +216,10 @@ function rawpheno_rawdata_summary_json() {
             $trait_count = 0;
             // From the materialized view: measurement field contains data
             // in the following format:
-            //trait1 id=trait1 value:trait2 id=trait2 value:...
+            // trait1 id=trait1 value:trait2 id=trait2 value:...
             $trait_summary = explode(':', $traits);
             
-            //Read each trait id=trait value combination.
+            // Read each trait id=trait value combination.
             foreach($trait_summary as $entry) {
               list($type_id, $value) = explode('=', $entry);
               //Count all traits except planting date.
@@ -240,9 +244,5 @@ function rawpheno_rawdata_summary_json() {
     }
   }
   
-  // Return Array.
-  // Final value is JSON Data.
-  // [{"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"},
-  //  {"location":"X","year":"YYYY","rep":"[1-3]","trait":"[0-9]"}, ...]
   return $arr_json;
 }

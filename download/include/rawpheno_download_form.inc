@@ -9,30 +9,27 @@ module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_submi
 module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_validate');
 
 /**
- * Function callback for phenotypes/download
- *
- * @param type $form
- * @param type $form_state
- * @return type
+ * Function callback; create export data form.
  */
 function rawpheno_download($form, &$form_state) {
-  //Fieldset container for download form.
+  // Fieldset container for download form.
   $form['download_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Select locations and traits that you want to download'),
     '#attributes' => array('id' => 'field-container'),
   );
   
-  //Query all locations available.
-  $d = db_query("SELECT DISTINCT t1.value, t1.value as location FROM {pheno_plantprop} as t1
-                 INNER JOIN {chado.cvterm} as t2 ON t1.type_id = t2.cvterm_id
-                 WHERE t2.name = 'location' ORDER BY t1.value ASC");
+  // Query all locations available.
+  $location = db_query("SELECT DISTINCT t1.value, t1.value as location 
+    FROM {pheno_plantprop} as t1
+      INNER JOIN {chado.cvterm} as t2 ON t1.type_id = t2.cvterm_id
+    WHERE t2.name = 'location' 
+    ORDER BY t1.value ASC")
+    ->fetchAllKeyed();
   
-  $location = db_query($d)->fetchAllKeyed();
-  
-  //Primary select field - an AJAX chained select that updates secondary 
-  //select field (traits) based on location selected. 
-  //Default to othe first location in the list.
+  // Primary select field - an AJAX chained select that updates secondary 
+  // select field (traits) based on location selected. 
+  // Default to the first location in the list.
   $form['download_fldset']['location'] = array(
     '#title' => t('Location'),
     '#type' => 'select',
@@ -50,40 +47,37 @@ function rawpheno_download($form, &$form_state) {
     ),
   );
   
-  //Div wrapper to display ajax result.
+  // Div wrapper to display ajax result.
   $form['download_fldset']['wrapper'] = array(
     '#prefix' => '<div id="div-measurements">',
     '#suffix' => '</div>'
   );
   
-  //Determine default traits to display by the value of location
+  // Determine default traits to display based on value of location.
   if (isset($form_state['values']['location'])) {
-    //When user has selected a location.
+    // When user has selected a location.
     $loc = $form_state['values']['location'];
-    $loc = "'".implode("','",$loc)."'";
   }
   else {
-    //No selection made or on page load - default location to the first 
-    //location available in primary select field.
-    $loc = "'".reset($location)."'";
+    // No selection made or on page load - default location to the first 
+    // location available in primary select field.
+    $loc = reset($location);
   }
   
-  //When location is established, query all available traits per location.
-  //Note: planting date is excluded from the list in the same manner it is
-  //excluded from the rawdata heat map.
-  $t = db_query(sprintf("SELECT DISTINCT t1.type_id, t2.definition 
-                 FROM {pheno_measurements} AS t1
-                   INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
-                 WHERE t1.plant_id IN 
-                   (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (%s))
-                   AND t1.value <> ''
-                   AND t2.name <> 'planting_date'
-                 ORDER BY t1.type_id ASC", $loc));   
-  
-  //Return trait id => trait definition array.                 
-  $traits = db_query($t)->fetchAllKeyed();
+  // Query all traits available per location.
+  // Note: planting date is excluded from the list in the same manner it is
+  // excluded from the rawdata heat map.
+  $traits = db_query("SELECT DISTINCT t1.type_id, t2.definition 
+    FROM {pheno_measurements} AS t1
+      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+    WHERE t1.plant_id IN 
+      (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
+      AND t1.value <> ''
+      AND t2.name <> 'planting_date'
+    ORDER BY t1.type_id ASC", array(':location' => $loc))
+    ->fetchAllKeyed();
     
-  //Secondary select field - list of traits avaliable for download.
+  // Secondary select field - list of traits avaliable for download.
   $form['download_fldset']['wrapper']['traits'] = array(
     '#title' => count($traits).' Traits available',
     '#type' => 'select',
@@ -92,7 +86,7 @@ function rawpheno_download($form, &$form_state) {
     '#size' => 17,
   );
   
-  //Submit button.
+  // Submit button.
   $form['download_fldset']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
@@ -100,7 +94,7 @@ function rawpheno_download($form, &$form_state) {
     '#suffix' => '</div><div style="clear: both;"></div>',
   );
   
-  //Attach CSS and JavaScript
+  // Attach CSS and JavaScript
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/download/css/rawpheno_download_style.css');
   $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/download/js/rawpheno_download_stage01.js');
   
@@ -108,11 +102,7 @@ function rawpheno_download($form, &$form_state) {
 }
 
 /**
- * AJAX function callback in primary select (locations).
- *
- * @param type $form
- * @param type $form_state
- * @return array
+ * Function callback; set form wrapper for AJAX.
  */
 function rawpheno_download_measurements($form, $form_state) {
   return $form['download_fldset']['wrapper'];
