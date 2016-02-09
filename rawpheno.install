@@ -8,8 +8,6 @@
  
 /**
  * Implements hook_schema().
- *
- * @return array
  */
 function rawpheno_schema() {
   // PHENO PLANT
@@ -205,13 +203,24 @@ function rawpheno_install() {
   // Index number of Plot, Entry, Rep and Location in traits array.
   // These id set is inserted into {chado.cvterm} as property types.
   $pp_id = array(0,1,3,4);
+  // Array to hold column headers with first and second try.
+  $arr_multiheaders = rawpheno_function_headers('multi-trial');
   
   // Read each header and create cvterm name and cvterm definition.
   foreach($expected_header as $i => $term) {
     $tmp_term = $term;
     // cvterm name - Remove unit from the term and convert to lower case.
-    $cvterm_name = trim(strtolower(preg_replace('/\([^)]+\)/', '', $tmp_term)));
+    if (in_array($term, $arr_multiheaders)) {
+      // For header with secondary attemp, include 1st and 2nd in the name.
+      $tmp_term = str_replace(array(' cm', ' count'), '', $tmp_term);
+      $cvterm_name = trim(strtolower($tmp_term));  
+    }
+    else {
+      $cvterm_name = trim(strtolower(preg_replace('/\([^)]+\)/', '', $tmp_term)));
+    }
 
+    $cvterm_name = str_replace(' ', '_', $cvterm_name);
+    
     // Skip column header if it is Name.
     if ($term == 'Name') { 
       continue;
@@ -314,7 +323,7 @@ function rawpheno_install() {
   );
   
   // Create materialized view.
-  triapal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
 }
 
 /**
@@ -327,7 +336,23 @@ function rawpheno_uninstall() {
   $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
               ->fetchField();
+              
+  if (isset($mview_id) && $mview_id > 0) {
+    // Delete materialized view.
+    tripal_delete_mview($mview_id);
+  }
   
-  // Delete materialized view.
-  tripal_delete_mview($mview_id);
+  // Remove cvterm records.
+  $cv_vocabulary = array('phenotype_plant_property_types', 
+                         'phenotype_measurement_types', 
+                         'phenotype_measurement_units');
+  
+  foreach($cv_vocabulary as $vocabulary) {
+    $cv_id = tripal_get_cv(array('name' => $vocabulary));
+    if (isset($cv_id->cv_id)) {
+      // Delete all the cvterm under this vocabulary.
+      $del = "DELETE FROM {chado.cvterm} WHERE cv_id = :cv_id";
+      db_query($del, array(':cv_id' => $cv_id->cv_id));
+    }
+  }
 }

@@ -121,7 +121,13 @@
         d3.json(file, function(error, data) {
           //Error reading file
           if (error) throw error;
-          
+          else if(data == '') {
+             chart.append('g')
+               .attr('transform', 'translate(350,100)')
+               .append('text')
+               .text('No data');
+          }
+          else {
           //Group data with location as primary key.
           //year as secondary key and rep as tertiary.
           //data /location/year/rep - values.
@@ -224,7 +230,7 @@
             .attr('class', 'axis')
             .attr('transform', 'translate(0,' + (barHeight * 3) +')')
             .call(xAxis);
-   
+          }
         });
          
         //List of functions required.

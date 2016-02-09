@@ -46,6 +46,7 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_instructions'),
     'access arguments' => array('access content'),
+    'theme callback' => 'theme_callback',
     'file' => 'instructions/include/rawpheno_instructions_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
@@ -142,7 +143,7 @@ function rawpheno_instructions_autocomplete_search($key = '') {
     } 
   }
  
-  drupal_json_output($list);
+  drupal_json_output($arr_headers);
 }
 
 /**
@@ -151,7 +152,7 @@ function rawpheno_instructions_autocomplete_search($key = '') {
  * @see hook_menu()
  *
  * @return
- *   A JSON with each member has the following objects:
+ *   A JSON and each member has the following objects:
  *   location, year, rep, # traits.
  */
 function rawpheno_rawdata_summary_json() {

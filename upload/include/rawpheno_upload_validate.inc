@@ -19,6 +19,7 @@ function rawpheno_element_validate($form, &$form_state) {
 
 /**
  * Implements hook_file_validate().
+ *
  * Basic compliance test of spreadsheet submitted.
  */
 function rawpheno_file_validate($file, $form_state) {
@@ -28,11 +29,11 @@ function rawpheno_file_validate($file, $form_state) {
   
   if (isset($file) && filesize($xls_file) && in_array($xls_extension, array('xls', 'xlsx'))) {
     // File exists and is valid xls or xlsx.
-    // Array to hold first, last and 10th row required to perform basic compliance test.
+    // Array to hold first, last and 10th row required in performing basic compliance test.
     $arr_xls_rows = rawpheno_function_read($file);
     // Total number of rows returned.
     $total_rows = count($arr_xls_rows);
-    
+
     if ($total_rows < 2) {
       // Missing measurement sheet or is empty worksheet.
       $h = 'No data to process or Measurements sheet is missing';
@@ -81,6 +82,7 @@ function rawpheno_file_validate($file, $form_state) {
 
 /**
  * Implements hook_file_presave().
+ *
  * Display file validation result.
  */
 function rawpheno_file_presave($file) {
@@ -135,20 +137,20 @@ function rawpheno_validate_review($form, &$form_state) {
       $txt_describe = $form_state['values']['txtarea_describe_' . $key];
       
       // Validate only when user cheked checbox associated to trait.
-      if( $form_state['values']['chk_' . $key] == 1 ) {
-        if( empty($txt_def) ) {
+      if ($form_state['values']['chk_' . $key] == 1) {
+        if (empty($txt_def)) {
           // Definition
-          form_set_error('txt_def_' . $key, 'Header Definition is required in '.$txt_header);
+          form_set_error('txt_def_' . $key, 'Definition is required in ' . $txt_header);
         } 
       
-        if( empty($txt_unit)) {
+        if (empty($txt_unit)) {
           // Unit
-          form_set_error('txt_unit_' . $key, 'Header Unit is required in '.$txt_header);
+          form_set_error('txt_unit_' . $key, 'Unit is required in ' . $txt_header);
         }
       
-        if( empty($txt_describe) )  {
+        if (empty($txt_describe))  {
           // Description
-          form_set_error('txtarea_describe_' . $key, 'Header Description is required in '.$txt_header);
+          form_set_error('txtarea_describe_' . $key, 'Description is required in ' . $txt_header);
         }
       }
     }

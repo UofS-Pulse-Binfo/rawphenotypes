@@ -7,6 +7,7 @@
  
 /**
  * Implements hook_submit().
+ *
  * Master submit to handle form submit.
  */
 function rawpheno_element_submit($form, &$form_state) {
@@ -126,32 +127,35 @@ function rawpheno_submit_review($form, &$form_state) {
   // 2. The entire spreadsheet.
   // Get the variable that holds the path to the spreadsheet file in the server.
   $xls_file = variable_get('rawpheno_xls_file'); 
-  
+
   // Save all rows in the spreadsheet.
   if (isset($xls_file) && !empty($xls_file)) {
     // Array of required traits excluding Name.
-    $arr_plantprop_headers = reawpheno_function_headers('plantprop');
-    $arr_plantprop = array_map('strtolower', $arr_plantprop_headers);
-          
+    $arr_plantprop_headers = rawpheno_function_headers('plantprop');
+    $arr_plantprop_headers = array_map('rawpheno_function_delformat', $arr_plantprop_headers);
+    
     // Array to hold all rows in the spreadsheet.
     $arr_xls_rows = rawpheno_function_read($xls_file);
     // Find the index number of name header in the spreadsheet.
-    $name_index = array_search('name', array_map('strtolower', $arr_xls_rows[0]));
-    
+    $name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
+    // Array of column headers with first and second try.
+    $arr_multiheaders = rawpheno_function_headers('multi-trial');
+    $arr_multiheaders = array_map('rawpheno_function_delformat', $arr_multiheaders);
+
     // Read each row.
-    for($ix = 0; $ix < count($arr_xls_rows); $ix++) {
+    for($i = 0; $i < count($arr_xls_rows); $i++) {
       // Rearrange array to make sure name is the first element,
       // and generate a plant_id number for the rest of the entries.
-      $name_col = $arr_xls_rows[$ix][$name_index];
-      unset($arr_xls_rows[$ix][$name_index]);
-      array_unshift($arr_xls_rows[$ix], $name_col);
+      $name_col = $arr_xls_rows[$i][$name_index];
+      unset($arr_xls_rows[$i][$name_index]);
+      array_unshift($arr_xls_rows[$i], $name_col);
         
       // Skip row with index 0, this is the column headers row.
-      if ($ix == 0) continue;
+      if ($i == 0) continue;
       
       // Read each row and each cell.
       // Each row will be an array where name is always the first element.
-      foreach($arr_xls_rows[$ix] as $cell_index => $cell_entry) {
+      foreach($arr_xls_rows[$i] as $cell_index => $cell_entry) {
         // Determine which table to insert a column header.
         if ($cell_index == 0) {
           // Name
@@ -159,7 +163,6 @@ function rawpheno_submit_review($form, &$form_state) {
           // Name column header goes into pheno_plant.
           // Check if stock name exists.
           $stock_id = rawpheno_function_instock($cell_entry);
-          
           // Determine if name has a stock id number.
           if (isset($stock_id) && $stock_id > 0) {
             // Plant_id for this row.
@@ -174,8 +177,8 @@ function rawpheno_submit_review($form, &$form_state) {
         else {
           // OTHER
           // The rest of the data array.
+          // Get the column header of a cell.
           $cell_colheader = rawpheno_function_delformat($arr_xls_rows[0][$cell_index]);
-          
           // Determine if column header is required
           if (in_array($cell_colheader, $arr_plantprop_headers) && !empty($cell_colheader)) {
             // PLOT, ENTRY, REP and LOCATION
@@ -201,7 +204,6 @@ function rawpheno_submit_review($form, &$form_state) {
               // Test if column header of cell is a new trait.
               // Replace any extra spaces to underscore and create an exact match of
               // cvterm name inserted into cvterm table.
-              $cell_colheader = rawpheno_function_nonewline($cell_colheader);
               $cv_name = str_replace(' ', '_', $cell_colheader);
               $cv_id = tripal_get_cvterm(array('name' => $cv_name));
               $type_id = $cv_id->cvterm_id;
@@ -218,9 +220,17 @@ function rawpheno_submit_review($form, &$form_state) {
             else {
               // NOT NEW
               // Column header is not a new trait.
-              // Remove any excess spaces from the header.
-              $cv_name = preg_replace('!\s+!', ' ', $arr_xls_rows[0][$cell_index]);
-              $cv_id = tripal_get_cvterm(array('definition' => $cv_name));
+              // Remove unit from the header.
+              if (in_array($cell_colheader, $arr_multiheaders)) {
+                $cv_name = trim(str_replace(array(' cm', ' count'), '', $cell_colheader));
+              }
+              else {
+                $cv_name = trim(preg_replace('/\([^)]+\)/', '', $cell_colheader));
+              }
+              
+              $cv_name = str_replace(' ', '_', $cv_name);
+
+              $cv_id = tripal_get_cvterm(array('name' => $cv_name));
               $type_id = $cv_id->cvterm_id;
               
               // Extract unit from the column header the cell is under.

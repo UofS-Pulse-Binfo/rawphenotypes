@@ -1,19 +1,19 @@
 <?php
 /**
  * @file
- * Master function to managed measurement types.
+ * Master function to managed column headers.
  *
- * @params string $type
+ * @params $type
+ *   A string containing a description of column header set required. 
+ *
  * @return array
+ *   An array of column headers returned based on the type of set requested.
  */
 function rawpheno_function_headers($type) {  
-  //$type - Contains the type of trait set requested.
-  //        values: phenotyping, required, expected, plantprop
-            
-  //List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
-  //TRAIT/MEASUREMENT ---------------------------------------- INDEX
-  //Order is the same order as in the spreadsheet file. 
-  //Note: Subset traits: 24, 25 and 26 are Hidden Column.
+  // List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
+  // TRAIT/MEASUREMENT ---------------------------------------- INDEX
+  // Order is the same order as in the spreadsheet file. 
+  // Note: Subset traits: 24, 25 and 26 are Hidden Column.
   $arr_headers = 
   array(
   'Plot',                                                       //0
@@ -50,44 +50,47 @@ function rawpheno_function_headers($type) {
   'Comments'                                                    //31
   );
   
-  //Determine the type of request.
+  // Determine the type of request.
   switch($type) {
     case 'phenotyping':
-      //List of trait used in standard phenotyping instructions page.
-      //Used in: Instructions page.
+      // List of column headers used in standard phenotyping instructions page.
+      // Used in: Instructions page.
       $type_id = array(5,7,8,9,10,11,13,14,15,16,18,20,21,23,24,25,26,27,28,29,30);
       break;
     
     case 'required':
-      //List of required traits - these traits must have a value.
-      //Used in: Upload Data - validate spreadsheet.
+      // List of required column headers - must have a value.
+      // Used in: Upload Data - validate spreadsheet.
       $type_id = array(0,1,2,3,4);
       break;
       
     case 'expected':
-      //List of trait ids expected to be present in spreadsheet submitted.
-      //Used in: Upload Data - validate spreadsheet.
+      // List of column headers ids expected to be present in spreadsheet.
+      // Used in: Upload Data - validate spreadsheet.
       //         .install file of this module.
       $type_id = array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
                        24,25,26,27,28,29,30,31);
       break;
     
     case 'plantprop':
-      //List of required traits excluding name - Plant Prop Traits.
-      //Used in: Upload Data - Save spreadsheet.
+      // List of required column headers excluding name - Plant Prop Traits.
+      // Used in: Upload Data - Save spreadsheet.
       $type_id = array(0,1,3,4);
       break;  
+      
+    case 'multi-trial':
+      // List of column headers with first and secondary try.
+      // Used in: .install file and Upload Data - save spreadsheet.
+      $type_id = array(11,12,16,17,18,19);
+      break;
   } 
   
   $arr_requested_trait = array();
-  //Create the array of traits based on requested trait ids.
+  // Create the array of traits based on requested trait ids.
   foreach($type_id as $id) {
-    //Push the trait into the array.
+    // Push the trait into the array.
     array_push($arr_requested_trait, $arr_headers[$id]);
   }
 
-  //Return array.
-  //Array of traits based on trait ids requested.
-  //array(Trait 1, Trait 2, ...)
   return $arr_requested_trait;
 }

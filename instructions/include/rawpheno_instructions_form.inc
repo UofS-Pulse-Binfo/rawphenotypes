@@ -1,19 +1,15 @@
 <?php
 
 /**
- * Function callback for phenotypes/instructions.
- *
- * @param type $form
- * @param type $form_state
- * @return type
+ * Function callback; generate standard phenotyping instructions page.
  */
 function rawpheno_instructions($form, &$form_state) {
-  //Apply page template.
+  // Apply page template.
   $form['instructions'] = array(
     '#theme' => 'instructions_template',
   );
   
-  //Search field with autocomplete feature.
+  // Search field with autocomplete feature.
   $form['instructions']['search'] = array(
     '#title' => '',
     '#type' => 'textfield',
@@ -23,18 +19,18 @@ function rawpheno_instructions($form, &$form_state) {
     '#autocomplete_path' => 'autocomplete',
   );
 
-  //Hidden field containing url to json.
+  // Hidden field containing url to json.
   $form['json_url'] = array(
     '#type' => 'hidden',
     '#value' => $GLOBALS['base_url'] . '/autocomplete',
     '#attributes' => array('id' => array('traits-json'))
   );  
   
-  //Attach CSS and JavaScript
+  // Attach CSS and JavaScript
   $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/css/rawpheno_instructions_style.css');
   $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/js/rawpheno_instructions_script.js');
   
-  //Attach jquery ui library
+  // Attach jquery ui library
   $form['#attached']['library'][] = array('system', 'ui.tabs');
    
   return $form;
@@ -42,12 +38,6 @@ function rawpheno_instructions($form, &$form_state) {
 
 /**
  * Implements hook_theme().
- *
- * @param $existing
- * @param $type
- * @oaran $theme
- * @param $path
- * @return array
  */
 function rawpheno_theme($existing, $type, $theme, $path) {
   return array( 

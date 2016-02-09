@@ -275,7 +275,7 @@ function rawpheno_function_unit($xls_header_cell) {
  *   Contains the value of the cell.
  *
  * @return 
- *   Bo0lean true = 1 or false = 0;
+ *   Boolean true = 1 or false = 0;
  */
 function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
   // All values match the unit by default. Unless proven otherwise.
@@ -284,7 +284,7 @@ function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
   switch($xls_unit) {
     case 'date':
       // Date must be YYYY-MM-DD format.
-      if (!empty($xls_cell_value) && preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $xls_cell_value) == 0) {
+      if (!empty($xls_cell_value) && preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}/', $xls_cell_value) == 0) {
         $is_valid = 0;
       }
       break;
@@ -466,6 +466,6 @@ function rawpheno_function_resetvar() {
  *   An interger containing the stock id number of the stock name.
  */
 function rawpheno_function_instock($xls_name) {
-  $stock = chado_select_record('stock', array('stock_id'), array('name' => $name));
+  $stock = chado_select_record('stock', array('stock_id'), array('name' => $xls_name));
   return (isset($stock[0]->stock_id)) ? $stock[0]->stock_id : 0;
 }
