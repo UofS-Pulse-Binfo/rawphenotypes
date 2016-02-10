@@ -4,7 +4,8 @@
  * @file
  * Contains all implementations of hook_form().
  */
- 
+
+// Include implementations of hook_submit() and hook_validate(). 
 module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_submit');
 module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_validate');
 
@@ -20,9 +21,9 @@ function rawpheno_download($form, &$form_state) {
   );
   
   // Query all locations available.
-  $location = db_query("SELECT DISTINCT t1.value, t1.value as location 
-    FROM {pheno_plantprop} as t1
-      INNER JOIN {chado.cvterm} as t2 ON t1.type_id = t2.cvterm_id
+  $location = db_query("SELECT DISTINCT t1.value, t1.value AS location 
+    FROM {pheno_plantprop} AS t1
+      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t2.name = 'location' 
     ORDER BY t1.value ASC")
     ->fetchAllKeyed();
@@ -43,7 +44,7 @@ function rawpheno_download($form, &$form_state) {
       'event' => 'change',
       'callback' => 'rawpheno_download_measurements',
       'wrapper' => 'div-measurements',
-      'progress' => array('type'=>'', 'message'=>'')
+      'progress' => array('type' => '', 'message' => '')
     ),
   );
   

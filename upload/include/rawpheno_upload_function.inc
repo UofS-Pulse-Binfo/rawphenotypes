@@ -359,7 +359,7 @@ function rawpheno_function_error($xls_errors, $row_count) {
           $in_row = '* In First Row';
         }
         else {
-          $in_row = ($row_count > 11) ? '* In 10th Row' : '* In Last Row';
+          $in_row = ($row_count > 10) ? '* In 10th Row' : '* In Last Row';
         }
 
         foreach($xls_errors[$i] as $key => $value) {

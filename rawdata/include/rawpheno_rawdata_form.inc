@@ -1,12 +1,7 @@
 <?php
 
 /**
- * @file
- * Implements hook_form().
- */
- 
-/**
- * Function callback for rawpheno rawdata.
+ * Function callback; create heat map page.
  */
 function rawpheno_rawdata($form, &$form_state) {
   // Container for svg canvas.

@@ -7,12 +7,12 @@
     attach: function (context, settings) {
       $(document).ready(function() {
       /////
-        //Reference form elements.
+        // Reference form elements.
         var chkb = $('#field-container .frm-cell input:checkbox');
         var selTrait = $("[name='traits[]']");
         var btnSubmit = $('#edit-download-submit-download');
         
-        //Submit button event
+        // Submit button event
         btnSubmit.click(function(e) { 
           if (selTrait.val() && btnSubmit.val() == 'Download') {
             btnSubmit.val('Download in 3');
@@ -30,16 +30,16 @@
           }
         });
 
-        //Checkbox form element
+        // Checkbox form element
         chkb.click(function() {
-          //Select all options when checked.
+          // Select all options when checked.
           var state = ($(this).is(':checked')) ? 'selected' : '';
           resetFld(selTrait, state);          
-          //When clicked, focus secondary select box.
+          // When clicked, focus secondary select box.
           $(selTrait).focus();
         });
         
-        //Disable all form elements when ajax request in progress.
+        // Disable all form elements when ajax request in progress.
         $(document).ajaxStart(function() {
           //ajax start
           chkb.attr('checked', false); 
@@ -52,7 +52,7 @@
       /////    
       });
       
-      //Reset select field when user selects another location.
+      // Reset select field when user selects another location.
       function resetFld(select, state) {
         $(select).find('option').each(function() {
           $(this).attr('selected', state);

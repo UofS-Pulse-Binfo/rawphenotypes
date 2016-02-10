@@ -7,13 +7,14 @@
  *   A string containing a description of column header set required. 
  *
  * @return array
- *   An array of column headers returned based on the type of set requested.
+ *   An array of column headers based on the type of set requested.
  */
 function rawpheno_function_headers($type) {  
   // List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
   // TRAIT/MEASUREMENT ---------------------------------------- INDEX
   // Order is the same order as in the spreadsheet file. 
   // Note: Subset traits: 24, 25 and 26 are Hidden Column.
+  //       Traits with Second trial eg. 1st; cm, 2nd; cm
   $arr_headers = 
   array(
   'Plot',                                                       //0

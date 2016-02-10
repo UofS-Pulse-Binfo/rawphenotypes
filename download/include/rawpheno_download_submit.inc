@@ -12,7 +12,7 @@ function rawpheno_download_submit($form, &$form_state) {
  
   // Location or locations selected by user.
   $location = $form_state['values']['location'];
-  // list of traits selected by user.
+  // List of traits selected by user.
   $traits = $form_state['values']['traits'];
   
   // Add planting date to the list of traits.
@@ -24,7 +24,7 @@ function rawpheno_download_submit($form, &$form_state) {
   // The result is sorted by plant_id and the grouping string ensuring that the first
   // row is Name - containing the stock name.
   // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
-  $d = db_query("SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS data, 'A' as grp
+  $sql = db_query("SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS data, 'A' as grp
     FROM {chado.stock} AS t1 
       INNER JOIN {pheno_plant} AS t2 USING(stock_id)
     WHERE t2.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
@@ -42,13 +42,13 @@ function rawpheno_download_submit($form, &$form_state) {
     ORDER BY id, grp, tid ASC", array(':location' => $location, ':traits' => $traits));
  
   // Create header row and data row of the csv file.
-  if ($d) {
+  if ($sql) {
     // Array to hold column headers.
     $arr_headers = array();
     // Array to hold data rows
     $arr_data_rows = array();
     
-    while($row = $d->fetchAssoc()) {
+    while($row = $sql->fetchAssoc()) {
       // Determine if the column header is in the array of column headers
       if (!in_array($row['def'], $arr_headers)) {
         // Not in the array of column headers. - Add this header.

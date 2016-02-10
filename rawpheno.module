@@ -46,8 +46,6 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_instructions'),
     'access arguments' => array('access content'),
-    'theme callback' => 'theme_callback',
-    'file' => 'instructions/include/rawpheno_instructions_form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
     // Menu callback which generates a list of headers in JSON,
@@ -246,4 +244,48 @@ function rawpheno_rawdata_summary_json() {
   }
   
   return $arr_json;
+}
+
+/**
+ * Function callback; generate standard phenotyping instructions page.
+ */
+function rawpheno_instructions($form, &$form_state) {
+  // Search field with autocomplete feature.
+  $form['search'] = array(
+    '#title' => '&nbsp;',
+    '#type' => 'textfield',
+    '#maxlength' => 65,
+    '#size' => 65,
+    '#default_value' => t('Search Trait'),
+    '#autocomplete_path' => 'autocomplete',
+  );
+
+  // Hidden field containing url to json.
+  $form['json_url'] = array(
+    '#type' => 'hidden',
+    '#value' => $GLOBALS['base_url'] . '/autocomplete',
+    '#attributes' => array('id' => array('traits-json'))
+  );  
+  
+  // Attach CSS and JavaScript
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/css/rawpheno_instructions_style.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/js/rawpheno_instructions_script.js');
+  
+  // Attach jquery ui library
+  $form['#attached']['library'][] = array('system', 'ui.tabs');
+   
+  return $form;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function rawpheno_theme($existing, $type, $theme, $path) {
+  $items['rawpheno_instructions'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_instructions',
+    'path' => $path . '/instructions/theme',
+  );
+  
+  return $items;
 }
