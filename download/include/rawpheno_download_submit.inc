@@ -82,7 +82,7 @@ function rawpheno_download_submit($form, &$form_state) {
   array_splice($arr_headers, 2, 0, $name_header);
 
   // Create filename, with date and time information.  
-  $file_name = 'rawpheno_csv' . date('d-m-Y') . time() . '.csv';
+  $file_name = 'rawpheno_csv' . date('YMd') .'_'. time() . '.csv';
   $file_csv = file_save_data(implode(',', $arr_headers) . "\n" .
                              implode("\n", $arr_csv_rows), 'public://' . $file_name);
  
@@ -92,7 +92,7 @@ function rawpheno_download_submit($form, &$form_state) {
   // Set page headers.
   $http_headers = array(
     'Content-Type' => 'text/csv',
-    'Content-Disposition' => 'attachment; filename="' . 'rawdata.csv' . '"',
+    'Content-Disposition' => 'attachment; filename="' . $file_name . '"',
     'Content-Length' => filesize($path),
   );
 

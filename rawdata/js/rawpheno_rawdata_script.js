@@ -177,24 +177,33 @@
             .data(function(d) { return d.values; })
             .enter()
             .append('g')
-            .on('mouseover', function(d) {      
+            .on('mousemove', function(d) {
+              d3.select(this)
+                .style('opacity', 0.6);
+              
               div.transition()        
-                .duration(200)      
-                .style('opacity', 0.8);      
-              div .html(d.values + ' Traits')  
-                .style('left', (d3.event.pageX) + 'px')     
-                .style('top', (d3.event.pageY) + 'px');    
+                .style('opacity', 1);
+
+              div.html(d.values + ' Traits')  
+                 .style('left', (d3.event.pageX+10) + 'px')     
+                 .style('top', (d3.event.pageY) + 'px');    
             })                  
             .on('mouseout', function(d) {       
+              d3.select(this)
+                .transition() 
+                .delay(500)
+                .style('opacity', 1);
+                
               div.transition()        
-                .duration(500)      
                 .style('opacity', 0);   
             })
             .append('rect')
             .attr('stroke', '#FFFFFF')
             .attr('stroke-width', barBorder)
             .attr('fill', startColour)
-            .transition().duration(function(d, i) { return 500 * i; }).ease('back')
+            .transition()
+            .duration(function(d, i) { return 600 * i; })
+            .ease('back')
             .attr('fill', function(d) { return color(mapColour(type(d.values))); })
             .attr('width', barWidth)
             .attr('height', barHeight)
