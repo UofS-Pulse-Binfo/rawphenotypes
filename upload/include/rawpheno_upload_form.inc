@@ -31,29 +31,29 @@ function rawpheno_element($form, &$form_state) {
   // Create a page title based on the current stage.
   $form = rawpheno_get_header($form, $form_state);
   // Get the directory path to rawpheno module.
-  $path = drupal_get_path('module', 'rawpheno');
+  $path = drupal_get_path('module', 'rawpheno') . '/upload/';
   
   // Load corresponding form together with JavaScript and CSS.
   switch($form_state['stage']) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage01.css');
-      $form['#attached']['js']  = array($path . '/upload/js/rawpheno_upload_stage01.js');
+      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage01.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage01.js');
       
       return rawpheno_form_check($form, $form_state);
       break;
 
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage02.css');
-      $form['#attached']['js']  = array($path . '/upload/js/rawpheno_upload_stage02.js');
+      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage02.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage02.js');
       
       return rawpheno_form_review($form, $form_state);
       break;
 	 
     case 'save':
       // Stage 03 - save to databse and success page.
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage03.css');
+      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage03.css');
 
       return rawpheno_form_save($form, $form_state);
       break;
@@ -95,7 +95,7 @@ function rawpheno_form_check($form, &$form_state) {
   
   // Close error window button
   $form['stage01_button_close'] = array(
-    '#markup' => '<input type="button" class="form-submit" id="edit-stage01-button-close" value="Close error and try again">',
+    '#markup' => '<br /><input type="button" class="form-submit" id="edit-stage01-button-close" value="Close error and try again">',
   );
 
   return $form;  

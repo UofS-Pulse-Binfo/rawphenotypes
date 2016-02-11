@@ -46,7 +46,7 @@ function rawpheno_file_validate($file, $form_state) {
       $arr_xls_errors = array();
       // Get the column headers row.
       $xls_headers_row = $arr_xls_rows[0];
-      
+
       // Validate column headers row.
       // Index 0 - Headers row.
       $arr_xls_errors[0] = rawpheno_function_chkheader($xls_headers_row);
@@ -64,7 +64,7 @@ function rawpheno_file_validate($file, $form_state) {
       // Format all errors and report a list of errors found in the spreadsheet.
       $txt_error = rawpheno_function_error($arr_xls_errors, $total_rows);
     }  
-    
+
     //Determine if there is errors to report.    
     if (strlen(trim($txt_error)) > 0) {
       // Errors found.

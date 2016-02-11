@@ -10,7 +10,7 @@ module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_submi
 module_load_include('inc', 'rawpheno', 'download/include/rawpheno_download_validate');
 
 /**
- * Function callback; create export data form.
+ * Function callback: construct export data form.
  */
 function rawpheno_download($form, &$form_state) {
   // Fieldset container for download form.
@@ -96,14 +96,15 @@ function rawpheno_download($form, &$form_state) {
   );
   
   // Attach CSS and JavaScript
-  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/download/css/rawpheno_download_style.css');
-  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/download/js/rawpheno_download_stage01.js');
+  $path = drupal_get_path('module', 'rawpheno') . '/download/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno_download_style.css');
+  $form['#attached']['js']  = array($path . 'js/rawpheno_download_stage01.js');
   
   return $form;
 }
 
 /**
- * Function callback; set form wrapper for AJAX.
+ * Function callback: set form wrapper for AJAX.
  */
 function rawpheno_download_measurements($form, $form_state) {
   return $form['download_fldset']['wrapper'];

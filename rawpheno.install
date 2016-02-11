@@ -259,6 +259,9 @@ function rawpheno_install() {
   $arr_terms = array($pp_terms, $mt_terms, $mu_terms);
   // Insert all terms by cvterm vocabulary.
   foreach($cv_vocabulary as $cv_i => $cv_name) {
+    // Insert Controlled Vocubalary
+    tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
+    
     // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
     foreach($arr_terms[$cv_i] as $term_name => $term_def) {
       $arr_terms_param = array('id'         => 'tripal:'.$term_name,
@@ -342,17 +345,22 @@ function rawpheno_uninstall() {
     tripal_delete_mview($mview_id);
   }
   
-  // Remove cvterm records.
+  // Remove cvterm records then controlled vocabulary.
   $cv_vocabulary = array('phenotype_plant_property_types', 
                          'phenotype_measurement_types', 
                          'phenotype_measurement_units');
   
   foreach($cv_vocabulary as $vocabulary) {
+    // Delete all cvterm under a controlled vocabulary.
     $cv_id = tripal_get_cv(array('name' => $vocabulary));
     if (isset($cv_id->cv_id)) {
       // Delete all the cvterm under this vocabulary.
       $del = "DELETE FROM {chado.cvterm} WHERE cv_id = :cv_id";
       db_query($del, array(':cv_id' => $cv_id->cv_id));
+      
+      // Then delete controlled vocabulary terms.
+      $del = "DELETE FROM {chado.cv} WHERE cv_id = :cv_id AND name = :cv";
+      db_query($del, array(':cv_id' => $cv_id->cv_id, ':cv' => $vocabulary));
     }
   }
 }

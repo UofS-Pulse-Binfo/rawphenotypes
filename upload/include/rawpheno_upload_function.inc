@@ -179,10 +179,9 @@ function rawpheno_function_chkrow($xls_row, $xls_headers) {
 		    //Required cell is empty.
 		    $arr_cell[] = $arr_required_id[$index];
 		  } 
-		  elseif (rawpheno_function_delformat($xls_headers[$index]) == 'name' &&
-		          rawpheno_function_instock($value) <= 0) {
+		  elseif (rawpheno_function_delformat($xls_headers[$index]) == 'name' && rawpheno_function_instock($value) <= 0) {
 		    // Name with stock name that does not exist.
-		    $arr_stock[] = 'Name: '.$value;
+		    $arr_stock[] = 'Name: ' . $value;
 		  }
     }
     else {
@@ -190,10 +189,10 @@ function rawpheno_function_chkrow($xls_row, $xls_headers) {
       // Match value to the unit.
       // Extract the unit in the column header and test the value against the unit.
       $unit = rawpheno_function_unit($xls_headers[$index]);
-      
+
       if (rawpheno_function_chkunit($unit, $value) == 0 && !empty($value)) {
         // Does not match - create an error message about this cell.
-        $arr_unit[] = $xls_headers[$index] .' - ('.$value.') not a valid ('.$unit.')';
+        $arr_unit[] = $xls_headers[$index] . ' - ('. $value. ') not a valid (' . $unit . ')';
       }
     }
   }
@@ -287,16 +286,14 @@ function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
     
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (!empty($xls_cell_value) && strlen($xls_cell_value) == 1 && 
-          !in_array($xls_cell_value, array('y','n','?'))) {
+      if (!empty($xls_cell_value) && strlen($xls_cell_value) == 1 && !in_array($xls_cell_value, array('y','n','?'))) {
         $is_valid = 0;
       }
       break;
     
     case 'scale':
       // Scale - if numeric, check if 1-5 range, inclusive.
-      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) &&
-          !($xls_cell_value >= 1 && $xls_cell_value < 6)) {
+      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) && ($xls_cell_value >= 6 || $xls_cell_value < 1)) {
         $is_valid = 0;    
       } 
       break;

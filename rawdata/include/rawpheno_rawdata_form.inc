@@ -19,8 +19,9 @@ function rawpheno_rawdata($form, &$form_state) {
   );
   
   // Attach CSS and JavaScript.
-  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/rawdata/css/rawpheno_rawdata_style.css');
-  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/rawdata/js/rawpheno_rawdata_script.js');
+  $path = drupal_get_path('module', 'rawpheno') . '/rawdata/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno_rawdata_style.css');
+  $form['#attached']['js']  = array($path . 'js/rawpheno_rawdata_script.js');
   
   // Attach d3 JS library.
   $d3_lib = libraries_load('d3');

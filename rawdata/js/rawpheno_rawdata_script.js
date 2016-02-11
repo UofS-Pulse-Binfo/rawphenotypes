@@ -179,7 +179,7 @@
             .append('g')
             .on('mousemove', function(d) {
               d3.select(this)
-                .style('opacity', 0.6);
+                .style('opacity', 0.5);
               
               div.transition()        
                 .style('opacity', 1);
@@ -191,7 +191,7 @@
             .on('mouseout', function(d) {       
               d3.select(this)
                 .transition() 
-                .delay(500)
+                .delay(200)
                 .style('opacity', 1);
                 
               div.transition()        

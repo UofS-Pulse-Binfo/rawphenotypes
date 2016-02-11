@@ -53,7 +53,8 @@ function rawpheno_submit_review($form, &$form_state) {
   // 2. The entire spreadsheet.
   
   // cvterm id of controlled vocabulary. 
-  $cv_measurements_unit = 523;
+  $cvid = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  $cv_measurements_unit = $cvid->cv_id;
  
   // 1. Save new headers.
   // Read variable that holds new column headers.
