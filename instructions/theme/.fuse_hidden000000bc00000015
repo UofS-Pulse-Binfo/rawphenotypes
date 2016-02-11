@@ -1,21 +1,5 @@
 <?php
 
-/**
- * @file
- * Displays column header and instructions.
- * 
- * This page is the Standard Phenotyping Procedure. A page describing
- * what SOP for each trait and providing spreadsheet template file.
- *
- * Available variables:
- * - $path: The directory path to rawpheno module.
- * - $traits: Is an array containing column headers that requires phenotyping instructions.
- * - $form['search']: Is the form search field.
- * - $form['json_url']: Is a hidden field containing the url to menu callback. 
- */
-
-// Directory path to rawpheno module.
-$path = drupal_get_path('module', 'rawpheno');
 // Use array to match traits.
 $traits = rawpheno_function_headers('phenotyping');
 // Index number and Trait equivalent
@@ -44,6 +28,7 @@ $traits = rawpheno_function_headers('phenotyping');
 
 <div id="phenotype-page" class="copy-center-row">
   <div id="container-option">
+    
     <fieldset>
       <div class="fieldset-wrapper">
         <div class="tools">
@@ -56,7 +41,9 @@ $traits = rawpheno_function_headers('phenotyping');
         </div>
       </div>
     </fieldset>
+    
   </div>
+  
   
   <div id="tabs" style="clear: both;">
     <ul>
@@ -66,6 +53,7 @@ $traits = rawpheno_function_headers('phenotyping');
       <li><a href="#fragment-4">Subset Traits</a></li>
       <li><a href="#fragment-5">Photo Appendix</a></li>
     </ul>
+  
     
     <div id="fragment-1">
       <div class="container-link"> 
@@ -385,6 +373,9 @@ $traits = rawpheno_function_headers('phenotyping');
         <div id="gallery-container">   
           <div class="side-nav"><a href="javascript:void();"><</a></div>
           <div class="gallery-img">
+            <?php
+              $path = drupal_get_path('module', 'rawpheno');
+            ?>
             <input type="hidden" id="path" value="../../<?php echo $path; ?>/instructions/img/appendix/">
             <input type="hidden" id="cur-img" value="0">
             <img src="../../<?php echo $path; ?>/instructions/img/appendix/01-tendrils-no-elongation.jpg">

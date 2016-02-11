@@ -157,7 +157,7 @@ function rawpheno_function_chkheader($xls_headers) {
  * @param $xls_headers
  *   An array containing all column headers in the spreadsheet.  
  *
- * @return
+ * @return array
  *   An array containing all cells with error.
  */
 function rawpheno_function_chkrow($xls_row, $xls_headers) {
@@ -208,7 +208,7 @@ function rawpheno_function_chkrow($xls_row, $xls_headers) {
  * @param $xls_headers
  *   An array containing all column headers in the spreadsheet.  
  *
- * @return
+ * @return array
  *   An array containing index numbers of each required column headers in the spreadsheet. 
  */
 function rawpheno_function_id($xls_headers) {  
@@ -228,6 +228,20 @@ function rawpheno_function_id($xls_headers) {
   }
   
   return $arr_required_id;
+}
+
+/**
+ * Function to remove new lines, extra spaces from a string.
+ *
+ * @param string $xls_cell_value
+ * @return string
+ */
+function rawpheno_function_nonewline($xls_cell_value) {
+  // $xls_cell_value - Contains the value of a cell
+  
+  // Remove extra spaces and new lines.
+  // Return string.
+  return preg_replace('!\s+!', ' ', $xls_cell_value);
 }
 
 /**

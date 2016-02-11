@@ -13,16 +13,13 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_validate'
 module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function');
 
 /**
- * Master form constructor which calls an individual form for each stage.
- * 
- * @see rawpheno_element_validate()
- * @see rawpheno_element_submit()
+ * Master form which calls an individual form for each step.
  */
 function rawpheno_element($form, &$form_state) {  
   // Reset variables before starting.
   if (!isset($form_state['stage'])) {
     rawpheno_function_resetvar();
-    // Default to stage 01.
+    // Default to stage 01
     $form_state['stage'] = 'check';
   }
   
@@ -30,31 +27,21 @@ function rawpheno_element($form, &$form_state) {
   
   // Create a page title based on the current stage.
   $form = rawpheno_get_header($form, $form_state);
-  // Get the directory path to rawpheno module.
-  $path = drupal_get_path('module', 'rawpheno');
   
-  // Load corresponding form together with JavaScript and CSS.
+  // Load corresponding interface or form.
   switch($form_state['stage']) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage01.css');
-      $form['#attached']['js']  = array($path . '/upload/js/rawpheno_upload_stage01.js');
-      
       return rawpheno_form_check($form, $form_state);
       break;
 
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage02.css');
-      $form['#attached']['js']  = array($path . '/upload/js/rawpheno_upload_stage02.js');
-      
       return rawpheno_form_review($form, $form_state);
       break;
 	 
     case 'save':
       // Stage 03 - save to databse and success page.
-      $form['#attached']['css'] = array($path . '/upload/css/rawpheno_upload_stage03.css');
-
       return rawpheno_form_save($form, $form_state);
       break;
   }
@@ -63,10 +50,7 @@ function rawpheno_element($form, &$form_state) {
 }
 
 /**
- * Function callback: Construct form for Stage 01.
- *
- * Stage 01 form allows user to upload data collection spreadsheet and
- * perform basic compliance test.
+ * Form stage 01 - upload spreadsheet and perform a basic compliance test.
  */
 function rawpheno_form_check($form, &$form_state) {
   // Create an instance of DragNDrop Upload.
@@ -95,17 +79,20 @@ function rawpheno_form_check($form, &$form_state) {
   
   // Close error window button
   $form['stage01_button_close'] = array(
-    '#markup' => '<input type="button" class="form-submit" id="edit-stage01-button-close" value="Close error and try again">',
+    '#markup' => '<br /><a class="button" id="edit-stage01-button-close" href="javascript:void();">
+                  Close error and try again</a>',
   );
+  
+  // Attach CSS and JavaScript.
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage01.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/upload/js/rawpheno_upload_stage01.js');
 
   return $form;  
 }
 
 /**
- * Function callback: Construct form for Stage 02.
- *
- * Stage 02 form allows user to describe and save a additional trait/s found
- * in the spreadsheet submitted in Stage 01.
+ * Form stage 02 - review new traits found.
+ * Allow user to describe and save a additional trait/s found.
  */
 function rawpheno_form_review($form, &$form_state) {
   // This is the error message used in lieu of Drupal form_set_error().
@@ -193,14 +180,15 @@ function rawpheno_form_review($form, &$form_state) {
     );
   }
   
-   return $form;
+  //Attach CSS and JavaScript.
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage02.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/upload/js/rawpheno_upload_stage02.js');
+  
+  return $form;
 }
 
 /**
- * Function callback: Construct form for Stage 03.
- *
- * Stage 03 form is the final stage that displays a status message
- * and a navigation button to direct user after a successful file upload.
+ * Form stage 03 - save the spreadsheet to database.
  */
 function rawpheno_form_save($form, &$form_state) {
   // Success message to display.
@@ -224,5 +212,8 @@ function rawpheno_form_save($form, &$form_state) {
     '#value' => 'Go to home KnowPulse',
   );
   
+  // Attach CSS.
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_stage03.css');
+
   return $form;
 }

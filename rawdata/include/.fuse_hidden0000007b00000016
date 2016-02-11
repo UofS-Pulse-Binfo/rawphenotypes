@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Page callback: Displays a heat map chart.
+ * Function callback; create heat map page.
  */
 function rawpheno_rawdata($form, &$form_state) {
   // Container for svg canvas.
@@ -23,10 +23,7 @@ function rawpheno_rawdata($form, &$form_state) {
   $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/rawdata/js/rawpheno_rawdata_script.js');
   
   // Attach d3 JS library.
-  $d3_lib = libraries_load('d3');
-  if (isset($d3_lib) && !empty($d3_lib['loaded'])) {
-    $form['#attached']['libraries_load'][] = array('d3');
-  }
+  $form['#attached']['libraries_load'][] = array('d3');
   
   return $form;
 }

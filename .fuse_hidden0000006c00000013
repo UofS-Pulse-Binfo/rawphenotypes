@@ -87,11 +87,8 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements')
 
 /**
  * Implements hook_libraries_info().
- *
- * Define external libraries: Spreadsheet Reader and D3JS
  */
 function rawpheno_libraries_info() {
-  // Spreadsheet reader
   // File option is empty since library files are included
   // individually using include_once().
   // files in: sites/all/libraries/spreadsheet-reader
@@ -100,31 +97,18 @@ function rawpheno_libraries_info() {
   //   - SpreadsheetReaderXLS.php
   //   - php-excel-reader/excel_reader2.php
   $libraries['spreadsheet_reader'] = array(
-    'name' => 'NUOVO Spreadsheet',
+    'name' => 'NUOVO Spreadsheet - Reader XLS 2',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
     'download url' => 'https://github.com/nuovo/spreadsheet-reader',
     'path' => 'sites/all/libraries/spreadsheet-reader/',
     'files' => array(),
   );
   
-  // D3 JavaScript.
-  $libraries['d3'] = array(
-    'name' => 'D3 Data-Driven Documents',
-    'version' => '3.4.14',
-    'vendor url' => 'https://d3js.org/',
-    'download url' => 'https://github.com/mbostock/d3/releases/download/v3.5.14/d3.zip',
-    'library path' => 'sites/all/libraries/',
-    'path' => 'sites/all/libraries/d3/',
-    'files' => array(
-      'js' => array('d3.js')
-    )
-  );
-  
   return $libraries;
 }
 
 /**
- * Function callback: Autocomplete search field.
+ * Function callback; autocomplete search field.
  *
  * @see hook_menu()
  * 
@@ -161,7 +145,7 @@ function rawpheno_instructions_autocomplete_search($key = '') {
 }
 
 /**
- * Function callback: Generate data for the heat map.
+ * Function callback; generate data for the heat map.
  *
  * @see hook_menu()
  *
@@ -263,7 +247,7 @@ function rawpheno_rawdata_summary_json() {
 }
 
 /**
- * Page callback: display standard phenotyping instructions page.
+ * Function callback; generate standard phenotyping instructions page.
  */
 function rawpheno_instructions($form, &$form_state) {
   // Search field with autocomplete feature.
@@ -283,12 +267,11 @@ function rawpheno_instructions($form, &$form_state) {
     '#attributes' => array('id' => array('traits-json'))
   );  
   
-  // Attach CSS and JavaScript.
-  $path = drupal_get_path('module', 'rawpheno') . '/instructions/';
-  $form['#attached']['css'] = array($path . 'css/rawpheno_instructions_style.css');
-  $form['#attached']['js']  = array($path . 'js/rawpheno_instructions_script.js');
+  // Attach CSS and JavaScript
+  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/css/rawpheno_instructions_style.css');
+  $form['#attached']['js'] = array(drupal_get_path('module', 'rawpheno') . '/instructions/js/rawpheno_instructions_script.js');
   
-  // Attach JQuery UI library.
+  // Attach jquery ui library
   $form['#attached']['library'][] = array('system', 'ui.tabs');
    
   return $form;
@@ -296,8 +279,6 @@ function rawpheno_instructions($form, &$form_state) {
 
 /**
  * Implements hook_theme().
- *
- * Returns HTML for rawpheno_instructions().
  */
 function rawpheno_theme($existing, $type, $theme, $path) {
   $items['rawpheno_instructions'] = array(
