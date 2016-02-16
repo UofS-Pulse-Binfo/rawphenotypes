@@ -69,6 +69,7 @@ $traits = rawpheno_function_headers('phenotyping');
     
     <div id="fragment-1">
       <div class="container-link"> 
+        <div class="download-template-instructions"><em>The following excel document should be used as a template for collecting phenotypic data:</em></div>
         <a href="#" class="button">Download</a> Download AGILE - Phenotype Data Collection (AGILE-PhenotypeDataCollection-v5.xlsx)
       </div> 
         

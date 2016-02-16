@@ -170,3 +170,9 @@ label {
   border: 6px solid #FFFFFF;
   padding: 0;
 }
+
+.download-template-instructions {
+  font-style: italic;
+  font-weight:1.01em;
+  padding-bottom: 10px;
+}
