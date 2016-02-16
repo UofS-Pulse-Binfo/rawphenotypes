@@ -112,7 +112,8 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[2]); //2 - # of Emerged Plants (count) ?></div></td> 
           <td>Record the number of plants which emerged.</td>
-          <td><strong>When:</strong> Record values once plants begin to flower or have elongated tendrils.</td>
+          <td><strong>When:</strong> Record values once plants begin to flower or have elongated tendrils.<br />
+          <strong>Definitions:</strong><br />* Emergence = seedling stem/leaves have become visible.</td>
         </tr>
         <?php } ?>
         
@@ -129,28 +130,28 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[4]); //4 - Days till 10% of Plants have One Open Flower (R1; days) ?></div></td> 
           <td>Record the number of days after planting for which 10% of plants have at least one open flower.</td>
-          <td>Some plants may not produce elongated tendrils but develop a rudimentary tendril only 2-3 mm long. If this applies to more than 90% of plants in the plot, the “Days till 10% have Elongated Tendril” should be left blank.<br />
+          <td>
           <strong>Definitions: </strong><br />* Open flower = flower banner (standard petal) is visible.<br />
           * R1 = One open flower at any node.</td>
         </tr>          
         <?php } ?>
         
-        <?php if(isset($traits[6]) && !empty($traits[6])) { ?>    
+        <?php if(isset($traits[6]) && !empty($traits[6])) { ?>   
+        <!-- Removed this trait due to difficulty in measuring consistently. 
         <tr>
           <td><div class="data-cells"><?php print($traits[6]); //6 - Days till 10% of Plants have Pods (R3; days) ?></div></td> 
           <td>Record the number of days after planting for which 10% of plants have pods.</td>
           <td>Pods can be present but still covered with flower petals, for ease of data collection, only count the plant as having a pod if you can visually see the pod without having to remove flower petals.<br />
           <strong>Definitions: </strong><br />* Plant with pods = pods are visible without having to remove flower petals. <br />
           * R3 = Pod on nodes 10-13 of the basal primary branch visible.</td>
-        </tr>   
+        </tr>   -->
         <?php } ?>
         
         <?php if(isset($traits[7]) && !empty($traits[7])) { ?>      
         <tr>
           <td><div class="data-cells"><?php print($traits[7]); //7 - Days till 10% of Plants have fully Swollen Pods (R5; days)' ?></div></td> 
           <td>Record the number of days after planting for which 10% of plants have pods with fully swollen seeds (that fill more than half of the pod area).</td>
-          <td>Pods can be present but still covered with flower petals, for ease of data collection, only count the plant as having a pod if you can visually see the pod without having to remove flower petals.<br />
-          <strong>Definitions: </strong><br />*Plant with pods = pods are visible without having to remove flower petals. <br />
+          <td><strong>Definitions: </strong><br />* Plant with pods = pods are visible without having to remove flower petals. <br />
           * Swollen Pod = seeds have swollen to their max size and fill more than half the pod area.<br />
           * R5 = Seed in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity.<br />
           <ul> 
@@ -165,8 +166,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[8]); //8 - Days till 10% of Plants have 1/2 Pods Mature (R7; days) ?></div></td> 
           <td>Record the number of days after planting for which 10% of plants have 1/2 of their pods mature.</td>
-          <td>Pods can be present but still covered with flower petals, for ease of data collection, only count the plant as having a pod if you can visually see the pod without having to remove flower petals.<br />
-          <strong>Definitions: </strong><br />* Mature pod = dry pod ready to be harvested
+          <td><strong>Definitions: </strong><br />* Mature pod = dry pod ready to be harvested
           <ul>
             <li>Before the pods dry out they lose their green pigmentation, often looking pale, but will still contain moisture, which you can feel when you touch the pod. Pods that are considered mature will have changed colour and be dry to the touch.</li>
           </ul>
@@ -182,7 +182,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[11]); //11 - Days till Harvest (days) ?></div></td> 
           <td>Record the number of days from planting to harvest.</td>
-          <td>-</td>
+          <td></td>
         </tr>
         <?php } ?>
         
@@ -190,7 +190,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[12]); //12 - Diseases Present (y/n/?) ?></div></td> 
           <td>Record the presence of any disease, and if able, describe or make notes.</td>
-          <td>
+          <td><strong>Scale:</strong>
             <ul>
               <li>y = disease present</li>
               <li>n = no disease present</li>
@@ -288,7 +288,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[13]); //13 - Lodging (Scale: 1-5) upright - lodged ?></div></td> 
           <td>Record the degree of plant lodging.</td>
-          <td>
+          <td><strong>Scale:</strong>
           <ul>
             <li>1 = vertical/upright</li>
             <li>2 = leaning</li>
@@ -297,7 +297,7 @@ $traits = rawpheno_function_headers('phenotyping');
             <li>5 = most plants flat/prostrate</li>
           </ul>
           <strong>When:</strong> Record value when harvesting the plot.<br />
-          <strong>Definitions:</strong><br />lodged = plant canopy is no longer vertical to the ground.<br />
+          <strong>Definitions:</strong><br />* lodged = plant canopy is no longer vertical to the ground.<br />
           </td>
         </tr>
         <?php } ?>
@@ -316,7 +316,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[18]); //18 - Total Seed Mass (g) ?></div></td> 
           <td>Record the total mass (g) of all seeds harvested from each plot.</td>
-          <td>-</td>
+          <td></td>
         </tr>        
         <?php } ?>
         
@@ -324,7 +324,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[19]); //19 - Total # of Seeds (count) ;?></div></td> 
           <td>Record the total number of seeds harvested from each plot.</td>
-          <td>-</td>
+          <td></td>
         </tr>  
         <?php } ?>
         
@@ -362,7 +362,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[15]); //15 - Subset Traits: # Pods (count) ?></div></td> 
           <td>Record the total number of pods on the 20 peduncles collected for the subset traits.</td>
-          <td>-</td>
+          <td></td>
         </tr>
         <?php } ?> 
         
@@ -370,7 +370,7 @@ $traits = rawpheno_function_headers('phenotyping');
         <tr>
           <td><div class="data-cells"><?php print($traits[16]); //16 - Subset Traits: # Seeds (count) ?></div></td> 
           <td>Record the total number of seeds from pods counted for the previous trait (“Subset Traits: # Pods”). </td>
-          <td>-</td>
+          <td></td>
         </tr>
         <?php } ?> 
       </table>    
