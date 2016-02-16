@@ -9,3 +9,8 @@ __This module is currently not ready for use outside of KnowPulse. If you are in
 
 __Note: there are some modifications needed to the spreadsheet reader to get it to handle dates the way we expect. There will be a patch available in the future.__
 
+## Features
+- A d3.js heatmap summarizes the raw data available by displaying the number of traits broken down by location (x-axis) and replicate (y-axis; grouped by year). This chart uses a materialized view for improved performance.
+- Upload data functionality supporting excel spreadsheets (XLSX). Currently the loader expects the traits required for the AGILE project but it also flexible enough to allow users to add additional traits (one per column) to the spreadsheet. If additional traits are present, the loader asks the user to describe the trait including the units and any scale used.
+- A searchable trait collection instruction page defining a standard protocol for collecting of the traits required by AGILE. In the future, the intent is for these instructions to be easily customizable -perhaps even drawn from the trait descriptions in chado.
+- Data Download functionality which allows users to select the locations and traits they are interested in. A comma-separated file is produced which can easily be opened in excel for viewing and is R-friendly for analysis.
