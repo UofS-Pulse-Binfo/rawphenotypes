@@ -78,6 +78,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#file_upload_max_size' => '10M',
     '#upload_location' => 'public://',
     '#upload_event' => 'manual',
+    '#upload_validators' => array('file_validate_extensions' => array('xlsx')),
   );
   
   // Save spreadsheet button - go to stage 03.
