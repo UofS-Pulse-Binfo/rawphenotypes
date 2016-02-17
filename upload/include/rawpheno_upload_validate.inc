@@ -9,7 +9,7 @@
  * Implements hook_validate().
  * Validate traits review form.
  */
-function rawpheno_element_validate($form, &$form_state) {
+function rawpheno_upload_form_master_validate($form, &$form_state) {
   // Submit button from review traits triggered the submit action. 
   if (isset($form_state['stage']) && $form_state['stage'] == 'review') {
     // Validate the review form.

@@ -18,7 +18,7 @@ module_load_include('inc', 'rawpheno', 'upload/include/rawpheno_upload_function'
  * @see rawpheno_element_validate()
  * @see rawpheno_element_submit()
  */
-function rawpheno_element($form, &$form_state) {  
+function rawpheno_upload_form_master($form, &$form_state) {  
   // Reset variables before starting.
   if (!isset($form_state['stage'])) {
     rawpheno_function_resetvar();
@@ -26,10 +26,10 @@ function rawpheno_element($form, &$form_state) {
     $form_state['stage'] = 'check';
   }
   
-  $form = array();
-  
   // Create a page title based on the current stage.
+  // This includes the current stage tracker.
   $form = rawpheno_get_header($form, $form_state);
+  
   // Get the directory path to rawpheno module.
   $path = drupal_get_path('module', 'rawpheno') . '/upload/';
   
@@ -40,7 +40,7 @@ function rawpheno_element($form, &$form_state) {
       $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage01.css');
       $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage01.js');
       
-      return rawpheno_form_check($form, $form_state);
+      $form = rawpheno_form_check($form, $form_state);
       break;
 
     case 'review':
@@ -48,17 +48,17 @@ function rawpheno_element($form, &$form_state) {
       $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage02.css');
       $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage02.js');
       
-      return rawpheno_form_review($form, $form_state);
+      $form = rawpheno_form_review($form, $form_state);
       break;
 	 
     case 'save':
       // Stage 03 - save to databse and success page.
       $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage03.css');
 
-      return rawpheno_form_save($form, $form_state);
+      $form = rawpheno_form_save($form, $form_state);
       break;
   }
-
+  
   return $form;
 }
 
@@ -80,7 +80,7 @@ function rawpheno_form_check($form, &$form_state) {
     '#upload_location' => 'public://',
     '#upload_event' => 'manual',
   );
-   
+  
   // Save spreadsheet button - go to stage 03.
   $form['stage01_submit_save'] = array(
     '#type' => 'submit',

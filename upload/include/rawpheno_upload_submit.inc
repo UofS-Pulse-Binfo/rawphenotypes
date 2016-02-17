@@ -10,7 +10,7 @@
  *
  * Master submit to handle form submit.
  */
-function rawpheno_element_submit($form, &$form_state) {
+function rawpheno_upload_form_master_submit($form, &$form_state) {
   // Which button triggers a submit action.
   $btn_submit = $form_state['triggering_element']['#value'];   
   
