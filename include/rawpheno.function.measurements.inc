@@ -56,7 +56,7 @@ function rawpheno_function_headers($type) {
     case 'phenotyping':
       // List of column headers used in standard phenotyping instructions page.
       // Used in: Instructions page.
-      $type_id = array(5,7,8,9,10,11,13,14,15,16,18,20,21,23,24,25,26,27,28,29,30);
+      $type_id = array(5,7,8,9,10,11,14,15,16,18,20,21,23,24,25,26,27,28,29,30);
       break;
     
     case 'required':
@@ -90,7 +90,15 @@ function rawpheno_function_headers($type) {
   // Create the array of traits based on requested trait ids.
   foreach($type_id as $id) {
     // Push the trait into the array.
-    array_push($arr_requested_trait, $arr_headers[$id]);
+    if ($type == 'phenotyping') {
+      // Store the actual index number associated to a trait.
+      // This is important since order in is relevant in the instructions page.
+      $arr_requested_trait[$id] = $arr_headers[$id]; 
+    }
+    else {
+      // Order is irrelevant, just need the array of traits.
+      array_push($arr_requested_trait, $arr_headers[$id]);
+    }
   }
 
   return $arr_requested_trait;

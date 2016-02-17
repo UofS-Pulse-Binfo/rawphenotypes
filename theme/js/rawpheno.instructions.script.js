@@ -69,6 +69,9 @@
 		    // SEARCH FUNCTIONALITY
 		    // Reference to search textbox.
         var txtField = $('#edit-search');
+        // Reference to Search button.
+        var btnSearch = $("#btn_submit");
+        
         
         // Create a label as default value in the search text field.
         // When selected will clear the value.
@@ -79,6 +82,12 @@
           if (this.value == '') {
           this.value = 'Search Trait';
         }});
+
+        // Clear all search when user types in new
+        // keywords into the search field. 
+        txtField.keypress(function() {
+          removeElements();
+        });
 
         // Initialize JQuery Tabs.
         $('#tabs').tabs({delay:0}); 
@@ -95,31 +104,53 @@
           })
         });
         
-        // Reference to Search button.
-        var btnSearch = $("#btn_submit");
+        // Search button is clicked.
         btnSearch.click(function() { 
-          if (txtField.val() == null || txtField.val().trim() == '') {
+          // Clear or reset previous search.
+          removeElements();
+          
+          if (txtField.val() == null || txtField.val().trim() == '' || txtField.val().length <= 1) {
             // Field is empty
-            alert('Trait field is empty');
+            var title = 'Invalid value in search field.';
+            var message = 'Please type in keywords and select the best matching trait from the autocomplete drop-down.';
+            errorMessage(title, message);
           }
           else {
             // Compare user input against the array of traits to see
             // if trait is available.
-            if ( btnSearch.val() == 'Search' ) {
+            if (btnSearch.val() == 'Search') {
+              // Array to hold traits with keywords in it.
+              var traitsWithKey = new Array;
               // Get the index of the trait.
               var traitIndex = null;
-              for( var i = 0; i < availableTrait.length; i++ ) {
+              for(var i = 0; i < availableTrait.length; i++) {
                 if (availableTrait[i].toLowerCase() == txtField.val().toLowerCase()) {
                   traitIndex = i;
                   break;
                 }
+                
+                // Get traits with keywords in it.
+                if (availableTrait[i].toLowerCase().indexOf(txtField.val().toLowerCase()) > -1) {
+                  traitsWithKey.push(availableTrait[i]);  
+                }
               }
               //
               
-              if( traitIndex != null ) {
+              if(traitIndex != null) {
                 // If search is successful - replace Search button value
                 // to Clear Search to allow user to reset search.
-                btnSearch.val('Clear search');
+                var resetLink = '<input id="btn_reset" name="btn_reset" class="form-submit" value="Clear search" type="button">';
+                $('div.tools:last-child').append(resetLink);
+                
+                $('#btn_reset').click(function() {
+                  // Reset search - remove the result and reset button label.
+                  txtField.val('Search Trait');
+                  // Remove search result.
+                  $('#container-option table, #container-option p').hide('slow').remove();
+                  $(this).remove();
+                  txtField.focus();
+                });
+                
               
                 // Determine which category the trait is in.
                 // Include category in search result.
@@ -153,20 +184,61 @@
                 $('#container-option').append(newDiv);
               }
               else {
-                // Not found
-                alert('Trait '+txtField.val()+' not found');
+                if (traitsWithKey.length > 0) {
+                  var suggestion = '';
+                  for(var i = 0; i < traitsWithKey.length; i++) {
+                    suggestion = suggestion + ' &bull;&nbsp;<a href="javascript:void();">'+traitsWithKey[i]+'</a>&nbsp;';
+                  }
+                  $('#container-option').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
+                
+                  // Enable links in did you mean:/suggested traits
+                  $('#list-suggest a').click(function() {
+                    txtField.val($(this).text());
+                    btnSearch.click();
+                  }); 
+                }
+                else {
+                  // Not found
+                  var title = 'The trait you entered does not have an exact match.';
+                  var message = 'Please select the best matching trait from the autocomplete drop-down.';
+                  errorMessage(title, message);
+                }
               }            
-            }
-            else {
-              // Reset search - remove the result and reset button label.
-              btnSearch.val('Search');
-              txtField.val('Search Trait');
-              // Remove search result.
-              $('#container-option table, #container-option p').hide('slow').remove();
             }  
           }  
         });
       });
+      
+      // Remove search results and error messages.
+      function removeElements() {
+        // Remove any error messages from previous search.
+        if ($('div.messages').length > 0) { 
+          $('div.messages').remove(); 
+        } 
+        
+        // Remove any suggested links from previous search.  
+        if ($('#list-suggest').length > 0) {
+          $('#list-suggest').remove();
+        }
+        
+        // Remove any search result from previous search.
+        if ($('#container-option table').length > 0) {
+          $('#container-option table, #container-option p').hide('slow').remove();
+        }
+        
+        // Remove clear button from previous search.
+        if ($('#btn_reset').length > 0) {
+          $('#btn_reset').remove();
+        }
+      }
+      
+      // Display error message.
+      function errorMessage(title, message) {
+        var error = '<div class="messages error">'+title+'<pre><h3>'+message+'</h3></pre></div>';
+        $('#container-option').append(error);
+        
+        $('#edit-search').focus();
+      }
     }
   };
 }(jQuery));

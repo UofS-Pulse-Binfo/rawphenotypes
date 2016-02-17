@@ -162,7 +162,7 @@ function rawpheno_schema() {
 }
 
 // Include function to manage column headers.
-module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
+module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
 
 /**
  * Implements hook_install().

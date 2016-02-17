@@ -4,8 +4,8 @@
  */
 
 /* Import global css */
-@import 'rawpheno_upload_stages.css';
-@import 'rawpheno_upload_style.css';
+@import 'rawpheno.upload.stages.css';
+@import 'rawpheno.upload.style.css';
 
 label.option {
   background-color: #FFFFFF;

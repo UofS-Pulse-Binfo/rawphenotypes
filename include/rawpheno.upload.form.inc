@@ -36,23 +36,23 @@ function rawpheno_upload_form_master($form, &$form_state) {
   switch($form_state['stage']) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
-      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage01.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage01.js');
+      $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
       
       $form = rawpheno_upload_form_stage_check($form, $form_state);
       break;
 
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
-      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage02.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno_upload_stage02.js');
+      $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage02.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage02.js');
       
       $form = rawpheno_upload_form_stage_review($form, $form_state);
       break;
 	 
     case 'save':
       // Stage 03 - save to databse and success page.
-      $form['#attached']['css'] = array($path . 'css/rawpheno_upload_stage03.css');
+      $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage03.css');
 
       $form = rawpheno_upload_form_stage_save($form, $form_state);
       break;
@@ -78,7 +78,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#file_upload_max_size' => '10M',
     '#upload_location' => 'public://',
     '#upload_event' => 'manual',
-    '#upload_validators' => array('file_validate_extensions' => array('xlsx')),
+    '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
   );
   
   // Save spreadsheet button - go to stage 03.

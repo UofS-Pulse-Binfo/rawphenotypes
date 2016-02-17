@@ -26,7 +26,7 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_rawdata'),
     'access arguments' => array('access content'),
-    'file' => 'rawdata/include/rawpheno_rawdata_form.inc',
+    'file' => 'include/rawpheno.rawdata.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
     // Menu callback which generates the summary data in JSON,
@@ -65,7 +65,7 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_download'),
     'access arguments' => array('access content'),
-    'file' => 'download/include/rawpheno_download_form.inc',
+    'file' => 'include/rawpheno.download.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 6,
   );
@@ -86,7 +86,7 @@ function rawpheno_menu() {
 }
 
 // Include function to manage column headers.
-module_load_include('inc', 'rawpheno', 'include/rawpheno_function_measurements');
+module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
 
 /**
  * Implements hook_libraries_info().
@@ -148,12 +148,12 @@ function rawpheno_instructions_autocomplete_search($key = '') {
   // Determine if keyword is provided.
   if (empty($key)) {
     // No keywords - Return all headers for JavaScript processing the search.
-    $arr_headers = $arr_phenotyping_headers;
+    $arr_headers = array_values($arr_phenotyping_headers);
   }
   else {
     // With keywords - Select only the headers with keywords in it.
     // These headers will then be suggested to the user as they type keywords.
-    foreach($arr_phenotyping_headers as $header) {
+    foreach($arr_phenotyping_headers as $index => $header) {
       if (stristr($header, $key)) {
         $arr_headers[$header] = $header;
       } 
@@ -287,9 +287,9 @@ function rawpheno_instructions($form, &$form_state) {
   );  
   
   // Attach CSS and JavaScript.
-  $path = drupal_get_path('module', 'rawpheno') . '/instructions/';
-  $form['#attached']['css'] = array($path . 'css/rawpheno_instructions_style.css');
-  $form['#attached']['js']  = array($path . 'js/rawpheno_instructions_script.js');
+  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno.instructions.style.css');
+  $form['#attached']['js']  = array($path . 'js/rawpheno.instructions.script.js');
   
   // Attach JQuery UI library.
   $form['#attached']['library'][] = array('system', 'ui.tabs');
@@ -306,7 +306,7 @@ function rawpheno_theme($existing, $type, $theme, $path) {
   $items['rawpheno_instructions'] = array(
     'render element' => 'form',
     'template' => 'rawpheno_instructions',
-    'path' => $path . '/instructions/theme',
+    'path' => $path . '/theme',
   );
   
   return $items;

@@ -4,8 +4,8 @@
  */
 
 /* Import global css */
-@import 'rawpheno_upload_stages.css';
-@import 'rawpheno_upload_style.css';
+@import 'rawpheno.upload.stages.css';
+@import 'rawpheno.upload.style.css';
 
 .dragndrop-example-api, .dragndrop-example-element-mirror, #droppable-dnd {
   background-color: #FAFAFA; 
