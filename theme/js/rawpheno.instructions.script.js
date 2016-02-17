@@ -81,6 +81,7 @@
         }}).blur(function() {
           if (this.value == '') {
           this.value = 'Search Trait';
+          removeElements();
         }});
 
         // Clear all search when user types in new
