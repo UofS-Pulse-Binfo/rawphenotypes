@@ -77,7 +77,7 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_upload_form_master'),
     'access arguments' => array('access content'),
-	  'file' => 'upload/include/rawpheno_upload_form.inc',
+	  'file' => 'include/rawpheno.upload.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 3,
   );
