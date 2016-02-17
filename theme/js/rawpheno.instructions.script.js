@@ -79,7 +79,7 @@
         if (this.value == 'Search Trait') { 
           this.value = ''; 
         }}).blur(function() {
-          if (this.value == '') {
+          if (this.value.trim() == '') {
           this.value = 'Search Trait';
           removeElements();
         }});
