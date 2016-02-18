@@ -9,6 +9,9 @@
  *   http://www.d3js.org
  */
 
+// Include functions required in processing spreadsheet file.
+module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
+
 /**
  * Implements hook_menu().
  */

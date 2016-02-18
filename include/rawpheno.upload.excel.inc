@@ -6,6 +6,175 @@
  */
 
 /**
+ *
+ */
+function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
+
+  $plantprop_headers = unserialize($plantprop_headers);
+  print "Headers: ".print_r($plantprop_headers, TRUE)."\n";
+  $plantprop_headers = array_map('rawpheno_function_delformat', $plantprop_headers);
+  print "Mapped Headers: ".print_r($plantprop_headers, TRUE)."\n";
+  
+  // Array to hold all rows in the spreadsheet.
+  $arr_xls_rows = rawpheno_function_read($xls_file);
+  
+  // Find the index number of name header in the spreadsheet.
+  $name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
+  print "Index of Name column:".print_r($name_index, TRUE)."\n";
+  
+  // Array of column headers with first and second try.
+  $arr_multiheaders = rawpheno_function_headers('multi-trial');
+  $arr_multiheaders = array_map('rawpheno_function_delformat', $arr_multiheaders);
+  print "Mapped Multi-Headers: ".print_r($arr_multiheaders, TRUE)."\n";
+
+  // Read each row.
+  for($i = 0; $i < count($arr_xls_rows); $i++) {
+  
+    print "Row:".print_r($arr_xls_rows[$i],TRUE)."\n";
+    
+    // Rearrange array to make sure name is the first element,
+    // and generate a plant_id number for the rest of the entries.
+    $name_col = $arr_xls_rows[$i][$name_index];
+    unset($arr_xls_rows[$i][$name_index]);
+    array_unshift($arr_xls_rows[$i], $name_col);
+      
+    // Skip row with index 0, this is the column headers row.
+    if ($i == 0) continue;
+    
+    // Read each row and each cell.
+    // Each row will be an array where name is always the first element.
+    foreach($arr_xls_rows[$i] as $cell_index => $cell_entry) {
+      // Determine which table to insert a column header.
+      if ($cell_index == 0) {
+        // Name
+        // First element in data array - Name cells
+        // Name column header goes into pheno_plant.
+        // Check if stock name exists.
+        $stock_id = rawpheno_function_instock($cell_entry);
+        print "\tStock=".$stock_id."\n";
+        
+        // Determine if name has a stock id number.
+        if (isset($stock_id) && $stock_id > 0) {
+          // Plant_id for this row.
+          $pheno_plantid = db_insert('pheno_plant')
+            ->fields(array('stock_id' => $stock_id))
+            ->execute();
+        } else {
+          // Next row if stock name does not exist.
+          break;
+        }
+        print "\tPlant=".$pheno_plantid."\n";
+      } 
+      else {
+        // OTHER
+        // The rest of the data array.
+        // Get the column header of a cell.
+        $cell_colheader = rawpheno_function_delformat($arr_xls_rows[0][$cell_index]);
+        print "\tColumn=".$cell_colheader."\n";
+        // Determine if column header is required
+        if (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
+          // PLOT, ENTRY, REP and LOCATION
+          // Cells containing column headers that are required.
+          // Traits: plot, entry, rep, location into pheno_plantprop.
+          $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
+          $type_id = $type->cvterm_id;
+          print "\t\tType=".$type_id."\n";
+          print "\t\tValue=".$cell_entry."\n";
+          
+          // Ensure that cvterm_id is present before inserting to table
+          if(isset($type_id)) {
+            $tmp = db_insert('pheno_plantprop')
+              ->fields(array('plant_id' => $pheno_plantid, 
+                             'type_id'  => $type_id, 
+                             'value'    => $cell_entry))
+              ->execute(); 
+              print "\t\tInserted Property".$tmp."\n";
+          }
+        } 
+        elseif (!empty($cell_colheader)) {
+          // THE REST OF THE COLUMN HEADERS
+          // Everything else into pheno_measurements.
+          // Determine if column header is New or not
+          if (count($new_header) > 0 && in_array($cell_colheader, $new_header)) {
+            // NEW
+            // Test if column header of cell is a new trait.
+            // Replace any extra spaces to underscore and create an exact match of
+            // cvterm name inserted into cvterm table.
+            $cv_name = str_replace(' ', '_', $cell_colheader);
+            $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+            $type_id = $type->cvterm_id;
+            
+            // Get corresponding unit for this new trail based on cvterm_id
+            // in chado.cvterm_relationship.
+            $cv_unit = db_query("SELECT object_id FROM {chado.cvterm_relationship}
+                                WHERE subject_id = :code LIMIT 1",
+                                array(':code' => trim($type_id)))
+              ->fetchField();
+            $unit_id = $cv_unit;
+            $unit = '';
+          }
+          else {
+            // NOT NEW
+            // Column header is not a new trait.
+            // Remove unit from the header.
+            if (in_array($cell_colheader, $arr_multiheaders)) {
+              $cv_name = trim(str_replace(array(' cm', ' count'), '', $cell_colheader));
+            }
+            else {
+              $cv_name = trim(preg_replace('/\([^)]+\)/', '', $cell_colheader));
+            }
+            
+            $cv_name = str_replace(' ', '_', $cv_name);
+
+            $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+            $type_id = $type->cvterm_id;
+          
+            // Extract unit from the column header the cell is under.
+            // If not unit, default to text unit
+            $u = rawpheno_function_unit($cell_colheader);
+            // Column header does not contain unit, use text as default
+            $cv_unit = tripal_get_cvterm(array('name' => $u, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+            $unit_id = $cv_unit->cvterm_id;
+            $unit = $u;
+          }
+          
+          // Determine if cell requires scale member code.
+          // When unit is scale, find code equivalent in pheno_scale_member table.  
+          if ($unit == 'scale') {
+            // Get pheno scale member code 
+            $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
+                                   WHERE code = :code LIMIT 1", 
+                                   array(':code' => trim($cell_entry)))
+              ->fetchField(); 
+            // Use default value in the cell if query to find scale member code 
+            // has no equivalent value.
+            $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
+          } 
+          else {
+            // No scale member value for the rest of traits.
+            $cvalue_id = '';
+          }
+          //
+          
+          // Insert trait only when type_id and unit_id are not null.
+          if (isset($type_id) && isset($unit_id)) {
+            $temp = db_insert('pheno_measurements')
+              ->fields(array('plant_id'  => $pheno_plantid, 
+                             'type_id'   => $type_id, 
+                             'unit_id'   => $unit_id, 
+                             'cvalue_id' => $cvalue_id,
+                             'value'     => $cell_entry,
+                             'modified'  => date("D M d, Y h:i:s a", time())))
+              ->execute();
+          } 
+        }
+      }
+    }
+  }
+
+}
+
+/**
  * Function to read excel file (xls and xlsx).
  *
  * @param $file
