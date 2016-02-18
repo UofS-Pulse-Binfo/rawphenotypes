@@ -67,15 +67,24 @@ function rawpheno_upload_form_master($form, &$form_state) {
 function rawpheno_upload_form_stage_check($form, &$form_state) {
   // Create an instance of DragNDrop Upload.
   // SETTINGS:
-  //  file_upload_max_size: max file size allowed
-  //  upload location: destination of file
-  //  upload event: manual - show an upload button or auto - uploads after drag drop
+  //   file_upload_max_size: max file size allowed
+  //   upload_location: destination of file
+  //   upload_event: manual - show an upload button or auto - uploads after drag drop
+  //   upload_validators: allowed file extensions
+  //   upload_button_text: label of upload button
+  //   droppable_area_text: text in drop area
+  //   progress_indicator: none, throbber or bar
+  //   progress_message: message to display while processing
   $form['dnd'] = array(
     '#type' => 'dragndrop_upload',
     '#file_upload_max_size' => '10M',
     '#upload_location' => 'public://',
     '#upload_event' => 'manual',
     '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
+    '#upload_button_text' => t('Upload and validate spreadsheet'),
+    '#droppable_area_text' => t('- Drag and Drop Phenotype Data Collection file here to upload -'),
+    '#progress_indicator' => 'throbber',
+    '#progress_message' => '',
   );
   
   // Save spreadsheet button - go to stage 03.
@@ -114,7 +123,7 @@ function rawpheno_upload_form_stage_review($form, &$form_state) {
                  '</pre></div>',
   );
   
-  // Main fieldset container for form elements 
+  // Main fieldset container for form elements.
   $form['xls_review_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Check the traits that you want to describe and save'),
@@ -151,7 +160,7 @@ function rawpheno_upload_form_stage_review($form, &$form_state) {
               '#title' => t('Definition*'),
               '#description' => t('A human-readable text definition'),
               '#maxlength' => 150,
-              '#prefix' => '<div id="div-edit-chk-'. $i .'" style="display: none;">',
+              '#prefix' => '<div class="container-form" id="div-edit-chk-'. $i .'" style="display: none;">',
             );
             // UNIT
             $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(

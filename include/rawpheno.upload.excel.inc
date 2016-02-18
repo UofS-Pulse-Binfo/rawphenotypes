@@ -195,7 +195,7 @@ function rawpheno_function_read($file) {
   // To stop parser from auto formatting date to MM/DD/YY,
   // suggest a new date format YYYY-mm-dd in:
   //   line 678 in excel_reader2.php
-  //   line 835 in SpreadsheetReader_XLSX.php
+  //   line 834 in SpreadsheetReader_XLSX.php
   include_once $lib_path . 'php-excel-reader/excel_reader2.php';
   include_once $lib_path . 'SpreadsheetReader_XLSX.php';
   include_once $lib_path . 'SpreadsheetReader.php';  
@@ -429,7 +429,7 @@ function rawpheno_function_unit($xls_header_cell) {
  *   Contains the value of the cell.
  *
  * @return 
- *   Boolean true = 1 or false = 0;
+ *   Boolean true = 1 or false = 0.
  */
 function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
   // All values match the unit by default. Unless proven otherwise.
@@ -551,7 +551,7 @@ function rawpheno_function_error($xls_errors, $row_count) {
  * @param $class
  *   A string containing the css name. 
  *
- * @return string
+ * @return
  *   A string containing the text wrapped in html with class
  *   attribute equals to the specified class name.
  */
@@ -609,12 +609,12 @@ function rawpheno_function_resetvar() {
 }
 
 /**
- * Function to varify existence of stock name
+ * Function to verify existence of stock name
  *
  * @param $xls_name
  *   A string containing the name of the stock to look up.  
  *
- * @return int
+ * @return
  *   An interger containing the stock id number of the stock name.
  */
 function rawpheno_function_instock($xls_name) {

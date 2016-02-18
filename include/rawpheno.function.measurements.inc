@@ -92,7 +92,7 @@ function rawpheno_function_headers($type) {
     // Push the trait into the array.
     if ($type == 'phenotyping') {
       // Store the actual index number associated to a trait.
-      // This is important since order in is relevant in the instructions page.
+      // This is important since order is relevant in the instructions page.
       $arr_requested_trait[$id] = $arr_headers[$id]; 
     }
     else {

@@ -49,6 +49,15 @@
           resetFld(selTrait, '');
           $(':input').removeAttr('disabled');
         });
+        
+        $('#download-window-error').hide();
+        // Show error near the stage indicator.
+        if( document.getElementById('messages') ) {
+          // Check for durpal error message.
+          $('#messages').remove();
+          $('#download-window-error').show();
+        }
+        
       /////    
       });
       

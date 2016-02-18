@@ -168,7 +168,6 @@
               return 'translate(0, '+ (i * barHeight) +')';
             });
           
-          
           // Insert g and in it are 3 rect representing
           // 3 reps done per year per location.
           // Index to data: /location/year/rep - read primary key then secondary key 
@@ -184,7 +183,7 @@
               div.transition()        
                 .style('opacity', 1);
 
-              div.html(d.values + ' Traits')  
+              div.html('Rep '+d.key+': '+d.values + ' Traits')  
                  .style('left', (d3.event.pageX+10) + 'px')     
                  .style('top', (d3.event.pageY) + 'px');    
             })                  

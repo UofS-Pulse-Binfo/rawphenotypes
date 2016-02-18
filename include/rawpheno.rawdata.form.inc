@@ -11,7 +11,7 @@ function rawpheno_rawdata($form, &$form_state) {
                   </div>',    
   );
   
-  // Hidden field containing url to json.
+  // Hidden field containing url to JSON.
   $form['json_url'] = array(
     '#type' => 'hidden',
     '#value' => $GLOBALS['base_url'] . '/rawdata',
@@ -23,7 +23,7 @@ function rawpheno_rawdata($form, &$form_state) {
   $form['#attached']['css'] = array($path . 'css/rawpheno.rawdata.style.css');
   $form['#attached']['js']  = array($path . 'js/rawpheno.rawdata.script.js');
   
-  // Attach d3 JS library.
+  // Attach D3 JS library.
   $d3_lib = libraries_load('d3');
   if (isset($d3_lib) && !empty($d3_lib['loaded'])) {
     $form['#attached']['libraries_load'][] = array('d3');
