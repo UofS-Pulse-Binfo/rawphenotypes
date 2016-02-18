@@ -329,7 +329,7 @@ $traits = rawpheno_function_headers('phenotyping');
     <div id="fragment-4">
       <h3>The following traits require a fair amount of work and, as such, are completely optional. We will collect them in SK, if you are interested in these traits, please contact us to make sure we are collecting the same thing.</h3>
       <p>
-        Note: These columns are hidden by default. If you would like to record this data, select column “W” and either right-click (computer) or long-press (tablet) the column header then select “Unhide”.
+        Note: These columns are hidden by default. If you would like to record this data, select columns “X” and "AB" and either right-click (computer) or long-press (tablet) the column header then select “Unhide”.
         For the following “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. If 20 peduncles cannot be obtained, sample from a 3rd plant.
       </p>
       

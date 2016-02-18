@@ -10,7 +10,6 @@
  * 
  * @param $form
  * @param $form_state
- * @return type 
  */
 function rawpheno_get_header($form, &$form_state) {
   // On first load, initialize stage to stage 01 - check spreadsheet (uploader).
@@ -47,8 +46,11 @@ function rawpheno_get_header($form, &$form_state) {
 /**
  * Function to calculate the next stage.
  * 
+ * @param $form
  * @param $form_state
- * @return string 
+ *
+ * @return
+ *   A string containing the stage name. 
  */
 function rawpheno_next_page($form, &$form_state) {
   // Get the address/name of the next page based on the current stage.

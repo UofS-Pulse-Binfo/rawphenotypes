@@ -97,7 +97,7 @@ div.tools {
 label {
   display: table-cell;
   width: 15px;
-  height: 20px;
+  height: 25px;
   float: left;
   margin: 4px 10px 0 20px;
   background-color: yellowgreen;
@@ -147,7 +147,7 @@ label {
 
 .side-nav {
   float: left;
-  font-size: 2em;
+  font-size: 2.5em;
   margin: 130px 20px 0 20px;
 }
 
@@ -175,4 +175,19 @@ label {
   font-style: italic;
   font-weight:1.01em;
   padding-bottom: 10px;
+}
+
+#autocomplete {
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+}
+
+#autocomplete li {
+  font-family: sans-serif;
+  padding: 2px 0 2px 5px;
+}
+
+#edit-search {
+  height: 20px;
+  padding-left: 10px;
 }

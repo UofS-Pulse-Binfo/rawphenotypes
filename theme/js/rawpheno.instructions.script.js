@@ -72,7 +72,6 @@
         // Reference to Search button.
         var btnSearch = $("#btn_submit");
         
-        
         // Create a label as default value in the search text field.
         // When selected will clear the value.
         txtField.focus(function() {  

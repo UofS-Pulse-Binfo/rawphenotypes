@@ -13,8 +13,9 @@ label.option {
   cursor: pointer;
   font-weight: normal;
   margin: 3px 1px;
-  padding: 2px 7px;
+  padding: 4px 10px;
   text-align: center;
+  font-size: 2.5em;
 }
 
 label.option:hover {
@@ -27,4 +28,16 @@ label.option:hover {
 
 #stage02-window-error {
   display: none;
+}
+
+input[type=checkbox] {
+  margin-right: 10px;
+  /* All browsers except webkit*/
+  transform: scale(1.2);
+  /* Webkit browsers*/
+  -webkit-transform: scale(1.2);
+}
+
+.container-form {
+  padding: 0 30px;
 }

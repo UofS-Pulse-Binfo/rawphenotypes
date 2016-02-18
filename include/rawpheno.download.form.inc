@@ -9,6 +9,14 @@
  * Function callback: construct export data form.
  */
 function rawpheno_download($form, &$form_state) {
+  // This is the error message used in lieu of Drupal form_set_error().
+  // This error message will be in close proximity to the interface.
+  $h = 'Please review form for any empty fields';
+  $form['download_window_error'] = array(
+    '#markup' => '<div id="download-window-error" class="messages error">Required fields empty.<pre><h3>'.$h.
+                 '</h3></pre></div>',
+  );
+  
   // Fieldset container for download form.
   $form['download_fldset'] = array(
     '#type' => 'fieldset',
@@ -215,7 +223,6 @@ function rawpheno_download_submit($form, &$form_state) {
 }
 
 /**
- * @file
  * Implements hook_validate().
  */
 function rawpheno_download_validate($form, &$form_state) {
