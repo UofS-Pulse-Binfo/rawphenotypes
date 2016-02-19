@@ -69,6 +69,7 @@
 		    // SEARCH FUNCTIONALITY
 		    // Reference to search textbox.
         var txtField = $('#edit-search');
+        txtField.val('').focus();
         // Reference to Search button.
         var btnSearch = $("#btn_submit");
         

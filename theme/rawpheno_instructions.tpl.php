@@ -43,7 +43,7 @@ $traits = rawpheno_function_headers('phenotyping');
 
 <div id="phenotype-page" class="copy-center-row">
   <div id="container-option">
-    <fieldset>
+    <fieldset id="search-container">
       <div class="fieldset-wrapper">
         <div class="tools">
           <?php print drupal_render($form["search"]); ?>

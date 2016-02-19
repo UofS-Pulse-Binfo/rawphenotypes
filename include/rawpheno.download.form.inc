@@ -13,8 +13,8 @@ function rawpheno_download($form, &$form_state) {
   // This error message will be in close proximity to the interface.
   $h = 'Please review form for any empty fields';
   $form['download_window_error'] = array(
-    '#markup' => '<div id="download-window-error" class="messages error">Required fields empty.<pre><h3>'.$h.
-                 '</h3></pre></div>',
+    '#markup' => '<div id="download-window-error" class="messages error">Required fields empty.<pre>'.$h.
+                 '</pre></div>',
   );
   
   // Fieldset container for download form.
@@ -95,7 +95,7 @@ function rawpheno_download($form, &$form_state) {
   $form['download_fldset']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
-    '#prefix' => '<div class="frm-cell"><input type="checkbox"> Select all traits',
+    '#prefix' => '<div class="frm-cell"><input type="checkbox"> &nbsp;Select all traits',
     '#suffix' => '</div><div style="clear: both;"></div>',
   );
   
@@ -166,12 +166,18 @@ function rawpheno_download_submit($form, &$form_state) {
       // Determine if the column header is in the array of column headers
       if (!in_array($row['def'], $arr_headers)) {
         // Not in the array of column headers. - Add this header.
-        array_push($arr_headers, $row['def']);   
+        $header = (strpos($row['def'], ',')) ? '"'.$row['def'].'"' : $row['def'];
+        array_push($arr_headers, $header);   
       }
       
       // Determine if data has a value or not.
       // Assign NA - Not Applicable when data is NULL
-      $value = (empty($row['data'])) ? 'NA' : trim($row['data']);
+      if (empty($row['data'])) {
+        $value = 'NA';
+      } 
+      else {
+        $value = (strpos($row['data'], ',')) ? '"'.$row['data'].'"' : $row['data'];
+      }
       // Create an array of data with plant_id as the index.
       $plant_id = $row['id'];
       $arr_data_rows[$plant_id][] = $value;
