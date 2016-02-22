@@ -316,7 +316,7 @@ function rawpheno_install() {
       'length' => 20),
     'location' => array (
       'type' => 'varchar',
-      'length' => 20),
+      'length' => 255),
     'rep' => array (
       'type' => 'varchar',
       'length' => 5),
