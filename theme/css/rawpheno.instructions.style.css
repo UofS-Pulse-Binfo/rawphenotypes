@@ -7,6 +7,7 @@
   background: none;
   border-width: 0px;
   padding: 0px;
+  min-width: 820px;
 }
 
 #tabs .ui-tabs-nav {
@@ -21,7 +22,20 @@
 #tabs .ui-tabs-panel {
   background: #FAFAFA; 
   border-width: 0px 1px 1px 1px;
+  border-radius: 0;
   font-size: 0.9em;
+}
+
+#fragment-1 {
+  min-width: 780px;
+}
+
+#fragment-1 p {
+  font-size: 1.2em;
+}
+
+#fragment-1 p a {
+  color: #13b72d;
 }
 
 #tabs .ui-tabs-panel li p {
@@ -66,13 +80,23 @@
   padding: 20px;
 }
 
+.ui-tabs-nav li a {
+  height: 35px;
+  line-height: 30px;
+  font-size: 1.2em;
+}
+
 a.button:hover {
   background: #DEDEDE none repeat scroll 0% 0%;
 }
 
 #essential a {
-  background-color: green;
-  color: #FFFFFF;
+  background-color: #F8FFE5;
+  color: #548135;
+}
+
+#photo-appendix a {
+  background-color: #CCCCCC;
 }
 
 #phenotype-page {
@@ -92,15 +116,6 @@ a.button:hover {
 div.tools {
   display: table-cell;
   padding: 0 5px 0 0;
-}
-
-label {
-  display: table-cell;
-  width: 25px;
-  height: 30px;
-  float: left;
-  margin: 4px 3px 0 10px;
-  background: url('../img/lens.gif') no-repeat;
 }
 
 #container-option table div:first-child {
@@ -190,8 +205,21 @@ label {
 #edit-search {
   height: 20px;
   padding-left: 10px;
+  font-family: sans-serif;
+  font-weight: 300;
+  font-size: 1.1em;
+  width: 380px;
 }
 
 #search-container {
   background-color: #FAFAFA;
+}
+
+/* header */
+#search-container {
+  background: #FAFAFA url('../img/icon-instructions.gif') no-repeat;
+  background-position: 30px 25px;
+  border-radius: 0;
+  padding-left: 75px;
+  min-width: 740px;
 }

@@ -9,6 +9,14 @@
  * Function callback: construct export data form.
  */
 function rawpheno_download($form, &$form_state) {
+  // Download page header information.
+  $markup = '<div id="download-header">Select locations and traits that you want to download</div>';
+  $form['download_header'] = array(
+    '#type' => 'fieldset',
+    '#title' => '',
+    '#value' => $markup,
+  );        
+  
   // This is the error message used in lieu of Drupal form_set_error().
   // This error message will be in close proximity to the interface.
   $h = 'Please review form for any empty fields';
@@ -16,26 +24,26 @@ function rawpheno_download($form, &$form_state) {
     '#markup' => '<div id="download-window-error" class="messages error">Required fields empty.<pre>'.$h.
                  '</pre></div>',
   );
-  
+ 
   // Fieldset container for download form.
-  $form['download_fldset'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Select locations and traits that you want to download'),
-    '#attributes' => array('id' => 'field-container'),
+  $form['container_download_form'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="container-fields"><div class="wrapper-fields">',
+    '#suffix' => '</div></div>',
   );
-  
+ 
   // Query all locations available.
-  $location = db_query("SELECT DISTINCT t1.value, t1.value AS location 
+  $location = db_query("SELECT DISTINCT t1.value, t1.value AS location
     FROM {pheno_plantprop} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t2.name = 'location' 
+    WHERE t2.name = 'location'
     ORDER BY t1.value ASC")
     ->fetchAllKeyed();
-  
-  // Primary select field - an AJAX chained select that updates secondary 
-  // select field (traits) based on location selected. 
+ 
+  // Primary select field - an AJAX chained select that updates secondary
+  // select field (traits) based on location selected.
   // Default to the first location in the list.
-  $form['download_fldset']['location'] = array(
+  $form['container_download_form']['location'] = array(
     '#title' => t('Location'),
     '#type' => 'select',
     '#options' => $location,
@@ -51,31 +59,31 @@ function rawpheno_download($form, &$form_state) {
       'progress' => array('type' => '', 'message' => '')
     ),
   );
-  
+ 
   // Div wrapper to display ajax result.
-  $form['download_fldset']['wrapper'] = array(
+  $form['container_download_form']['wrapper'] = array(
     '#prefix' => '<div id="div-measurements">',
     '#suffix' => '</div>'
   );
-  
+ 
   // Determine default traits to display based on value of location.
   if (isset($form_state['values']['location'])) {
     // When user has selected a location.
     $loc = $form_state['values']['location'];
   }
   else {
-    // No selection made or on page load - default location to the first 
+    // No selection made or on page load - default location to the first
     // location available in primary select field.
     $loc = reset($location);
   }
-  
+ 
   // Query all traits available per location.
   // Note: planting date is excluded from the list in the same manner it is
   // excluded from the rawdata heat map.
-  $traits = db_query("SELECT DISTINCT t1.type_id, t2.definition 
+  $traits = db_query("SELECT DISTINCT t1.type_id, t2.definition
     FROM {pheno_measurements} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t1.plant_id IN 
+    WHERE t1.plant_id IN
       (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t1.value <> ''
       AND t2.name <> 'planting_date'
@@ -83,27 +91,27 @@ function rawpheno_download($form, &$form_state) {
     ->fetchAllKeyed();
     
   // Secondary select field - list of traits avaliable for download.
-  $form['download_fldset']['wrapper']['traits'] = array(
+  $form['container_download_form']['wrapper']['traits'] = array(
     '#title' => count($traits).' Traits available',
     '#type' => 'select',
     '#options' => $traits,
     '#multiple' => TRUE,
     '#size' => 17,
   );
-  
+ 
   // Submit button.
-  $form['download_fldset']['download_submit_download'] = array(
+  $form['container_download_form']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
     '#prefix' => '<div class="frm-cell"><input type="checkbox"> &nbsp;Select all traits',
     '#suffix' => '</div><div style="clear: both;"></div>',
-  );
-  
+  );  
+
   // Attach CSS and JavaScript
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.download.style.css');
   $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
-  
+    
   return $form;
 }
 

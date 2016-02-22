@@ -10,14 +10,14 @@
 #edit-dnd-upload {
   margin: 0 auto;
   padding: 0;
-  width: 99%;
+  width: 100%;
 }
 
 #droppable-dnd {
   background: url('../../theme/img/excel-icon.gif') no-repeat top center;
   background-position: 50% 130px;
   background-color: #FAFAFA;
-  border: 3px solid #EAEAEA;
+  border: 1px solid #AAAAAA;
 
   -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
   -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
@@ -105,4 +105,14 @@ a.button:hover {
 
 #edit-stage01-submit-save, #edit-stage01-submit-review, #edit-stage01-button-close {
   display: none;
+}
+
+#container-dnd {
+  border: 1px solid #AAAAAA;
+  background-color: #FAFAFA;
+}
+
+#edit-dnd-ajax-wrapper {
+  margin: 0;
+  padding: 0;
 }

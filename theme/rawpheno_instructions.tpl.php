@@ -49,7 +49,7 @@ $traits = rawpheno_function_headers('phenotyping');
           <?php print drupal_render($form["search"]); ?>
           <?php print drupal_render($form["json_url"]); ?>
         </div>  
-  
+     
         <div class="tools">
           &nbsp;<input type="button" id="btn_submit" name="btn_submit" class="form-submit" value="Search">
         </div>
@@ -63,7 +63,7 @@ $traits = rawpheno_function_headers('phenotyping');
       <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
       <li><a href="#fragment-3">Optional Traits</a></li>
       <li><a href="#fragment-4">Subset Traits</a></li>
-      <li><a href="#fragment-5">Photo Appendix</a></li>
+      <li id="photo-appendix"><a href="#fragment-5">Photo Appendix</a></li>
     </ul>
 
     <div id="fragment-1">
@@ -82,7 +82,7 @@ $traits = rawpheno_function_headers('phenotyping');
       </ul> 
       <p> 
         These data will then be submitted through KnowPulse:<br />
-        <a href="../raw/upload">knowpulse.usask.ca/phenotypes/raw/upload</a>
+        &bull; <a href="../raw/upload">knowpulse.usask.ca/phenotypes/raw/upload</a>
       </p>  
     </div>
   

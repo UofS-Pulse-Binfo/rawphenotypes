@@ -5,6 +5,13 @@
  */
 function rawpheno_rawdata($form, &$form_state) {
   // Container for svg canvas.
+  $markup = '<div id="rawdata-header">Lorem ipsum dolor sit amet. Curabitur mattis porttitor nulla ut suscipit.</div>';
+  $form['rawdata_header'] = array(
+    '#type' => 'fieldset',
+    '#title' => '',
+    '#value' => $markup,
+  ); 
+  
   $form['rawdata'] = array(
     '#markup' => '<div id="rawdata-container">
                     <svg class="data-chart"></svg>
