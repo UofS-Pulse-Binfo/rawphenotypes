@@ -7,27 +7,78 @@
 @import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
-.dragndrop-example-api, .dragndrop-example-element-mirror, #droppable-dnd {
-  background-color: #FAFAFA; 
-  
-  border: 1px dashed #999999;
+#edit-dnd-upload {
+  margin: 0 auto;
+  padding: 0;
+  width: 99%;
+}
+
+#droppable-dnd {
+  background: url('../../theme/img/excel-icon.gif') no-repeat top center;
+  background-position: 50% 130px;
+  background-color: #FAFAFA;
+  border: 3px solid #EAEAEA;
+
   -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
   -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
-  box-shadow:         1px 1px 5px 1px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
   
-  color: #000000;
-  font-size: 0.99em;
-  height: 270px;
-  line-height: 200px;  
-  margin: 10px 10px 10px 0;
-  padding: 60px 0 0 0;
-  text-align: center;
+  height: 420px;
+  margin: 0;
+  padding: 0;
   width: 100%;
 }
 
-#droppable-dnd:hover {
-  background-color: #F7F7F7;
-  border: 1px dashed #333333;
+/* Drag file here message and link container */
+.droppable-message {
+  color: #666666;
+  font-size: 1.3em;
+  line-height: 55px;
+  margin: 180px 0 0 0;
+  padding: 0;
+}
+
+/* Choose file link */
+#droppable-dnd a:link, #droppable-dnd a {
+  background: none;
+  border: none;
+  color: #118324;
+  font-family: inherit;
+  font-weight: 300;
+  left: 0;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  text-decoration: underline;
+}
+
+div.preview-remove {
+  color: #118324;
+  font-family: inherit;
+  font-weight: 300;
+  text-decoration: underline;
+}
+
+/* Choose file link container */
+.droppable-standard-upload {
+  line-height: 0;
+  margin: 0;
+  min-height: 10px;
+  padding: 0;
+}
+
+/* Text and link container */
+#droppable-dnd span {
+  margin: 0;
+  padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Preview filename */
+div.droppable-preview-file {
+  color: #666666;
+  margin: 110px 0 0 0;
 }
 
 #edit-dnd-upload  {

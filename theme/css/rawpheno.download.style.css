@@ -9,7 +9,7 @@
  
 #field-container .fieldset-wrapper {
   text-align: center;
-  width: 620px;
+  width: 720px;
   margin: 0 auto;
   padding: 40px 0;
 }
@@ -25,11 +25,11 @@
 }
 
 #field-container div.frm-cell:first-child select {
-  width: 100px;
+  width: auto;
 }
 
 #field-container div.frm-cell:nth-child(3) {
-  width: 110px;
+  width: 112px;
   margin-top: 110px;
   margin-left: 7px;
 }

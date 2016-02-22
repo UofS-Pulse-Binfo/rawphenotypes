@@ -82,7 +82,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_event' => 'manual',
     '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
     '#upload_button_text' => t('Upload and validate spreadsheet'),
-    '#droppable_area_text' => t('- Drag and Drop Phenotype Data Collection file here to upload -'),
+    '#droppable_area_text' => t('Drag Phenotype Data Collection file here'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => '',
   );
