@@ -398,10 +398,7 @@ function rawpheno_upload_form_master_submit($form, &$form_state) {
     case 'Save spreadheet':
       // Save Spreadsheet button
       rawpheno_submit_review($form, $form_state);
-
-      // Update the materialized view.
-      $mview_id =tripal_get_mview_id('rawpheno_rawdata_summary');
-      if ($mview_id) tripal_populate_mview($mview_id);
+      
       break;
   
     case 'Upload another spreadsheet':

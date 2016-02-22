@@ -6,31 +6,47 @@
  */
 
 /**
+ * Load the Spreadsheet into the database. This should be executed as a Tripal Job.
  *
+ * @param $xls_file
+ *   The spreadsheet containing phenotypics data to be loaded.
+ * @param $plantprop_headers
+ *   An array of columns that should be saved as plant properties rather than measurements.
+ * @param $job_id
+ *   The tripal job id.
  */
 function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
 
   $plantprop_headers = unserialize($plantprop_headers);
-  print "Headers: ".print_r($plantprop_headers, TRUE)."\n";
+  print "headers:".print_r($plantprop_headers, TRUE)."\n";
+    
   $plantprop_headers = array_map('rawpheno_function_delformat', $plantprop_headers);
-  print "Mapped Headers: ".print_r($plantprop_headers, TRUE)."\n";
+  
+  print "\nXLSX File: " . $xls_file . "\n";;
   
   // Array to hold all rows in the spreadsheet.
   $arr_xls_rows = rawpheno_function_read($xls_file);
+
+  // Print a quick summary about the loading job.
+  $num_rows = sizeof($arr_xls_rows);
+  print "Number of lines read: " . $num_rows . "\n";
+  print "Number of columns: " . sizeof($arr_xls_rows[0]) . "\n";
   
   // Find the index number of name header in the spreadsheet.
   $name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
-  print "Index of Name column:".print_r($name_index, TRUE)."\n";
   
   // Array of column headers with first and second try.
   $arr_multiheaders = rawpheno_function_headers('multi-trial');
   $arr_multiheaders = array_map('rawpheno_function_delformat', $arr_multiheaders);
-  print "Mapped Multi-Headers: ".print_r($arr_multiheaders, TRUE)."\n";
 
   // Read each row.
+  print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: ";
   for($i = 0; $i < count($arr_xls_rows); $i++) {
-  
-    print "Row:".print_r($arr_xls_rows[$i],TRUE)."\n";
+    
+    if (($i % 25) == 0 AND $i !== 0) {
+      // print update every 25 lines.
+      print $i . "... ";
+    }
     
     // Rearrange array to make sure name is the first element,
     // and generate a plant_id number for the rest of the entries.
@@ -51,7 +67,6 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
         // Name column header goes into pheno_plant.
         // Check if stock name exists.
         $stock_id = rawpheno_function_instock($cell_entry);
-        print "\tStock=".$stock_id."\n";
         
         // Determine if name has a stock id number.
         if (isset($stock_id) && $stock_id > 0) {
@@ -63,14 +78,12 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
           // Next row if stock name does not exist.
           break;
         }
-        print "\tPlant=".$pheno_plantid."\n";
       } 
       else {
         // OTHER
         // The rest of the data array.
         // Get the column header of a cell.
         $cell_colheader = rawpheno_function_delformat($arr_xls_rows[0][$cell_index]);
-        print "\tColumn=".$cell_colheader."\n";
         // Determine if column header is required
         if (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
           // PLOT, ENTRY, REP and LOCATION
@@ -78,8 +91,6 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
           // Traits: plot, entry, rep, location into pheno_plantprop.
           $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
           $type_id = $type->cvterm_id;
-          print "\t\tType=".$type_id."\n";
-          print "\t\tValue=".$cell_entry."\n";
           
           // Ensure that cvterm_id is present before inserting to table
           if(isset($type_id)) {
@@ -88,7 +99,6 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
                              'type_id'  => $type_id, 
                              'value'    => $cell_entry))
               ->execute(); 
-              print "\t\tInserted Property".$tmp."\n";
           }
         } 
         elseif (!empty($cell_colheader)) {
@@ -171,6 +181,11 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
       }
     }
   }
+  print "Complete.\n";
+  
+  print "\nUpdating the materialized view summarizing phenotypic data.\n";
+  $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');
+  if ($mview_id) tripal_populate_mview($mview_id);
 
 }
 
