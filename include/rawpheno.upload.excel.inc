@@ -17,11 +17,12 @@
  */
 function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
 
+  // Unserialize and remove formating for the headers that should be saved as 
+  // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
-  print "headers:".print_r($plantprop_headers, TRUE)."\n";
-    
   $plantprop_headers = array_map('rawpheno_function_delformat', $plantprop_headers);
   
+  // Keep a record of which file we are loading in the logs.
   print "\nXLSX File: " . $xls_file . "\n";;
   
   // Array to hold all rows in the spreadsheet.
@@ -43,9 +44,15 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
   print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: ";
   for($i = 0; $i < count($arr_xls_rows); $i++) {
     
+    // print update every 25 lines.
     if (($i % 25) == 0 AND $i !== 0) {
-      // print update every 25 lines.
       print $i . "... ";
+    }
+    
+    // Update job status every 5%
+    $percent_complete = round(($i / $num_rows) * 100);
+    if (($percent_complete % 5) == 0) {
+      tripal_set_job_progress($job_id, $percent_complete);
     }
     
     // Rearrange array to make sure name is the first element,

@@ -11,6 +11,7 @@
 
 // Include functions required in processing spreadsheet file.
 module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
+module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.form');
 
 /**
  * Implements hook_menu().
@@ -309,6 +310,11 @@ function rawpheno_theme($existing, $type, $theme, $path) {
   $items['rawpheno_instructions'] = array(
     'render element' => 'form',
     'template' => 'rawpheno_instructions',
+    'path' => $path . '/theme',
+  );
+
+  $items['rawpheno_upload_validation_report'] = array(
+    'template' => 'rawpheno_upload_validation_report',
     'path' => $path . '/theme',
   );
   

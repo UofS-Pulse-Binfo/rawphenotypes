@@ -49,3 +49,15 @@
 #edit-header {
   background-color: #FAFAFA;  
 }
+
+em {
+  font-weight: bold;
+}
+
+/* Right align the next button */
+input#edit-next-step {
+  float: right;
+}
+input#edit-next-step.form-button-disabled {
+  display: none;
+}

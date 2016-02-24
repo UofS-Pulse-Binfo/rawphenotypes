@@ -27,11 +27,12 @@
       });
       
       // Show error near the stage indicator.
+      /*
       if( document.getElementById('messages') ) {
         // Check for durpal error message.
         $('#messages').remove();
         $('#stage02-window-error').show();
-      }
+      }*/
     }
   };
 }(jQuery));

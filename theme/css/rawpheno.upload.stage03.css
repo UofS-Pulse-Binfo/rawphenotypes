@@ -10,3 +10,19 @@
 a.button:hover {
   background: #DEDEDE none repeat scroll 0% 0%;
 }
+
+.upload-buttons.step3 {
+  display: inline-flex;
+  justify-content: space-between;
+  width: 94%;
+  margin: 40px 20px;
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.upload-buttons.step3 img {
+  border: 0;
+  width: 80px;
+  height: 80px;
+}
