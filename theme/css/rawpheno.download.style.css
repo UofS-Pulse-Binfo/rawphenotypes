@@ -3,35 +3,48 @@
  * Style phenotypes/download page.
  */
  
-#field-container {
+#container-fields {
   background-color: #FAFAFA;
-}
- 
-#field-container .fieldset-wrapper {
-  text-align: center;
-  width: 720px;
-  margin: 0 auto;
-  padding: 40px 0;
+  border: 1px solid #AAAAAA;
+  padding: 40px;
+  
+  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
+  
+  min-width: 890px;
 }
 
-#field-container div.frm-cell, #div-measurements {
+#container-fields div.frm-cell, #div-measurements {
   text-align: left;
-  padding: 10px 8px;
+  padding: 10px 10px;
   float: left;
+}
+
+.wrapper-fields {
+  margin: 0 auto;
+  width: 750px;
 }
 
 #div-measurements select {
   width: 350px;
 }
 
-#field-container div.frm-cell:first-child select {
+#container-fields div.frm-cell:first-child select {
+  min-width: 100px;
   width: auto;
 }
 
-#field-container div.frm-cell:nth-child(3) {
-  width: 112px;
-  margin-top: 110px;
+#container-fields div.frm-cell:nth-child(3) {
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  font-family: sans-serif;
+  height: 187px;
+  margin-top: 65px;
   margin-left: 7px;
+  padding-top: 48px;
+  text-align: center;
+  width: 135px;
 }
 
 select:disabled {
@@ -42,7 +55,7 @@ select:disabled {
   margin: 20px 0;
 }
 
-#field-container label {
+#container-fields label {
   background-color: #CCCCCC;
   font-weight: 400;
   font-family: sans-serif;
@@ -61,4 +74,23 @@ input[type=checkbox] {
 
   /* Webkit browsers*/
   -webkit-transform: scale(1.2);
+  
+  margin-bottom: 25px;
+}
+
+/* header */
+#edit-download-header {
+  background: #FAFAFA url('../img/icon-download.gif') no-repeat;
+  background-position: 30px 25px;
+  border-radius: 0;
+  padding-left: 75px;
+}
+
+#download-header {
+  font-size: 1.2em;
+  font-family: sans-serif;
+  font-weight: normal;
+  min-width: 875px;
+  padding-top: 5px;
+  padding-bottom: 18px;
 }

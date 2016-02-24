@@ -13,6 +13,7 @@
         var dropMessageHTML = $('.droppable-message').html();
         var dropMessage = $('.droppable-message');
         
+<<<<<<< HEAD
         if (drop) {
           drop.addEventListener("dragover", function() { 
             drop.style.border = '3px dashed #999999';
@@ -35,6 +36,28 @@
             dropMessage.html(dropMessageHTML);
           });
         }        
+=======
+        drop.addEventListener("dragover", function() { 
+          drop.style.border = '1px dashed #999999';
+          drop.style.backgroundColor = '#F7F7F7';
+          // Create a new instruction to user.
+          dropMessage.text('Drop to upload and validate your spreadsheet'); 
+        });  
+      
+        drop.addEventListener("dragleave", function() { 
+          drop.style.border = '1px solid #AAAAAA';
+          drop.style.backgroundColor = '#FAFAFA';
+          // Remove new instruction and restore original message.
+          dropMessage.html(dropMessageHTML);
+        });
+        
+        drop.addEventListener("drop", function() { 
+          drop.style.border = '1px solid #AAAAAA';
+          drop.style.backgroundColor = '#FAFAFA';
+          // Remove new instruction and restore original message.
+          dropMessage.html(dropMessageHTML);
+        });
+>>>>>>> 85589a860bf53b13d3eabe3dbea82602538c2f1c
         
       });
     }

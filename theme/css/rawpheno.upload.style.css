@@ -46,8 +46,12 @@
   font-size: 1.5em;
 }
 
+/* header */
 #edit-header {
-  background-color: #FAFAFA;  
+  background: #FAFAFA url('../img/icon-upload.gif') no-repeat;
+  background-position: 30px 25px;
+  border-radius: 0;
+  padding-left: 25px;
 }
 
 em {

@@ -275,7 +275,7 @@ function rawpheno_rawdata_summary_json() {
 function rawpheno_instructions($form, &$form_state) {
   // Search field with autocomplete feature.
   $form['search'] = array(
-    '#title' => '&nbsp;',
+    '#title' => '',
     '#type' => 'textfield',
     '#maxlength' => 65,
     '#size' => 65,
