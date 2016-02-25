@@ -505,78 +505,71 @@ function rawpheno_submit_review($form, &$form_state) {
     foreach($new_header as $i => $header) { 
     
       // Determine if the form in review traits has been filled out and checkbox
-      // has been checked by user.
+      // has been checked by user. If it has been chcked then save the trait.
       if ($form_state['values']['chk_' . $i] == 1) {  
-        // Get all form values when checkbox only when it is checked.
-        $already_inserted = FALSE;
-        // Save in cvterm.
-        $cv_term        = $form_state['values']['txt_header_' . $i];
-        $cv_unit        = $form_state['values']['txt_unit_' . $i];
-        $cv_definition  = $form_state['values']['txt_def_' . $i];
-        // Save in cvtermprop.
-        $cv_description = $form_state['values']['txtarea_describe_' . $i];  
-        
-        // Create an array of key => value, where key is the term and value as
-        // definition/information about the key.
-        // Index 0 is a measurement type, while index 1 is a measurement unit.
-        $arr_insert_terms = array($cv_term => $cv_definition, 
-                                  $cv_unit => $cv_unit);
-        
-        $m = 0;
-        // Read terms array and insert into cvterm.
-        foreach($arr_insert_terms as $term => $definition) {
-          // Sanitize terms.
-          $cv_name = rawpheno_function_delformat($term);
-          $cv_name = str_replace(' ', '_', $cv_name);
-          // cvterm vocabulary type.
-          $vocabulary = ($m == 0) ? 'phenotype_measurement_types' : 
-                                    'phenotype_measurement_units';
-          
-          // Check to see if the term already exists.
-          // Currently we are just assuming if the name is the same then it's the same trait.
-          // This is obviously an incorrect assumption since most traits can be measured
-          // a ba-jillion different ways so we should revisit this.
-          // @TODO: Find a better way to deal with multiple terms having the same name.
-          $term = tripal_get_cvterm(
-            array('name' => $cv_name, 'cv_id' => array('name' => $vocabulary)),
-            array('include_fk' => array())
-          );
-          
-          if (!$term) {
-            // Insert cvterm measurement type and unit.
-            $arr_term_params = array('id'         => 'tripal:'.$term,
-                                     'name'       => $cv_name,
-                                     'definition' => $definition,
-                                     'cv_name'    => $vocabulary);  
-          
-            // Store cvterm ids generated to be used in relating
-            // a cvterm type to cvterm unit. 
-            $cvterm_id[$m] = tripal_insert_cvterm($arr_term_params);
-          
-            // Insert description to cvtermprop,
-            // when inserting a measurement unit.
-            if ($m == 1) {
-              $ins = db_insert('chado.cvtermprop')
-                ->fields(array('cvterm_id' => $cvterm_id[1]->cvterm_id, 
-                               'type_id'   => $cv_measurements_unit,
-                               'value'     => $cv_description,
-                               'rank'      => 0))
-                ->execute();
-            }
-          }          
-          else {
-            $already_inserted = TRUE;
-          }
-          $m++;
+      
+        // First, save the measurement.
+        $m_cvterm = array(
+          'id' => 'tripal:' . $form_state['values']['txt_header_' . $i],
+          'name' => $form_state['values']['txt_header_' . $i],
+          'definition' => $form_state['values']['txt_def_' . $i],
+          'cv_name' => 'phenotype_measurement_types'
+        );
+        $m_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), array('name' => $m_cvterm['name'], 'cv_id' => array('name' => $m_cvterm['cv_name'])));
+        if (!$m_cvterm_id) {
+          $m_cvterm_id = tripal_insert_cvterm($m_cvterm);
+        }
+        // Grab just the id.
+        if (is_array($m_cvterm_id)) {
+          $m_cvterm_id = $m_cvterm_id[0]->cvterm_id;
+        }
+        elseif (is_object($m_cvterm_id)) {
+          $m_cvterm_id = $m_cvterm_id->cvterm_id;
         }
         
-        // Relate term with unit in chado.cvterm_relationship
-        if (!$already_inserted) {
-          $ins = db_insert('chado.cvterm_relationship')
-            ->fields(array('type_id'    => $cv_measurements_unit,
-                           'subject_id' => $cvterm_id[0]->cvterm_id,
-                           'object_id'  => $cvterm_id[1]->cvterm_id))
-            ->execute();
+        // Then save the Unit.
+        $u_cvterm = array(
+          'id' => 'tripal:' . $form_state['values']['txt_unit_' . $i],
+          'name' => $form_state['values']['txt_unit_' . $i],
+          'definition' => $form_state['values']['txt_unit_' . $i],
+          'cv_name' => 'phenotype_measurement_units'
+        );
+        $u_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), array('name' => $u_cvterm['name'], 'cv_id' => array('name' => $u_cvterm['cv_name'])));
+        if (!$u_cvterm_id) {
+          $u_cvterm_id = tripal_insert_cvterm($u_cvterm);
+        }
+        // Grab just the id.
+        if (is_array($u_cvterm_id)) {
+          $u_cvterm_id = $u_cvterm_id[0]->cvterm_id;
+        }
+        elseif (is_object($u_cvterm_id)) {
+          $u_cvterm_id = $u_cvterm_id->cvterm_id;
+        }
+        
+        // Don't forget the method description.
+        // @todo this shouldn't be using this type.
+        // @todo should this even be attached to the unit? I had assumed the trait.
+        $prop = array(
+          'cvterm_id' => $u_cvterm_id,
+          'type_id' => $cv_measurements_unit,
+          'value' => $form_state['values']['txtarea_describe_' . $i],
+          'rank' => 0,
+        );
+        $prop_id = chado_select_record('cvtermprop', array('cvtermprop_id'), $prop);
+        if (!$prop_id) {
+          $prop = chado_insert_record('cvtermprop', $prop);
+        }
+        
+        // Finally relate the measurement and unit.
+        // @todo: this shouldn't be using this type.
+        $rel = array(
+          'subject_id' => $u_cvterm_id,
+          'type_id' => $cv_measurements_unit,
+          'object_id' => $m_cvterm_id,
+        );
+        $rel_id = chado_select_record('cvterm_relationship', array('cvterm_relationship_id'), $rel);
+        if (!$rel_id) {
+          chado_insert_record('cvterm_relationship', $rel);
         }
       }
     } 
