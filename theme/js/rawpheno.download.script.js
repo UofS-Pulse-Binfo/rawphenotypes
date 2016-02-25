@@ -8,7 +8,7 @@
       $(document).ready(function() {
       /////
         // Reference form elements.
-        var chkb = $('#container-fields .frm-cell input:checkbox');
+        var chkb = $('#container-download .form-cell input:checkbox');
         var selTrait = $("[name='traits[]']");
         var btnSubmit = $('#edit-download-submit-download');
         

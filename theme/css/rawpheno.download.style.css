@@ -2,70 +2,56 @@
  * @file 
  * Style phenotypes/download page.
  */
- 
-#container-fields {
-  background-color: #FAFAFA;
-  border: 1px solid #AAAAAA;
-  padding: 40px;
-  
-  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
-  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
-  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
-  
-  min-width: 890px;
+
+/* Import global css */
+@import 'rawpheno.style.css';
+
+/* header */
+#header-download {
+  background: #FAFAFA url('../img/icon-download.gif') no-repeat;
+  background-position: 30px 18px;
 }
 
-#container-fields div.frm-cell, #div-measurements {
-  text-align: left;
-  padding: 10px 10px;
+.form-cell {
   float: left;
+  margin: 0 10px;
+  padding: 0;
 }
 
-.wrapper-fields {
-  margin: 0 auto;
-  width: 750px;
+.form-cell span {
+  background: #CCCCCC url('../img/icon-marker-small.gif') no-repeat;
+  background-position: 20px 37px;
+  border-bottom: 4px solid #FFFFFF;
+  display: block;
+  font-family: sans-serif;
+  font-weight: 400;
+  margin: 0 0 -3px 0;
+  padding: 12px;
+  text-align: left;
 }
 
-#div-measurements select {
-  width: 350px;
-}
-
-#container-fields div.frm-cell:first-child select {
-  min-width: 100px;
-  width: auto;
-}
-
-#container-fields div.frm-cell:nth-child(3) {
+#div-controls {
   background-color: #FFFFFF;
   border: 1px solid #CCCCCC;
+  border-top: none;
+  height: 296px;
+}
+
+#div-controls label {
+  font-weight: normal;
   font-family: sans-serif;
-  height: 187px;
-  margin-top: 65px;
-  margin-left: 7px;
-  padding-top: 48px;
-  text-align: center;
-  width: 135px;
+  margin: 50px 0;
 }
 
-select:disabled {
-  background-color: #F7F7F7;
+#div-controls span {
+  width: 140px;
 }
 
-#edit-download-submit-download {
-  margin: 20px 0;
-}
-
-#container-fields label {
-  background-color: #CCCCCC;
-  font-weight: 400;
-  font-family: sans-serif;
-  margin: 15px -1px 0 0;
-  padding: 10px;
-  width: 60px;  
-}
-
-#div-measurements label{
-  width: 170px;
+.clear-float {
+  clear: both;
+  font-size: 0;
+  margin: 0;
+  padding: 0;
 }
 
 input[type=checkbox] {
@@ -74,23 +60,12 @@ input[type=checkbox] {
 
   /* Webkit browsers*/
   -webkit-transform: scale(1.2);
-  
-  margin-bottom: 25px;
 }
 
-/* header */
-#edit-download-header {
-  background: #FAFAFA url('../img/icon-download.gif') no-repeat;
-  background-position: 30px 25px;
-  border-radius: 0;
-  padding-left: 75px;
+select:disabled {
+  background-color: #F7F7F7;
 }
 
-#download-header {
-  font-size: 1.2em;
-  font-family: sans-serif;
-  font-weight: normal;
-  min-width: 875px;
-  padding-top: 5px;
-  padding-bottom: 18px;
+#edit-traits:disabled {
+  background: url('../img/throbber-active.gif') no-repeat center;
 }

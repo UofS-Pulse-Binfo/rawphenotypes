@@ -9,13 +9,13 @@
  * Function callback: construct export data form.
  */
 function rawpheno_download($form, &$form_state) {
-  // Download page header information.
-  $markup = '<div id="download-header">Select locations and traits that you want to download</div>';
-  $form['download_header'] = array(
-    '#type' => 'fieldset',
-    '#title' => '',
-    '#value' => $markup,
-  );        
+  // This is the header section of this page.
+  $form['header_download'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="header-download" class="container-header">',
+    '#suffix' => '</div>',
+    '#markup' => '<span>Select locations and traits that you want to download.</span>',
+  ); 
   
   // This is the error message used in lieu of Drupal form_set_error().
   // This error message will be in close proximity to the interface.
@@ -25,13 +25,17 @@ function rawpheno_download($form, &$form_state) {
                  '</pre></div>',
   );
  
-  // Fieldset container for download form.
-  $form['container_download_form'] = array(
+  // Container for contents.
+  $form['container_download'] = array(
     '#type' => 'markup',
-    '#prefix' => '<div id="container-fields"><div class="wrapper-fields">',
-    '#suffix' => '</div></div>',
+    '#prefix' => '<div id="container-download" class="container-content">
+                    <div class="content-wrapper">',
+    '#suffix' => '</div></div>',    
   );
- 
+  
+  // Primary select field - an AJAX chained select that updates secondary
+  // select field (traits) based on location selected.
+  // Default to the first location in the list.
   // Query all locations available.
   $location = db_query("SELECT DISTINCT t1.value, t1.value AS location
     FROM {pheno_plantprop} AS t1
@@ -39,18 +43,16 @@ function rawpheno_download($form, &$form_state) {
     WHERE t2.name = 'location'
     ORDER BY t1.value ASC")
     ->fetchAllKeyed();
- 
-  // Primary select field - an AJAX chained select that updates secondary
-  // select field (traits) based on location selected.
-  // Default to the first location in the list.
-  $form['container_download_form']['location'] = array(
-    '#title' => t('Location'),
+    
+  $form['container_download']['location'] = array(
+    '#title' => '',
     '#type' => 'select',
     '#options' => $location,
     '#default_value' => reset($location),
     '#multiple' => TRUE,
     '#size' => 17,
-    '#prefix' => '<div class="frm-cell">',
+    '#prefix' => '<div id="div-location" class="form-cell">
+                    <span>Location</span>',
     '#suffix' => '</div>',
     '#ajax' => array(
       'event' => 'change',
@@ -59,13 +61,7 @@ function rawpheno_download($form, &$form_state) {
       'progress' => array('type' => '', 'message' => '')
     ),
   );
- 
-  // Div wrapper to display ajax result.
-  $form['container_download_form']['wrapper'] = array(
-    '#prefix' => '<div id="div-measurements">',
-    '#suffix' => '</div>'
-  );
- 
+  
   // Determine default traits to display based on value of location.
   if (isset($form_state['values']['location'])) {
     // When user has selected a location.
@@ -76,7 +72,7 @@ function rawpheno_download($form, &$form_state) {
     // location available in primary select field.
     $loc = reset($location);
   }
- 
+
   // Query all traits available per location.
   // Note: planting date is excluded from the list in the same manner it is
   // excluded from the rawdata heat map.
@@ -89,23 +85,34 @@ function rawpheno_download($form, &$form_state) {
       AND t2.name <> 'planting_date'
     ORDER BY t1.type_id ASC", array(':location' => $loc))
     ->fetchAllKeyed();
-    
+
+  // Div wrapper to display ajax result.
+  $form['container_download']['ajax_wrapper'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="div-measurements" class="form-cell">
+                    <span>'. count($traits) .'Traits Available</span>',
+    '#suffix' => '</div>'
+  );
+      
   // Secondary select field - list of traits avaliable for download.
-  $form['container_download_form']['wrapper']['traits'] = array(
-    '#title' => count($traits).' Traits available',
+  $form['container_download']['ajax_wrapper']['traits'] = array(
+    '#title' => '',
     '#type' => 'select',
     '#options' => $traits,
     '#multiple' => TRUE,
     '#size' => 17,
   );
- 
+  
   // Submit button.
-  $form['container_download_form']['download_submit_download'] = array(
+  $form['container_download']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
-    '#prefix' => '<div class="frm-cell"><input type="checkbox"> &nbsp;Select all traits',
-    '#suffix' => '</div><div style="clear: both;"></div>',
-  );  
+    '#prefix' => '<div id="div-controls" class="form-cell">
+                   <span>Download</span> 
+                   <label><input type="checkbox"> &nbsp;Select all traits</label>',
+    '#suffix' => '</div>
+                  <div class="clear-float">&nbsp;</div>',
+  ); 
 
   // Attach CSS and JavaScript
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';

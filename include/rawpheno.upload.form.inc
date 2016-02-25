@@ -122,6 +122,30 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
  * in the spreadsheet submitted in Stage 01.
  */
 function rawpheno_upload_form_stage_review($form, &$form_state) {
+<<<<<<< Updated upstream
+=======
+  // This is the error message used in lieu of Drupal form_set_error().
+  // This error message will be in close proximity to the interface.
+  $h = 'Error in checked column headers/traits. Please review form for any empty fields';
+  $h = rawpheno_function_format($h, 'em');
+  $form['stage02_window_error'] = array(
+    '#markup' => '<div id="stage02-window-error" class="messages error">Required fields empty.<pre>'.$h.
+                 '</pre></div>',
+  );
+  
+  // DIV container for download form.
+  $form['xls_review_fldset'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="container-fields">',
+    '#suffix' => '</div>',
+  );
+  
+  // Form instructions.
+  $form['xls_review_fldset']['txt_title'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>Please check the traits that you want to describe and save.</p>'
+  );
+>>>>>>> Stashed changes
   
   // Read variable containing new headers found in stage 01.
   // Based on these new traits, construct form to allow user to describe each new traits.
@@ -138,10 +162,12 @@ function rawpheno_upload_form_stage_review($form, &$form_state) {
 
     foreach($new_header as $i => $k) {
       if (isset($k) && !empty($k)) {
-        // Fieldset to contain a set of trait and corresponding form elements.
+        // DIV container for each additional trait.
+        $css = ($i % 2) ? 'row-shade' : 'row-plain';
         $form['xls_review_fldset']['fldset_' . $i] = array(
-          '#type' => 'fieldset',
-          '#title' => '',
+          '#type' => 'markup',
+          '#prefix' => '<div class="'. $css .'">',
+          '#suffix' => '</div>',
         );
           // All fields are required.
           // CHECKBOX to let user select a trait to describe and save.
@@ -153,30 +179,18 @@ function rawpheno_upload_form_stage_review($form, &$form_state) {
           $form['xls_review_fldset']['fldset_' . $i]['txt_header_' . $i] = array(
             '#type' => 'hidden',
             '#value' => $k,
-          ); 
-            // These fields are hidden by default - show only when checked.
-            // TERM DEFINITION
-            $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i] = array(
-              '#type' => 'textfield',
-              '#title' => t('Definition*'),
-              '#description' => t('A human-readable text definition'),
-              '#maxlength' => 150,
+          );
+            // DIV to contain the form fields of each row of trait.
+            $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i] = array(
               '#prefix' => '<div class="container-form" id="div-edit-chk-'. $i .'" style="display: none;">',
+              '#suffix' => '</div>',  
             );
-            // UNIT
-            $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
-              '#type' => 'textfield',
-              '#title' => t('Unit*'),
-              '#description' => t('Unit of measurments used'),
-              '#size' => 30,
-              '#maxlength' => 100,
+            
+            $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i] = array(
+              '#prefix' => '<div class="container-form-wrapper">',
+              '#suffix' => '</div>',  
             );
-            // DESCRIPTION - describe the trait.
-            $form['xls_review_fldset']['fldset_' . $i]['txtarea_describe_' . $i] = array(
-              '#type' => 'textarea',
-              '#title' => t('Describe the method used*'),
-              '#description' => t('Describe the method used to collect this data if you used a scale, be specific'),
-            );
+<<<<<<< Updated upstream
             // Note indicating fields are required.
             $form['xls_review_fldset']['fldset_' . $i]['required_mark'] = array(
               '#markup' => '<small>* means required</small>',
@@ -191,10 +205,63 @@ function rawpheno_upload_form_stage_review($form, &$form_state) {
     $form['notice'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="messages status">No new traits were detected in the spreadsheet. Please click "Next Step".</div>',
+=======
+              // Create two DIV containers. One to align left and another to float right.
+              // DIV:Left
+              $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i]['form_left_' . $i] = array(
+                '#prefix' => '<div class="form-left">',
+                '#suffix' => '</div>',
+              );
+                // Add form elements term definition and unit to div:left.
+                // TERM DEFINITION
+                $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i]['form_left_' . $i]['txt_def_' . $i] = array(
+                  '#type' => 'textfield',
+                  '#title' => t('Definition*'),
+                  '#description' => t('A human-readable text definition'),
+                  '#size' => 50,
+                  '#maxlength' => 200,
+                );
+                // UNIT
+                $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i]['form_left_' . $i]['txt_unit_' . $i] = array(
+                  '#type' => 'textfield',
+                  '#title' => t('Unit*'),
+                  '#description' => t('Unit of measurments used'),
+                  '#size' => 50,
+                  '#maxlength' => 130,
+                );
+        
+              // DIV:Right    
+              $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i]['form_right_' . $i] = array(
+                '#prefix' => '<div class="form-right">',
+                '#suffix' => '</div><div style="clear: both;"><small>* means required</small></div>',
+              );
+                // Add form element describe method used to div:right.
+                // DESCRIPTION - describe the trait.
+                $form['xls_review_fldset']['fldset_' . $i]['container_form_' . $i]['container_form_wrapper_' . $i]['form_right_' . $i]['txtarea_describe_' . $i] = array(
+                  '#type' => 'textarea',
+                   '#title' => t('Describe the method used*'),
+                   '#description' => t('Describe the method used to collect this data if you used a scale, be specific'),
+                );
+      }  
+    }
+    
+    // Save spreadsheet button - go to stage 03
+    $form['stage02_submit_save'] = array(
+      '#type' => 'submit',
+      '#value' => 'Save spreadheet',
+    );
+  }
+  else {
+    // Direct user to stage 01 in case user will navigate
+    // using back and forward button of the browser.
+    $form['stage02_submit_save'] = array(
+      '#type' => 'submit',
+      '#value' => 'Upload another spreadsheet',
+>>>>>>> Stashed changes
     );
   }
   
-   return $form;
+  return $form;
 }
 
 /**

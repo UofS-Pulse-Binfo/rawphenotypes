@@ -4,18 +4,20 @@
  * Page callback: Displays a heat map chart.
  */
 function rawpheno_rawdata($form, &$form_state) {
-  // Container for svg canvas.
-  $markup = '<div id="rawdata-header">Lorem ipsum dolor sit amet. Curabitur mattis porttitor nulla ut suscipit.</div>';
-  $form['rawdata_header'] = array(
-    '#type' => 'fieldset',
-    '#title' => '',
-    '#value' => $markup,
+  // This is the header section of this page.
+  $form['header_rawdata'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="header-rawdata" class="container-header">',
+    '#suffix' => '</div>',
+    '#markup' => '<span>Phenotypic data available through KnowPulse.</span>',
   ); 
   
-  $form['rawdata'] = array(
-    '#markup' => '<div id="rawdata-container">
-                    <svg class="data-chart"></svg>
-                  </div>',    
+  // Container for contents.
+  $form['container_rawdata'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div id="container-rawdata" class="container-content">
+                  <svg class="data-chart">',
+    '#suffix' => '</svg></div>',    
   );
   
   // Hidden field containing url to JSON.

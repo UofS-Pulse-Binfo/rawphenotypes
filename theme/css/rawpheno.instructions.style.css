@@ -3,11 +3,97 @@
  * Style tabs in phenotypes/instructions page.
  */
 
+/* Import global css */
+@import 'rawpheno.style.css';
+
+/* Header */
+#header-instructions {
+  background: #FAFAFA url('../img/icon-instructions.gif') no-repeat;
+  background-position: 30px 18px;
+  padding-top: 20px;
+}
+
+/* Autocomplete search field */
+#edit-search {
+  font-family: sans-serif;
+  font-weight: 300;
+  font-size: 0.8em;
+  margin: 0;
+  padding: 7px;
+  width: 350px;
+}
+
+#autocomplete {
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  font-size: 0.8em;
+}
+
+#autocomplete li {
+  font-family: sans-serif;
+  padding: 2px 0 2px 5px;
+}
+
+#header-instructions div {
+  margin: 0;
+  padding: 0;
+}
+
+#btn_submit, #btn_reset {
+  font-size: 0.87em;
+  position: absolute;
+}
+
+#btn_submit {
+  margin: -30px 0 0 380px;
+}
+
+#btn_reset {
+  margin: -30px 0 0 480px;
+}
+
+/* Search Result Container */
+#container-search-result {
+  margin: 0;
+  padding: 0;
+}
+
+#container-search-result table div:first-child {
+  background-color: #FFFFFF;
+  border: 1px solid #969696;
+  font-weight: normal;
+  margin: 0 auto;
+  padding: 2px 7px;
+  text-align: center;
+  width: 130px;
+}
+
+#container-search-result table td, #lists table td {
+  vertical-align: top;
+}
+
+#container-search-result p {
+  font-size: 1.1em;
+  margin: 20px 0;
+}
+
+#container-search-result table {
+  border-bottom: 4px solid #314355;
+  margin-bottom: 40px;
+ 
+  -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
+  -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
+  box-shadow:         1px 1px 5px 1px #CCCCCC;
+  
+  min-width: 970px;
+}
+
+/* Tabs */
 #tabs {
   background: none;
-  border-width: 0px;
-  padding: 0px;
-  min-width: 820px;
+  border-width: 0;
+  padding: 0;
+  min-width: 970px;
 }
 
 #tabs .ui-tabs-nav {
@@ -20,22 +106,15 @@
 }
 
 #tabs .ui-tabs-panel {
-  background: #FAFAFA; 
+  background: #FAFAFA;
   border-width: 0px 1px 1px 1px;
   border-radius: 0;
-  font-size: 0.9em;
+  font-size: 0.8em;
 }
 
-#fragment-1 {
-  min-width: 780px;
-}
-
-#fragment-1 p {
-  font-size: 1.2em;
-}
-
-#fragment-1 p a {
-  color: #13b72d;
+#tabs .ui-tabs-panel li p {
+  margin: 0;
+  padding: 2px;
 }
 
 #tabs .ui-tabs-panel li p {
@@ -71,19 +150,33 @@
   width: 130px;
 }
 
+/* Tab 1 */
+#fragment-1 {
+  min-width: 780px;
+}
+
+#fragment-1 p {
+  font-size: 1.2em;
+}
+
+#fragment-1 p a {
+  color: #13b72d;
+}
+
 .container-link {
-  background-color: #EAEAEA;
-  border: 1px solid #FFFFFF;
+  background: #EAEAEA url('../img/bg-download-spreadsheet.gif') repeat-x;
+  border: 1px solid #CCCCCC;
   clear: left;
   font-size: 1.2em;
   margin: 10px 0 0 0;
-  padding: 20px;
+  padding: 25px;
 }
 
+/* All Tabs */
 .ui-tabs-nav li a {
   height: 35px;
   line-height: 30px;
-  font-size: 1.2em;
+  font-size: 1em;
 }
 
 a.button:hover {
@@ -99,64 +192,17 @@ a.button:hover {
   background-color: #CCCCCC;
 }
 
-#phenotype-page {
-  font-size: 0.9em;
-}
-
-.ui-autocomplete li {
-  font-size: 0.7em;
-  font-family: arial;
-}
-
-#container-option {
-  margin: 0 0 25px 0;
-  padding: 0;
-}
-
-div.tools {
-  display: table-cell;
-  padding: 0 5px 0 0;
-}
-
-#container-option table div:first-child {
-  background-color: #FFFFFF;
-  border: 1px solid #969696;
-  font-weight: normal;
-  margin: 0 auto;
-  padding: 2px 7px;
-  text-align: center;
-  width: 130px;
-}
-
-#container-option table td, #lists table td {
-  vertical-align: top;
-}
-
-#container-option p {
-  font-size: 1.1em;
-  margin: 0;
-}
-
-#container-option table {
-  border-bottom: 4px solid #314355;
-  margin-bottom: 40px;
-  
-  -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
-  -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
-  box-shadow:         1px 1px 5px 1px #CCCCCC;
-}
-
 /* photo appendix */
 #photo-container {
-  background-color: #EAEAEA; 
-  padding: 30px 5px; 
+  background-color: #EAEAEA;
+  padding: 30px 5px;
   margin-top: 20px;
-  text-align: center; 
-  width: 95%; margin:0 auto; 
+  text-align: center;
+  width: 95%; margin:0 auto;
 }
 
 #gallery-container {
-  display: inline-block; 
+  display: inline-block;
   margin: 0 auto;
 }
 
@@ -177,7 +223,7 @@ div.tools {
 }
 
 .gallery-img {
-  float: left; 
+  float: left;
   width: 470px;
 }
 
@@ -190,36 +236,4 @@ div.tools {
   font-style: italic;
   font-weight:1.01em;
   padding-bottom: 10px;
-}
-
-#autocomplete {
-  background-color: #FFFFFF;
-  border: 1px solid #CCCCCC;
-}
-
-#autocomplete li {
-  font-family: sans-serif;
-  padding: 2px 0 2px 5px;
-}
-
-#edit-search {
-  height: 20px;
-  padding-left: 10px;
-  font-family: sans-serif;
-  font-weight: 300;
-  font-size: 1.1em;
-  width: 380px;
-}
-
-#search-container {
-  background-color: #FAFAFA;
-}
-
-/* header */
-#search-container {
-  background: #FAFAFA url('../img/icon-instructions.gif') no-repeat;
-  background-position: 30px 25px;
-  border-radius: 0;
-  padding-left: 75px;
-  min-width: 740px;
 }

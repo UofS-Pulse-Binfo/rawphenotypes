@@ -11,6 +11,7 @@
   width: 100%;
   font-family: sans-serif;
   font-weight: 300;
+  padding-bottom: 6px;
 }
 
 .progress-meter, .region-content ul, .region-content ol {
@@ -29,7 +30,7 @@ ol.progress-meter li {
   border-bottom-style: solid;
   display: inline-block;
   font-size: 12px;
-  height: 36px;
+  height: 27px;
   text-align: center;
   text-indent: -19px;
   width: 30.20%;
@@ -52,7 +53,7 @@ ol.progress-meter li.done {
 
 ol.progress-meter li.done:before {
   content: "\2713";
-  bottom: -28.175px;
+  bottom: -20.175px;
   border: none;
   border-radius: 19px;
   height: 19px;
@@ -66,7 +67,7 @@ ol.progress-meter li.todo {
 
 ol.progress-meter li.todo:before {
   content: "\2B24";
-  bottom: -26.95px;
+  bottom: -18.95px;
   font-size: 17.1px;
   line-height: 18.05px;
 }
@@ -82,10 +83,10 @@ ol.progress-meter li.done:before {
 }
 
 ol.progress-meter li.todo {
-  border-bottom-color: silver;
+  border-bottom-color: #D5D5D5;
   color: silver;
 }
 
 ol.progress-meter li.todo:before {
-  color: silver;
+  color: #D5D5D5;
 }
