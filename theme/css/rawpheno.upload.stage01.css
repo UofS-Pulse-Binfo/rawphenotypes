@@ -25,17 +25,21 @@
   
   height: 420px;
   margin: 0;
-  padding: 0;
-  width: 100%;
+  padding: 10px;
+  width: 98.2%;
+  min-width: 895px;
 }
 
 /* Drag file here message and link container */
 .droppable-message {
+  border: 3px solid none;
   color: #666666;
   font-size: 1.3em;
   line-height: 55px;
-  margin: 180px 0 0 0;
-  padding: 0;
+  margin: 0 auto;
+  padding-top: 180px;
+  width: 99%;
+  height: 232px;
 }
 
 /* Choose file link */

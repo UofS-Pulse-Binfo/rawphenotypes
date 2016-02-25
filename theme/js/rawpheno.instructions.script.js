@@ -72,6 +72,7 @@
         txtField.val('').focus();
         // Reference to Search button.
         var btnSearch = $("#btn_submit");
+        var btnReset = $("#btn_reset");
         
         // Create a label as default value in the search text field.
         // When selected will clear the value.
@@ -141,13 +142,13 @@
                 // If search is successful - replace Search button value
                 // to Clear Search to allow user to reset search.
                 var resetLink = '<input id="btn_reset" name="btn_reset" class="form-submit" value="Clear search" type="button">';
-                $('div.tools:last-child').append(resetLink);
+                $('#header-instructions').append(resetLink);
                 
                 $('#btn_reset').click(function() {
                   // Reset search - remove the result and reset button label.
                   txtField.val('Search Trait');
                   // Remove search result.
-                  $('#container-option table, #container-option p').hide('slow').remove();
+                  $('#container-search-result table, #container-search-result p').hide('slow').remove();
                   $(this).remove();
                   txtField.focus();
                 });
@@ -182,7 +183,7 @@
                 var traitRow = $('#tabs table').find('tr').eq(traitTrIndex).html();
                 var tableHeader = $('table').eq(1).find('tr').eq(0).html();
                 var newDiv = traitType+'<table><tr>'+tableHeader+'</tr><tr>'+traitRow+'</tr></table>';
-                $('#container-option').append(newDiv);
+                $('#container-search-result').append(newDiv);
               }
               else {
                 if (traitsWithKey.length > 0) {
@@ -190,7 +191,7 @@
                   for(var i = 0; i < traitsWithKey.length; i++) {
                     suggestion = suggestion + ' &bull;&nbsp;<a href="javascript:void();">'+traitsWithKey[i]+'</a>&nbsp;';
                   }
-                  $('#container-option').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
+                  $('#container-search-result').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
                 
                   // Enable links in did you mean:/suggested traits
                   $('#list-suggest a').click(function() {
@@ -223,8 +224,8 @@
         }
         
         // Remove any search result from previous search.
-        if ($('#container-option table').length > 0) {
-          $('#container-option table, #container-option p').hide('slow').remove();
+        if ($('#container-search-result table').length > 0) {
+          $('#container-search-result table, #container-search-result p').hide('slow').remove();
         }
         
         // Remove clear button from previous search.
@@ -236,7 +237,7 @@
       // Display error message.
       function errorMessage(title, message) {
         var error = '<div class="messages error">'+title+'<pre><h3>'+message+'</h3></pre></div>';
-        $('#container-option').append(error);
+        $('#container-search-result').append(error);
         
         $('#edit-search').focus();
       }

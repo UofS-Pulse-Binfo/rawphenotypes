@@ -39,5 +39,56 @@ input[type=checkbox] {
 }
 
 .container-form {
-  padding: 0 30px;
+  background: url('../../theme/img/icon-marker.gif') no-repeat top center;
+  background-position: 60px 0;
+  padding-top: 15px;
+  margin-bottom: 20px;
+}
+
+.container-form-wrapper {
+  background-color: #FFFFFF;
+  padding: 20px 30px;
+}
+
+#container-fields {
+  background-color: #FAFAFA;
+  border: 1px solid #AAAAAA;
+  padding: 40px;
+  
+  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
+  
+  margin-bottom: 20px; 
+}
+
+.row-shade, .row-plain {
+  border: 1px solid #AAAAAA;
+  padding: 20px 20px 10px 20px;
+}
+
+p {
+  font-size: 1.2em;
+  margin: 0;
+  padding: 0;
+}
+
+.row-shade {
+  background-color: #D1D1D1;
+}
+
+.row-plain {
+  background-color: #EAEAEA ;
+}
+
+.form-left {
+  float: left;
+  width: 45%
+  min-width: 450px;
+  margin-right: 40px;
+}
+
+.form-right {
+  float: left;
+  width: 45%;
 }

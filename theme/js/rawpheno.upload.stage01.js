@@ -10,9 +10,12 @@
 		    $('.droppable-browse-button').text('choose your file');
 		    // Drag over events.
 		    var drop = document.getElementById('droppable-dnd');
+        var dropInner = document.getElementsByClassName('droppable-message')[0];
+        
         var dropMessageHTML = $('.droppable-message').html();
         var dropMessage = $('.droppable-message');
         
+<<<<<<< Updated upstream
         if (drop) {
           drop.addEventListener("dragover", function() { 
             drop.style.border = '1px dashed #999999';
@@ -60,6 +63,25 @@
           submitButton.addClass('form-button-disabled');
           submitButton.attr('disabled','disabled');
         }
+=======
+        drop.addEventListener("dragover", function() { 
+          dropInner.style.border = '4px dashed #999999';
+          // Create a new instruction to user.
+          dropMessage.text('Drop to upload and validate your spreadsheet'); 
+        });  
+      
+        drop.addEventListener("dragleave", function() { 
+          dropInner.style.border = 'none';
+          // Remove new instruction and restore original message.
+          dropMessage.html(dropMessageHTML);
+        });
+        
+        drop.addEventListener("drop", function() { 
+          dropInner.style.border = 'none';
+          // Remove new instruction and restore original message.
+          dropMessage.html(dropMessageHTML);
+        });
+>>>>>>> Stashed changes
       });
     }
   };
