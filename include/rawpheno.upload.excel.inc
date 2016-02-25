@@ -585,6 +585,51 @@ function rawpheno_function_format($text, $class) {
 }
 
 /**
+ * Determines which headers indicate new traits as compared to those expected for AGILE.
+ *
+ * @param $xls_file
+ *    The full path to the excel file containing data.
+ * @param $handle?
+ *    A reference to the openened file?
+ *
+ * @return
+ *    An array of headers for new traits.
+ */
+function rawpheno_indicate_new_headers($file) {
+
+  // Retrieve the header for the indicated file.
+  // @TODO
+  $rows = rawpheno_function_read($file);
+  $xls_headers = $rows[0];
+  
+  // Array to hold epected column headers.
+  $expected_headers = rawpheno_function_headers('expected');
+  
+  // Remove any formatting in each column headers.
+  $expected_headers = array_map('rawpheno_function_delformat', $expected_headers);
+  
+  // Array to hold new column headers.
+  $new_headers = array();
+
+  // Assuming the file actually has a non-empty header row...
+  if (count($xls_headers) > 0) {
+  
+    // Read each column header and compare against expected column headers.
+    foreach($xls_headers as $value) {
+      $temp_value = rawpheno_function_delformat($value);
+      
+      // Determine if column header exists in the expected column headers.
+      if (!in_array($temp_value, $expected_headers) && !empty($value)) {
+        // Not in expected column headers, save it as new header.
+        array_push($new_headers, $value);
+      }
+    }
+  }
+
+  return $new_headers;
+}
+
+/**
  * Function to find new headers.
  *
  * @param $var_name

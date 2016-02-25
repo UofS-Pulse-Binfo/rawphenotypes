@@ -42,6 +42,15 @@ function rawpheno_upload_form_master($form, &$form_state) {
   
   // Add the stage tracker/header.
   $form = rawpheno_get_header($form, $form_state);
+
+  // Add the next button for all but the last step.
+  if ($form_state['stage'] != 'save') {
+    $form['next_step'] = array(
+      '#type' => 'submit',
+      '#value' => 'Next Step',
+      '#weight' => 100
+    );
+  }
   
   // Get the directory path to rawpheno module.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
@@ -59,7 +68,6 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage02.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage02.js');
       
       $form = rawpheno_upload_form_stage_review($form, $form_state);
       break;
@@ -70,14 +78,6 @@ function rawpheno_upload_form_master($form, &$form_state) {
 
       $form = rawpheno_upload_form_stage_save($form, $form_state);
       break;
-  }
-
-  // Add the next button for all but the last step.
-  if ($form_state['stage'] != 'save') {
-    $form['next_step'] = array(
-      '#type' => 'submit',
-      '#value' => 'Next Step',
-    );
   }
   
   return $form;
@@ -120,81 +120,135 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
  *
  * Stage 02 form allows user to describe and save a additional trait/s found
  * in the spreadsheet submitted in Stage 01.
+ *
+ * Assuming the file uploaded properly, we have access to an excel file and need to
+ * ensure that all traits have been described. If there are any that haven't then
+ * we need to ask the the user to define them now.
  */
-function rawpheno_upload_form_stage_review($form, &$form_state) {
+function rawpheno_upload_form_stage_review(&$form, &$form_state) {
+  $new_header = array();
   
-  // Read variable containing new headers found in stage 01.
-  // Based on these new traits, construct form to allow user to describe each new traits.
-  $new_header = variable_get('rawpheno_new_header');
-  
-  // Create form only when there is new traits.
-  if (isset($new_header) && count($new_header) > 0) {
-
-    // Main fieldset container for form elements.
-    $form['xls_review_fldset'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Check the traits that you want to describe and save'),
-    );
-
-    foreach($new_header as $i => $k) {
-      if (isset($k) && !empty($k)) {
-        // Fieldset to contain a set of trait and corresponding form elements.
-        $form['xls_review_fldset']['fldset_' . $i] = array(
-          '#type' => 'fieldset',
-          '#title' => '',
-        );
-          // All fields are required.
-          // CHECKBOX to let user select a trait to describe and save.
-          $form['xls_review_fldset']['fldset_' . $i]['chk_' . $i] = array(
-            '#type' => 'checkbox',
-            '#title' => t(ucwords($k)),
-          );
-          // TERM NAME/TRAIT/HEADER
-          $form['xls_review_fldset']['fldset_' . $i]['txt_header_' . $i] = array(
-            '#type' => 'hidden',
-            '#value' => $k,
-          ); 
-            // These fields are hidden by default - show only when checked.
-            // TERM DEFINITION
-            $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i] = array(
-              '#type' => 'textfield',
-              '#title' => t('Definition*'),
-              '#description' => t('A human-readable text definition'),
-              '#maxlength' => 150,
-              '#prefix' => '<div class="container-form" id="div-edit-chk-'. $i .'" style="display: none;">',
-            );
-            // UNIT
-            $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
-              '#type' => 'textfield',
-              '#title' => t('Unit*'),
-              '#description' => t('Unit of measurments used'),
-              '#size' => 30,
-              '#maxlength' => 100,
-            );
-            // DESCRIPTION - describe the trait.
-            $form['xls_review_fldset']['fldset_' . $i]['txtarea_describe_' . $i] = array(
-              '#type' => 'textarea',
-              '#title' => t('Describe the method used*'),
-              '#description' => t('Describe the method used to collect this data if you used a scale, be specific'),
-            );
-            // Note indicating fields are required.
-            $form['xls_review_fldset']['fldset_' . $i]['required_mark'] = array(
-              '#markup' => '<small>* means required</small>',
-              '#suffix' => '</div>',
-            );
-      }
-    } 
-  } 
-  // If there are no new traits then simply inform the user of this and move to the next step.
+  // First step, determine which headers/traits need to be described.
+  if (isset($form_state['multistep_values']['fid'])) {
+    $file = file_load($form_state['multistep_values']['fid']);
+    if ($file) {
+      $new_header = rawpheno_indicate_new_headers($file);
+      $form_state['multistep_values']['new_headers'] = $new_header;
+    }
+    else {
+      drupal_set_message('Unable to access your file. Please try uploading again.', 'error');
+    }
+  }
   else {
-
+    drupal_set_message('We have no record of your uploaded file. Please try uploading it again.', 'error');
+  }
+  
+  // If we were unable to access the file then don't let them proceed.
+  if (!isset($file) OR empty($file)) {
+    $form['notice'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="messages error">'
+        . t('Unable to access uploaded file. Please attempt to upload your file again <a href="@upload-page">on the previous page</a>. If the problem persists then contact the administrator.',
+            array('@upload-page' => url('phenotypes/raw/upload')))
+        . '</div>',
+    );
+    
+    unset($form['next_step']);
+    
+    return $form;
+  }
+  
+  // If there are no new headers then they don't have to do anything.
+  if (empty($new_header)) {
     $form['notice'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="messages status">No new traits were detected in the spreadsheet. Please click "Next Step".</div>',
     );
+    
+    return $form;
   }
+
+  // Otherwise, we need a form!
+  // Main fieldset container for form elements.
+  $form['xls_review_fldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Check the traits that you want to describe and save'),
+  );
+
+  foreach($new_header as $i => $k) {
+    if (isset($k) && !empty($k)) {
+    
+      // Fieldset to contain a set of trait and corresponding form elements.
+      $form['xls_review_fldset']['fldset_' . $i] = array(
+        '#type' => 'fieldset',
+        '#title' => '',
+        '#prefix' => '<span id="trait-description-' . $i . '">',
+        '#suffix' => '</span>',
+      );
+
+      // All fields are required.
+      // CHECKBOX to let user select a trait to describe and save.
+      $form['xls_review_fldset']['fldset_' . $i]['chk_' . $i] = array(
+        '#type' => 'checkbox',
+        '#title' => t(ucwords($k)),
+        '#ajax' => array(
+          'callback' => 'ajax_rawpheno_upload_form_step2_expand_trait_callback',
+          'wrapper' => 'trait-description-' . $i,
+          'effect' => 'fade',
+          'trait_index' => $i,
+        )
+      );
+        
+      // If the checkbox is checked then show the fields we want described.
+      if (isset($form_state['values']['chk_' . $i]) AND ($form_state['values']['chk_' . $i] == TRUE)) {
+
+        // TERM NAME/TRAIT/HEADER
+        $form['xls_review_fldset']['fldset_' . $i]['txt_header_' . $i] = array(
+          '#type' => 'hidden',
+          '#value' => $k,
+        ); 
+          // These fields are hidden by default - show only when checked.
+          // TERM DEFINITION
+          $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i] = array(
+            '#type' => 'textfield',
+            '#title' => t('Definition'),
+            '#required' => TRUE,
+            '#description' => t('A human-readable text definition'),
+            '#maxlength' => 150,
+            '#prefix' => '<div class="container-form" id="div-edit-chk-'. $i .'">',
+          );
+          // UNIT
+          $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
+            '#type' => 'textfield',
+            '#title' => t('Unit'),
+            '#required' => TRUE,
+            '#description' => t('Unit of measurments used'),
+            '#size' => 30,
+            '#maxlength' => 100,
+          );
+          // DESCRIPTION - describe the trait.
+          $form['xls_review_fldset']['fldset_' . $i]['txtarea_describe_' . $i] = array(
+            '#type' => 'textarea',
+            '#title' => t('Describe the method used'),
+            '#required' => TRUE,
+            '#description' => t('Describe the method used to collect this data if you used a scale, be specific'),
+          );
+        }
+    }
+  } 
   
    return $form;
+}
+
+/*
+ * Selects the piece of the form we want to use as replacement text and returns
+ * it as a form (renderable array).
+ *
+ * @return renderable array (the trait description elements)
+ */
+function ajax_rawpheno_upload_form_step2_expand_trait_callback($form, $form_state) {
+  $trait_index = $form_state['triggering_element']['#ajax']['trait_index'];
+  return $form['xls_review_fldset']['fldset_' . $trait_index];
 }
 
 /**
@@ -360,7 +414,7 @@ function rawpheno_file_validate($file) {
       $txt_error = rawpheno_function_error($arr_xls_errors, $total_rows);
     }  
 
-drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
+    drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
 
     //Determine if there is errors to report.    
     if (strlen(trim($txt_error)) > 0) {
@@ -371,8 +425,6 @@ drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => 
     else {
       // No errors - save new header and path to file.
       variable_set('rawpheno_xls_file', drupal_realpath($file->destination));
-      // Find new headers in the spreadsheet.
-      rawpheno_function_newheader('rawpheno_new_header', $xls_headers_row);
       
       drupal_set_message(t('<span id="rawpheno-upload-successful">The specified file %file was uploaded successfully after passing all validation.</span>', array('%file' => $file->filename)));
     }
@@ -381,93 +433,9 @@ drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => 
 }
 
 /**
- * Implements hook_file_presave().
- *
- * Display file validation result.
- */
-function rawpheno_file_presave($file) {
-  if (isset($file)) {
-    // Read variable for new headers.
-    $new_header = variable_get('rawpheno_new_header'); 
-    
-    // Determine if there is new header found.
-    if (count($new_header) > 0) {
-      // New headers found in the variable must be described.
-      $txt_header = rawpheno_function_format('In Worksheet Measurements:', 'em');
-      $h = 'Found '.count($new_header).' additional column headers/traits that require more information.';
-      $txt_header .= rawpheno_function_format($h, 'text');
-    
-      // Show user these new column headers found.
-      foreach($new_header as $header) {
-        $txt_header .= rawpheno_function_format($header, 'cell');
-      }
-    
-      // Create a status window using this id.
-      $id = 'stage01-window-review';
-    }
-    else {
-      // No new column headers to describe.
-      $txt_header = rawpheno_function_format('Spreadsheet passed basic compliance test.', 'em');
-    
-      // Create a status window using this id.
-      $id = 'stage01-window-success';
-    }
-  
-    // Report to user status or progress of state 01
-    //drupal_set_message('Spreadsheet is valid.<pre id="'.$id.'">'.$txt_header.'</pre>', 'status');
-  }
-}
-
-/**
  * Implements hook_validate().
- * Validate traits review form.
  */
-function rawpheno_upload_form_master_validate($form, &$form_state) {
-  // Submit button from review traits triggered the submit action. 
-  if (isset($form_state['stage']) && $form_state['stage'] == 'review') {
-    // Validate the review form.
-    return rawpheno_validate_review($form, $form_state);
-  }
-}
-
-/**
- * Validate form entries in describe trait from.
- */
-function rawpheno_validate_review($form, &$form_state) {
-  // Include CSS - this is a fix to drupal not showing header information on hook_validate().
-  $form['#attached']['css'] = array(drupal_get_path('module', 'rawpheno') . '/upload/css/rawpheno_upload_style.css');
- 
-  // Read new headers variable.
-  $new_header = variable_get('rawpheno_new_header');
-  
-  if (isset($new_header) && count($new_header) > 0) {
-    foreach($new_header as $key => $value) {
-      // User supplied values to be validated. 
-      $txt_header   = $form_state['values']['txt_header_' . $key];
-      $txt_def      = $form_state['values']['txt_def_' . $key];
-      $txt_unit     = $form_state['values']['txt_unit_' . $key];
-      $txt_describe = $form_state['values']['txtarea_describe_' . $key];
-      
-      // Validate only when user cheked checbox associated to trait.
-      if ($form_state['values']['chk_' . $key] == 1) {
-        if (empty($txt_def)) {
-          // Definition
-          form_set_error('txt_def_' . $key, 'Definition is required in ' . $txt_header);
-        } 
-      
-        if (empty($txt_unit)) {
-          // Unit
-          form_set_error('txt_unit_' . $key, 'Unit is required in ' . $txt_header);
-        }
-      
-        if (empty($txt_describe))  {
-          // Description
-          form_set_error('txtarea_describe_' . $key, 'Description is required in ' . $txt_header);
-        }
-      }
-    }
-  } 
-}
+function rawpheno_upload_form_master_validate($form, &$form_state) { }
 
 /**
  * Implements hook_submit().
@@ -487,6 +455,11 @@ function rawpheno_upload_form_master_submit(&$form, &$form_state) {
     if ($job_id) {
       drupal_goto(current_path() . '/' . $job_id);
     }
+  }
+  
+  // If we just uploaded the file then we want to save the fid for easy access.
+  if (isset($form_state['values']['dnd'])) {
+    $form_state['multistep_values']['fid'] = $form_state['values']['dnd'];
   }
     
   // If the next step button was pressed then iterate to the next step.
@@ -523,16 +496,19 @@ function rawpheno_submit_review($form, &$form_state) {
  
   // 1. Save new headers.
   // Read variable that holds new column headers.
-  $new_header = variable_get('rawpheno_new_header');
+  $new_header = $form_state['multistep_values']['new_headers'];
   
   // Determine if there is new header.
-  if (isset($new_header) && count($new_header) > 0) {
+  if (count($new_header) > 0) {
+  
     // Read each column header.
-    foreach($new_header as $i => $header) {  
+    foreach($new_header as $i => $header) { 
+    
       // Determine if the form in review traits has been filled out and checkbox
       // has been checked by user.
       if ($form_state['values']['chk_' . $i] == 1) {  
         // Get all form values when checkbox only when it is checked.
+        $already_inserted = FALSE;
         // Save in cvterm.
         $cv_term        = $form_state['values']['txt_header_' . $i];
         $cv_unit        = $form_state['values']['txt_unit_' . $i];
@@ -556,36 +532,52 @@ function rawpheno_submit_review($form, &$form_state) {
           $vocabulary = ($m == 0) ? 'phenotype_measurement_types' : 
                                     'phenotype_measurement_units';
           
-          // Insert cvterm measurement type and unit.
-          $arr_term_params = array('id'         => 'tripal:'.$term,
-                                   'name'       => $cv_name,
-                                   'definition' => $definition,
-                                   'cv_name'    => $vocabulary);  
+          // Check to see if the term already exists.
+          // Currently we are just assuming if the name is the same then it's the same trait.
+          // This is obviously an incorrect assumption since most traits can be measured
+          // a ba-jillion different ways so we should revisit this.
+          // @TODO: Find a better way to deal with multiple terms having the same name.
+          $term = tripal_get_cvterm(
+            array('name' => $cv_name, 'cv_id' => array('name' => $vocabulary)),
+            array('include_fk' => array())
+          );
           
-          // Store cvterm ids generated to be used in relating
-          // a cvterm type to cvterm unit. 
-          $cvterm_id[$m] = tripal_insert_cvterm($arr_term_params);
+          if (!$term) {
+            // Insert cvterm measurement type and unit.
+            $arr_term_params = array('id'         => 'tripal:'.$term,
+                                     'name'       => $cv_name,
+                                     'definition' => $definition,
+                                     'cv_name'    => $vocabulary);  
           
-          // Insert description to cvtermprop,
-          // when inserting a measurement unit.
-          if ($m == 1) {
-            $ins = db_insert('chado.cvtermprop')
-              ->fields(array('cvterm_id' => $cvterm_id[1]->cvterm_id, 
-                             'type_id'   => $cv_measurements_unit,
-                             'value'     => $cv_description,
-                             'rank'      => 0))
-              ->execute();
+            // Store cvterm ids generated to be used in relating
+            // a cvterm type to cvterm unit. 
+            $cvterm_id[$m] = tripal_insert_cvterm($arr_term_params);
+          
+            // Insert description to cvtermprop,
+            // when inserting a measurement unit.
+            if ($m == 1) {
+              $ins = db_insert('chado.cvtermprop')
+                ->fields(array('cvterm_id' => $cvterm_id[1]->cvterm_id, 
+                               'type_id'   => $cv_measurements_unit,
+                               'value'     => $cv_description,
+                               'rank'      => 0))
+                ->execute();
+            }
+          }          
+          else {
+            $already_inserted = TRUE;
           }
-          
           $m++;
         }
         
         // Relate term with unit in chado.cvterm_relationship
-        $ins = db_insert('chado.cvterm_relationship')
-          ->fields(array('type_id'    => $cv_measurements_unit,
-                         'subject_id' => $cvterm_id[0]->cvterm_id,
-                         'object_id'  => $cvterm_id[1]->cvterm_id))
-          ->execute();
+        if (!$already_inserted) {
+          $ins = db_insert('chado.cvterm_relationship')
+            ->fields(array('type_id'    => $cv_measurements_unit,
+                           'subject_id' => $cvterm_id[0]->cvterm_id,
+                           'object_id'  => $cvterm_id[1]->cvterm_id))
+            ->execute();
+        }
       }
     } 
   }
