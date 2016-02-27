@@ -3,23 +3,8 @@
  * Style phenotypes/rawdata.
  */
 
-<<<<<<< Updated upstream
-#rawdata-container {
-  background-color: #FAFAFA;
-  border: 1px solid #AAAAAA;
-  padding: 60px;
-  max-width: 100%;
-  min-width: 850px;
-  text-align: center;
-  
-  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
-  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
-  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
-}
-=======
-/* Import global css */
+/* Import rawpheno global css */
 @import 'rawpheno.style.css';
->>>>>>> Stashed changes
 
 .chart-title {
   font-family: sans-serif;
@@ -64,27 +49,7 @@ div.tool-tip {
   text-align: center;                       
 }
 
-<<<<<<< Updated upstream
-/* header */
-#edit-rawdata-header {
-  background: #FAFAFA url('../img/icon-rawdata.gif') no-repeat;
-  background-position: 30px 25px;
-  border-radius: 0;
-  padding-left: 75px;
-  min-width: 890px;
+/* Page icon */
+.container-subtitle {
+  background: url('../img/icon-rawdata.gif') no-repeat left top;
 }
-
-#rawdata-header {
-  font-size: 1.2em;
-  font-family: sans-serif;
-  padding-top: 5px;
-  padding-bottom: 18px;
-  font-weight: normal;
-}
-=======
-/* header 
-#header-rawdata {
-  background: url('../img/icon-rawdata.gif') no-repeat;
-  background-position: 30px 18px;
-}*/
->>>>>>> Stashed changes

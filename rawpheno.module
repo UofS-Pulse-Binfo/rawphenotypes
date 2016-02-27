@@ -273,14 +273,31 @@ function rawpheno_rawdata_summary_json() {
  * Page callback: display standard phenotyping instructions page.
  */
 function rawpheno_instructions($form, &$form_state) {
+  // Page title.
+  $form['page_title'] = array(
+    '#type' => 'markup',
+    '#markup' => 'Standard Phenotyping Procedure',
+  );
+  
+  // Navigation button.
+  $form['page_button'] = array(
+    '#type' => 'markup',
+    '#markup' => '<a href="./raw/upload">Upload Data</a>',
+  );
+  
   // Search field with autocomplete feature.
-  $form['search'] = array(
+  $form['txt_search'] = array(
     '#title' => '',
     '#type' => 'textfield',
     '#maxlength' => 65,
     '#size' => 65,
     '#default_value' => t('Search Trait'),
     '#autocomplete_path' => 'autocomplete',
+  );
+  
+  $form['btn_search'] = array(
+    '#type' => 'markup',
+    '#markup' => '<input type="button" id="btn_submit" name="btn_submit" class="form-submit" value="Search">',
   );
 
   // Hidden field containing url to json.
@@ -309,7 +326,13 @@ function rawpheno_instructions($form, &$form_state) {
 function rawpheno_theme($existing, $type, $theme, $path) {
   $items['rawpheno_instructions'] = array(
     'render element' => 'form',
-    'template' => 'rawpheno_instructions',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+
+  $items['rawpheno_rawdata'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
     'path' => $path . '/theme',
   );
 

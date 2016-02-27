@@ -68,9 +68,8 @@
 		    
 		    // SEARCH FUNCTIONALITY
 		    // Reference to search textbox.
-        var txtField = $('#edit-search');
-        txtField.val('').focus();
-        // Reference to Search button.
+        var txtField = $('#edit-txt-search');
+        // Reference to search buttons.
         var btnSearch = $("#btn_submit");
         var btnReset = $("#btn_reset");
         
@@ -142,7 +141,7 @@
                 // If search is successful - replace Search button value
                 // to Clear Search to allow user to reset search.
                 var resetLink = '<input id="btn_reset" name="btn_reset" class="form-submit" value="Clear search" type="button">';
-                $('#header-instructions').append(resetLink);
+                $('div.subtitle-left').append(resetLink);
                 
                 $('#btn_reset').click(function() {
                   // Reset search - remove the result and reset button label.
@@ -239,7 +238,7 @@
         var error = '<div class="messages error">'+title+'<pre><h3>'+message+'</h3></pre></div>';
         $('#container-search-result').append(error);
         
-        $('#edit-search').focus();
+        $('#edit-txt-search').focus();
       }
     }
   };

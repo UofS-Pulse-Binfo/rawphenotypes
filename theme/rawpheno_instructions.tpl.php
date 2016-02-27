@@ -42,15 +42,7 @@ $traits = rawpheno_function_headers('phenotyping');
 ?>
 
 <div id="phenotype-page">
-  <div id="container-search-result">
-    <div id="header-instructions" class="container-header">
-      <?php 
-        print drupal_render($form["search"]); 
-        print drupal_render($form["json_url"]);
-      ?>
-      <input type="button" id="btn_submit" name="btn_submit" class="form-submit" value="Search">
-    </div>
-  </div>
+  <div id="container-search-result"></div>
   
   <div id="tabs">
     <ul>
