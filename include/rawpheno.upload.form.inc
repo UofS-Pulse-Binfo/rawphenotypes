@@ -426,7 +426,7 @@ function rawpheno_file_validate($file) {
       // No errors - save new header and path to file.
       variable_set('rawpheno_xls_file', drupal_realpath($file->destination));
       
-      drupal_set_message(t('<span id="rawpheno-upload-successful">The specified file %file was uploaded successfully after passing all validation.</span>', array('%file' => $file->filename)));
+      drupal_set_message(t('<span id="rawpheno-upload-successful">The specified file %file passed basic validation. Please click "Next Step".</span>', array('%file' => $file->filename)));
     }
   }  
 
