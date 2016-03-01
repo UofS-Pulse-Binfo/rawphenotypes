@@ -13,7 +13,7 @@ function rawpheno_rawdata($form, &$form_state) {
   // Navigation button.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => '<a href="./raw/rawdata">Download Data</a>',
+    '#markup' => '<a href="raw/download">Download Data <span>&#10095;</span></a>',
   );
   
   // Page Contents.

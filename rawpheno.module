@@ -282,7 +282,7 @@ function rawpheno_instructions($form, &$form_state) {
   // Navigation button.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => '<a href="./raw/upload">Upload Data</a>',
+    '#markup' => '<a href="../raw/upload">Upload Data <span>&#10095;</span></a>',
   );
   
   // Search field with autocomplete feature.
@@ -297,7 +297,7 @@ function rawpheno_instructions($form, &$form_state) {
   
   $form['btn_search'] = array(
     '#type' => 'markup',
-    '#markup' => '<input type="button" id="btn_submit" name="btn_submit" class="form-submit" value="Search">',
+    '#markup' => '<input type="button" id="btn_submit" name="btn_search" class="form-submit" value=" ">',
   );
 
   // Hidden field containing url to json.
@@ -331,6 +331,12 @@ function rawpheno_theme($existing, $type, $theme, $path) {
   );
 
   $items['rawpheno_rawdata'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+
+  $items['rawpheno_download'] = array(
     'render element' => 'form',
     'template' => 'rawpheno_pages',
     'path' => $path . '/theme',

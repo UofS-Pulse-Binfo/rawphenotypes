@@ -6,66 +6,56 @@
 /* Import global css */
 @import 'rawpheno.style.css';
 
-/* header */
-#header-download {
-  background: #FAFAFA url('../img/icon-download.gif') no-repeat;
-  background-position: 30px 18px;
-}
-
-.form-cell {
-  float: left;
-  margin: 0 10px;
-  padding: 0;
-}
-
-.form-cell span {
-  background: #CCCCCC url('../img/icon-marker-small.gif') no-repeat;
-  background-position: 20px 37px;
-  border-bottom: 4px solid #FFFFFF;
-  display: block;
-  font-family: sans-serif;
-  font-weight: 400;
-  margin: 0 0 -3px 0;
-  padding: 12px;
+/* Page icon */
+.container-subtitle {
+  background: url('../img/icon-download.gif') no-repeat left top;
+  background-position: 0 5px;
   text-align: left;
 }
 
-#div-controls {
-  background-color: #FFFFFF;
-  border: 1px solid #CCCCCC;
-  border-top: none;
-  height: 296px;
+label {
+  font-size: 0.9em;
+  font-weight: bold;
+  margin: 0 0 5px; 0;
 }
 
-#div-controls label {
-  font-weight: normal;
-  font-family: sans-serif;
-  margin: 50px 0;
-}
-
-#div-controls span {
-  width: 140px;
-}
-
-.clear-float {
-  clear: both;
-  font-size: 0;
-  margin: 0;
-  padding: 0;
-}
-
-input[type=checkbox] {
-  /* All browsers except webkit*/
-  transform: scale(1.2);
-
-  /* Webkit browsers*/
-  -webkit-transform: scale(1.2);
+select {
+  min-width: 350px;
 }
 
 select:disabled {
   background-color: #F7F7F7;
 }
 
-#edit-traits:disabled {
+#div-measurements .form-select:disabled {
   background: url('../img/throbber-active.gif') no-repeat center;
+}
+
+.form-wrapper {
+  display: inline-block;
+}
+
+#div-location, #div-measurements {
+  margin: 0 15px;
+  text-align: left;
+}
+
+#div-location {
+  float: left;
+}
+
+#div-measurements {
+  float: right;
+}
+
+#div-button {
+  border-top: 1px solid #EAEAEA;
+  clear: both;
+  text-align: right;
+  margin: 0 15px;
+  padding: 15px 0 0 0;
+}
+
+#edit-download-submit {
+  margin: 0;
 }

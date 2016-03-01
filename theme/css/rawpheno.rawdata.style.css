@@ -6,6 +6,12 @@
 /* Import rawpheno global css */
 @import 'rawpheno.style.css';
 
+/* Page icon */
+.container-subtitle {
+  background: url('../img/icon-rawdata.gif') no-repeat;
+  background-position: 0 5px;
+}
+
 .chart-title {
   font-family: sans-serif;
   font-size: 18px;
@@ -47,9 +53,4 @@ div.tool-tip {
   position: absolute;           
   pointer-events: none;     
   text-align: center;                       
-}
-
-/* Page icon */
-.container-subtitle {
-  background: url('../img/icon-rawdata.gif') no-repeat left top;
 }
