@@ -356,79 +356,39 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  * Basic compliance test of spreadsheet submitted.
  */
 function rawpheno_file_validate($file) {
-  // Variables containing spreadsheet file information.
-  $xls_file = drupal_realpath($file->uri);
-  $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);  
-
-  // Assume everything went well unless it didn't.
-  $status = array(
-    'is_xlsx' => TRUE,
-    'tab_exists' => TRUE,
-    'missing_header' => TRUE,
-  );
   
-  if (isset($file) && filesize($xls_file) && in_array($xls_extension, array('xls', 'xlsx'))) {
-    // File exists and is valid xls or xlsx.
-    // Array to hold first, last and 10th row required in performing basic compliance test.
-    $arr_xls_rows = rawpheno_function_read($file);
-    // Total number of rows returned.
-    $total_rows = count($arr_xls_rows);
-    
-    // @todo improve this check.
-    if (!$arr_xls_rows) {
-      $status['is_xlsx'] = FALSE;
+  // Validate the file.
+  // The following function will return an array specifying which of the validation
+  // steps passed and providing infomration for those that failed.
+  $status = rawpheno_validate_excel_file($file);
+
+  // We want to show the user which steps passed/failed even if all of them passed,
+  // so lets do that now. We use drupal_set_message() because returning from this function
+  // creates an error message and halts file upload, whereas, using drupal_set_message()
+  // allows us to print to the screen regardless of failure/success.
+  drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
+
+  // Now we want to determine if validation passed or failed as a whole.
+  // To do that we have to look at each step and only if all steps passed 
+  // did the file pass validation and can be uploaded.
+  $all_passed = TRUE;
+  foreach ($status as $test_result) {
+    if ($test_result !== TRUE) {
+      $all_passed = FALSE;
+      break; break;
     }
-
-    if ($total_rows < 2) {
-      // Missing measurement sheet or is empty worksheet.
-      $h = 'No data to process or Measurements sheet is missing';
-      $txt_error = rawpheno_function_format($h, 'em');
-      $txt_error .= 'Please check spreadsheet for missing or blank sheet and try again.';
-      $status['tab_exists'] = FALSE;
-    }
-    else {
-      // VALIDATE HEADER & ROWS
-      // Array to hold errors found in the spreadsheet.
-      $arr_xls_errors = array();
-      // Get the column headers row.
-      $xls_headers_row = $arr_xls_rows[0];
-
-      // Validate column headers row.
-      // Index 0 - Headers row.
-      $arr_xls_errors[0] = rawpheno_function_chkheader($xls_headers_row);
-      $status['missing_header'] = $arr_xls_errors[0];
-      
-      // Validate non column header rows.
-      /* @todo disabled until I can re-do validation to use hooks.
-      // Index 1 - First row.
-      $arr_xls_errors[1] = rawpheno_function_chkrow($arr_xls_rows[1], $xls_headers_row);
-      // Last or 10th row.
-      if ($total_rows > 2) {
-        // Get the index of last or 10th row.
-        $i = ($total_rows < 11) ? $total_rows - 1 : 10;
-        $arr_xls_errors[2] = rawpheno_function_chkrow($arr_xls_rows[$i], $xls_headers_row);
-      }
-*/
-      
-      // Format all errors and report a list of errors found in the spreadsheet.
-      $txt_error = rawpheno_function_error($arr_xls_errors, $total_rows);
-    }  
-
-    drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
-
-    //Determine if there is errors to report.    
-    if (strlen(trim($txt_error)) > 0) {
-      // Errors found.
-      $sheet_error = rawpheno_function_format('In Worksheet Measurements:', 'em');
-      return FALSE;//'<pre id="stage01-window-error">'.$sheet_error.$txt_error.'</pre>';
-    } 
-    else {
-      // No errors - save new header and path to file.
-      variable_set('rawpheno_xls_file', drupal_realpath($file->destination));
-      
-      drupal_set_message(t('<span id="rawpheno-upload-successful">The specified file %file passed basic validation. Please click "Next Step".</span>', array('%file' => $file->filename)));
-    }
-  }  
+  }
+  
+  // hook_file_validate() expects an array of error messages if validation failed and
+  // and empty array if there are no errors. We don't want this system to print the errors
+  // for us since we are using our more friendly theme (see drupal_set_message() above).
+  // The work-around is to pass FALSE if validation failed.
+  if ($all_passed) {
+    return array();
+  }
+  else {
+    return FALSE;
+  }
 
 }
 
