@@ -60,7 +60,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
-      //$form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
       
       $form = rawpheno_upload_form_stage_check($form, $form_state);
       break;
@@ -384,7 +384,7 @@ function rawpheno_file_validate($file) {
   // for us since we are using our more friendly theme (see drupal_set_message() above).
   // The work-around is to pass FALSE if validation failed.
   if ($all_passed) {
-    
+    drupal_set_message('<span id="rawpheno-upload-successful">Your file uploaded successfully. Please click "Next" to continue.</span>');
     return array();
   }
   else {
@@ -538,7 +538,8 @@ function rawpheno_submit_review($form, &$form_state) {
   
   // 2. The entire spreadsheet.
   // Get the variable that holds the path to the spreadsheet file in the server.
-  $xls_file = variable_get('rawpheno_xls_file'); 
+  $file = file_load($form_state['multistep_values']['fid']);
+  $xls_file = drupal_realpath($file->uri);
   
   // Array of required traits excluding Name.
   $plantprop_headers = rawpheno_function_headers('plantprop');
@@ -557,10 +558,5 @@ function rawpheno_submit_review($form, &$form_state) {
     );
 
     return $job_id;
-  }
-  
-  // After saving process, reset all variables.
-  if ($form_state['triggering_element']['#value'] == 'Save spreadheet') {
-    rawpheno_function_resetvar();
   }
 }
