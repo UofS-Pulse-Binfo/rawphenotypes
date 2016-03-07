@@ -295,6 +295,203 @@ function rawpheno_function_read($file) {
 }
 
 /**
+ * Validates an excel file using any validators registered with rawpheno.
+ *
+ * @param $file
+ *   A drupal managed_file object describing the uploaded spreadsheet.
+ */
+function rawpheno_validate_excel_file($file) {
+  $status = array();
+  
+  // Process the validators to make them easier to use.
+  // Specifically, sort them by their scope.
+  $validators = array();
+  $all_validators = module_invoke_all('rawpheno_validators');
+  foreach($all_validators as $k => $v) {
+    $validators[ $v['scope'] ][ $k ] = $v;
+  }
+
+  // Function call libraries_load() base on the implementation
+  // of hook_libraries_info() in rawpheno.module.
+  $xls_lib = libraries_load('spreadsheet_reader');
+  // Library path information returned will be used
+  // to include individual library files required.
+  $lib_path = $xls_lib['path']; 
+
+  // Include parser library. PLS DO NOT ALTER ORDER!!!
+  // To stop parser from auto formatting date to MM/DD/YY,
+  // suggest a new date format YYYY-mm-dd in:
+  //   line 678 in excel_reader2.php
+  //   line 834 in SpreadsheetReader_XLSX.php
+  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
+  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
+  include_once $lib_path . 'SpreadsheetReader.php';  
+
+  // First validate the whole file. If any of these fail then halt validation.
+  foreach ($validators['file'] as $validator_name => $validator) {
+    if (isset($validator['validation callback']) AND function_exists($validator['validation callback'])) {
+      $status[ $validator_name ] = call_user_func($validator['validation callback'], $file);
+
+      // If returned false then halt validation.
+      if ($status[ $validator_name ] === FALSE) {
+        return $status;
+      }
+    }
+  }
+  
+  // Open the file for reading
+  $xls_obj = rawpheno_open_file($file);
+
+  // Change to the correct spreadsheet.
+  rawpheno_change_sheet($xls_obj, 'measurements');
+  
+  // This increment variable $i is required since xls and xlsx
+  // parsers assign array index differently. 
+  // XLS starts at 1, while XLSX at 0;
+  $i = 1;
+  
+  // Iterate though each row.
+  $num_errored_rows = 0;
+  foreach($xls_obj as $row) {
+  
+    // Convert row into a string and check the length.
+    // This will exclude empty rows.        
+    if (strlen(trim(implode('', $row))) > 2) {
+
+      // VALIDATE THE HEADER.
+      if ($i == 1) {
+        // Save the header for later.
+        $header = array();
+        $new_header = array();
+        foreach ($row as $r) {
+          $without_format = rawpheno_function_delformat($r);
+          $no_units = preg_replace('/(\s+\(.*\))/','',$r);
+          $header[] = array(
+            'no format' => $without_format,
+            'original' => $r,
+            'units' => rawpheno_function_unit($without_format),
+            'no units' => $no_units,
+          );
+        }
+        
+        // Foreach validator with a scope of header, execute the validation callback & save the results.
+        foreach($validators['header'] as $validator_name => $validator) {
+          if (isset($validator['validation callback']) AND function_exists($validator['validation callback'])) {
+            $result = call_user_func($validator['validation callback'], $header);
+            
+            // The status needs to keep track of which rows failed for a given header.
+            if ($result === FALSE) {
+              $status[ $validator_name ] = $i;
+            }
+            elseif (is_array($result)) {
+              $status[ $validator_name ] = $result;
+            }
+          }
+        }
+      } 
+      // VALIDATE THE ROW.
+      else {
+        $row_has_error = FALSE;
+        foreach ($row as $column_index => $cell) {
+          
+          $column_name = $header[$column_index]['no units'];
+          if (empty($column_name)) continue;
+          
+          // Foreach validator:
+          foreach (array('all','subset') as $scope) {
+            foreach($validators[$scope] as $validator_name => $validator) {
+            
+              // Only validate if there is a validation callback.
+              if (isset($validator['validation callback']) AND function_exists($validator['validation callback'])) {
+              
+                // Only validate if the current validator applies to the current column.
+                // Specifically, if there are no defined headers it's applicable to
+                //   OR if the current header is in the list of applicable headers.
+                if (!isset($validator['headers']) OR in_array($column_name, $validator['headers'])) {     
+                     
+                  // Execute the validation callback & save the results.
+                  $result = call_user_func($validator['validation callback'], $cell, $i, $row, $column_index, $header);
+                
+                  // The status needs to keep track of which rows failed for a given header.
+                  if ($result === FALSE) {
+                    $status[ $validator_name ][ $column_name ][$i] = $i;
+                    $row_has_error = TRUE;
+                  }
+                  elseif (is_array($result)) {
+                    $status[ $validator_name ][ $column_name ][$i] = $result;
+                    $row_has_error = TRUE;
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        if ($row_has_error) $num_errored_rows++;
+      }
+      
+      if ($num_errored_rows >= 10) {
+        drupal_set_message("We have only checked the first $i lines of your file. Please fix the errors reported below and then upload the fixed file.", 'error');
+        break; break;
+      }
+    }
+    
+    $i++;
+  }
+  
+  // Make sure all validators are represented in status. 
+  // If they are not already then a failure wasn't recorded -thus they passed :-).
+  foreach($all_validators as $validator_name => $validator) {
+    if (!isset($status[$validator_name])) $status[$validator_name] = TRUE;
+  }
+
+  return $status;
+}
+
+/**
+ * @TODO
+ */
+function rawpheno_open_file($file) {
+
+  // Grab the path and extension from the file.
+  $xls_file = drupal_realpath($file->uri);
+  $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
+  
+  // Validate that the spreadsheet is either xlsx or xls and open the spreadsheet using
+  // the correct class.
+  // XLSX:
+  if ($xls_extension == 'xlsx') {
+    $xls_obj = new SpreadsheetReader_XLSX($xls_file);
+  } 
+  // XLS:
+  elseif ($xls_extension == 'xls') {
+    // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
+    include_once $lib_path . 'SpreadsheetReader_XLS.php';
+    $xls_obj = new SpreadsheetReader_XLS($xls_file);
+  }
+  
+  return $xls_obj;
+}
+
+/**
+ * @TODO
+ */
+function rawpheno_change_sheet(&$xls_obj, $tab_name) {
+
+  $xls_sheets = $xls_obj->Sheets();
+  foreach($xls_sheets as $sheet_key => $sheet_value) {
+    $xls_obj->ChangeSheet($sheet_key);
+
+    // Only process the measurements worksheet.
+    if (rawpheno_function_delformat($sheet_value) == 'measurements') {
+      return TRUE;
+    }
+  }
+  return FALSE;
+  
+}
+
+/**
  * Function to remove all formatting from a cell value.
  *
  * @param $xls_cell_value
@@ -352,17 +549,19 @@ function rawpheno_function_chkheader($xls_headers) {
  *   An array containing all cells with error.
  */
 function rawpheno_function_chkrow($xls_row, $xls_headers) {
-  // Array to hold required cells that are empty.
-  $arr_cell = array();
-  // Array to hold cells with value that do not match the unit.
-  $arr_unit = array();
-  // Array to hold cells with stock name that does not exist.
-  $arr_stock = array();
+
   // Array to hold index number of required column headers.
   $arr_required_id = rawpheno_function_id($xls_headers);
-  
+
+  // Get a list of validators.
+  $validators = module_invoke_all('rawpheno_validators');
+    
   //Read each cell in non-column header row.
   foreach($xls_row as $index => $value) {
+    foreach ($validators as $validator) {
+    
+    }
+  /*
     // Determine if cell is required or not.
     if (array_key_exists($index, $arr_required_id)) {
 		  // Required - Cell belongs to either plot, name, entry, rep and location column.
@@ -386,6 +585,7 @@ function rawpheno_function_chkrow($xls_row, $xls_headers) {
         $arr_unit[] = $xls_headers[$index] . ' - ('. $value. ') not a valid (' . $unit . ')';
       }
     }
+    */
   }
  
  return array($arr_cell, $arr_unit, $arr_stock); 
@@ -439,58 +639,6 @@ function rawpheno_function_unit($xls_header_cell) {
   
   // Return unit found, or default to text if no unit.
   return (isset($match[1])) ? trim($match[1]) : 'text';
-}
-
-/**
- * Function to validate a cell has a value that matches the unit
- * in the column header.
- *
- * @param $xls_unit
- *   A string containing the unit extracted from the column header.
- * @param $xls_cell_value
- *   Contains the value of the cell.
- *
- * @return 
- *   Boolean true = 1 or false = 0.
- */
-function rawpheno_function_chkunit($xls_unit, $xls_cell_value) {
-  // All values match the unit by default. Unless proven otherwise.
-  $is_valid = 1;
-  
-  switch($xls_unit) {
-    case 'date':
-      // Date must be YYYY-MM-DD format.
-      if (!empty($xls_cell_value) && preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}/', $xls_cell_value) == 0) {
-        $is_valid = 0;
-      }
-      break;
-    
-    case 'count':
-    case 'days':
-    case 'cm':
-    case 'g':
-      // Measurements - if it is numeric, then it must be greater than or equals to 0.
-      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) && $xls_cell_value < 0) {
-        $is_valid = 0;      
-      }
-      break;
-    
-    case 'y/n/?':
-      // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (!empty($xls_cell_value) && strlen($xls_cell_value) == 1 && !in_array($xls_cell_value, array('y','n','?'))) {
-        $is_valid = 0;
-      }
-      break;
-    
-    case 'scale':
-      // Scale - if numeric, check if 1-5 range, inclusive.
-      if (!empty($xls_cell_value) && is_numeric($xls_cell_value) && ($xls_cell_value >= 6 || $xls_cell_value < 1)) {
-        $is_valid = 0;    
-      } 
-      break;
-  }
-  
-  return $is_valid;
 }
 
 /**
