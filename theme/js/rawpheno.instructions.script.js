@@ -71,7 +71,6 @@
         var txtField = $('#edit-txt-search');
         // Reference to search buttons.
         var btnSearch = $("#btn_submit");
-        var btnReset = $("#btn_reset");
         
         // Create a label as default value in the search text field.
         // When selected will clear the value.
@@ -111,102 +110,103 @@
           removeElements();
           
           if (txtField.val() == null || txtField.val().trim() == '' || txtField.val().length <= 1) {
-            // Field is empty
+            // Search field is blank.
             var title = 'Invalid value in search field.';
             var message = 'Please type in keywords and select the best matching trait from the autocomplete drop-down.';
             errorMessage(title, message);
           }
           else {
-            // Compare user input against the array of traits to see
-            // if trait is available.
-            if (btnSearch.val() == 'Search') {
-              // Array to hold traits with keywords in it.
-              var traitsWithKey = new Array;
-              // Get the index of the trait.
-              var traitIndex = null;
-              for(var i = 0; i < availableTrait.length; i++) {
-                if (availableTrait[i].toLowerCase() == txtField.val().toLowerCase()) {
-                  traitIndex = i;
-                  break;
-                }
-                
-                // Get traits with keywords in it.
-                if (availableTrait[i].toLowerCase().indexOf(txtField.val().toLowerCase()) > -1) {
-                  traitsWithKey.push(availableTrait[i]);  
-                }
+            // Array to hold traits with keywords in it.
+            var traitsWithKey = new Array;
+            // Get the index of the trait.
+            var traitIndex = null;
+            
+            for(var i = 0; i < availableTrait.length; i++) {
+              if (availableTrait[i].toLowerCase() == txtField.val().toLowerCase()) {
+                // Compare user input against the array of traits to see
+                // if trait is available/present.
+                traitIndex = i;
+                break;
               }
-              //
-              
-              if(traitIndex != null) {
-                // If search is successful - replace Search button value
-                // to Clear Search to allow user to reset search.
-                var resetLink = '<input id="btn_reset" name="btn_reset" class="form-submit" value="Clear search" type="button">';
-                $('div.subtitle-left').append(resetLink);
                 
-                $('#btn_reset').click(function() {
-                  // Reset search - remove the result and reset button label.
-                  txtField.val('Search Trait');
-                  // Remove search result.
-                  $('#container-search-result table, #container-search-result p').hide('slow').remove();
-                  $(this).remove();
-                  txtField.focus();
-                });
-                
-              
-                // Determine which category the trait is in.
-                // Include category in search result.
-                var traitCategory = '';
-                if (traitIndex >= 0 && traitIndex <= 9) {
-                  traitCategory = 'Essential Trait';
-                } 
-                else if (traitIndex >= 10 && traitIndex <= 19) {
-                  traitCategory = 'Optional Trait';
-                } 
-                else {
-                  traitCategory = 'Subset Trait';
-                } 
-                
-                // Find the table the trait is in.
-                var traitType = '<p>* This trait is '+traitCategory+'</p>';
-                var countLi = $('#tabs tr').size();
-                for(var x = 0; x < countLi; x++) {
-                  var m = $('#tabs tr').eq(x).find('div').text(); 
-                  if (m == txtField.val()) {
-                    var traitTrIndex = x;
-                    break;
-                  }
-                } 
-                
-                // When table is found.
-                // Copy the table row <tr> with the trait information.
-                var traitRow = $('#tabs table').find('tr').eq(traitTrIndex).html();
-                var tableHeader = $('table').eq(1).find('tr').eq(0).html();
-                var newDiv = traitType+'<table><tr>'+tableHeader+'</tr><tr>'+traitRow+'</tr></table>';
-                $('#container-search-result').append(newDiv);
+              if (availableTrait[i].toLowerCase().indexOf(txtField.val().toLowerCase()) > -1) {
+                // Get traits with keywords in it.
+                traitsWithKey.push(availableTrait[i]);  
+              }
+            }
+            
+            // Process result of comparison.
+            if(traitIndex != null) {
+              // If search is successful - add reset link
+              // to Clear Search to allow user to reset search.
+              var resetLink = '<a href="javascript:void();" id="lnk-reset">Reset search</a>';
+              $('div.subtitle-left').append(resetLink);
+
+              $('#lnk-reset').click(function() {
+                // Reset search - remove the result and reset button label.
+                txtField.val('Search Trait');
+                // Remove search result.
+                $('#container-search-result table, #container-search-result p').remove();
+                $(this).remove();
+                txtField.focus();
+              });
+
+              // Determine which category the trait is in.
+              // Include category in search result.
+              var traitCategory = '';
+              if (traitIndex >= 0 && traitIndex <= 9) {
+                traitCategory = 'Essential Trait';
+              }
+              else if (traitIndex >= 10 && traitIndex <= 19) {
+                traitCategory = 'Optional Trait';
               }
               else {
-                if (traitsWithKey.length > 0) {
-                  var suggestion = '';
-                  for(var i = 0; i < traitsWithKey.length; i++) {
-                    suggestion = suggestion + ' &bull;&nbsp;<a href="javascript:void();">'+traitsWithKey[i]+'</a>&nbsp;';
-                  }
-                  $('#container-search-result').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
+                traitCategory = 'Subset Trait';
+              }
+
+              // Find the table the trait is in.
+              var traitType = '<p>* This trait is '+traitCategory+'</p>';
+              var countLi = $('#tabs tr').size();
+              for(var x = 0; x < countLi; x++) {
+                var m = $('#tabs tr').eq(x).find('div').text();
+                if (m == txtField.val()) {
+                  var traitTrIndex = x;
+                  break;
+                }
+              }
+            
+              // When table is found.
+              // Copy the table row <tr> with the trait information.
+              var traitRow = $('#tabs table').find('tr').eq(traitTrIndex).html();
+              var tableHeader = $('table').eq(1).find('tr').eq(0).html();
+              var newDiv = traitType+'<table><tr>'+tableHeader+'</tr><tr>'+traitRow+'</tr></table>';
+              $('#container-search-result').append(newDiv);
+            }
+            else {
+              // No traits found, but suggest a trait.
+              if (traitsWithKey.length > 0) {
+                // Found traits for suggestion.
+                var suggestion = '';
                 
-                  // Enable links in did you mean:/suggested traits
-                  $('#list-suggest a').click(function() {
-                    txtField.val($(this).text());
-                    btnSearch.click();
-                  }); 
+                for(var i = 0; i < traitsWithKey.length; i++) {
+                  suggestion = suggestion + ' &bull;&nbsp;<a href="javascript:void();">'+traitsWithKey[i]+'</a>&nbsp;';
                 }
-                else {
-                  // Not found
-                  var title = 'The trait you entered does not have an exact match.';
-                  var message = 'Please select the best matching trait from the autocomplete drop-down.';
-                  errorMessage(title, message);
-                }
-              }            
-            }  
-          }  
+                $('#container-search-result').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
+                
+                // Enable links in did you mean:/suggested traits
+                $('#list-suggest a').click(function() {
+                  txtField.val($(this).text());
+                  btnSearch.click();
+                });
+              }
+              else {
+                // No trait found, none to suggest.
+                var title = 'The trait you entered does not have an exact match.';
+                var message = 'Please select the best matching trait from the autocomplete drop-down.';
+                errorMessage(title, message);
+              }
+            }
+          }
         });
       });
       
@@ -228,8 +228,8 @@
         }
         
         // Remove clear button from previous search.
-        if ($('#btn_reset').length > 0) {
-          $('#btn_reset').remove();
+        if ($('#lnk-reset').length > 0) {
+          $('#lnk-reset').remove();
         }
       }
       

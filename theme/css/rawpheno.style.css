@@ -27,7 +27,7 @@
   /* min-width of div is 950 */
   /* less padding and border */
   min-width: 908px;
-  padding: 30px 40px 30px 40px;
+  padding: 20px 40px 30px 40px;
   text-align: center;
 }
 
@@ -40,8 +40,7 @@
 /* Page Subtitle */
 .container-subtitle {
   border-bottom: 1px solid #CCCCCC;
-  height: 80px;
-  padding: 0 0 20px 0;
+  height: 65px;
   width: 910px;
 }
 
@@ -52,7 +51,7 @@
 
 .subtitle-left {
   float: left;
-  margin-left: 100px;
+  margin-left: 70px;
 }
 
 .subtitle-right {
@@ -70,38 +69,33 @@
 
 /* Navigation */
 .subtitle-right a {
-  font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
-  display: block;
-  margin-top: 10px;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;  
   text-decoration: none;
 }
 
-.subtitle-right a {
-  background: #CCCCCC;
-  background-image: -webkit-linear-gradient(top, #EAEAEA, #CCCCCC);
-  background-image: -moz-linear-gradient(top, #EAEAEA, #CCCCCC);
-  background-image: -ms-linear-gradient(top, #EAEAEA, #CCCCCC);
-  background-image: -o-linear-gradient(top, #EAEAEA, #CCCCCC);
-  background-image: linear-gradient(to bottom, #EAEAEA, #CCCCCC);
-  -webkit-border-radius: 20;
-  -moz-border-radius: 20;
-  border-radius: 20px;
-  border: 1px solid #CCCCCC;
+.subtitle-right a, .subtitle-right a:visited, .subtitle-right a:active {
+  background: #304356;
+  border: 1px solid #EAEAEA;
   font-family: Arial;
-  color: #666666;
-  font-size: 13px;
-  padding: 7px 25px 7px 25px;
+  color: #FFFFFF;
+  font-size: 0.9em;
+  padding: 15px 25px 15px 25px;
   text-decoration: none;
 }
 
 .subtitle-right a:hover {
   background: #adb4b8;
-  background-image: -webkit-linear-gradient(top, #adb4b8, #888c8f);
-  background-image: -moz-linear-gradient(top, #adb4b8, #888c8f);
-  background-image: -ms-linear-gradient(top, #adb4b8, #888c8f);
-  background-image: -o-linear-gradient(top, #adb4b8, #888c8f);
-  background-image: linear-gradient(to bottom, #adb4b8, #888c8f);
+  background-image: -webkit-linear-gradient(top, #304356, #CCCCCC);
+  background-image: -moz-linear-gradient(top, #304356, #CCCCCC);
+  background-image: -ms-linear-gradient(top, #304356, #CCCCCC);
+  background-image: -o-linear-gradient(top, #304356, #CCCCCC);
+  background-image: linear-gradient(to bottom, #304356, #CCCCCC);
   border: 1px solid #CCCCCC;
   color: #FFFFFF;
   text-decoration: none;
+}
+
+a span {
+  font-size: 1.3em;
+  margin-left: 7px;
 }

@@ -1,3 +1,4 @@
+
 /**
  * @file
  * Style tabs in phenotypes/instructions page.
@@ -9,6 +10,7 @@
 /* Page icon */
 .container-subtitle {
   background: url('../img/icon-instructions.gif') no-repeat left top;
+  background-position: 0 5px;
   text-align: left;
 }
 
@@ -20,18 +22,20 @@
 
 /* Autocomplete search field */
 #edit-txt-search {
+  background-color: #F7F7F7;
+  background-position: 98% center;
   font-family: sans-serif;
-  font-size: 0.9em;
-  margin: 15px 0 0 0;
-  padding: 7px;
-  width: 350px;
+  font-size: 0.96em;
+  margin: -15px 0 0 0;
+  padding: 14px;
+  width: 355px;
 }
 
 #autocomplete {
   background-color: #FFFFFF;
   border: 1px solid #CCCCCC;
   font-size: 0.8em;
-  margin-top: 15px;
+  margin-top: -15px;
 }
 
 #autocomplete li {
@@ -39,22 +43,27 @@
   padding: 2px 0 2px 5px;
 }
 
-#header-instructions div {
-  margin: 0;
-  padding: 0;
-}
-
-#btn_submit, #btn_reset {
-  font-size: 0.87em;
+#btn_submit, #lnk-reset {
+  font-size: 0.90em;
   position: absolute;
 }
 
 #btn_submit {
-  margin: -42px 0 0 375px;
+  background-image: url('../img/icon-lens.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #EAEAEA;
+  height: 40px;
+  margin: -58px 0 0 395px;
 }
 
-#btn_reset {
-  margin: -42px 0 0 465px;
+#btn_submit:hover {
+  background-color: #D5D5D5;
+}
+
+#lnk-reset {
+  font-family: sans-serif;
+  margin: -42px 0 0 455px;
 }
 
 /* Search Result Container */
@@ -98,6 +107,10 @@
   padding: 0;
 }
 
+#tabs .ui-tabs-nav li {
+  border-radius: 0;
+}
+
 #tabs .ui-tabs-nav {
   background: transparent;
   border-width: 0px 0px 1px 0px;
@@ -108,7 +121,7 @@
 }
 
 #tabs .ui-tabs-panel {
-  background: #FAFAFA;
+  background: #F7F7F7;
   border-width: 0px 1px 1px 1px;
   border-radius: 0;
   font-size: 0.8em;
