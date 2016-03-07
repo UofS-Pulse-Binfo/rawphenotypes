@@ -60,7 +60,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+      //$form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
       
       $form = rawpheno_upload_form_stage_check($form, $form_state);
       break;
@@ -355,7 +355,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  *
  * Basic compliance test of spreadsheet submitted.
  */
-function rawpheno_file_validate(&$file) {
+function rawpheno_file_validate($file) {
   
   // Validate the file.
   // The following function will return an array specifying which of the validation
@@ -384,9 +384,6 @@ function rawpheno_file_validate(&$file) {
   // for us since we are using our more friendly theme (see drupal_set_message() above).
   // The work-around is to pass FALSE if validation failed.
   if ($all_passed) {
-    
-    // We also want to keep the file permanently.
-    $file->status = FILE_STATUS_PERMANENT;
     
     return array();
   }
