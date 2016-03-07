@@ -385,12 +385,6 @@ function rawpheno_file_validate($file) {
       $all_passed = FALSE;
       break; break;
     }
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-  }  
-=======
->>>>>>> Stashed changes
   }
   
   // hook_file_validate() expects an array of error messages if validation failed and
@@ -405,7 +399,6 @@ function rawpheno_file_validate($file) {
     return FALSE;
   }
 
->>>>>>> origin/master
 }
 
 /**
