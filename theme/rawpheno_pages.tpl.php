@@ -2,76 +2,140 @@
 /**
  * @file
  * Master template file of rawpheno.
+ *
+ * Available variables:
+ * - $path: The directory path to rawpheno module.
+ * - $page_id: String ID of the page/form.
+ * - $rel_url: An array of urls. Each page has a link to a related page.
+ * - $theme_colour: Colour setting selected by user in administration panel. Default to navyblue/#304356.
+ * - $page_title: Page title from admin configuration.
+ * - $rel_url: An array containing url of related pages.
+ * - $traits: Is an array containing column headers that requires phenotyping instructions.
+ *     Index number - Trait equivalent
+ *     see include/rawpheno.function.measurements.inc
+ *     5  - Planting Date (date)
+ *     7  - Days to Emergence (days)
+ *     8  - # of Emerged Plants (count)
+ *     9  - Days till 10% of Plants have Elongated Tendrils (days)
+ *     10 - Days till 10% of Plants have One Open Flower (R1; days)
+ *     11 - # Nodes on Primary Stem at R1 (1st; count)
+ *     14 - Days till 10% of Plants have fully Swollen Pods (R5; days)
+ *     15 - Days till 10% of Plants have 1/2 Pods Mature (R7; days)
+ *     16 - R7 Traits: Lowest Pod Height (1st; cm)
+ *     18 - R7 Traits: Canopy Height (1st; cm)
+ *     20 - Days till Harvest (days)
+ *     21 - Diseases Present (y/n/?)
+ *     23 - Lodging (Scale: 1-5) upright - lodged
+ *     24 - Subset Traits: # Peduncles (count)
+ *     25 - Subset Traits: # Pods (count)
+ *     26 - Subset Traits: # Seeds (count)
+ *     27 - Straw Biomass (g)
+ *     28 - Total Seed Mass (g)
+ *     29 - Total # of Seeds (count)
+ *     30 - 100 Seed Mass (g)
  */
-$page = $form['form_id']['#value'];
+ 
+ $page_id = $form['#form_id'];
+ // TODO: rename callback function of rawpheno upload in the same format as in the other pages.
+ //       then this condition in unecessary.
+ if ($page_id == 'rawpheno_upload_form_master') {
+   $page_id = 'rawpheno_upload';
+ }
 ?>
-
-<div class="container-header">
-  <?php print drupal_render($form['page_title']); ?>
+<div class="container-header" style="<?php print "background-color: $theme_colour;"; ?>">
+  <?php print $page_title[$page_id]; ?>
 </div>
 
-<div class="container-page">
+<div class="container-page" style="<?php print "border-color: $theme_colour;" ?>">
   <div class="content-wrapper">
     <div class="container-subtitle">
       <div class="subtitle-left">
-        <?php
-          if ($page == 'rawpheno_instructions') {
-            print drupal_render($form["txt_search"]); 
-            print drupal_render($form["btn_search"]); 
-            print drupal_render($form["json_url"]);
-          }
+        <?php 
+         if ($page_id == 'rawpheno_instructions') {
+           // Search box in instructions page.
+           print drupal_render($form['txt_search']);
+           print drupal_render($form['btn_search']);
+         }
+         elseif ($page_id == 'rawpheno_upload') {
+           // Stage indicator in upload page.
+           print drupal_render($form['header_upload']);
+         }
+         else {
+           print '&nbsp;';
+         }
         ?>
       </div>
       
       <div class="subtitle-right">
-        <?php print drupal_render($form['page_button']); ?>
+        <?php 
+          // Load corresponding url in relation to the current page.
+          $form['page_button']['#prefix'] = '<a href="' . $rel_url[$page_id] . '" style="background-color: '.$theme_colour.'">';
+          $form['page_button']['#suffix'] = '</a>';
+          print drupal_render($form['page_button']); 
+        ?>
       </div>
     </div>
     
     <div class="container-contents">
       <?php 
-      if ($page == 'rawpheno_rawdata') { 
-        // RAWDATA
+      if ($page_id == 'rawpheno_rawdata') { 
+        // Begin rawdata page.
+        /////////////////////////////////////
       ?>
-        <div id="container-rawdata">
-          <?php
-            print drupal_render($form['page_content']);
-            print drupal_render($form['json_url']);
+      
+      <div id="container-rawdata" class="form-wrapper">
+        <?php 
+          print drupal_render_children($form);
+        ?>
+      </div>
+      
+      <?php 
+        // End rawdata page.
+      } 
+      elseif ($page_id == 'rawpheno_download') {  
+        // Begin download page.
+        /////////////////////////////////////
+      ?>
+      
+      <div id="container-download" class="form-wrapper">
+        <?php print drupal_render($form['download_window_error']); ?>
+        <div id="div-location">
+          <?php print drupal_render($form['location']); ?>
+        </div>
+        <?php
+          print drupal_render($form['ajax_wrapper']);
+          print drupal_render($form['ajax_wrapper']['traits']);
+          print drupal_render($form['ajax_wrapper']['chk_select_all']);
+        ?>
+        <div id="div-button">
+          <?php 
+            print drupal_render($form['download_submit_download']); 
+            print drupal_render_children($form);
           ?>
         </div>
+      </div>
+      
       <?php 
-        // END RAWDATA
+        // End download page.
       } 
-      elseif ($page == 'rawpheno_download') {
-        // DOWNLOAD 
+      elseif ($page_id == 'rawpheno_upload') { 
+        // Begin upload page.
+        /////////////////////////////////////
       ?>
-        <div id="container-download" class="form-wrapper">    
-          <?php    
-            print drupal_render_children($form); 
-          ?>
-        </div>
+      
+      <div id="container-upload">
+        <?php print drupal_render_children($form); ?>
+      </div>
+      
       <?php 
-        // END DOWNLOAD
+        // End upload page.
       } 
-      elseif ($page == 'rawpheno_upload') {
-        // UPLOAD
+      elseif ($page_id == 'rawpheno_instructions') { 
+        // Begin instructions page.
+        /////////////////////////////////////
       ?>
       
-      
-      
-      
-      
-      
-      <?php 
-        // END UPLOAD
-      }
-      elseif ($page == 'rawpheno_instructions') {
-        // INSTRUCTIONS
-        // Directory path to rawpheno module.
-        $path = drupal_get_path('module', 'rawpheno');
-        // Use array to match traits.
-        $traits = rawpheno_function_headers('phenotyping');
-      ?>
+      <div id="container-instructions">
         <div id="phenotype-page">
           <div id="container-search-result"></div>
  
@@ -404,10 +468,13 @@ $page = $form['form_id']['#value'];
             </div>
           </div>
         </div>
+      </div>
+      
       <?php
-        // END INSTRUCTIONS
-      }
-      ?>
+        print drupal_render_children($form);
+        // End instructions page.
+      } 
+      ?>      
     </div>
   </div>
 </div>

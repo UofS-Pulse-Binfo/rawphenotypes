@@ -327,12 +327,49 @@ function rawpheno_install() {
   
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  
+  // Set default colour scheme and page titles.
+  variable_set('rawpheno_colour_scheme', '#304356');
+  variable_set('rawpheno_rawdata_title', 'Phenotypic data available through KnowPulse');
+  variable_set('rawpheno_download_title', 'Select locations and traits that you want to download');
+  variable_set('rawpheno_instructions_title', 'Standard Phenotyping Procedure');
+  variable_set('rawpheno_upload_title', 'Drag and Drop phenotypic data collection spreadsheet');
 }
 
 /**
  * Implements hook_uninstall().
  */
 function rawpheno_uninstall() { 
+  // Delete settings variables.
+  if (variable_get('rawpheno_colour_scheme')) {
+    // Holds new column headers.
+    variable_del('rawpheno_colour_scheme');
+  }
+  
+  // Rawdata page title.
+  if (variable_get('rawpheno_rawdata_title')) {
+    // Holds new column headers.
+    variable_del('rawpheno_rawdata_title');
+  }  
+  
+  // Download page title.
+  if (variable_get('rawpheno_download_title')) {
+    // Holds new column headers.
+    variable_del('rawpheno_download_title');
+  }
+  
+  // Instructions page title.
+  if (variable_get('rawpheno_instructions_title')) {
+    // Holds new column headers.
+    variable_del('rawpheno_instructions_title');
+  }
+  
+  // Upload page title.
+  if (variable_get('rawpheno_upload_title')) {
+    // Holds new column headers.
+    variable_del('rawpheno_upload_title');
+  }
+  
   // Remove materialized view on uninstall.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().

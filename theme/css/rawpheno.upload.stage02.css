@@ -7,6 +7,28 @@
 @import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
+/* Main fieldset container */
+#edit-xls-review-fldset {
+  padding: 10px 20px 20px 20px;
+}
+
+/* Container for each trait */
+.container-form {
+  padding: 15px 10px 7px 25px;
+}
+
+.container-form:nth-child(odd) {
+  background-color: #F7F7F7;
+}
+
+.container-form:nth-child(even) {
+  background-color: #EAEAEA;
+}
+
+
+
+
+
 label.option {
   background-color: #FFFFFF;
   border: 1px solid #969696;
@@ -38,12 +60,7 @@ input[type=checkbox] {
   -webkit-transform: scale(1.2);
 }
 
-.container-form {
-  background: url('../../theme/img/icon-marker.gif') no-repeat top center;
-  background-position: 60px 0;
-  padding-top: 15px;
-  margin-bottom: 20px;
-}
+
 
 .container-form-wrapper {
   background-color: #FFFFFF;
@@ -91,4 +108,36 @@ p {
 .form-right {
   float: left;
   width: 45%;
+}
+
+/* Progress bar when check box is clicked */
+.ajax-progress {
+  float: right;
+  margin-right: 20px;
+}
+
+div.container-trait:nth-child(even) {
+  background-color: #F7F7F7;
+}
+
+div.container-trait:nth-child(odd) {
+  background-color: #FAFAFA;
+}
+
+.form-item {
+  background-color: #F7F7F7;
+  border-bottom: 1px solid #FFFFFF;
+  margin: 0 !important;
+  padding: 15px;
+}
+
+div.container-trait div {
+  border-bottom: none;
+  background-color: #EAEAEA;
+}
+
+div.container-trait div.form-item {
+  border: none;
+  margin-top: 0 !important;
+  padding: 10px 45px;
 }

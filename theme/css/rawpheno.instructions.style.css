@@ -11,7 +11,6 @@
 .container-subtitle {
   background: url('../img/icon-instructions.gif') no-repeat left top;
   background-position: 0 5px;
-  text-align: left;
 }
 
 .container-contents {
@@ -20,9 +19,12 @@
   text-align: left;
 }
 
+em {
+  font-weight: bold;
+}
+
 /* Autocomplete search field */
 #edit-txt-search {
-  background-color: #F7F7F7;
   background-position: 98% center;
   font-family: sans-serif;
   font-size: 0.96em;
@@ -55,6 +57,8 @@
   background-color: #EAEAEA;
   height: 40px;
   margin: -58px 0 0 395px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 #btn_submit:hover {
@@ -109,6 +113,7 @@
 
 #tabs .ui-tabs-nav li {
   border-radius: 0;
+  background: #FCFDFD;
 }
 
 #tabs .ui-tabs-nav {
@@ -121,7 +126,7 @@
 }
 
 #tabs .ui-tabs-panel {
-  background: #F7F7F7;
+  background: #FCFDFD;
   border-width: 0px 1px 1px 1px;
   border-radius: 0;
   font-size: 0.8em;
@@ -204,7 +209,7 @@ a.button:hover {
 }
 
 #photo-appendix a {
-  background-color: #CCCCCC;
+  background-color: #EAEAEA;
 }
 
 /* photo appendix */
@@ -213,7 +218,8 @@ a.button:hover {
   padding: 30px 5px;
   margin-top: 20px;
   text-align: center;
-  width: 95%; margin:0 auto;
+  width: 98%; 
+  margin: 0 auto;
 }
 
 #gallery-container {

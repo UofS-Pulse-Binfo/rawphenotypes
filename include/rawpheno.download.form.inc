@@ -8,18 +8,18 @@
 /**
  * Function callback: construct export data form.
  */
-
 function rawpheno_download($form, &$form_state) {
-  // Page title.
-  $form['page_title'] = array(
-    '#type' => 'markup',
-    '#markup' => 'Select locations and traits that you want to download',
+  // This is the error message used in lieu of Drupal form_set_error().
+  // This error message will be in close proximity to the interface.
+  $form['download_window_error'] = array(
+    '#markup' => t('<div id="download-window-error" class="messages error">
+                 No traits or location selected. Please try again.</div>'),
   );
- 
-  // Navigation button.
+  
+  // Navigation button. Related page of download page is rawdata/summary page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => '<a href="../raw">View Summary <span>&#10095;</span></a>',
+    '#markup' => t('View Summary <span>&#10095;</span>'),
   );  
   
   // Primary select field - an AJAX chained select that updates secondary
@@ -34,14 +34,12 @@ function rawpheno_download($form, &$form_state) {
     ->fetchAllKeyed();  
 
   $form['location'] = array(
-    '#title' => 'Location',
+    '#title' => t('Location'),
     '#type' => 'select',
     '#options' => $location,
     '#default_value' => reset($location),
     '#multiple' => TRUE,
     '#size' => 17,
-    '#prefix' => '<div id="div-location">',
-    '#suffix' => '</div>',
     '#ajax' => array(
       'event' => 'change',
       'callback' => 'rawpheno_download_measurements',
@@ -83,7 +81,7 @@ function rawpheno_download($form, &$form_state) {
   );
 
   $form['ajax_wrapper']['traits'] = array(
-    '#title' => count($traits) . ' Traits available',
+    '#title' => t('@traits-count Traits available', array('@traits-count'=> count($traits))),
     '#type' => 'select',
     '#options' => $traits,
     '#multiple' => TRUE,
@@ -99,8 +97,6 @@ function rawpheno_download($form, &$form_state) {
   $form['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
-    '#prefix' => '<div id="div-button">',
-    '#suffix' => '</div>',
   );
   
   // Attach CSS and JavaScript
@@ -110,6 +106,7 @@ function rawpheno_download($form, &$form_state) {
     
   return $form;
 }
+
 /**
  * Function callback: set form wrapper for AJAX.
  */
@@ -173,7 +170,7 @@ function rawpheno_download_submit($form, &$form_state) {
         array_push($arr_headers, $header);   
       }
       
-      // Determine if data has a value or not.
+      // Determine if data has a value or null.
       // Assign NA - Not Applicable when data is NULL
       if (empty($row['data'])) {
         $value = 'NA';
@@ -236,8 +233,15 @@ function rawpheno_download_submit($form, &$form_state) {
  */
 function rawpheno_download_validate($form, &$form_state) {
   $traits = $form_state['values']['traits'];
+  $locations = $form_state['values']['location'];
+  
   if (count($traits) <= 0) {
-    // No trait select.
+    // No trait selected.
     form_set_error('traits', t('Please select traits and try again.'));
+  }
+  
+  if (count($locations) <= 0) {
+    // No location selected.
+    form_set_error('location', t('Please select location and try again.'));
   }
 }

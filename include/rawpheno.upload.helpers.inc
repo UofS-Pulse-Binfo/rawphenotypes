@@ -36,8 +36,6 @@ function rawpheno_get_header($form, &$form_state) {
   // stage information defined above.
   $form['header_upload'] = array(
     '#type' => 'markup',
-    '#prefix' => '<div id="header-upload" class="container-header">',
-    '#suffix' => '</div>',
     '#markup' => $markup,
   ); 
   

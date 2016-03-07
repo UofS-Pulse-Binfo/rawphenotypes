@@ -6,7 +6,7 @@
  * @params $type
  *   A string containing a description of column header set required. 
  *
- * @return array
+ * @return
  *   An array of column headers based on the type of set requested.
  */
 function rawpheno_function_headers($type) {  
@@ -103,3 +103,4 @@ function rawpheno_function_headers($type) {
 
   return $arr_requested_trait;
 }
+ 

@@ -122,9 +122,30 @@
           if (error) throw error;
           else if(data == '') {
              chart.append('g')
-               .attr('transform', 'translate(350,100)')
-               .append('text')
-               .text('No data');
+             .on('mousemove', function(d) {
+                d3.select(this)
+                  .style('opacity', 0.5);
+              
+                div.transition()        
+                  .style('opacity', 1);
+
+                div.html('No Data')  
+                  .style('left', (d3.event.pageX+10) + 'px')     
+                  .style('top', (d3.event.pageY) + 'px');    
+             })                  
+             .on('mouseout', function(d) {       
+                d3.select(this)
+                  .transition() 
+                  .delay(200)
+                  .style('opacity', 1);
+                
+                 div.transition()        
+                  .style('opacity', 0);   
+             })
+             .append('rect')
+             .attr('fill', '#EAEAEA')
+             .attr('width', '90%')
+             .attr('height', '70%');
           }
           else {
           // Group data with location as primary key.

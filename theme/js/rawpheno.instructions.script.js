@@ -139,15 +139,14 @@
             if(traitIndex != null) {
               // If search is successful - add reset link
               // to Clear Search to allow user to reset search.
-              var resetLink = '<a href="javascript:void();" id="lnk-reset">Reset search</a>';
+              var resetLink = '<a href="javascript:void();" id="lnk-reset">Clear search</a>';
               $('div.subtitle-left').append(resetLink);
 
               $('#lnk-reset').click(function() {
                 // Reset search - remove the result and reset button label.
                 txtField.val('Search Trait');
                 // Remove search result.
-                $('#container-search-result table, #container-search-result p').remove();
-                $(this).remove();
+                removeElements();
                 txtField.focus();
               });
 
@@ -165,7 +164,7 @@
               }
 
               // Find the table the trait is in.
-              var traitType = '<p>* This trait is '+traitCategory+'</p>';
+              var traitType = '<em>* This trait is '+traitCategory+'</em>';
               var countLi = $('#tabs tr').size();
               for(var x = 0; x < countLi; x++) {
                 var m = $('#tabs tr').eq(x).find('div').text();
@@ -191,7 +190,7 @@
                 for(var i = 0; i < traitsWithKey.length; i++) {
                   suggestion = suggestion + ' &bull;&nbsp;<a href="javascript:void();">'+traitsWithKey[i]+'</a>&nbsp;';
                 }
-                $('#container-search-result').append('<p id="list-suggest">Did you mean: ' + suggestion + '</p>');
+                $('#container-search-result').append('<p id="list-suggest"><em>Did you mean:</em> ' + suggestion + '</p>');
                 
                 // Enable links in did you mean:/suggested traits
                 $('#list-suggest a').click(function() {
@@ -224,7 +223,7 @@
         
         // Remove any search result from previous search.
         if ($('#container-search-result table').length > 0) {
-          $('#container-search-result table, #container-search-result p').hide('slow').remove();
+          $('#container-search-result table, #container-search-result em').hide('slow').remove();
         }
         
         // Remove clear button from previous search.
@@ -235,7 +234,7 @@
       
       // Display error message.
       function errorMessage(title, message) {
-        var error = '<div class="messages error">'+title+'<pre><h3>'+message+'</h3></pre></div>';
+        var error = '<div class="messages error">'+title+' '+message+'</div>';
         $('#container-search-result').append(error);
         
         $('#edit-txt-search').focus();

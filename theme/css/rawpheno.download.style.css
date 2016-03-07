@@ -10,7 +10,6 @@
 .container-subtitle {
   background: url('../img/icon-download.gif') no-repeat left top;
   background-position: 0 5px;
-  text-align: left;
 }
 
 label {
@@ -49,13 +48,21 @@ select:disabled {
 }
 
 #div-button {
-  border-top: 1px solid #EAEAEA;
+  border-top: 1px solid #CCCCCC;
   clear: both;
   text-align: right;
   margin: 0 15px;
   padding: 15px 0 0 0;
 }
 
-#edit-download-submit {
-  margin: 0;
+#edit-download-submit-download {
+  margin: 10px 0 0 0;
+}
+
+.messages, .error {
+  text-align: left;
+}
+
+#download-window-error {
+  display: none;
 }

@@ -9,10 +9,15 @@
  *   http://www.d3js.org
  */
 
+<<<<<<< HEAD
+// Include function to manage column headers.
+module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
+=======
 // Include functions required in processing spreadsheet file.
 module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
 module_load_include('inc', 'rawpheno', 'include/rawpheno.validation');
 module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.form');
+>>>>>>> origin/master
 
 /**
  * Implements hook_menu().
@@ -51,6 +56,7 @@ function rawpheno_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_instructions'),
     'access arguments' => array('access content'),
+    'file' => 'include/rawpheno.instructions.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 0,
   );
@@ -87,11 +93,172 @@ function rawpheno_menu() {
     'weight' => 3,
   );
   
+  // ADMIN COLOUR SETTINGS PAGE
+  // A page for changing page colour and page title.
+  $items['admin/config/user-interface/rawpheno_testadmin'] = array(
+    'title' => 'Rawpheno Page Configurations',
+    'description' => 'Apply a colour scheme and change page title.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_colourscheme'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
   return $items;
 }
 
-// Include function to manage column headers.
-module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
+/**
+ * Function callback: construct settings form to change colour scheme and page title.
+ */
+function rawpheno_colourscheme($form, &$form_state) {
+  $form['rawpheno_colour_scheme'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Enter colour:'),
+    '#default_value' => variable_get('rawpheno_colour_scheme'),
+    '#size' => 40,
+    '#maxlength' => 20,
+    '#description' => t('eg. HEX: #304356, blue | <a href="@adobe-kuler" target="_blank">get more colours here</a>', 
+                        array('@adobe-kuler' => url('https://color.adobe.com/'))),
+    '#required' => TRUE,
+  );
+  
+  // Headers and title
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Page title'),
+    '#collapsed' => FALSE,
+  );
+    
+    // Rawdata page.
+    $form['fieldset']['rawpheno_rawdata_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title of Rawdata page:'),
+      '#default_value' => variable_get('rawpheno_rawdata_title'),
+      '#size' => 120,
+      '#maxlength' => 220,
+      '#required' => TRUE,
+    );
+    
+    // Download Page.
+    $form['fieldset']['rawpheno_download_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title of Download page:'),
+      '#default_value' => variable_get('rawpheno_download_title'),
+      '#size' => 120,
+      '#maxlength' => 220,
+      '#required' => TRUE,
+    );  
+    
+    // Instructions page.
+    $form['fieldset']['rawpheno_instructions_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title of Instructions page:'),
+      '#default_value' => variable_get('rawpheno_instructions_title'),
+      '#size' => 120,
+      '#maxlength' => 220,
+      '#required' => TRUE,
+    );  
+  
+    // Upload page.
+    $form['fieldset']['rawpheno_upload_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title of Upload page:'),
+      '#default_value' => variable_get('rawpheno_upload_title'),
+      '#size' => 120,
+      '#maxlength' => 220,
+      '#required' => TRUE,
+    );  
+  
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_preprocess().
+ */
+function rawpheno_preprocess(&$variables) {
+  // Path to module.
+  $variables['path'] = drupal_get_path('module', 'rawpheno');
+  // Phenotyping traits present in standard phenotyping procedure.
+  $variables['traits'] = rawpheno_function_headers('phenotyping'); 
+  
+  // Colour scheme selected by the user from the admin/configuration.
+  $colour = variable_get('rawpheno_colour_scheme');
+  // Default to navy blue of knowpulse if no colour is provided.
+  // This colour will fill background of header and top right button, and border of content area.
+  $theme_colour = (empty($colour)) ? '#304356' : $colour;
+  $variables['theme_colour'] = $theme_colour;
+  
+  // URL to each page.
+  $arr_url = array(
+    'rawpheno_rawdata' => url('phenotypes/raw'),
+    'rawpheno_download' => url('phenotypes/raw/download'),  
+    'rawpheno_instructions' => url('phenotypes/raw/instructions'),
+    'rawpheno_upload' => url('phenotypes/raw/upload')
+  );
+  
+  // Cross-link page.
+  // Rawdata and download page.
+  // Instructions and upload page.
+  $arr_assign_url = array(
+    'rawpheno_rawdata' => $arr_url['rawpheno_download'],
+    'rawpheno_download' => $arr_url['rawpheno_rawdata'],  
+    'rawpheno_instructions' => $arr_url['rawpheno_upload'],
+    'rawpheno_upload' => $arr_url['rawpheno_instructions']
+  );
+  
+  $variables['rel_url'] = $arr_assign_url;
+  
+  // Page titles from admin configuration panel.
+  $arr_headers = array();
+  $arr_headers['rawpheno_rawdata'] = variable_get('rawpheno_rawdata_title');
+  $arr_headers['rawpheno_download'] = variable_get('rawpheno_download_title');
+  $arr_headers['rawpheno_instructions'] = variable_get('rawpheno_instructions_title');
+  $arr_headers['rawpheno_upload'] = variable_get('rawpheno_upload_title');
+  
+  $variables['page_title'] = $arr_headers;
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Returns HTML for rawpheno pages.
+ */
+function rawpheno_theme($existing, $type, $theme, $path) {
+  // Rawdata page.
+  $items['rawpheno_rawdata'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+  
+  // Instructions page.
+  $items['rawpheno_instructions'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+  
+  // Download page.
+  $items['rawpheno_download'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+
+  // Upload page.
+  $items['rawpheno_upload_form_master'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+    // Upload Errors.
+    $items['rawpheno_upload_validation_report'] = array(
+      'template' => 'rawpheno_upload_validation_report',
+      'path' => $path . '/theme',
+    );
+    
+  return $items;
+}
 
 /**
  * Implements hook_libraries_info().
@@ -268,85 +435,4 @@ function rawpheno_rawdata_summary_json() {
   }
   
   return $arr_json;
-}
-
-/**
- * Page callback: display standard phenotyping instructions page.
- */
-function rawpheno_instructions($form, &$form_state) {
-  // Page title.
-  $form['page_title'] = array(
-    '#type' => 'markup',
-    '#markup' => 'Standard Phenotyping Procedure',
-  );
-  
-  // Navigation button.
-  $form['page_button'] = array(
-    '#type' => 'markup',
-    '#markup' => '<a href="../raw/upload">Upload Data <span>&#10095;</span></a>',
-  );
-  
-  // Search field with autocomplete feature.
-  $form['txt_search'] = array(
-    '#title' => '',
-    '#type' => 'textfield',
-    '#maxlength' => 65,
-    '#size' => 65,
-    '#default_value' => t('Search Trait'),
-    '#autocomplete_path' => 'autocomplete',
-  );
-  
-  $form['btn_search'] = array(
-    '#type' => 'markup',
-    '#markup' => '<input type="button" id="btn_submit" name="btn_search" class="form-submit" value=" ">',
-  );
-
-  // Hidden field containing url to json.
-  $form['json_url'] = array(
-    '#type' => 'hidden',
-    '#value' => $GLOBALS['base_url'] . '/autocomplete',
-    '#attributes' => array('id' => array('traits-json'))
-  );  
-  
-  // Attach CSS and JavaScript.
-  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
-  $form['#attached']['css'] = array($path . 'css/rawpheno.instructions.style.css');
-  $form['#attached']['js']  = array($path . 'js/rawpheno.instructions.script.js');
-  
-  // Attach JQuery UI library.
-  $form['#attached']['library'][] = array('system', 'ui.tabs');
-   
-  return $form;
-}
-
-/**
- * Implements hook_theme().
- *
- * Returns HTML for rawpheno_instructions().
- */
-function rawpheno_theme($existing, $type, $theme, $path) {
-  $items['rawpheno_instructions'] = array(
-    'render element' => 'form',
-    'template' => 'rawpheno_pages',
-    'path' => $path . '/theme',
-  );
-
-  $items['rawpheno_rawdata'] = array(
-    'render element' => 'form',
-    'template' => 'rawpheno_pages',
-    'path' => $path . '/theme',
-  );
-
-  $items['rawpheno_download'] = array(
-    'render element' => 'form',
-    'template' => 'rawpheno_pages',
-    'path' => $path . '/theme',
-  );
-
-  $items['rawpheno_upload_validation_report'] = array(
-    'template' => 'rawpheno_upload_validation_report',
-    'path' => $path . '/theme',
-  );
-  
-  return $items;
 }

@@ -4,18 +4,12 @@
  * Page callback: Displays a heat map chart.
  */
 function rawpheno_rawdata($form, &$form_state) {
-  // Page title.
-  $form['page_title'] = array(
-    '#type' => 'markup',
-    '#markup' => 'Phenotypic data available through KnowPulse',
-  );
-  
-  // Navigation button.
+  // Navigation button. Related page of rawdata/summary page is download page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => '<a href="raw/download">Download Data <span>&#10095;</span></a>',
+    '#markup' => t('Download Data <span>&#10095;</span>'),
   );
-  
+ 
   // Page Contents.
   // SVG canvas.
   $form['page_content'] = array(
@@ -26,7 +20,7 @@ function rawpheno_rawdata($form, &$form_state) {
   // Hidden field containing url to JSON.
   $form['json_url'] = array(
     '#type' => 'hidden',
-    '#value' => $GLOBALS['base_url'] . '/rawdata',
+    '#value' => url('/rawdata'),
     '#attributes' => array('id' => array('rawdata-json'))
   );
   
@@ -40,6 +34,6 @@ function rawpheno_rawdata($form, &$form_state) {
   if (isset($d3_lib) && !empty($d3_lib['loaded'])) {
     $form['#attached']['libraries_load'][] = array('d3');
   }
-
+  
   return $form;
 }

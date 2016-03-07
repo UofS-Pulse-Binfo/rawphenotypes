@@ -7,6 +7,8 @@
 
 // Additional Helper functions
 module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.helpers');
+// Include functions required in processing spreadsheet file.
+module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
 
 /**
  * Master form constructor which calls an individual form for each stage.
@@ -14,30 +16,37 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.helpers');
  * @see rawpheno_element_validate()
  * @see rawpheno_element_submit()
  */
-function rawpheno_upload_form_master($form, &$form_state) {  
-
+function rawpheno_upload_form_master($form, &$form_state) {    
+  // Navigation button. Related page of upload page is instructions page.
+  $form['page_button'] = array(
+    '#type' => 'markup',
+    '#markup' => t('Standard Procedure <span>&#10095;</span>'),
+  );
+  
   // If the stage is not set then default to the first stage (i.e. 'check' )
   if (!isset($form_state['stage'])) {
     $form_state['stage'] = 'check';
-  }
-
+  } 
+  
   // If a job_id was provide in the URL then the user wants information
   // on a prvious bulk loading job. Thus we should show them the last step.
   if (isset($form_state['build_info']['args'][0])) {
     $form_state['stage'] = 'save';
   }
-
+  
   // Display some basic information/guidance.
   $form['help']['help_text'] = array(
     '#type' => 'markup',
-    '#markup' => '<p>'
-    . t('This form will guide you through uploading your raw phenotypic data. Your data should be in a <em>Microsoft Excel Workbook (XLSX) following the format described on the <a href="@instructions-page" target="_blank">Instructions Page</a></em>. In the second step we ask that you <em>describe any additional phenotypes</em>. Finally, the spreadsheet is saved to KnowPulse, at which point the <em>phenotypic data is available through <a href="@summary-page" target="_blank">summaries</a> and <a href="@download-page" target="_blank">downloads</a></em>.',
+    '#markup' => '<div id="txt-help-text"><ul>'
+    . t('<li>This form will guide you through uploading your raw phenotypic data. Your data should be in a <em>Microsoft Excel Workbook (XLSX) following the format described on the <a href="@instructions-page" target="_blank">Instructions Page</a></em>.</li> 
+         <li>In the second step we ask that you <em>describe any additional phenotypes</em>. </li>
+         <li>Finally, the spreadsheet is saved to KnowPulse, at which point the <em>phenotypic data is available through <a href="@summary-page" target="_blank">summaries</a> and <a href="@download-page" target="_blank">downloads</a></em>.</li>',
       array(
         '@instructions-page' => url('phenotypes/raw/instructions'),
         '@summary-page' => url('phenotypes/raw'),
         '@download-page' => url('phenotypes/raw/download'),
       ))
-    .'</p>'
+    .'</ul></div><hr />'
   );
   
   // Add the stage tracker/header.
@@ -68,7 +77,8 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage02.css');
-      
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+
       $form = rawpheno_upload_form_stage_review($form, $form_state);
       break;
 	 
@@ -109,7 +119,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
     '#droppable_area_text' => t('Drag Phenotype Data Collection file here'),
     '#progress_indicator' => 'throbber',
-    '#progress_message' => '',
+    '#progress_message' => 'Please wait...',
   );
 
   return $form;  
@@ -127,7 +137,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
  */
 function rawpheno_upload_form_stage_review(&$form, &$form_state) {
   $new_header = array();
-  
+
   // First step, determine which headers/traits need to be described.
   if (isset($form_state['multistep_values']['fid'])) {
     $file = file_load($form_state['multistep_values']['fid']);
@@ -167,28 +177,22 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     
     return $form;
   }
-
+  
   // Otherwise, we need a form!
   // Main fieldset container for form elements.
+  
   $form['xls_review_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Check the traits that you want to describe and save'),
   );
-
+  
+  //Remove this after applying theme to describe trait.
   foreach($new_header as $i => $k) {
     if (isset($k) && !empty($k)) {
     
-      // Fieldset to contain a set of trait and corresponding form elements.
-      $form['xls_review_fldset']['fldset_' . $i] = array(
-        '#type' => 'fieldset',
-        '#title' => '',
-        '#prefix' => '<span id="trait-description-' . $i . '">',
-        '#suffix' => '</span>',
-      );
-
       // All fields are required.
       // CHECKBOX to let user select a trait to describe and save.
-      $form['xls_review_fldset']['fldset_' . $i]['chk_' . $i] = array(
+      $form['xls_review_fldset']['chk_' . $i] = array(
         '#type' => 'checkbox',
         '#title' => t(ucwords($k)),
         '#ajax' => array(
@@ -198,10 +202,16 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
           'trait_index' => $i,
         )
       );
+  
+      // Container div that holds form elements.
+      $form['xls_review_fldset']['fldset_' . $i] = array(
+        '#type' => 'markup',
+        '#prefix' => '<div id="trait-description-' . $i . '" class="container-trait">',
+        '#suffix' => '</div>',
+      );
         
-      // If the checkbox is checked then show the fields we want described.
+      // If the checkbox is checked then show the fields user want to described.
       if (isset($form_state['values']['chk_' . $i]) AND ($form_state['values']['chk_' . $i] == TRUE)) {
-
         // TERM NAME/TRAIT/HEADER
         $form['xls_review_fldset']['fldset_' . $i]['txt_header_' . $i] = array(
           '#type' => 'hidden',
@@ -215,7 +225,6 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             '#required' => TRUE,
             '#description' => t('A human-readable text definition'),
             '#maxlength' => 150,
-            '#prefix' => '<div class="container-form" id="div-edit-chk-'. $i .'">',
           );
           // UNIT
           $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
@@ -223,7 +232,6 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             '#title' => t('Unit'),
             '#required' => TRUE,
             '#description' => t('Unit of measurments used'),
-            '#size' => 30,
             '#maxlength' => 100,
           );
           // DESCRIPTION - describe the trait.
@@ -377,6 +385,12 @@ function rawpheno_file_validate($file) {
       $all_passed = FALSE;
       break; break;
     }
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+  }  
+=======
+>>>>>>> Stashed changes
   }
   
   // hook_file_validate() expects an array of error messages if validation failed and
@@ -391,6 +405,7 @@ function rawpheno_file_validate($file) {
     return FALSE;
   }
 
+>>>>>>> origin/master
 }
 
 /**

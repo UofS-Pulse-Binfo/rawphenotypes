@@ -5,6 +5,13 @@
 (function($) {
   Drupal.behaviors.rawphenoToggleDragnDropMessage = {
     attach: function (contex, settings) {
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+      $(document).ready(function() { 
+ 		    $('.droppable-browse-button').text('choose your file');
+=======
+>>>>>>> Stashed changes
 
         // Hide the next button unless needed.
         var submitButton = $('#edit-next-step');
@@ -21,35 +28,89 @@
         
         // Handle the hover-over effects of the drop-zone.
 		    $('.droppable-browse-button').text('choose your file');
+>>>>>>> origin/master
 		    // Drag over events.
+		    // Drag and drop dropzone container div.
 		    var drop = document.getElementById('droppable-dnd');
-        var dropInner = document.getElementsByClassName('droppable-message')[0];
-        
-        var dropMessageHTML = $('.droppable-message').html();
+        // Inner container div that holds controls, labels and links.
         var dropMessage = $('.droppable-message');
+        var dropMessageHTML = $('.droppable-message').html();
         
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+        // Add corresponding message on each mouse/drag event.
+=======
+>>>>>>> origin/master
+>>>>>>> Stashed changes
         if (drop) {
           drop.addEventListener("dragover", function() { 
-            drop.style.border = '1px dashed #999999';
-            drop.style.backgroundColor = '#F7F7F7';
+            dropMessage.css('border','3px dashed #AAAAAA');
             // Create a new instruction to user.
             dropMessage.text('Drop to upload and validate your spreadsheet'); 
           });  
       
           drop.addEventListener("dragleave", function() { 
-            drop.style.border = '1px solid #AAAAAA';
-            drop.style.backgroundColor = '#FAFAFA';
+            dropMessage.css('border','none');
             // Remove new instruction and restore original message.
             dropMessage.html(dropMessageHTML);
           });
         
           drop.addEventListener("drop", function() { 
-            drop.style.border = '1px solid #AAAAAA';
-            drop.style.backgroundColor = '#FAFAFA';
-            // Remove new instruction and restore original message.
-            dropMessage.html(dropMessageHTML);
+            dropMessage.css('border','none');
+            // Clear dropzone from text information as AJAX upload starts.
+            dropMessage.html('');
           });
+<<<<<<< Updated upstream
         }
+=======
+<<<<<<< HEAD
+        }     
+
+        // Allow user to collapse upload instructions message box.
+        $('hr').click(function() {
+          if ($(this).attr('class') == 'icon-up') {
+            // Help window text open.
+            $('#txt-help-text').animate({height : '140px'}, 300, function() { 
+              $('hr').removeClass('icon-up');
+            });
+          } 
+          else {
+            // Help window text collapse.
+            $('#txt-help-text').animate({height : '0px'}, 300, function() { 
+              $('hr').addClass('icon-up');
+            });
+          }
+        });
+      });
+    }
+  };
+}(jQuery));
+
+/**
+ * Diable the next step button until a success message with an id=rawpheno-upload-successful
+ * appears on the page.
+ */
+(function($) {
+  Drupal.behaviors.rawphenoUpload1ControlWorkflow = {
+    attach: function (contex, settings) {
+      $(document).ready(function() { 
+        var submitButton = $('#edit-next-step');
+        var successMsg = $('#rawpheno-upload-successful');
+        
+        if (successMsg.length) {
+          submitButton.removeClass('form-button-disabled');
+          submitButton.removeAttr('disabled');
+        }
+        else {
+          submitButton.addClass('form-button-disabled');
+          submitButton.attr('disabled','disabled');
+        }
+      });
+=======
+        }
+>>>>>>> origin/master
+>>>>>>> Stashed changes
     }
   };
 }(jQuery));

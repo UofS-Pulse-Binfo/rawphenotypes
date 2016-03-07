@@ -6,12 +6,11 @@
   Drupal.behaviors.rawphenoSelTrait = {
     attach: function (context, settings) {
       $(document).ready(function() {
-      /////
         // Reference form elements.
         var chkb = $('input:checkbox');
         var selTrait = $("[name='traits[]']");
 
-        // Checkbox form element
+        // Checkbox form element.
         chkb.click(function() {
           // Select all options when checked.
           var state = ($(this).is(':checked')) ? 'selected' : '';
@@ -41,7 +40,8 @@
           }
         });
         
-        // Disable all form elements when ajax request in progress.
+        // Disable all form elements when AJAX request in progress,
+        // and enable when finished.
         $(document).ajaxStart(function() {
           //ajax start
           $(':input').attr('disabled', 'disabled');
@@ -53,15 +53,14 @@
         });
         
         // Manage error message box.
-        $('#download-window-error').hide();
-        // Show error near the stage indicator.
-        if( document.getElementById('messages') ) {
+        var downloadWinError = $('#download-window-error');
+        downloadWinError.hide();
+        
+        if ($('#messages').length > 0) {
           // Check for durpal error message.
           $('#messages').remove();
-          $('#download-window-error').show();
+          downloadWinError.show();
         }
-
-      /////    
       });
       
       // Reset select field when user selects another location.

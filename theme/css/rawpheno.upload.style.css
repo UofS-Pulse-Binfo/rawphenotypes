@@ -6,14 +6,18 @@
 /* Import global css */
 @import 'rawpheno.style.css';
  
-/* header */
-#header-upload {
-  background: #FAFAFA url('../img/icon-upload.gif') no-repeat;
-  background-position: 30px 18px;
-  margin-bottom: 20px;
-  padding: 0 0 0 50px;
+/* Page icon */
+.container-subtitle {
+  background: url('../img/icon-upload.gif') no-repeat left top;
+  background-position: 0 5px;
 }
  
+.container-contents {
+  background-color: #FFFFFF;
+  padding: 0;
+  text-align: left;
+}
+
 #rawpheno-element #edit-header ul li.active{ 
   color: red; 
   font-weight: bold; 
@@ -55,15 +59,6 @@
 .error-message-em {
   font-weight: normal;
   font-size: 1.5em;
-<<<<<<< Updated upstream
-}
-
-/* header */
-#edit-header {
-  background: #FAFAFA url('../img/icon-upload.gif') no-repeat;
-  background-position: 30px 25px;
-  border-radius: 0;
-  padding-left: 25px;
 }
 
 em {
@@ -76,6 +71,4 @@ input#edit-next-step {
 }
 input#edit-next-step.form-button-disabled {
   display: none;
-=======
->>>>>>> Stashed changes
 }

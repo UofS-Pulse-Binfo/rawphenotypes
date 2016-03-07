@@ -14,9 +14,9 @@
 }
 
 #droppable-dnd {
-  background: url('../../theme/img/excel-icon.gif') no-repeat top center;
+  background: url('../../theme/img/icon-excel.gif') no-repeat top center;
   background-position: 50% 130px;
-  background-color: #FAFAFA;
+  background-color: #FCFDFD;
   border: 1px solid #AAAAAA;
 
   -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
@@ -26,8 +26,7 @@
   height: 420px;
   margin: 0;
   padding: 10px;
-  width: 98.2%;
-  min-width: 895px;
+  width: 890px;
 }
 
 /* Drag file here message and link container */
@@ -35,11 +34,10 @@
   border: 3px solid none;
   color: #666666;
   font-size: 1.3em;
-  line-height: 55px;
   margin: 0 auto;
-  padding-top: 180px;
   width: 99%;
-  height: 232px;
+  height: 260px;
+  padding-top: 150px;
 }
 
 /* Choose file link */
@@ -71,14 +69,6 @@ div.preview-remove {
   padding: 0;
 }
 
-/* Text and link container */
-#droppable-dnd span {
-  margin: 0;
-  padding: 0;
-  margin: 0;
-  padding: 0;
-}
-
 /* Preview filename */
 div.droppable-preview-file {
   color: #666666;
@@ -105,10 +95,6 @@ a.button:hover {
 .file { 
   width: 0; 
   display: none; 
-}
-
-#edit-stage01-submit-save, #edit-stage01-submit-review, #edit-stage01-button-close {
-  display: none;
 }
 
 #container-dnd {
