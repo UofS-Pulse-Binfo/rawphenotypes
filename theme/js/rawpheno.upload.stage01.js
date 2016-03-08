@@ -49,23 +49,7 @@
             // Clear dropzone from text information as AJAX upload starts.
             dropMessage.html('');
           });
-        }  
-
-        // Allow user to collapse upload instructions message box.
-        $('hr').click(function() {
-          if ($(this).attr('class') == 'icon-up') {
-            // Help window text open.
-            $('#txt-help-text').animate({height : '140px'}, 300, function() { 
-              $('hr').removeClass('icon-up');
-            });
-          } 
-          else {
-            // Help window text collapse.
-            $('#txt-help-text').animate({height : '0px'}, 300, function() { 
-              $('hr').addClass('icon-up');
-            });
-          }
-        });
+        }
       });
     }
   };
