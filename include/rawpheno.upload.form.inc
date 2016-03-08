@@ -20,7 +20,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
   // Navigation button. Related page of upload page is instructions page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => t('Standard Procedure <span>&#10095;</span>'),
+    '#markup' => t('Standard Procedure &#10095;'),
   );
   
   // If the stage is not set then default to the first stage (i.e. 'check' )
@@ -69,7 +69,8 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js',
+                                        $path . 'js/rawpheno.upload.script.js');
       
       $form = rawpheno_upload_form_stage_check($form, $form_state);
       break;
@@ -77,7 +78,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage02.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.script.js');
 
       $form = rawpheno_upload_form_stage_review($form, $form_state);
       break;
@@ -85,6 +86,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'save':
       // Stage 03 - save to databse and success page.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage03.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.script.js');
 
       $form = rawpheno_upload_form_stage_save($form, $form_state);
       break;
@@ -270,6 +272,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
   $job_id = NULL;
   $percent_complete = 0;
   $message = 'Waiting for job system';
+  
   if (isset($form_state['build_info']['args'][0])) {
     $job_id = $form_state['build_info']['args'][0];
     
@@ -320,41 +323,54 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
   
   // We make a DIV which the progress bar can occupy. You can see this in use
   // in ajax_example_progressbar_callback().
-  $form['status'] = array(
+  $form['container_status'] = array(
     '#type' => 'markup',
-    '#markup' => theme('progress_bar', array('percent' => $percent_complete, 'message' => $message)),
+    '#prefix' => '<div class="container-status">',
+    '#suffix' => '</div>',  
   );
+    $form['container_status']['status'] = array(
+      '#type' => 'markup',
+      '#markup' => theme('progress_bar', array('percent' => $percent_complete, 'message' => $message)),
+    );
   
-  $form['buttons'] = array(
+  $form['container_status']['container_buttons'] = array(
     '#type' => 'markup',
-    '#prefix' => '<div class="upload-buttons step3">',
-    '#suffix' => '</div>'
-  );
+    '#prefix' => '<div class="container-buttons">',
+    '#suffix' => '</div>',
+  ); 
   
-  $form['buttons']['new_upload'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<a href="' . url('phenotypes/raw/upload') . '" target="_blank">',
-    '#markup' => '<div class="upload-icon-link"><img alt="Upload more Phenotypic Data" src="data:image/png;base64,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" />'
-      . '<div class="upload-icon-title">Upload New Data</div></div>',
-    '#suffix' => '</a>'
-  );
+    $form['container_status']['container_buttons']['upload'] = array(
+      '#type' => 'markup',
+      '#markup' => t('<div class="nav-buttons">
+                      <a href="@upload" target="_blank">Upload New Data</a>
+                      </div>', array('@upload' => url('phenotypes/raw/upload'))),
+    ); 
+  
+    $form['container_status']['container_buttons']['download'] = array(
+      '#type' => 'markup',
+      '#markup' => t('<div class="nav-buttons">
+                      <a href="@upload" target="_blank">Download Data</a>
+                      </div>', array('@upload' => url('phenotypes/raw/download'))),
+    ); 
+    
+    $form['container_status']['container_buttons']['summary'] = array(
+      '#type' => 'markup',
+      '#markup' => t('<div class="nav-buttons">
+                      <a href="@upload" target="_blank">Data Summary</a>
+                      </div>', array('@upload' => url('phenotypes/raw'))),
+    ); 
 
-  $form['buttons']['summary'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<a href="' . url('phenotypes/raw') . '" target="_blank">',
-    '#markup' => '<div class="upload-icon-link"><img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAFlklEQVR4Xu2dO28TQRDHOQoeBQQhRUpLEUFtu6SgixLafAAQHU0kGpIqooI0SGnoEHyAtOTRUVDarkEpaKNEQgQKHgVhFoUIny/e2fE6t7f8LAUL339nd2b/N4+9xxbnjj+dTmf+6OhoSf7bkr/pv7/znZUFDkSbflEU691ud8tpVrh/2u32M/l6nJWqKOOzwFqv11sujs/8TR+a4/lZQDzBQiFn/7aoNpefemiksMCOI8A+MV9hqjwhB44AR3nqhlYaC0AAjZUyxkCAjCdXoxoE0FgpY0zqBNgT2x9GtP+syDrvkfdLju9G7HNKZM0o5LlFmk8KnBZyQ4AXfOCkCSArk/f7/f5rnxLa45Lwfhasm5BRn0NZILmmlenDtVqte1Jvv/Lh5PiK9OsW5KJ8RNf3IuimTxgEGLYQBPCx5qyO4wHslsYDVNiOEDBsFEIAISDdlUBCACGAKsDIAXIAcgDKwDIHSAJJAlkIKnGAKoAqgCqgxAFWAo2JZ/RmlIF2k1IFUAVQBVAFcDVwgAOUgZSBlIGUgdwQ8i8HWAdgHSDddQCZmw3569mLoaGWq/LLJY+873L8ScQ+2yJrUSFvRzBvFTgt5JEAvQ/5Ju0BtJqCs1sAAthtl0VLCJDFNNqVgAB222XREgJkMY12JSCA3XZZtIQAWUyjXQkIYLddFi0hQBbTaFdCS4A9uTljxd7NYEt5WPKucnUsVpchcr6Jrg9DGozCiq635fgDhbwN6feNAqeCSL9PBeh9KllLgA/y5OotVc8KkFyWXRaYG2CKH24Jq5gVCGCkai6Ph0MACEAIsHAAD1BhNXKASiol/YYQQoDl9Jc2eAA8QBbvCMID4AFIAi0cIAQQAggBZQ5QBVAFsBQ8zAHKQEuMnUAbrgVwLYBXxZY5QBlodDVUAVQBVAFUAc1/WzghgBDASqCFA7nkAG4Xja8WA5zS5qL87ntKN2J3QaLcLmpfglqMBrtdOy4r5Lmnkn8ocFrIFQH6dkc5p70nUNspuIZZAAI0bMJiDxcCxLZow+RBgIZNWOzhQoDYFm2YPAjQsAmLPVwIENuiDZMHARo2YbGHqyVAXQtB30ThnxGVviqyiojyYopKeiGolmsBNb0uPuakhsjijqCytSBACH8GsbH3C8AD2OdC2xIPgAdId/dwPID2PLbj8AB4ADzAAAdIAu3uhCSwwnbKLWPsVh+vJSGAEEAIIASM50VOWhMCCAFR9w2kDIx0Zo4QQw5ADkAOQA4QydOQA5ADkAOUOcA6wPBZob0hhCQwkmsmCRQLaN8RxFKwnXXkAOQAUXOAujaMeCle4J39PBhsKZsovJBfNA9qxuoyRE7SG0aEKAK2QRbQJoENUomhhlgAAoRYK0MsBMhwUkNUggAh1soQCwEynNQQlSBAiLUyxEKADCc1RCUIEGKtDLFaAhyI7s8j6n9HZM0p5G0IpqfAaSGrAvS9ns49pftEK1CBawtmUYGrBaIlwP90NbCu18VDgLIFaroaCAEqqIgHMJ6fAa+KNfYwXjNCwLD98AB4gFp2DBnvVDa2xgPgAdru7di+DzmAz0KnHCcHqDBM4vcEkgOQA5ADlDlACCAEnP2WMSwEGVkX0IwqgCqAKqDEAZJAkkCSQJLAgDg6Cso6AOsA2q1jI1EuTAxJIEkgSSBJoN9rsBDkt1ElIpccwO3a8dFog6pm1+XHaYW8PcEcKnBayKwAfduput1RdrUCFbgpwcwocLVAtDlALYOj08lbAAJM3sZJ9wABkp6eyQ8OAkzexkn34Aiwr0zIklaEwZkscOAIsC1NNU/pmHqgUdIW2Ck6nc68XHffTHqYDG4iFpCXZi382UVTvMAz+Xo8kV4QmqoF1nq93vLJNqrHnmBJRtsiJ0h1zsYel3vIty9n/nq3291y0n4DHetPXYnj9WcAAAAASUVORK5CYII=" />'
-      . '<div class="upload-icon-title">Data Summary</div></div>',
-    '#suffix' => '</a>'
-  );
-  
-  $form['buttons']['download'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<a href="' . url('phenotypes/raw/download') . '" target="_blank">',
-    '#markup' => '<div class="upload-icon-link"><img alt="" src="data:image/png;base64,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" />'
-      . '<div class="upload-icon-title">Download Data</div></div>',
-    '#suffix' => '</a>'
-  );
-  
+    $form['container_status']['container_buttons']['instructions'] = array(
+      '#type' => 'markup',
+      '#markup' => t('<div class="nav-buttons">
+                      <a href="@upload" target="_blank">Standard Procedure</a>
+                      </div>', array('@upload' => url('phenotypes/raw/instructions'))),
+    ); 
+    
+    $form['container_status']['container_buttons']['clear'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div style="clear:left"> </div>',
+    ); 
   return $form;
 }
 
@@ -364,18 +380,19 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  * Basic compliance test of spreadsheet submitted.
  */
 function rawpheno_file_validate($file) {
+
   
   // Validate the file.
   // The following function will return an array specifying which of the validation
   // steps passed and providing infomration for those that failed.
-  $status = rawpheno_validate_excel_file($file);
-
+  //$status = rawpheno_validate_excel_file($file);
+  
   // We want to show the user which steps passed/failed even if all of them passed,
   // so lets do that now. We use drupal_set_message() because returning from this function
   // creates an error message and halts file upload, whereas, using drupal_set_message()
   // allows us to print to the screen regardless of failure/success.
   drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
-
+  
   // Now we want to determine if validation passed or failed as a whole.
   // To do that we have to look at each step and only if all steps passed 
   // did the file pass validation and can be uploaded.
@@ -398,7 +415,6 @@ function rawpheno_file_validate($file) {
   else {
     return FALSE;
   }
-
 }
 
 /**

@@ -254,7 +254,6 @@ function rawpheno_theme($existing, $type, $theme, $path) {
       'template' => 'rawpheno_upload_validation_report',
       'path' => $path . '/theme',
     );
-    
   return $items;
 }
 
