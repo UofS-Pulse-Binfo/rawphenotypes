@@ -96,9 +96,22 @@ function rawpheno_rawpheno_validators() {
  */
 function validator_is_excel_validate_file($file) {
 
+  // First test extension.
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
   if ($xls_extension == 'xlsx' OR $xls_extension == 'xls') {
-    return TRUE;
+  
+    // Then test that the file can be opened.
+    // This checks against PDFs masquerading as XLS ;-).
+    try {
+      $xls_obj = rawpheno_open_file($file);
+    }
+    catch (Exception $E) {
+      return FALSE;
+    }
+
+    if ($xls_obj) {
+      return TRUE;
+    }
   }
   return FALSE;
 }
