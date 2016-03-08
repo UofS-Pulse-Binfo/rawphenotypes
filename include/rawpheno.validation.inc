@@ -43,7 +43,7 @@ function rawpheno_rawpheno_validators() {
   );
   
   $validators['tab_exists'] = array(
-    'label' => 'The "Measurements" tab exists.',
+    'label' => 'The "Measurements" tab exists and has content.',
     'scope' => 'file',
     'message callback' => NULL,
     'validation callback' => 'validator_tab_exists_validate_file',
@@ -127,14 +127,30 @@ function validator_is_excel_validate_file($file) {
  */
 function validator_tab_exists_validate_file($file) {
 
+  // Check it opens.
   $xls_obj = rawpheno_open_file($file);
 
   $xls_sheets = $xls_obj->Sheets();
   foreach($xls_sheets as $sheet_key => $sheet_value) {
     $xls_obj->ChangeSheet($sheet_key);
 
+    // check the measurements tab exists.
     if (rawpheno_function_delformat($sheet_value) == 'measurements') {
-      return TRUE;
+    
+      // Check there are contents.
+      $i = 0;
+      $have_data = 0;
+      foreach ($xls_obj as $row) {
+        // only check the first two lines.
+        if ($i > 2) break;
+        
+        // Check the row isn't empty.
+        if (strlen(trim(implode('', $row))) > 2) {
+          $have_data++;
+        }
+        $i++;
+      }
+      if ($have_data > 1) return TRUE;
     }
   }
   
