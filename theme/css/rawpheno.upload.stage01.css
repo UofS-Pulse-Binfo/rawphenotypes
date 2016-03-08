@@ -131,6 +131,10 @@ ul.error-main > li {
   padding: 0 0 15px 10px;
 }
 
+ul.error-main > li em {
+  margin-left: 18px;
+}
+
 ul.error-main {
   padding: 15px; 
   margin: 0 15px 0 0;
@@ -144,4 +148,14 @@ ul.error-main {
 
 li.error-item {
   margin-left: 20px;
+}
+
+.success {
+  background: url('../img/icon-success.jpg') no-repeat;
+  background-position: 5px 0;
+}
+
+.failed {
+  background: url('../img/icon-failed.jpg') no-repeat;
+  background-position: 5px 0;
 }

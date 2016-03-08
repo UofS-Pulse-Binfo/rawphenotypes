@@ -8,6 +8,9 @@ $validators = module_invoke_all('rawpheno_validators');
 ?>
 <h3>Validation Result</h3>
 <ul class="error-main">
+  <li class="success"><em>test</em><ul class="error-detail"><li class="error-item">Hello</li></ul></li>
+  <li class="failed"><em>test</em><ul class="error-detail"><li class="error-item">Hello</li></ul></li>
+  
   <?php 
     foreach ($status as $key => $result) {
       $class = ($result == TRUE) ? 'success' : 'failed';
