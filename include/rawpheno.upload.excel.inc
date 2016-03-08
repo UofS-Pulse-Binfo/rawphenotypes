@@ -15,26 +15,52 @@
  * @param $job_id
  *   The tripal job id.
  */
-function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
+function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
   // Unserialize and remove formating for the headers that should be saved as 
   // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
   $plantprop_headers = array_map('rawpheno_function_delformat', $plantprop_headers);
   
+  // First we load the file.
+  $file = file_load($fid);
+  if (!$file) {
+    print 'ERROR!';
+    return FALSE;
+  }
+  $xls_file = drupal_realpath($file->uri);
+
   // Keep a record of which file we are loading in the logs.
   print "\nXLSX File: " . $xls_file . "\n";;
   
-  // Array to hold all rows in the spreadsheet.
-  $arr_xls_rows = rawpheno_function_read($xls_file);
+  // Function call libraries_load() base on the implementation
+  // of hook_libraries_info() in rawpheno.module.
+  $xls_lib = libraries_load('spreadsheet_reader');
+  // Library path information returned will be used
+  // to include individual library files required.
+  $lib_path = $xls_lib['path'];
 
-  // Print a quick summary about the loading job.
-  $num_rows = sizeof($arr_xls_rows);
-  print "Number of lines read: " . $num_rows . "\n";
-  print "Number of columns: " . sizeof($arr_xls_rows[0]) . "\n";
-  
+  // Include parser library. PLS DO NOT ALTER ORDER!!!
+  // To stop parser from auto formatting date to MM/DD/YY,
+  // suggest a new date format YYYY-mm-dd in:
+  //   line 678 in excel_reader2.php
+  //   line 834 in SpreadsheetReader_XLSX.php
+  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
+  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
+  include_once $lib_path . 'SpreadsheetReader.php';  
+
+  // Open the file for reading
+  $xls_obj = rawpheno_open_file($file);
+  if (!$xls_obj) {
+    print 'ERROR!';
+    return FALSE;
+  }
+
+  // Change to the correct spreadsheet.
+  rawpheno_change_sheet($xls_obj, 'measurements');
+
   // Find the index number of name header in the spreadsheet.
-  $name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
+  //$name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
   
   // Array of column headers with first and second try.
   $arr_multiheaders = rawpheno_function_headers('multi-trial');
@@ -45,31 +71,40 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
   try {
     // Read each row.
     print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: ";
-    for($i = 0; $i < count($arr_xls_rows); $i++) {
-    
+    $i = 0;
+    foreach ($xls_obj as $row) {
+      $i++;
+
       // print update every 25 lines.
       if (($i % 25) == 0 AND $i !== 0) {
         print $i . "... ";
       }
     
       // Update job status every 5%
-      $percent_complete = round(($i / $num_rows) * 100);
-      if (($percent_complete % 5) == 0) {
-        tripal_set_job_progress($job_id, $percent_complete);
-      }
+      //$percent_complete = round(($i / $num_rows) * 100);
+      //if (($percent_complete % 5) == 0) {
+      //  tripal_set_job_progress($job_id, $percent_complete);
+      //}
     
+      // This is the header.
+      if ($i == 0) {
+        $header = $row;
+
+        // Find the index number of name header in the spreadsheet.
+        $name_index = array_search('name', array_map('rawpheno_function_delformat', $header));
+
+        continue;
+      }
+
       // Rearrange array to make sure name is the first element,
       // and generate a plant_id number for the rest of the entries.
-      $name_col = $arr_xls_rows[$i][$name_index];
-      unset($arr_xls_rows[$i][$name_index]);
-      array_unshift($arr_xls_rows[$i], $name_col);
-      
-      // Skip row with index 0, this is the column headers row.
-      if ($i == 0) continue;
+      $name_col = $row[$name_index];
+      unset($row[$name_index]);
+      array_unshift($row, $name_col);
     
       // Read each row and each cell.
       // Each row will be an array where name is always the first element.
-      foreach($arr_xls_rows[$i] as $cell_index => $cell_entry) {
+      foreach($row as $cell_index => $cell_entry) {
         // Determine which table to insert a column header.
         if ($cell_index == 0) {
           // Name
@@ -94,7 +129,7 @@ function rawpheno_load_spreadsheet($xls_file, $plantprop_headers, $job_id) {
           // OTHER
           // The rest of the data array.
           // Get the column header of a cell.
-          $cell_colheader = rawpheno_function_delformat($arr_xls_rows[0][$cell_index]);
+          $cell_colheader = rawpheno_function_delformat($header[$cell_index]);
           // Determine if column header is required
           if (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
             // PLOT, ENTRY, REP and LOCATION
@@ -468,6 +503,9 @@ function rawpheno_open_file($file) {
   // Grab the path and extension from the file.
   $xls_file = drupal_realpath($file->uri);
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
+
+  print 'File: '.$xls_file."\n";
+  print 'extension: '.$xls_extension."\n";
   
   // Validate that the spreadsheet is either xlsx or xls and open the spreadsheet using
   // the correct class.
@@ -478,6 +516,9 @@ function rawpheno_open_file($file) {
   // XLS:
   elseif ($xls_extension == 'xls') {
     // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
+    $xls_lib = libraries_load('spreadsheet_reader');
+    $lib_path = $xls_lib['path']; 
+
     include_once $lib_path . 'SpreadsheetReader_XLS.php';
     $xls_obj = new SpreadsheetReader_XLS($xls_file);
   }
