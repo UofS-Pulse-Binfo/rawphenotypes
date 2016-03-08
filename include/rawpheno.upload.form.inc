@@ -63,14 +63,14 @@ function rawpheno_upload_form_master($form, &$form_state) {
   
   // Get the directory path to rawpheno module.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
-  $form['#attached']['js']  = array($path . 'js/rawpheno.upload.script.js');
   
   // Load corresponding form together with JavaScript and CSS.
   switch($form_state['stage']) {
     case 'check':
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
-      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js',
+                                        $path . 'js/rawpheno.upload.script.js');
       
       $form = rawpheno_upload_form_stage_check($form, $form_state);
       break;
@@ -78,6 +78,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'review':
       // Stage 02 - describe form (only when there is additional trait).
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage02.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.script.js');
 
       $form = rawpheno_upload_form_stage_review($form, $form_state);
       break;
@@ -85,6 +86,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     case 'save':
       // Stage 03 - save to databse and success page.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage03.css');
+      $form['#attached']['js']  = array($path . 'js/rawpheno.upload.script.js');
 
       $form = rawpheno_upload_form_stage_save($form, $form_state);
       break;
