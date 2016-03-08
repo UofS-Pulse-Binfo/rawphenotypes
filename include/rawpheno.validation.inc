@@ -43,7 +43,7 @@ function rawpheno_rawpheno_validators() {
   );
   
   $validators['tab_exists'] = array(
-    'label' => 'The "Measurements" tab exists and contains data.',
+    'label' => 'The "Measurements" tab exists.',
     'scope' => 'file',
     'message callback' => NULL,
     'validation callback' => 'validator_tab_exists_validate_file',
@@ -377,6 +377,11 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   9 = too many matching stocks (not unique).
  */
 function validator_germplasm_present_validate_cell($value, $row_index, $row, $header) {
+  
+  // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
+  if (empty($value)) {
+    return TRUE;
+  }
   
   $stocks = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $value))->fetchAll();
   
