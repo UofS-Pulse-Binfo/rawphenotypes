@@ -3,7 +3,7 @@
  * Make the drag and drop element toggle it's message on mouseover.
  */
 (function($) {
-  Drupal.behaviors.rawphenoToggleDragnDropMessage = {
+  Drupal.behaviors.rawphenoToggleHelpText = {
     attach: function (contex, settings) {
        $(document).ready(function() { 
         // Allow user to collapse upload instructions message box.
