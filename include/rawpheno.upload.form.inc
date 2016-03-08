@@ -559,7 +559,7 @@ function rawpheno_submit_review($form, &$form_state) {
       'rawpheno',
       'rawpheno_load_spreadsheet',
       array(
-        $xls_file,
+        $form_state['multistep_values']['fid'],
         serialize($plantprop_headers)
       ),
       $user->uid

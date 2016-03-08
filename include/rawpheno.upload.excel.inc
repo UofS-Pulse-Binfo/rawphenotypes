@@ -25,7 +25,14 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
   // First we load the file.
   $file = file_load($fid);
   if (!$file) {
-    print 'ERROR!';
+    tripal_report_error(
+      'rawpheno',
+      TRIPAL_CRITICAL,
+      'Uploading Phenoypic Data: Unable to load file. File ID=!id',
+      array('!id' => $fid),
+      array('print' => TRUE)
+    );
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     return FALSE;
   }
   $xls_file = drupal_realpath($file->uri);
@@ -33,26 +40,20 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
   // Keep a record of which file we are loading in the logs.
   print "\nXLSX File: " . $xls_file . "\n";;
   
-  // Function call libraries_load() base on the implementation
-  // of hook_libraries_info() in rawpheno.module.
-  $xls_lib = libraries_load('spreadsheet_reader');
-  // Library path information returned will be used
-  // to include individual library files required.
-  $lib_path = $xls_lib['path'];
-
-  // Include parser library. PLS DO NOT ALTER ORDER!!!
-  // To stop parser from auto formatting date to MM/DD/YY,
-  // suggest a new date format YYYY-mm-dd in:
-  //   line 678 in excel_reader2.php
-  //   line 834 in SpreadsheetReader_XLSX.php
-  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
-  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
-  include_once $lib_path . 'SpreadsheetReader.php';  
+  // Add the libraries needed to parse excel files.
+  rawpheno_add_parsing_libraries();
 
   // Open the file for reading
   $xls_obj = rawpheno_open_file($file);
   if (!$xls_obj) {
-    print 'ERROR!';
+    tripal_report_error(
+      'rawpheno',
+      TRIPAL_CRITICAL,
+      'Uploading Phenoypic Data: Unable to open file. File=@file',
+      array('@file' => print_r($file, TRUE)),
+      array('print' => TRUE)
+    );
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     return FALSE;
   }
 
@@ -73,7 +74,6 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
     print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: ";
     $i = 0;
     foreach ($xls_obj as $row) {
-      $i++;
 
       // print update every 25 lines.
       if (($i % 25) == 0 AND $i !== 0) {
@@ -92,7 +92,20 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
         // Find the index number of name header in the spreadsheet.
         $name_index = array_search('name', array_map('rawpheno_function_delformat', $header));
+        if (!$name_index) {
+          tripal_report_error(
+            'rawpheno',
+            TRIPAL_CRITICAL,
+            'Uploading Phenoypic Data: Uname to determine the name column.',
+            array(),
+            array('print' => TRUE)
+          );
+          $TRANSACTION->rollback();
+          tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+          return FALSE;
+        }
 
+        $i++;
         continue;
       }
 
@@ -111,6 +124,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
           // First element in data array - Name cells
           // Name column header goes into pheno_plant.
           // Check if stock name exists.
+          $stock_id = NULL;
           $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $cell_entry));
           if ($r) $stock_id = $r->fetchField();
         
@@ -120,9 +134,20 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
             $pheno_plantid = db_insert('pheno_plant')
               ->fields(array('stock_id' => $stock_id))
               ->execute();
-          } else {
-            // Next row if stock name does not exist.
-            break;
+          } 
+          else {
+            // Warn the admin tht germplasm is not available...  
+            // We want to stop loading if this is the case.
+            tripal_report_error(
+              'rawpheno',
+              TRIPAL_CRITICAL,
+              'Uploading Phenoypic Data: Germplasm doesn\'t exist (name=!name)',
+              array('!name' => $cell_entry),
+              array('print' => TRUE)
+            );
+            $TRANSACTION->rollback();
+            tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+            return FALSE;
           }
         } 
         else {
@@ -145,6 +170,30 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
                                'type_id'  => $type_id, 
                                'value'    => $cell_entry))
                 ->execute(); 
+              if (!$tmp) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to insert plant property. Values=@values',
+                  array('@values' => print_r(array('plant_id' => $pheno_plantid,  'type_id'  => $type_id,  'value'    => $cell_entry),TRUE)),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
+            }
+            else {
+              tripal_report_error(
+                'rawpheno',
+                TRIPAL_ERROR,
+                'Uploading Phenoypic Data: Plant Property type !type does\'t exist.',
+                array('!type' => $cell_colheader),
+                array('print' => TRUE)
+              );
+              $TRANSACTION->rollback();
+              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+              return FALSE;
             }
           } 
           elseif (!empty($cell_colheader)) {
@@ -159,7 +208,19 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               $cv_name = str_replace(' ', '_', $cell_colheader);
               $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
               $type_id = $type->cvterm_id;
-            
+              if (!$type_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Plant Measurement Type (New Trait; Term=!name; Header=!colheader) does\'t exist.',
+                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
+              
               // Get corresponding unit for this new trail based on cvterm_id
               // in chado.cvterm_relationship.
               $cv_unit = db_query("SELECT object_id FROM {chado.cvterm_relationship}
@@ -168,6 +229,18 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
                 ->fetchField();
               $unit_id = $cv_unit;
               $unit = '';
+              if (!$unit_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (New Trait; Term=!name; Type ID=!id) does\'t exist.',
+                  array('!name' => $cv_name, '!id' => $type_id),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
             }
             else {
               // NOT NEW
@@ -184,7 +257,19 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
               $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
               $type_id = $type->cvterm_id;
-          
+              if (!$type_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Plant Measurement Type (Term=!name; Header=!colheader) does\'t exist.',
+                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
+              
               // Extract unit from the column header the cell is under.
               // If not unit, default to text unit
               $u = rawpheno_function_unit($cell_colheader);
@@ -192,6 +277,19 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               $cv_unit = tripal_get_cvterm(array('name' => $u, 'cv_id' => array('name' => 'phenotype_measurement_units')));
               $unit_id = $cv_unit->cvterm_id;
               $unit = $u;
+              if (!$unit_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (Term=!name; Type ID=!id; Unit=!unit) does\'t exist.',
+                  array('!name' => $cv_name, '!id' => $type_id, '!unit' => $unit),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
+
             }
           
             // Determine if cell requires scale member code.
@@ -202,6 +300,16 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
                                      WHERE code = :code LIMIT 1", 
                                      array(':code' => trim($cell_entry)))
                 ->fetchField(); 
+              if (!$cvalue_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_WARNING,
+                  'Uploading Phenoypic Data: Unable to find scale id for Plant Measurement Type (Term=!name; Type ID=!id; Scale Value=!scale) does\'t exist.',
+                  array('!name' => $cv_name, '!id' => $type_id, '!scale' => $cell_entry),
+                  array('print' => TRUE)
+                );
+              }
+              
               // Use default value in the cell if query to find scale member code 
               // has no equivalent value.
               $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
@@ -222,15 +330,34 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
                                'value'     => $cell_entry,
                                'modified'  => date("D M d, Y h:i:s a", time())))
                 ->execute();
+              if (!$temp) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
+                  array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
+                               'type_id'   => $type_id, 
+                               'unit_id'   => $unit_id, 
+                               'cvalue_id' => $cvalue_id,
+                               'value'     => $cell_entry,
+                               'modified'  => date("D M d, Y h:i:s a", time())),TRUE)),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                return FALSE;
+              }
             } 
           }
         }
       }
+      $i++;
     }
   }
   catch (Exception $e) {
     $TRANSACTION->rollback();
     watchdog_exception('rawpheno', $e);
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     return FALSE;
   }  
   
@@ -241,104 +368,6 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
   $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');
   if ($mview_id) tripal_populate_mview($mview_id);
 
-}
-
-/**
- * Function to read excel file (xls and xlsx).
- *
- * @param $file
- *   A string containing the path to a spreadsheet file.
- *
- * @return
- *   An array containing all data and column header rows in the spreadsheet.
- */
-function rawpheno_function_read($file) {
-  // Function call libraries_load() base on the implementation
-  // of hook_libraries_info() in rawpheno.module.
-  $xls_lib = libraries_load('spreadsheet_reader');
-  // Library path information returned will be used
-  // to include individual library files required.
-  $lib_path = $xls_lib['path']; 
-
-  // Include parser library. PLS DO NOT ALTER ORDER!!!
-  // To stop parser from auto formatting date to MM/DD/YY,
-  // suggest a new date format YYYY-mm-dd in:
-  //   line 678 in excel_reader2.php
-  //   line 834 in SpreadsheetReader_XLSX.php
-  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
-  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
-  include_once $lib_path . 'SpreadsheetReader.php';  
-
-  // Determine the stage requesting to read excel file.
-  if (gettype($file) == 'string') {
-    // STAGE 03
-    // Read the file uploaded in stage 01. This condition
-    // is for reading spreadsheet on stage 03, which the
-    // absolute path to excel file uploaded to the server
-    // in stage 01.
-    $xls_file = $file;
-    $xls_extension = pathinfo($file, PATHINFO_EXTENSION);
-  }
-  else {
-    // STAGE 01
-    // Read a temporary file in stage 01.
-    $xls_file = drupal_realpath($file->uri);
-    $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
-  }
-  
-  // Extract the file extension of the spreadsheet.
-  if ($xls_extension == 'xlsx') {
-    // XLSX
-    $xls_obj = new SpreadsheetReader_XLSX($xls_file);
-  } 
-  else {
-    // XLS
-    // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
-    include_once $lib_path . 'SpreadsheetReader_XLS.php';
-    $xls_obj = new SpreadsheetReader_XLS($xls_file);
-  }
-  
-  // Array to hold each row found in the spreadsheet.
-  $arr_xls_rows = array();
-  
-  // Locate measurement sheet.
-  $xls_sheets = $xls_obj->Sheets();
-  foreach($xls_sheets as $sheet_key => $sheet_value) {
-    $xls_obj->ChangeSheet($sheet_key);
-
-    // Start saving rows when in measurements sheet.
-    if (rawpheno_function_delformat($sheet_value) == 'measurements') {
-      // Begin saving first 11 rows, which will contain
-      // first, last or 10th row required in performing 
-      // basic compliance test.
-
-      // This increment variable $i is required since xls and xlsx
-      // parsers assign array index differently. 
-      // XLS starts at 1, while XLSX at 0;
-      $i = 0;
-      foreach($xls_obj as $row) {
-        // Convert row into a string and check the length.
-        // This will exclude empty rows.        
-        if (strlen(trim(implode('', $row))) > 2) {
-          // Save row into the array.
-          $arr_xls_rows[] = $row;
-        }
-
-        // Exit loop when there is at least 11 rows, or all rows when there is less than 11 rows.
-        // If request to read file is from stage 03, all rows will be saved into the array.
-        if ($i == 11 && gettype($file) != 'string') {        
-          break;
-        }
-        
-        $i++;
-      }
-      
-      // Skip other sheets when measurement sheet is found.
-      break;  
-    }     
-  }
-
-  return $arr_xls_rows;
 }
 
 /**
@@ -358,21 +387,8 @@ function rawpheno_validate_excel_file($file) {
     $validators[ $v['scope'] ][ $k ] = $v;
   }
 
-  // Function call libraries_load() base on the implementation
-  // of hook_libraries_info() in rawpheno.module.
-  $xls_lib = libraries_load('spreadsheet_reader');
-  // Library path information returned will be used
-  // to include individual library files required.
-  $lib_path = $xls_lib['path']; 
-
-  // Include parser library. PLS DO NOT ALTER ORDER!!!
-  // To stop parser from auto formatting date to MM/DD/YY,
-  // suggest a new date format YYYY-mm-dd in:
-  //   line 678 in excel_reader2.php
-  //   line 834 in SpreadsheetReader_XLSX.php
-  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
-  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
-  include_once $lib_path . 'SpreadsheetReader.php';  
+  // Add the libraries needed to parse excel files.
+  rawpheno_add_parsing_libraries();
 
   // First validate the whole file. If any of these fail then halt validation.
   foreach ($validators['file'] as $validator_name => $validator) {
@@ -503,9 +519,6 @@ function rawpheno_open_file($file) {
   // Grab the path and extension from the file.
   $xls_file = drupal_realpath($file->uri);
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
-
-  print 'File: '.$xls_file."\n";
-  print 'extension: '.$xls_extension."\n";
   
   // Validate that the spreadsheet is either xlsx or xls and open the spreadsheet using
   // the correct class.
@@ -594,9 +607,12 @@ function rawpheno_function_unit($xls_header_cell) {
 function rawpheno_indicate_new_headers($file) {
 
   // Retrieve the header for the indicated file.
-  // @TODO
-  $rows = rawpheno_function_read($file);
-  $xls_headers = $rows[0];
+  rawpheno_add_parsing_libraries();
+  $xls_obj = rawpheno_open_file($file);
+  rawpheno_change_sheet($xls_obj, 'measurements');
+  // Note: we use the foreach here 
+  // because the library documentation doesn't have a single fetch function.
+  foreach ($xls_obj as $xls_headers) { break; }
   
   // Array to hold epected column headers.
   $expected_headers = rawpheno_function_headers('expected');
@@ -623,4 +639,31 @@ function rawpheno_indicate_new_headers($file) {
   }
 
   return $new_headers;
+}
+
+/**
+ * Adds the necessary files for EXCEL parsing.
+ */
+function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
+
+  // Function call libraries_load() base on the implementation
+  // of hook_libraries_info() in rawpheno.module.
+  $xls_lib = libraries_load('spreadsheet_reader');
+  // Library path information returned will be used
+  // to include individual library files required.
+  $lib_path = $xls_lib['path'];
+
+  // Include parser library. PLS DO NOT ALTER ORDER!!!
+  // To stop parser from auto formatting date to MM/DD/YY,
+  // suggest a new date format YYYY-mm-dd in:
+  //   line 678 in excel_reader2.php
+  //   line 834 in SpreadsheetReader_XLSX.php
+  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
+  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
+  include_once $lib_path . 'SpreadsheetReader.php';  
+
+  if ($file_type == 'XLS') {
+    // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
+    include_once $lib_path . 'SpreadsheetReader_XLS.php';
+  }
 }
