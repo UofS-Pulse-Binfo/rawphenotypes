@@ -145,7 +145,7 @@ function validator_tab_exists_validate_file($file) {
         if ($i > 2) break;
         
         // Check the row isn't empty.
-        if (strlen(trim(implode('', $row))) > 2) {
+        if (strlen(trim(implode('', $row))) >= 1) {
           $have_data++;
         }
         $i++;

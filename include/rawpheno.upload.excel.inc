@@ -411,16 +411,17 @@ function rawpheno_validate_excel_file($file) {
   // This increment variable $i is required since xls and xlsx
   // parsers assign array index differently. 
   // XLS starts at 1, while XLSX at 0;
-  $i = 1;
+  $i = 0;
   
   // Iterate though each row.
   $num_errored_rows = 0;
   foreach($xls_obj as $row) {
+    $i++;
   
     // Convert row into a string and check the length.
     // This will exclude empty rows.        
-    if (strlen(trim(implode('', $row))) > 2) {
-
+    if (strlen(trim(implode('', $row))) >= 1) {
+    
       // VALIDATE THE HEADER.
       if ($i == 1) {
         // Save the header for later.
@@ -454,6 +455,7 @@ function rawpheno_validate_excel_file($file) {
       } 
       // VALIDATE THE ROW.
       else {
+
         $row_has_error = FALSE;
         foreach ($row as $column_index => $cell) {
           
@@ -498,8 +500,6 @@ function rawpheno_validate_excel_file($file) {
         break; break;
       }
     }
-    
-    $i++;
   }
   
   // Make sure all validators are represented in status. 
