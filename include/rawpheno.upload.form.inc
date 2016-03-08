@@ -385,7 +385,7 @@ function rawpheno_file_validate($file) {
   // Validate the file.
   // The following function will return an array specifying which of the validation
   // steps passed and providing infomration for those that failed.
-  //$status = rawpheno_validate_excel_file($file);
+  $status = rawpheno_validate_excel_file($file);
   
   // We want to show the user which steps passed/failed even if all of them passed,
   // so lets do that now. We use drupal_set_message() because returning from this function
