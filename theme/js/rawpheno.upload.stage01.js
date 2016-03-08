@@ -32,7 +32,14 @@
             dropMessage.css('border','none');
             // Remove new instruction and restore original message.
             dropMessage.html('');
-            if ($('div.messages').length > 0) { 
+            if ($('div.file-upload-js-error').length > 0) {
+              dropMessage.html(dropMessageHTML);
+              if ($('div.messages').length > 1) {
+                $('div.messages')[0].remove();
+              }
+            } 
+            else {
+              dropMessage.html('');
               $('div.messages').remove();
             }
           });
