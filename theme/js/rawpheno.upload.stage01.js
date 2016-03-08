@@ -5,9 +5,9 @@
 (function($) {
   Drupal.behaviors.rawphenoToggleDragnDropMessage = {
     attach: function (contex, settings) {
-//<<<<<<< Updated upstream=======<<<<<<< HEAD      $(document).ready(function() { 
-// 		    $('.droppable-browse-button').text('choose your file');
-//=======>>>>>>> Stashed changes
+       $(document).ready(function() { 
+  	    $('.droppable-browse-button').text('choose your file');
+
         // Hide the next button unless needed.
         var submitButton = $('#edit-next-step');
         var successMsg = $('#rawpheno-upload-successful');

@@ -106,3 +106,42 @@ a.button:hover {
   margin: 0;
   padding: 0;
 }
+
+
+/* stage 01 error message */
+.messages {
+  margin: 0 0 15px 0 !important;
+}
+
+.rawpheno-validate-progress {
+  padding: 0 !important;
+}
+
+div.rawpheno-validate-progress h3 {
+  background-color: #EAEAEA; 
+  margin-top: 0px; 
+  padding: 10px 0 10px 25px; 
+}
+
+.error-main {
+ list-style-type: none; 
+}
+
+ul.error-main > li {
+  padding: 0 0 15px 10px;
+}
+
+ul.error-main {
+  padding: 15px; 
+  margin: 0 15px 0 0;
+}
+
+.error-detail {
+  background-color: #F7F7F7;
+  margin: 0 20px 0 0 !important;
+  padding: 10px !important;
+}
+
+li.error-item {
+  margin-left: 20px;
+}
