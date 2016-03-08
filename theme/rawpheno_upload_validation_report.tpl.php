@@ -18,7 +18,7 @@ $validators = module_invoke_all('rawpheno_validators');
         if (isset($validators[$key]['message callback']) AND function_exists($validators[$key]['message callback'])) {
           $messages = call_user_func($validators[$key]['message callback'], $result);
           if (!empty($messages)) {
-             print '<ul class="error-detail"><li class="error-item">' . implode('</li><li>', $messages) . '</li></ul>';
+             print '<ul class="error-detail"><li class="error-item">' . implode('</li><li class="error-item">', $messages) . '</li></ul>';
           }
         }
       }
