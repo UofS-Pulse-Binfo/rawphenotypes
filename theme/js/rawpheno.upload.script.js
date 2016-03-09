@@ -10,13 +10,13 @@
         $('hr').click(function() {
           if ($(this).attr('class') == 'icon-up') {
             // Help window text open.
-            $('#txt-help-text').animate({height : '140px'}, 300, function() { 
+            $('#txt-help-text').stop().animate({height : '140px'}, 300, function() { 
               $('hr').removeClass('icon-up');
             });
           } 
           else {
             // Help window text collapse.
-            $('#txt-help-text').animate({height : '0px'}, 300, function() { 
+            $('#txt-help-text').stop().animate({height : '0px'}, 300, function() { 
               $('hr').addClass('icon-up');
             });
           }
