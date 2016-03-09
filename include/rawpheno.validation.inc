@@ -59,7 +59,7 @@ function rawpheno_rawpheno_validators() {
   
   // Ensure that required information is present for all cells in those columns.
   $validators['required_info'] = array(
-    'label' => 'Required Information is present.',
+    'label' => 'Required Information is present and numbers are not negative.',
     'scope' => 'subset',
     'headers' => array('Plot','Entry','Name','Rep','Location'),
     'message callback' => 'validator_required_info_generate_msg',
@@ -169,7 +169,13 @@ function validator_tab_exists_validate_file($file) {
 function validator_column_exists_generate_msg($error_info) {
   $messages = array();
   
-  $messages[] = 'The following columns must exist: "' . implode('", "',$error_info). '".';
+  if (isset($error_info['missing'])) {
+    $messages[] = 'The following columns must exist: "' . implode('", "',$error_info['missing']). '".';
+  }
+  
+  if (isset($error_info['duplicates'])) {
+    $messages[] = 'The following columns were duplicated: "' . implode('", "',$error_info['duplicates']). '". Please ensure each column is unique (only occurs once in the spreadsheet).';
+  }
   
   return $messages;
 }
@@ -184,11 +190,16 @@ function validator_column_exists_generate_msg($error_info) {
  *   TRUE if it passed validation; FALSE otherwise.
  */
 function validator_column_exists_validate_header($header) {
+  $result = array();
 
+  // First check that all the essential traits are there.
   $delformat_header = array();
+  $nospace_header = array();
   foreach ($header as $h) {
     $delformat_header[] = $h['no units'];
+    $nospace_header[] = str_replace(' ','', $h['no format']);
   }
+
   $essential_traits = array(
     'Plot',
     'Entry',
@@ -208,11 +219,26 @@ function validator_column_exists_validate_header($header) {
   $missing_traits = array_diff($essential_traits, $delformat_header);
   
   if (!empty($missing_traits)) {
-    return $missing_traits;
+    $result['missing'] = $missing_traits;
   }
-  else {
-    return TRUE;
-  }
+
+  // Second check there are no duplicates.
+  $nospace_header = array_filter($nospace_header);
+  $counts = array_count_values($nospace_header);
+  // If there are duplicates then go ahead and find them.
+  if (sizeof($nospace_header) != sizeof($unique)) {
+    
+    $duplicates = array();
+    foreach($counts as $val => $c) {
+      if($c > 1) {
+        $key = array_search($val, $nospace_header);
+        $duplicates[] = $header[$key]['no units'];
+      }
+    }
+    $result['duplicates'] = $duplicates;
+  }  
+
+  return $result;
 }
 
 /**
@@ -230,7 +256,7 @@ function validator_required_info_generate_msg($error_info) {
   // For each column with missing values.
   foreach ($error_info as $column => $rows) {
   
-    $msg = "You need to supply values for \"$column\" on row";
+    $msg = "You need to supply non-negative values for \"$column\" on row";
     
     // pluralize rows if there are more than one with an empty value.
     if (sizeof($rows) > 1) { $msg .= 's'; }
@@ -260,7 +286,9 @@ function validator_required_info_generate_msg($error_info) {
  *   TRUE if it passed validation; FALSE otherwise.
  */
 function validator_required_info_validate_cell($value, $row_index, $row, $header) { 
-  return empty($value) ? FALSE : TRUE;
+  if (empty($value)) return FALSE;
+  if ($value < 0) return FALSE;
+  return TRUE;
 }
 
 /**
@@ -276,12 +304,47 @@ function validator_units_match_type_generate_msg($error_info) {
   $messages = array();
   
   foreach($error_info as $column_name => $rows) {
+
+    // Expand each row.
     $parts = array();
     foreach ($rows as $row_index => $error) {
-      $msg = "The following values in \"$column_name\" are not " . $error['unit'] . ": ";
       $parts[] = '"' . $error['value'] .'" (line '.$row_index.')';
+      $unit_name = $error['unit'];
     }
-    $messages[] = $msg . implode(', ', $parts) . '.';
+    
+    // We want our messages consistent but helpful thus we need to provide some
+    // customization to the message based on the unit.
+    $unit_msg = '';
+    switch($unit_name) {
+      case 'date':
+        $unit_name = 'date(s)';
+        $unit_msg = 'We expect the date to be YYYY-MM-DD.';
+        break;
+      case 'count':
+        $unit_name = 'count(s)';
+        $unit_msg = 'We expect positive whole numbers.';
+        break;
+      case 'days':
+        $unit_name = 'day(s)';
+        $unit_msg = 'We expect positive whole numbers.';
+        break;
+      case 'cm':
+        $unit_name = 'centimeters';
+        break;
+      case 'g':
+        $unit_name = 'grams';
+        break;
+      case 'y/n/?':
+        break;
+      case 'scale':
+        $unit_name = 'within the scale';
+        $unit_msg . 'It should be a whole number between 1 and 5 where 1 indicates most plants are fully upright and 5 indicates most plants are fully prostrate/flat.';
+        break;
+      case 'text':
+    }
+    
+    // Combine all the parts into a full message.
+    $messages[] = "The following values in \"$column_name\" are not $unit_name: " . implode(', ', $parts) . '. ' . $unit_msg;
   }
   
   return $messages;
@@ -323,25 +386,41 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
     
     case 'count':
     case 'days':
+      // First check that it's a number.
+      if (is_numeric($value)) {
+        // Then check it's a positive whole number.
+        if ( (int)$value == $value AND $value > 0) {
+          return TRUE;
+        }
+      }
+      break;
+      
     case 'cm':
     case 'g':
       // Measurements - if it is numeric, then it must be greater than or equals to 0.
-      if (is_numeric($value) && $value >= 0) {
+      if (is_numeric($value) && $value > 0) {
         return TRUE;
       }
       break;
     
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (strlen($value) == 1 && in_array($value, array('y','n','?'))) {
+      if (strlen($value) == 1 && in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
         return TRUE;
       }
       break;
     
     case 'scale':
       // Scale - if numeric, check if 1-5 range, inclusive.
-      if (is_numeric($value) && ($value <= 6 || $value >= 1)) {
-        return TRUE;
+      // First, do we have a number?
+      if (is_numeric($value)) {
+        // Then check it's a positive whole number.
+        if ( (int)$value == $value AND $value > 0) {
+          // Finally is it between 1 and 5 inclusive?
+          if ($value >= 1 AND $value <= 5) {
+            return TRUE;
+          }
+        }
       } 
       break;
     case 'text':
