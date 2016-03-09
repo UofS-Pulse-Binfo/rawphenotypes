@@ -318,7 +318,7 @@ function validator_units_match_type_generate_msg($error_info) {
     switch($unit_name) {
       case 'date':
         $unit_name = 'date(s)';
-        $unit_msg = 'We expect the date to be YYYY-MM-DD.';
+        $unit_msg = 'We expect the date to be YYYY-MM-DD and to have occured in the past.';
         break;
       case 'count':
         $unit_name = 'count(s)';
@@ -380,7 +380,12 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
     case 'date':
       // Date must be YYYY-MM-DD format.
       if (preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}/', $value)) {
-        return TRUE;
+        // Then check that it's not in the future.
+        $today = new DateTime();
+        $date = DateTime::createFromFormat('Y-m-d', $value);
+        if ($date <= $today) {
+          return TRUE;
+        }
       }
       break;
     
