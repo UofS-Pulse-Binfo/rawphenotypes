@@ -17,6 +17,9 @@
         // Add corresponding message on each mouse/drag event.
         if (drop) {
           drop.addEventListener("dragover", function() { 
+            // Clear the stage from any messages in case AJAX fails.
+            $('div.droppable-preview-file').hide();
+            
             dropMessage.css('border','3px dashed #CCCCCC');
             // Create a new instruction to user.
             dropMessage.text('Drop to upload and validate your spreadsheet'); 
@@ -42,6 +45,16 @@
               dropMessage.html('');
               $('div.messages').remove();
             }
+            
+            // Do not show alert message with code snippet of module settings
+            // for security reason.
+            alert = function() {
+              // Clear dropzone stage and set it to default message.
+              $('div.droppable-preview-file').hide();
+              dropMessage.html(dropMessageHTML);
+              
+              $('<div class="messages error">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('hr');
+            };
           });
         }     
       });
