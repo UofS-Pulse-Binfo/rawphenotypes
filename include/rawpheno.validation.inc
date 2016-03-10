@@ -370,8 +370,8 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
   // Determine the units for this column.
   $unit = $header[$column_index]['units'];
 
-  // We always want to allow empty cells.
-  if (empty($value)) {
+  // We always want to allow empty cells but not treat zero as empty...
+  if (empty($value) AND !(strval($value) === '0')) {
     return TRUE;
   }
   
@@ -410,7 +410,8 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
     
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (strlen($value) == 1 && in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
+      
+      if (in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
         return TRUE;
       }
       break;

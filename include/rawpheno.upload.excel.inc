@@ -60,8 +60,8 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
   // Change to the correct spreadsheet.
   rawpheno_change_sheet($xls_obj, 'measurements');
 
-  // Find the index number of name header in the spreadsheet.
-  //$name_index = array_search('name', array_map('rawpheno_function_delformat', $arr_xls_rows[0]));
+  $num_rows = sizeof($xls_obj);
+  print "Number of rows: ".$num_rows.".\n";
   
   // Array of column headers with first and second try.
   $arr_multiheaders = rawpheno_function_headers('multi-trial');
