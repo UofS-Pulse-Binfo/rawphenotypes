@@ -226,7 +226,7 @@ function validator_column_exists_validate_header($header) {
   $nospace_header = array_filter($nospace_header);
   $counts = array_count_values($nospace_header);
   // If there are duplicates then go ahead and find them.
-  if (sizeof($nospace_header) != sizeof($unique)) {
+  if (sizeof($nospace_header) != sizeof($counts)) {
     
     $duplicates = array();
     foreach($counts as $val => $c) {
@@ -238,7 +238,12 @@ function validator_column_exists_validate_header($header) {
     $result['duplicates'] = $duplicates;
   }  
 
-  return $result;
+  if (empty($result)) {
+    return TRUE;
+  }
+  else {
+    return $result;
+  }
 }
 
 /**
