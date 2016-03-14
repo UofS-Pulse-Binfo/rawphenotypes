@@ -33,7 +33,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
       array('print' => TRUE)
     );
     tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-    return FALSE;
+    exit(1);
   }
   $xls_file = drupal_realpath($file->uri);
 
@@ -54,7 +54,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
       array('print' => TRUE)
     );
     tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-    return FALSE;
+    exit(2);
   }
 
   // Change to the correct spreadsheet.
@@ -103,7 +103,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
           );
           $TRANSACTION->rollback();
           tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-          return FALSE;
+          exit(31);
         }
 
         $i++;
@@ -136,7 +136,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
         );
         $TRANSACTION->rollback();
         tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-        return FALSE;
+        exit(32);
       }
                 
       // Read each row and each cell.
@@ -174,7 +174,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(33);
             }
           }
           else {
@@ -187,7 +187,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
             );
             $TRANSACTION->rollback();
             tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-            return FALSE;
+            exit(34);
           }
         } 
         // THE REST OF THE COLUMN HEADERS
@@ -212,7 +212,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(35);
             }
             
             // Get corresponding unit for this new trail based on cvterm_id
@@ -233,7 +233,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(36);
             }
           }
           else {
@@ -261,7 +261,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(37);
             }
             
             // Extract unit from the column header the cell is under.
@@ -281,7 +281,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(37);
             }
 
           }
@@ -339,7 +339,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
               );
               $TRANSACTION->rollback();
               tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              return FALSE;
+              exit(38);
             }
           } 
         }
@@ -351,7 +351,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
     $TRANSACTION->rollback();
     watchdog_exception('rawpheno', $e);
     tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-    return FALSE;
+    exit(4);
   }  
   
   unset($TRANSACTION); //Commit
