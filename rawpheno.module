@@ -342,16 +342,8 @@ function rawpheno_instructions_autocomplete_search($key = '') {
  *   location, year, rep, # traits.
  */
 function rawpheno_rawdata_summary_json() {
-  // Get the cvterm_id of planting date trait.
-  // The id will be used to determine if planting date is present in the list of headers. 
-  // The final trait count will be deducted by 1 if planting date is present.
-  $planting_date = tripal_get_cvterm(array('name' => 'planting_date'))
-                   ->cvterm_id; 
-  
   // Select all locations from materialized view.
-  $sql = "SELECT DISTINCT location 
-    FROM {chado.rawpheno_rawdata_mview} 
-    ORDER BY location ASC";
+  $sql = "SELECT DISTINCT location FROM {chado.rawpheno_rawdata_mview} ORDER BY location ASC";
   $locations = db_query($sql);
   
   if ($locations) {
@@ -386,39 +378,18 @@ function rawpheno_rawdata_summary_json() {
           // if none is found, gap is filled in for that particular year
           // and rep to ensure that by the end of this iteration, each location
           // has a total of 9 rows of data (3 reps X 3 planting years) - shown above.
-          $sql = "SELECT measurement 
+          
+          // Get the entry with the most traits for this particular location, year and rep.
+          $sql = "SELECT total_count
             FROM {chado.rawpheno_rawdata_mview}
-            WHERE measurement LIKE :year
-              AND rep = :rep 
-              AND location = :location 
-            LIMIT 1";  
-          $traits = db_query($sql, array(':year' => '%'.$year.'%', 
+            WHERE SUBSTRING(planting_date, 0, 5) = :year AND rep = :rep AND location = :location
+            ORDER BY total_count DESC LIMIT 1";  
+          $traits = db_query($sql, array(':year' => $year, 
                                          ':rep' => $rep, 
                                          ':location' => $location))
                     ->fetchField();
 
-          if (isset($traits) && !empty($traits)) {
-            // This particular year and rep have data collected.
-            // Compute the total traits measured excluding planting date.
-            $trait_count = 0;
-            // From the materialized view: measurement field contains data
-            // in the following format:
-            // trait1 id=trait1 value:trait2 id=trait2 value:...
-            $trait_summary = explode(':', $traits);
-            
-            // Read each trait id=trait value combination.
-            foreach($trait_summary as $entry) {
-              list($type_id, $value) = explode('=', $entry);
-              //Count all traits except planting date.
-              if ($type_id != $planting_date) {
-                $trait_count++;
-              }
-            } 
-          }
-          else {
-            // This particular year and rep have no data collected.
-            $trait_count = 0;
-          }
+          $trait_count = (isset($traits) && !empty($traits)) ? $traits : 0;
           
           // Create a json entry with the following keys:
           // location, year, rep and trait.

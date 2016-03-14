@@ -6,7 +6,7 @@
 // Get information about the validators available in oder to theme the validation results.
 $validators = module_invoke_all('rawpheno_validators');
 ?>
-<h3>Validation Result</h3>
+<h3>Validation Result <a href="#">Close window</a></h3>
 <ul class="error-main">
   <?php 
     foreach ($status as $key => $result) {

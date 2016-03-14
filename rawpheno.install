@@ -282,30 +282,23 @@ function rawpheno_install() {
   $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
 
   // Create a summary of data in the following format:
-  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ....
-  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ....
+  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ...., total trait count excluding planting_date
+  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ...., total trait count excluding planting_date
   // ...
   // Summary of traits will be processed and counted to become the trait count,
-  // excluding planting date. This summary will also provide the year.
-  $mv_sql = "SELECT t1.plant_id,
-      ARRAY_TO_STRING(
-        ARRAY_AGG(
-          DISTINCT CASE WHEN t2.name = 'location' 
-            THEN t1.value ELSE '' END), '') AS location,
-      ARRAY_TO_STRING(
-        ARRAY_AGG(
-          DISTINCT CASE WHEN t2.name = 'rep' 
-            THEN t1.value ELSE '' END), '') AS rep,
-      ARRAY_TO_STRING(
-        ARRAY_AGG(
-          DISTINCT CASE WHEN t3.value <> '' 
-            THEN CONCAT(t3.type_id, '=', t3.value) ELSE null END), ':') AS measurement
-    FROM {pheno_plantprop} AS t1 
-      INNER JOIN {chado.cvterm} as t2 on t1.type_id = t2.cvterm_id
-      INNER JOIN {pheno_measurements} as t3 on t1.plant_id = t3.plant_id
-    WHERE t2.name IN ('location', 'rep') 
-    GROUP BY t1.plant_id  
-    ORDER BY location, rep, t1.plant_id, measurement ASC";
+  // excluding planting date. This summary will also provide the year and list of traits with data.
+  $mv_sql = "SELECT DISTINCT t1.plant_id,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'location' THEN t2.value END), '') AS location,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'rep' THEN t2.value END), '') AS rep,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'planting_date' THEN t3.value END), '') AS planting_date,
+      COUNT(DISTINCT t3.type_id) - 1 AS count_measurement
+    FROM pheno_plant AS t1 
+      left JOIN pheno_plantprop AS t2 ON t1.plant_id = t2.plant_id
+      left JOIN pheno_measurements AS t3 ON t1.plant_id = t3.plant_id
+      left JOIN chado.cvterm AS t4 ON t4.cvterm_id IN(t2.type_id, t3.type_id)
+    WHERE t3.value <> ''
+    GROUP BY t1.plant_id
+    ORDER BY t1.plant_id ASC";
   
   // Schema array.
   $mv_schema = array (
@@ -320,8 +313,12 @@ function rawpheno_install() {
     'rep' => array (
       'type' => 'varchar',
       'length' => 5),
-    'measurement' => array (
-      'type' => 'text'),
+    'planting_date' => array (
+      'type' => 'varchar',
+      'length' => 12),
+    'total_count' => array (
+      'type' => 'varchar',
+      'length' => 20),
     )
   );
   

@@ -72,3 +72,10 @@ input#edit-next-step {
 input#edit-next-step.form-button-disabled {
   display: none;
 }
+
+/* Close window error */
+h3 a {
+  float: right;
+  font-size: 0.8em;
+  margin: 0 25px 0 0;
+}
