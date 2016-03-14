@@ -113,6 +113,8 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
   //   droppable_area_text: text in drop area
   //   progress_indicator: none, throbber or bar
   //   progress_message: message to display while processing
+  //   allow_replace: allow the browse button to be displayed even the when there is a already a file
+  //   standard_upload: show browse button or not
   $form['dnd'] = array(
     '#type' => 'dragndrop_upload',
     '#file_upload_max_size' => '10M',
@@ -122,6 +124,8 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#droppable_area_text' => t('Drag Phenotype Data Collection file here'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => 'Please wait...',
+    '#allow_replace' => 1,
+    '#standard_upload' => 1,
   );
 
   return $form;  

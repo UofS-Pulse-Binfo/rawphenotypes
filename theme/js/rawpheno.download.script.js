@@ -9,7 +9,15 @@
         // Reference form elements.
         var chkb = $('input:checkbox');
         var selTrait = $("[name='traits[]']");
-
+        
+        selTrait.click(function() {
+          // When select all is checked and select trait is clicked.
+          // Uncheck the checkbox.
+          if (chkb.attr('checked')) { 
+           chkb.attr('checked', false);
+          }
+        });
+        
         // Checkbox form element.
         chkb.click(function() {
           // Select all options when checked.
