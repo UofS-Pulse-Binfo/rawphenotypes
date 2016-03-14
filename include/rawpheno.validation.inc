@@ -392,6 +392,10 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
           return TRUE;
         }
       }
+      // Allow empty values.
+      if (empty($value)) {
+        return TRUE;
+      }
       break;
     
     case 'count':
@@ -403,6 +407,10 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
           return TRUE;
         }
       }
+      // Allow empty values.
+      if (empty($value)) {
+        return TRUE;
+      }
       break;
       
     case 'cm':
@@ -411,12 +419,19 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
       if (is_numeric($value) && $value > 0) {
         return TRUE;
       }
+      // Allow empty values.
+      if (empty($value)) {
+        return TRUE;
+      }
       break;
     
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      
       if (in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
+        return TRUE;
+      }
+      // Allow empty values.
+      if (empty($value)) {
         return TRUE;
       }
       break;
