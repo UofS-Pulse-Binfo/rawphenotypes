@@ -280,17 +280,22 @@ function validator_required_info_generate_msg($error_info) {
  *
  * @param $value
  *   The value of the current cell to be validated.
- * @param $row_index
- *   The index of the current row.
- * @param $row
- *   An array containing the current row -meant to provide context if needed.
- * @param $header
- *   An array containing the header -meant to provide context if needed.
+ * @param $context
+ *   Information providing context to the cell to validate. Includes:
+ *    - 'row index': the index of the tow the cell is in.
+ *    - 'row': an array containing all cells in the current row.
+ *    - 'column index': the index of the column the cell is in.
+ *    - 'header': an array containing the header for the file. Each column in the header
+ *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *       'original', 'units', 'no units'.
+ * @param $storage
+ *   An empty variable that is specific to the current validation but persistent across
+ *   rows. This can be helpful when checking that values are unique, etc.
  *
  * @return
  *   TRUE if it passed validation; FALSE otherwise.
  */
-function validator_required_info_validate_cell($value, $row_index, $row, $header) { 
+function validator_required_info_validate_cell($value, $context, &$storage) {
   if (empty($value)) return FALSE;
   if ($value < 0) return FALSE;
   return TRUE;
@@ -360,20 +365,25 @@ function validator_units_match_type_generate_msg($error_info) {
  *
  * @param $value
  *   The value of the current cell to be validated.
- * @param $row_index
- *   The index of the current row.
- * @param $row
- *   An array containing the current row -meant to provide context if needed.
- * @param $header
- *   An array containing the header -meant to provide context if needed.
+ * @param $context
+ *   Information providing context to the cell to validate. Includes:
+ *    - 'row index': the index of the tow the cell is in.
+ *    - 'row': an array containing all cells in the current row.
+ *    - 'column index': the index of the column the cell is in.
+ *    - 'header': an array containing the header for the file. Each column in the header
+ *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *       'original', 'units', 'no units'.
+ * @param $storage
+ *   An empty variable that is specific to the current validation but persistent across
+ *   rows. This can be helpful when checking that values are unique, etc.
  *
  * @return
  *   TRUE if it passed validation; FALSE otherwise.
  */
-function validator_units_match_type_validate_cell($value, $row_index, $row, $column_index, $header) { 
+function validator_units_match_type_validate_cell($value, $context, &$storage) { 
 
   // Determine the units for this column.
-  $unit = $header[$column_index]['units'];
+  $unit = $context['header'][ $context['column index'] ]['units'];
 
   // We always want to allow empty cells but not treat zero as empty...
   if (empty($value) AND !(strval($value) === '0')) {
@@ -384,11 +394,13 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
   switch($unit) {
     case 'date':
       // Date must be YYYY-MM-DD format.
-      if (preg_match('/^[0-9]{4}-([0-9]{2})-([0-9]{2})/', $value, $matches)) {
+      if (preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})/', $value, $matches)) {
+
         // Check that the month/day are in the expected range.
-        $month = $matches[1];
-        $day = $matches[2];
-        if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31) {
+        $year = $matches[1];
+        $month = $matches[2];
+        $day = $matches[3];
+        if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31 AND $year > 1900) {
         
           // Then check that it's not in the future.
           $today = new DateTime();
@@ -396,12 +408,6 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
           if ($date <= $today) {
             return TRUE;
           }
-        }
-        // Apparently excel autocorrects 0 to 1900-01-00 *raises eyebrow*
-        // Note: it appears that you can enter the days from 1900-01-00 as well. For example,
-        // 42441 gives you March 12, 2016... Unix timestamps do not work.
-        if ($value == '1900-01-00') {
-          return FALSE;
         }
       }
       break;
@@ -499,12 +505,17 @@ function validator_germplasm_present_generate_msg($error_info) {
  *
  * @param $value
  *   The value of the current cell to be validated.
- * @param $row_index
- *   The index of the current row.
- * @param $row
- *   An array containing the current row -meant to provide context if needed.
- * @param $header
- *   An array containing the header -meant to provide context if needed.
+ * @param $context
+ *   Information providing context to the cell to validate. Includes:
+ *    - 'row index': the index of the tow the cell is in.
+ *    - 'row': an array containing all cells in the current row.
+ *    - 'column index': the index of the column the cell is in.
+ *    - 'header': an array containing the header for the file. Each column in the header
+ *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *       'original', 'units', 'no units'.
+ * @param $storage
+ *   An empty variable that is specific to the current validation but persistent across
+ *   rows. This can be helpful when checking that values are unique, etc.
  *
  * @return
  *   TRUE if it passed validation. If it failed an array providing information about the
@@ -514,7 +525,7 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   0 = no matching stock.
  *   9 = too many matching stocks (not unique).
  */
-function validator_germplasm_present_validate_cell($value, $row_index, $row, $header) {
+function validator_germplasm_present_validate_cell($value, $context, &$storage) {
   
   // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
   if (empty($value)) {
@@ -527,10 +538,10 @@ function validator_germplasm_present_validate_cell($value, $row_index, $row, $he
     return TRUE;
   } 
   elseif (empty($stocks)) {
-    return array('name' => $value, 'row number' => $row_index, 'code' => 0);
+    return array('name' => $value, 'row number' => $context['row index'], 'code' => 0);
   }
   else {
-    return array('name' => $value, 'row number' => $row_index, 'code' => 9, 'stocks' => $stocks);
+    return array('name' => $value, 'row number' => $context['row index'], 'code' => 9, 'stocks' => $stocks);
   }
 
 }

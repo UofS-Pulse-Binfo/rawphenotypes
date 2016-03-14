@@ -408,6 +408,7 @@ function rawpheno_validate_excel_file($file) {
   
   // Iterate though each row.
   $num_errored_rows = 0;
+  $storage = array();
   foreach($xls_obj as $row) {
     $i++;
   
@@ -466,17 +467,28 @@ function rawpheno_validate_excel_file($file) {
                 // Specifically, if there are no defined headers it's applicable to
                 //   OR if the current header is in the list of applicable headers.
                 if (!isset($validator['headers']) OR in_array($column_name, $validator['headers'])) {     
-                     
+                    
                   // Execute the validation callback & save the results.
-                  $result = call_user_func($validator['validation callback'], $cell, $i, $row, $column_index, $header);
+                  $tmp_storage = (isset($storage[$validator_name])) ? $storage[$validator_name] : array();
+                  $context = array(
+                    'row index' => $i,
+                    'column index' => $column_index,
+                    'row' => $row,
+                    'header' => $header
+                  );
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+
+                  // Note: we use tmp storage b/c passing $storage[$validator_name] directly
+                  // doesn't seem to work.
+                  $storage[$validator_name] = $tmp_storage;
                 
                   // The status needs to keep track of which rows failed for a given header.
-                  if ($result === FALSE) {
-                    $status[ $validator_name ][ $column_name ][$i] = $i;
+                  if (is_array($result)) {
+                    $status[ $validator_name ][ $column_name ][$i] = $result;
                     $row_has_error = TRUE;
                   }
-                  elseif (is_array($result)) {
-                    $status[ $validator_name ][ $column_name ][$i] = $result;
+                  elseif ($result !== TRUE) {
+                    $status[ $validator_name ][ $column_name ][$i] = $i;
                     $row_has_error = TRUE;
                   }
                 }
@@ -500,7 +512,7 @@ function rawpheno_validate_excel_file($file) {
       }
     }
   }
-  
+      
   // Make sure all validators are represented in status. 
   // If they are not already then a failure wasn't recorded -thus they passed :-).
   foreach($all_validators as $validator_name => $validator) {
