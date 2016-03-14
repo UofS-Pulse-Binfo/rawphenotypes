@@ -384,12 +384,24 @@ function validator_units_match_type_validate_cell($value, $row_index, $row, $col
   switch($unit) {
     case 'date':
       // Date must be YYYY-MM-DD format.
-      if (preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}/', $value)) {
-        // Then check that it's not in the future.
-        $today = new DateTime();
-        $date = DateTime::createFromFormat('Y-m-d', $value);
-        if ($date <= $today) {
-          return TRUE;
+      if (preg_match('/^[0-9]{4}-([0-9]{2})-([0-9]{2})/', $value, $matches)) {
+        // Check that the month/day are in the expected range.
+        $month = $matches[1];
+        $day = $matches[2];
+        if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31) {
+        
+          // Then check that it's not in the future.
+          $today = new DateTime();
+          $date = DateTime::createFromFormat('Y-m-d', $value);
+          if ($date <= $today) {
+            return TRUE;
+          }
+        }
+        // Apparently excel autocorrects 0 to 1900-01-00 *raises eyebrow*
+        // Note: it appears that you can enter the days from 1900-01-00 as well. For example,
+        // 42441 gives you March 12, 2016... Unix timestamps do not work.
+        if ($value == '1900-01-00') {
+          return FALSE;
         }
       }
       break;
