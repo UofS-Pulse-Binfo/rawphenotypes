@@ -488,9 +488,15 @@ function rawpheno_validate_excel_file($file) {
         if ($row_has_error) $num_errored_rows++;
       }
       
+      // Only check until you have 10 rows with errors.
       if ($num_errored_rows >= 10) {
-        drupal_set_message("We have only checked the first $i lines of your file. Please fix the errors reported below and then upload the fixed file.", 'error');
-        break; break;
+      
+        // We only want to present the warning if this is not the end of the file ;-)
+        $has_next = $xls_obj->next();
+        if ($has_next AND strlen(trim(implode('', $has_next))) >= 1) {
+          drupal_set_message("We have only checked the first $i lines of your file. Please fix the errors reported below and then upload the fixed file.", 'error');
+          return $status;
+        }
       }
     }
   }
