@@ -261,15 +261,40 @@ function validator_required_info_generate_msg($error_info) {
   // For each column with missing values.
   foreach ($error_info as $column => $rows) {
   
-    $msg = "You need to supply non-negative values for \"$column\" on row";
+    // Find the parts and separate the messages.
+    $empty_parts = array();
+    $dup_parts = array();
+    foreach ($rows as $row_index => $info) {
+      if ($info['code'] == 1) {
+        $empty_parts[] = $row_index;
+      }
+      elseif ($info['code'] == 2) {
+        $dup_parts[ $info['value'] ] = '"' . $info['value'] . '" on lines ' . implode(', ', $info['rows']);
+      }
+    }
+
+    // Generate the empty message.
+    if (!empty($empty_parts)) {
+      $msg = "You need to supply non-negative values for \"$column\" on row";
+      
+      // pluralize rows if there are more than one with an empty value.
+      if (sizeof($empty_parts) > 1) { $msg .= 's'; }
     
-    // pluralize rows if there are more than one with an empty value.
-    if (sizeof($rows) > 1) { $msg .= 's'; }
+      // Add the row numbers to the message.
+      $msg .= ' ' . implode(', ',$empty_parts) . '.';
     
-    // Add the row numbers to the message.
-    $msg .= ' ' . implode(', ',$rows) . '.';
+      $messages[] = $msg;
     
-    $messages[] = $msg;
+    }
+    
+    // Generate the duplicate values message.
+    if (!empty($dup_parts)) {
+      $placeholder = (sizeof($dup_parts) > 1) ? 'values are' : 'value is';
+      $msg = "The \"$column\" should be unique. The following $placeholder duplicated: " 
+        . implode('; ', $dup_parts) . '.';
+      $messages[] = $msg;
+    }
+
   }
   
   return $messages;
@@ -296,8 +321,27 @@ function validator_required_info_generate_msg($error_info) {
  *   TRUE if it passed validation; FALSE otherwise.
  */
 function validator_required_info_validate_cell($value, $context, &$storage) {
-  if (empty($value)) return FALSE;
-  if ($value < 0) return FALSE;
+
+  // Validate if the cell is empty.
+  if (empty($value)) return array('code' => 1, 'row' => $context['row index']);
+  if ($value < 0) return array('code' => 1, 'row' => $context['row index']);
+  
+  // Validate if the plot is unique.
+  // If this is the plot column...
+  if ($context['header'][ $context['column index'] ]['no format'] == 'plot') {
+
+    // Has this value been used before?
+    $rows_used_in = array_keys($storage, $value);
+    
+    // save to storage.
+    $storage[ $context['row index'] ] = $value;
+    
+    // if it has then save for error.
+    if ($rows_used_in) {
+      $rows_used_in[] = $context['row index'];
+      return array('code' => 2, 'value' => $value, 'rows' => $rows_used_in);
+    }
+  }
   return TRUE;
 }
 
