@@ -150,213 +150,212 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
         // We don't want to insert empty data.
         // That said, while PHP thinks 0 is empty, we do not.
-        if (empty($cell_entry) AND !(strval($cell_entry) === 0)) {
-          break; break;
-        }
-        
-        // Get the column header of a cell.
-        $cell_colheader = rawpheno_function_delformat($header[$cell_index]);
-        
-        // We always want to strip flanking white space.
-        // FYI: This is done when the data is validated as well.
-        $cell_entry = trim($cell_entry);
+        if (!empty($cell_entry)  OR (strval($cell_entry) === 0)) {
 
-        // Determine which table to insert a column header.
-        // If this is the name column then doing nothing since we've already delt with it above.
-        if ($cell_index == $name_index) { } 
-        // PLOT, ENTRY, REP and LOCATION
-        // Cells containing column headers that are required.
-        // Traits: plot, entry, rep, location into pheno_plantprop.
-        elseif (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
-
-          $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
-          $type_id = $type->cvterm_id;
+          // Get the column header of a cell.
+          $cell_colheader = rawpheno_function_delformat($header[$cell_index]);
         
-          // Ensure that cvterm_id is present before inserting to table
-          if(isset($type_id)) {
-            $tmp = db_insert('pheno_plantprop')
-              ->fields(array('plant_id' => $pheno_plantid, 
-                             'type_id'  => $type_id, 
-                             'value'    => $cell_entry))
-              ->execute(); 
-            if (!$tmp) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Unable to insert plant property. Values=@values',
-                array('@values' => print_r(array('plant_id' => $pheno_plantid,  'type_id'  => $type_id,  'value'    => $cell_entry),TRUE)),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(33);
-            }
-          }
-          else {
-            tripal_report_error(
-              'rawpheno',
-              TRIPAL_ERROR,
-              'Uploading Phenoypic Data: Plant Property type !type does\'t exist.',
-              array('!type' => $cell_colheader),
-              array('print' => TRUE)
-            );
-            $TRANSACTION->rollback();
-            tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-            exit(34);
-          }
-        } 
-        // THE REST OF THE COLUMN HEADERS
-        // Everything else into pheno_measurements.
-        // Determine if column header is New or not
-        elseif (!empty($cell_colheader)) {
-          if (count($new_header) > 0 && in_array($cell_colheader, $new_header)) {
-            // NEW
-            // Test if column header of cell is a new trait.
-            // Replace any extra spaces to underscore and create an exact match of
-            // cvterm name inserted into cvterm table.
-            $cv_name = str_replace(' ', '_', $cell_colheader);
-            $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+          // We always want to strip flanking white space.
+          // FYI: This is done when the data is validated as well.
+          $cell_entry = trim($cell_entry);
+
+          // Determine which table to insert a column header.
+          // If this is the name column then doing nothing since we've already delt with it above.
+          if ($cell_index == $name_index) { } 
+          // PLOT, ENTRY, REP and LOCATION
+          // Cells containing column headers that are required.
+          // Traits: plot, entry, rep, location into pheno_plantprop.
+          elseif (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
+
+            $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
             $type_id = $type->cvterm_id;
-            if (!$type_id) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Plant Measurement Type (New Trait; Term=!name; Header=!colheader) does\'t exist.',
-                array('!name' => $cv_name, '!colheader' => $cell_colheader),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(35);
-            }
-            
-            // Get corresponding unit for this new trail based on cvterm_id
-            // in chado.cvterm_relationship.
-            $cv_unit = db_query("SELECT object_id FROM {chado.cvterm_relationship}
-                                WHERE subject_id = :code LIMIT 1",
-                                array(':code' => trim($type_id)))
-              ->fetchField();
-            $unit_id = $cv_unit;
-            $unit = '';
-            if (!$unit_id) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (New Trait; Term=!name; Type ID=!id) does\'t exist.',
-                array('!name' => $cv_name, '!id' => $type_id),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(36);
-            }
-          }
-          else {
-            // NOT NEW
-            // Column header is not a new trait.
-            // Remove unit from the header.
-            if (in_array($cell_colheader, $arr_multiheaders)) {
-              $cv_name = trim(str_replace(array(' cm', ' count'), '', $cell_colheader));
+        
+            // Ensure that cvterm_id is present before inserting to table
+            if(isset($type_id)) {
+              $tmp = db_insert('pheno_plantprop')
+                ->fields(array('plant_id' => $pheno_plantid, 
+                               'type_id'  => $type_id, 
+                               'value'    => $cell_entry))
+                ->execute(); 
+              if (!$tmp) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to insert plant property. Values=@values',
+                  array('@values' => print_r(array('plant_id' => $pheno_plantid,  'type_id'  => $type_id,  'value'    => $cell_entry),TRUE)),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(33);
+              }
             }
             else {
-              $cv_name = trim(preg_replace('/\([^)]+\)/', '', $cell_colheader));
+              tripal_report_error(
+                'rawpheno',
+                TRIPAL_ERROR,
+                'Uploading Phenoypic Data: Plant Property type !type does\'t exist.',
+                array('!type' => $cell_colheader),
+                array('print' => TRUE)
+              );
+              $TRANSACTION->rollback();
+              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+              exit(34);
             }
+          } 
+          // THE REST OF THE COLUMN HEADERS
+          // Everything else into pheno_measurements.
+          elseif (!empty($cell_colheader)) {
+            // Determine if column header is New or not
+            if (count($new_header) > 0 && in_array($cell_colheader, $new_header)) {
+              // NEW
+              // Test if column header of cell is a new trait.
+              // Replace any extra spaces to underscore and create an exact match of
+              // cvterm name inserted into cvterm table.
+              $cv_name = str_replace(' ', '_', $cell_colheader);
+              $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+              $type_id = $type->cvterm_id;
+              if (!$type_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Plant Measurement Type (New Trait; Term=!name; Header=!colheader).',
+                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(35);
+              }
+            
+              // Get corresponding unit for this new trail based on cvterm_id
+              // in chado.cvterm_relationship.
+              $cv_unit = db_query("SELECT object_id FROM {chado.cvterm_relationship}
+                                  WHERE subject_id = :code LIMIT 1",
+                                  array(':code' => trim($type_id)))
+                ->fetchField();
+              $unit_id = $cv_unit;
+              $unit = '';
+              if (!$unit_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (New Trait; Term=!name; Type ID=!id).',
+                  array('!name' => $cv_name, '!id' => $type_id),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(36);
+              }
+            }
+            else {
+              // NOT NEW
+              // Column header is not a new trait.
+              // Remove unit from the header.
+              if (in_array($cell_colheader, $arr_multiheaders)) {
+                $cv_name = trim(str_replace(array(' cm', ' count'), '', $cell_colheader));
+              }
+              else {
+                $cv_name = trim(preg_replace('/\([^)]+\)/', '', $cell_colheader));
+              }
           
-            $cv_name = str_replace(' ', '_', $cv_name);
+              $cv_name = str_replace(' ', '_', $cv_name);
 
-            $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
-            $type_id = $type->cvterm_id;
-            if (!$type_id) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Plant Measurement Type (Term=!name; Header=!colheader) does\'t exist.',
-                array('!name' => $cv_name, '!colheader' => $cell_colheader),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(37);
-            }
+              $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+              $type_id = $type->cvterm_id;
+              if (!$type_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Plant Measurement Type (Term=!name; Header=!colheader).',
+                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(37);
+              }
             
-            // Extract unit from the column header the cell is under.
-            // If not unit, default to text unit
-            $u = rawpheno_function_unit($cell_colheader);
-            // Column header does not contain unit, use text as default
-            $cv_unit = tripal_get_cvterm(array('name' => $u, 'cv_id' => array('name' => 'phenotype_measurement_units')));
-            $unit_id = $cv_unit->cvterm_id;
-            $unit = $u;
-            if (!$unit_id) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (Term=!name; Type ID=!id; Unit=!unit) does\'t exist.',
-                array('!name' => $cv_name, '!id' => $type_id, '!unit' => $unit),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(37);
-            }
+              // Extract unit from the column header the cell is under.
+              // If not unit, default to text unit
+              $u = rawpheno_function_unit($cell_colheader);
+              // Column header does not contain unit, use text as default
+              $cv_unit = tripal_get_cvterm(array('name' => $u, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+              $unit_id = $cv_unit->cvterm_id;
+              $unit = $u;
+              if (!$unit_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (Term=!name; Type ID=!id; Unit=!unit).',
+                  array('!name' => $cv_name, '!id' => $type_id, '!unit' => $unit),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(37);
+              }
 
-          }
-        
-          // Determine if cell requires scale member code.
-          // When unit is scale, find code equivalent in pheno_scale_member table.  
-          if ($unit == 'scale') {
-            // Get pheno scale member code 
-            $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
-                                   WHERE code = :code LIMIT 1", 
-                                   array(':code' => trim($cell_entry)))
-              ->fetchField(); 
-            if (!$cvalue_id) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_WARNING,
-                'Uploading Phenoypic Data: Unable to find scale id for Plant Measurement Type (Term=!name; Type ID=!id; Scale Value=!scale) does\'t exist.',
-                array('!name' => $cv_name, '!id' => $type_id, '!scale' => $cell_entry),
-                array('print' => TRUE)
-              );
             }
+        
+            // Determine if cell requires scale member code.
+            // When unit is scale, find code equivalent in pheno_scale_member table.  
+            if ($unit == 'scale') {
+              // Get pheno scale member code 
+              $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
+                                     WHERE code = :code LIMIT 1", 
+                                     array(':code' => trim($cell_entry)))
+                ->fetchField(); 
+              if (!$cvalue_id) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_WARNING,
+                  'Uploading Phenoypic Data: Unable to find scale id for Plant Measurement Type (Term=!name; Type ID=!id; Scale Value=!scale).',
+                  array('!name' => $cv_name, '!id' => $type_id, '!scale' => $cell_entry),
+                  array('print' => TRUE)
+                );
+              }
             
-            // Use default value in the cell if query to find scale member code 
-            // has no equivalent value.
-            $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
-          } 
-          else {
-            // No scale member value for the rest of traits.
-            $cvalue_id = '';
-          }
-          //
-        
-          // Insert trait only when type_id and unit_id are not null.
-          if (isset($type_id) && isset($unit_id)) {
-            $temp = db_insert('pheno_measurements')
-              ->fields(array('plant_id'  => $pheno_plantid, 
-                             'type_id'   => $type_id, 
-                             'unit_id'   => $unit_id, 
-                             'cvalue_id' => $cvalue_id,
-                             'value'     => $cell_entry,
-                             'modified'  => date("D M d, Y h:i:s a", time())))
-              ->execute();
-            if (!$temp) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
-                array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
-                             'type_id'   => $type_id, 
-                             'unit_id'   => $unit_id, 
-                             'cvalue_id' => $cvalue_id,
-                             'value'     => $cell_entry,
-                             'modified'  => date("D M d, Y h:i:s a", time())),TRUE)),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(38);
+              // Use default value in the cell if query to find scale member code 
+              // has no equivalent value.
+              $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
+            } 
+            else {
+              // No scale member value for the rest of traits.
+              $cvalue_id = '';
             }
-          } 
+            //
+        
+            // Insert trait only when type_id and unit_id are not null.
+            if (isset($type_id) && isset($unit_id)) {
+              $temp = db_insert('pheno_measurements')
+                ->fields(array('plant_id'  => $pheno_plantid, 
+                               'type_id'   => $type_id, 
+                               'unit_id'   => $unit_id, 
+                               'cvalue_id' => $cvalue_id,
+                               'value'     => $cell_entry,
+                               'modified'  => date("D M d, Y h:i:s a", time())))
+                ->execute();
+              if (!$temp) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
+                  array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
+                               'type_id'   => $type_id, 
+                               'unit_id'   => $unit_id, 
+                               'cvalue_id' => $cvalue_id,
+                               'value'     => $cell_entry,
+                               'modified'  => date("D M d, Y h:i:s a", time())),TRUE)),
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(38);
+              }
+            } 
+          }
         }
       }
       $i++;
