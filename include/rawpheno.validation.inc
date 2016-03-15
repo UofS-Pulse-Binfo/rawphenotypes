@@ -491,17 +491,25 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
       break;
     
     case 'scale':
-      // Scale - if numeric, check if 1-5 range, inclusive.
-      // First, do we have a number?
-      if (is_numeric($value)) {
-        // Then check it's a positive whole number.
-        if ( (int)$value == $value AND $value > 0) {
-          // Finally is it between 1 and 5 inclusive?
-          if ($value >= 1 AND $value <= 5) {
-            return TRUE;
-          }
-        }
-      } 
+      // Scales are associated with the trait cvterm and each approved code is stored
+      // in pheno_scale_member.
+      // First retrieve the cvterm_id for the trait.
+      $trait = $context['header'][ $context['column index'] ]['original'];
+      $trait_id = rawpheno_get_trait_id($trait);
+      if ($trait_id) {
+        // Then check that the value is in the scale members
+        $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value', 
+          array(':trait_id' => $trait_id, ':value' => $value))->fetchField();
+        if ($present) return TRUE;
+        // If not, make sure there are members.
+        $has_scale = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:trait_id',
+          array(':trait_id' => $trait_id))->fetchField();
+        if (!$has_scale) return TRUE;
+      }
+      // If this is a new trait/column then we don't know how to validate it, so we assume it's correct.
+      else {
+        return TRUE;
+      }
       break;
     case 'text':
       return TRUE;

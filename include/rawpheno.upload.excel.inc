@@ -613,8 +613,15 @@ function rawpheno_function_delformat($xls_cell_value) {
 function rawpheno_function_unit($xls_header_cell) {
   // Remove all formatting.  
   $temp_value = rawpheno_function_delformat($xls_header_cell);
+  
+  // If this is a scale then return that.
+  if (preg_match('/\(scale/',$temp_value)) {
+    return 'scale';
+  }
+  
   // Remove the following characters.
   $cell_value = str_replace(array(';', '1st', '2nd', 'r1', 'r3', 'r5', 'r7', ': 1-5'), '', $temp_value);
+
   // Extract text information inside the parenthesis.
   preg_match("/.*\(([^)]*)\)/", $cell_value, $match);
   
@@ -695,4 +702,31 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
     // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
     include_once $lib_path . 'SpreadsheetReader_XLS.php';
   }
+}
+
+/**
+ * Retrieve the cvterm_id for a given header.
+ *
+ * @param $header
+ *   The unchanged/original header text for the trait.
+ * @return
+ *   The cvterm_id for the trait.
+ */
+function rawpheno_get_trait_id($header) {
+
+  // Remove formats.
+  $trait_name = rawpheno_function_delformat($header);
+  
+  // Furhter process it.
+  $trait_name = trim(str_replace(array(' cm', ' count'), '', $trait_name));
+  $trait_name = trim(preg_replace('/\([^)]+\)/', '', $trait_name));
+  $trait_name = str_replace(' ', '_', $trait_name);
+  
+  $type = tripal_get_cvterm(array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+  
+  if ($type) {
+    return $type->cvterm_id;
+  }
+  
+  return FALSE;
 }
