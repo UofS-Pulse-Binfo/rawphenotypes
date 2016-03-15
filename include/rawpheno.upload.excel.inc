@@ -110,11 +110,16 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
         continue;
       }
       
-      // Process the name column first since we needa plant_id before we can insert any more data.
+      // Don't continue processing if this row is empty.
+      if (strlen(trim(implode('', $row))) <= 1) {
+        break; break;
+      }
+      
+      // Process the name column first since we need a plant_id before we can insert any more data.
       // Name column header goes into pheno_plant.
       // Check if stock name exists.
       $stock_id = NULL;
-      $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $row[$name_index]));
+      $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => trim($row[$name_index])));
       if ($r) $stock_id = $r->fetchField();
     
       // Determine if name has a stock id number.
@@ -130,8 +135,8 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
         tripal_report_error(
           'rawpheno',
           TRIPAL_CRITICAL,
-          'Uploading Phenoypic Data: Germplasm doesn\'t exist (name=!name)',
-          array('!name' => $cell_entry),
+          'Uploading Phenoypic Data: Germplasm doesn\'t exist (name=!name; row=!row)',
+          array('!name' => $row[$name_index], '!row' => $i),
           array('print' => TRUE)
         );
         $TRANSACTION->rollback();
@@ -143,8 +148,18 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
       // Each row will be an array where name is always the first element.
       foreach($row as $cell_index => $cell_entry) {
 
+        // We don't want to insert empty data.
+        // That said, while PHP thinks 0 is empty, we do not.
+        if (empty($cell_entry) AND !(strval($cell_entry) === 0)) {
+          break; break;
+        }
+        
         // Get the column header of a cell.
         $cell_colheader = rawpheno_function_delformat($header[$cell_index]);
+        
+        // We always want to strip flanking white space.
+        // FYI: This is done when the data is validated as well.
+        $cell_entry = trim($cell_entry);
 
         // Determine which table to insert a column header.
         // If this is the name column then doing nothing since we've already delt with it above.
@@ -455,6 +470,10 @@ function rawpheno_validate_excel_file($file) {
           
           $column_name = $header[$column_index]['no units'];
           if (empty($column_name)) continue;
+          
+          // We always want to strip flanking white space.
+          // FYI: This is done when the data is loaded as well.
+          $cell = trim($cell);
           
           // Foreach validator:
           foreach (array('all','subset') as $scope) {
