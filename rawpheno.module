@@ -342,15 +342,118 @@ function rawpheno_instructions_autocomplete_search($key = '') {
  *   location, year, rep, # traits.
  */
 function rawpheno_rawdata_summary_json() {
-  // Select all locations from materialized view.
+  $min_set = 3;
+  $sql_location = "SELECT DISTINCT location FROM {chado.rawpheno_rawdata_mview}
+    ORDER BY location ASC";
+
+  $result_location = db_query($sql_location);
+  $count_location = $result_location->rowCount();
+  
+  if ($count_location > 0) {
+    // Array to hold data.
+    $data_json = array();
+    // Array to hold planting years and rep.
+    $arr_range['year'] = array();
+    $arr_range['rep'] = array();
+    
+    // Define range of planting years and rep.
+    for($i = 0; $i < 2; $i++) {
+      $range = ($i == 0) ? 'year' : 'rep';
+      // Query materialized view.
+      $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM {chado.rawpheno_rawdata_mview}
+        ORDER BY data_range DESC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
+        
+      $r = db_query($sql_range);
+      $count_data = $r->rowCount();
+
+      // Determine if total number of years is less than minimum number. 
+      if ($count_data < $min_set) {
+        // Year/rep count is less than minimum, fill the gap to make the
+        // number always to minimum.
+           
+        // Initial/starting year/rep. To be used to compute succeeding values.
+        $start_value = $r->fetchField(0);
+        $arr_range[$range][] = $start_value;
+        
+        // Fill the missing years/rep and push to array.
+        for($c = 1; $c < $min_set; $c++) {
+          $arr_range[$range][] = (empty($r->fetchField($c))) ? 
+            $start_value + $c : $r->fetchField($c);
+        }
+      }
+      else {
+        // There is more than the minimum year/rep returned by the query.
+        // Store all values to years array.
+        foreach($r as $range_value) {
+          $arr_range[$range][] = (int)$range_value->data_range;
+        }
+      }
+    }
+    
+    // Construct data set.
+    // Read each location available and construct data set.
+    while($data = $result_location->fetchAssoc()) {
+      // In each location, read each planting year.
+      foreach($arr_range['year'] as $year) {
+        // In each year, read each rep.
+        foreach($arr_range['rep'] as $rep) {
+          // Each location in the materialized view
+          $location = $data['location'];
+          
+          // Get traits summary based on location, year and rep,
+          // if none is found, gap is filled in for that particular year
+          // and rep to ensure that by the end of this iteration, each location
+          // has a total of 9 rows of data (3 reps X 3 planting years) - shown above.
+          
+          // Get the entry with the most traits for this particular location, year and rep.
+          $sql = "SELECT total_count
+            FROM {chado.rawpheno_rawdata_mview}
+            WHERE SUBSTRING(planting_date, 0, 5) = :year AND rep = :rep AND location = :location
+            ORDER BY total_count DESC LIMIT 1";  
+          $traits = db_query($sql, array(':year' => $year, 
+                                         ':rep' => $rep, 
+                                         ':location' => $location))
+                    ->fetchField();
+
+          $trait_count = (isset($traits) && !empty($traits)) ? $traits : 0;
+          
+          // Create a json entry with the following keys:
+          // location, year, rep and trait.
+          $arr_json[] = array('location' => $location,
+                              'year' => $year,
+                              'rep' => $rep,
+                              'trait' => $trait_count);
+        }
+      }
+    }
+
+    return $arr_json;
+  } 
+  else {
+    // No data.
+    $data_json = NULL;
+  }
+}
+
+
+/*
+// Select all locations from materialized view.
   $sql = "SELECT DISTINCT location FROM {chado.rawpheno_rawdata_mview} ORDER BY location ASC";
   $locations = db_query($sql);
   
   if ($locations) {
     // Array to hold the JSON.
     $arr_json = array();
-    // Array of planting years.
+    
+    // Array of planting years. Search materialized view and find
+    // the least planting year. And compute the succeeding years.
+    ddd
     $arr_year = array(2017, 2016, 2015);
+    
+    
+    
+    
+    
     // Array of rep per year.
     $arr_rep = array(1, 2, 3);
 
@@ -403,4 +506,80 @@ function rawpheno_rawdata_summary_json() {
   }
   
   return $arr_json;
-}
+  
+  
+  
+  
+  
+  
+  $sql_year = "SELECT DISTINCT SUBSTRING(planting_date, 1, 4) AS planting_year 
+      FROM {chado.rawpheno_rawdata_mview}
+      ORDER BY planting_year DESC";
+    
+    $y = db_query($sql_year);
+    // Total number of planting years from materialized view.
+    $count_year = $y->rowCount();
+    // Array to hold the planting years.
+    $arr_years = array();
+
+    // Determine if total number of years is less than minimum number.
+    if ($count_year < 3) {
+      // Year count is less than minimum, fill the gap to make the
+      // number of planting year always to minimum.
+      
+      // Initial/starting year. To be used to compute succeeding years.
+      $initial_year = $y->fetchField(0);
+      $arr_years[0] = (int)$initial_year;
+      
+      // Fill the missing years and push to years array.
+      for($i = 1; $i < $min_set; $i++) {
+        $arr_years[$i] = (empty($y->fetchField($i))) ? 
+          $initial_year + $i : $y->fetchField($i);
+      }
+    }
+    else {
+      // There is more than the minimum year returned by the query.
+      // Store all years to years array.
+      $i = 0;
+      foreach($y as $k=>$year_value) {
+        $arr_years[$i] = (int)$year_value->planting_year;
+        $i++;
+      }
+    }
+    
+    // Determine number of reps.
+    
+    
+    
+    
+    // Construct data set.
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  */
