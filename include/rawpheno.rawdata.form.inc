@@ -7,7 +7,7 @@ function rawpheno_rawdata($form, &$form_state) {
   // Navigation button. Related page of rawdata/summary page is download page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => t('Download Data <span>&#10095;</span>'),
+    '#markup' => t('Download Data &#10095;'),
   );
  
   // Page Contents.

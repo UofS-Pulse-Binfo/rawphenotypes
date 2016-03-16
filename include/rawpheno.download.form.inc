@@ -196,6 +196,7 @@ function rawpheno_download_submit($form, &$form_state) {
     // to use file_transfer to give the file to the user securely. However, we cant use
     // fputcsv() with file_save_data() (typical way to create file for download). Thus
     // we are essentially duplicating fiel_dave_data() functionality here :-(.
+    global $user;
     $filename = 'rawpheno_csv' . date('YMd') .'_'. time() . '.csv';
     $uri = drupal_tempnam('temporary://', 'file');
     $file = new stdClass();
@@ -231,12 +232,18 @@ function rawpheno_download_submit($form, &$form_state) {
       fputcsv($OUT, $row);
     }
   }
+  
+  fclose($OUT);
+  
+  // Notify the drupal filesystem of the size change.
+  $file->filesize = filesize($file->uri);
+  file_save($file);
 
   // Set page headers.
   $http_headers = array(
     'Content-Type' => 'text/csv',
     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    'Content-Length' => filesize($path),
+    'Content-Length' => filesize($uri),
   );
 
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {

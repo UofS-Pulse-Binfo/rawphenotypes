@@ -66,7 +66,10 @@
         
         if ($('#messages').length > 0) {
           // Check for durpal error message.
+          var errorMessage = $('#messages');
+          errorMessage.find('h2').remove();
           $('#messages').remove();
+          downloadWinError.text(errorMessage.text());
           downloadWinError.show();
         }
       });

@@ -89,28 +89,7 @@
           })
           .text('Locations');
   
-        // X axis (locations)
-        var x0 = d3.scale.ordinal()
-          .rangeRoundBands([0, width], .1);
-        var xAxis = d3.svg.axis()
-          .scale(x0)
-          .orient('bottom');
-
-        // Y axis (year)
-        var y0 = d3.scale.ordinal()
-          .rangeRoundBands([0, barHeight * rep], .1);
-        var yAxis = d3.svg.axis()
-          .scale(y0)
-          .orient('left');
-
-        // Create g on margin top and margin left position,
-        // to contain chart
-        var chart = svg
-          .attr('height', height + margin.top + margin.bottom)
-          .attr('width', width + margin.left + margin.right)
-          .append('g')
-            .attr('id', 'g-locations')
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
        
         // json file
         var file = $('#rawdata-json').val();
@@ -162,10 +141,45 @@
             })
             .entries(data);
           
+          var dataByRep = d3.nest()
+            .key(function(d) { return d.rep })
+            .entries(data);
+          
+          var totalRep = dataByRep.length;
+          
+          
+          // X axis (locations)
+        var x0 = d3.scale.ordinal()
+          .rangeRoundBands([0, width], .1);
+        var xAxis = d3.svg.axis()
+          .scale(x0)
+          .orient('bottom');
+
+        // Y axis (year)
+        var y0 = d3.scale.ordinal()
+          .rangeRoundBands([0, barHeight * totalRep], .1);
+        var yAxis = d3.svg.axis()
+          .scale(y0)
+          .orient('left');
+
+        // Create g on margin top and margin left position,
+        // to contain chart
+        var chart = svg
+          .attr('height', height + margin.top + margin.bottom)
+          .attr('width', width + margin.left + margin.right)
+          .append('g')
+            .attr('id', 'g-locations')
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          
+          
+          
+          
+          
+          
           // Compute dimensions based on number of records to chart.
           var numberOfLocation = dataByLocation.length;
           var containerWidth = round(width/numberOfLocation);
-          var barWidth = round(containerWidth/rep);
+          var barWidth = round(containerWidth/totalRep);
           
           // Container g for each location.
           // Index to data: /location - read primary keys
@@ -237,7 +251,7 @@
             .attr('stroke-width', (barBorder + 1))
             .attr('fill', 'none')
             .attr('width', containerWidth)
-            .attr('height', barHeight * 3);
+            .attr('height', barHeight * totalRep);
          
           // Create data for y axis.
           var dataByYear = d3.nest()
