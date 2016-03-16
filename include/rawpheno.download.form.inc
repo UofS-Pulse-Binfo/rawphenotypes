@@ -12,14 +12,13 @@ function rawpheno_download($form, &$form_state) {
   // This is the error message used in lieu of Drupal form_set_error().
   // This error message will be in close proximity to the interface.
   $form['download_window_error'] = array(
-    '#markup' => t('<div id="download-window-error" class="messages error">
-                 No traits or location selected. Please try again.</div>'),
+    '#markup' => t('<div id="download-window-error" class="messages error"></div>'),
   );
   
   // Navigation button. Related page of download page is rawdata/summary page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => t('View Summary <span>&#10095;</span>'),
+    '#markup' => t('View Summary &#10095;'),
   );  
   
   // Primary select field - an AJAX chained select that updates secondary
@@ -88,6 +87,7 @@ function rawpheno_download($form, &$form_state) {
     '#size' => 17,
   );
   
+  // Checkbox to select all traits.
   $form['ajax_wrapper']['chk_select_all'] = array(
     '#title' => t('Select all traits'),
     '#type' => 'checkbox',
@@ -120,10 +120,29 @@ function rawpheno_download_measurements($form, $form_state) {
  * Generate a comma separated values (csv) file based on the location and trait set selected.
  */
 function rawpheno_download_submit($form, &$form_state) {
-  // Delay function not startle user with dialog box to save file.
+  // Delay function not to startle user with dialog box to save file.
   // A counter in front-end in sync whith this delay.
   sleep(4);
- 
+  
+  // Ensure that public directory exists.
+  $csv_path = 'public://';
+  if (!file_prepare_directory($csv_path, FILE_CREATE_DIRECTORY)) {
+    drupal_set_message(t('Unable to find public directory. Please check directory and try again.'), 'error');
+    return FALSE;
+  }
+
+  // Ensure the public directory is writable.
+  $csv_filename = 'rawphenotypes-' . REQUEST_TIME . '.csv';
+  $csv_file = file_save_data('', $csv_path . $csv_filename);
+  if (!$csv_file) {
+    drupal_set_message(t('Unable to create file in public directory. Please check directory permission and try again.'), 'error');
+    return FALSE;
+  }
+  
+  // Append file with data in csv format.
+  $csv_file_open = fopen($csv_file->uri, 'w');
+  /////
+  
   // Location or locations selected by user.
   $location = $form_state['values']['location'];
   // List of traits selected by user.
@@ -133,88 +152,67 @@ function rawpheno_download_submit($form, &$form_state) {
   $planting_date = tripal_get_cvterm(array('name' => 'planting_date'));
   array_push($traits, $planting_date->cvterm_id);
   
-  // Query to join data from different tables.
-  // Result: plant_id, trait_id, definition, data, and a grouping string
-  // The result is sorted by plant_id and the grouping string ensuring that the first
-  // row is Name - containing the stock name.
-  // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
-  $sql = db_query("SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS data, 'A' as grp
+  // Query all traits and location based on location and traits selected by user.
+  // The result follows a standard format: PLOT, ENTRY, NAME, REP, LOCATION, ...
+  $sql = db_query("SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS data, 'a' as grp
+    FROM {pheno_plantprop} AS t1
+      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
+      AND t2.name IN ('plot', 'entry')
+    UNION
+    SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS data, 'b' as grp
     FROM {chado.stock} AS t1 
       INNER JOIN {pheno_plant} AS t2 USING(stock_id)
     WHERE t2.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
     UNION
-    SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS data, 'B' as grp
+    SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS data, 'c' as grp
     FROM {pheno_plantprop} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
+      AND t2.name IN ('rep', 'location')
     UNION
-    SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS data, 'C' as grp
+    SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS data, 'd' as grp
     FROM {pheno_measurements} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t2.cvterm_id IN (:traits)
     ORDER BY id, grp, tid ASC", array(':location' => $location, ':traits' => $traits));
- 
-  // Create header row and data row of the csv file.
-  if ($sql) {
-    // Array to hold column headers.
-    $arr_headers = array();
-    // Array to hold data rows
-    $arr_data_rows = array();
     
-    while($row = $sql->fetchAssoc()) {
-      // Determine if the column header is in the array of column headers
-      if (!in_array($row['def'], $arr_headers)) {
-        // Not in the array of column headers. - Add this header.
-        $header = (strpos($row['def'], ',')) ? '"'.$row['def'].'"' : $row['def'];
-        array_push($arr_headers, $header);   
+    if ($sql) {
+      // Array to hold column headers.
+      $arr_download_data = array();
+      // Index 0 to hold all column headers.
+      $arr_download_data[0] = array();
+      while($row = $sql->fetchAssoc()) {
+        // Column headers
+        if (!in_array($row['def'], $arr_download_data[0])) {
+          $arr_download_data[0][] = $row['def'];
+        }
+        
+        // Data rows.
+        // Determine if data has a value or null.
+        // Assign NA - Not Applicable when data is NULL.
+        $arr_download_data[$row['id']][] = empty($row['data']) ? 'NA' : $row['data']; 
       }
-      
-      // Determine if data has a value or null.
-      // Assign NA - Not Applicable when data is NULL
-      if (empty($row['data'])) {
-        $value = 'NA';
-      } 
-      else {
-        $value = (strpos($row['data'], ',')) ? '"'.$row['data'].'"' : $row['data'];
-      }
-      // Create an array of data with plant_id as the index.
-      $plant_id = $row['id'];
-      $arr_data_rows[$plant_id][] = $value;
     }
+  
+  /////
+  foreach($arr_download_data as $data) {
+    fputcsv($csv_file_open, $data);
   }
   
-  // Array to hold the string-comma-separated values 
-  $arr_csv_rows = array();
-  // Read each rows of data.
-  foreach($arr_data_rows as $index => $value) {
-    // Splice name element.
-    $name_element = array_splice($value, 0, 1);
-    // Insert name data in between entry and rep.
-    array_splice($value, 2, 0, $name_element);
-    // Convert the array into string-comma-separated.
-    $arr_csv_rows[] = implode(',', $value);
-  }
- 
-  // Splice name header.
-  $name_header = array_splice($arr_headers, 0, 1);
-  // Insert in between entry and rep.
-  array_splice($arr_headers, 2, 0, $name_header);
+  fclose($csv_file_open);
+  
+  // Notify the drupal filesystem of the size change.
+  $csv_file->filesize = filesize($csv_file->uri);
+  file_save($csv_file);
 
-  // Create filename, with date and time information.  
-  $file_name = 'rawpheno_csv' . date('YMd') .'_'. time() . '.csv';
-  $file_csv = file_save_data(implode(',', $arr_headers) . "\n" .
-                             implode("\n", $arr_csv_rows), 'public://' . $file_name);
- 
-  // Include directory path to the filename.
-  $path = 'public://'.$file_name;
- 
   // Set page headers.
   $http_headers = array(
     'Content-Type' => 'text/csv',
-    'Content-Disposition' => 'attachment; filename="' . $file_name . '"',
-    'Content-Length' => filesize($path),
-  );
+    'Content-Disposition' => 'attachment; filename="' . $csv_filename . '"',
+    'Content-Length' => $csv_file->filesize,
+  );  
 
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {
     $http_headers['Cache-Control'] = 'must-revalidate, post-check=0, pre-check=0';
@@ -225,23 +223,24 @@ function rawpheno_download_submit($form, &$form_state) {
   }
 
   // Call drupal file_transfer() function.
-  file_transfer($path, $http_headers);
+  file_transfer($csv_file->uri, $http_headers);
 }
 
 /**
  * Implements hook_validate().
  */
 function rawpheno_download_validate($form, &$form_state) {
-  $traits = $form_state['values']['traits'];
+  // Validate location.
   $locations = $form_state['values']['location'];
-  
-  if (count($traits) <= 0) {
-    // No trait selected.
-    form_set_error('traits', t('Please select traits and try again.'));
-  }
-  
   if (count($locations) <= 0) {
     // No location selected.
-    form_set_error('location', t('Please select location and try again.'));
+    form_set_error('location', t('No location selected. Please select location and try again.'));
+  }
+
+  // Validate traits.
+  $traits = $form_state['values']['traits'];
+  if (count($traits) <= 0) {
+    // No trait selected.
+    form_set_error('traits', t('No traits selected. Please select traits and try again.'));
   }
 }
