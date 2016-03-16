@@ -155,7 +155,7 @@
       
           // Y axis (year)
           var y0 = d3.scale.ordinal()
-            .rangeRoundBands([0, barHeight * numberOfRep]);
+            .rangeRoundBands([0, barHeight * numberOfRep - margin.bottom]);
           var yAxis = d3.svg.axis()
             .scale(y0)
             .orient('left');
