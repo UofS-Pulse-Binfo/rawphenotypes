@@ -514,6 +514,8 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
     case 'text':
       return TRUE;
       break;
+    default:
+      return TRUE;
   }
 
   return array('value' => $value, 'unit' => $unit);
