@@ -276,9 +276,9 @@ function rawpheno_install() {
   // Summary of traits will be processed and counted to become the trait count,
   // excluding planting date. This summary will also provide the year and list of traits with data.
   $mv_sql = "SELECT DISTINCT t1.plant_id,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'location' THEN t2.value END), '') AS location,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'rep' THEN t2.value END), '') AS rep,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'planting_date' THEN t3.value END), '') AS planting_date,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Location' THEN t2.value END), '') AS location,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Rep' THEN t2.value END), '') AS rep,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Planting Date (date)' THEN t3.value END), '') AS planting_date,
       COUNT(DISTINCT t3.type_id) - 1 AS count_measurement
     FROM pheno_plant AS t1 
       left JOIN pheno_plantprop AS t2 ON t1.plant_id = t2.plant_id
