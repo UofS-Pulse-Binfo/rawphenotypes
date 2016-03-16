@@ -29,7 +29,7 @@ function rawpheno_download($form, &$form_state) {
   $location = db_query("SELECT DISTINCT t1.value, t1.value AS location
     FROM {pheno_plantprop} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t2.name = 'location'
+    WHERE t2.name = 'Location'
     ORDER BY t1.value ASC")
     ->fetchAllKeyed();  
 
@@ -69,7 +69,7 @@ function rawpheno_download($form, &$form_state) {
     WHERE t1.plant_id IN
       (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t1.value <> ''
-      AND t2.name <> 'planting_date'
+      AND t2.name <> 'Planting Date (date)'
     ORDER BY t1.type_id ASC", array(':location' => $loc))
     ->fetchAllKeyed();
   
@@ -130,8 +130,8 @@ function rawpheno_download_submit($form, &$form_state) {
   $traits = $form_state['values']['traits'];
   
   // Add planting date to the list of traits.
-  $planting_date = tripal_get_cvterm(array('name' => 'planting_date'));
-  array_push($traits, $planting_date->cvterm_id);
+  $planting_date = rawpheno_get_trait_id('Planting Date (date)');
+  array_push($traits, $planting_date);
   
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
@@ -153,7 +153,6 @@ function rawpheno_download_submit($form, &$form_state) {
     $header[ $r->id ] = $r->definition;
   }
   ksort($header);
-
   
   // Query to join data from different tables.
   // Result: plant_id, trait_id, definition, data, and a grouping string
@@ -203,7 +202,7 @@ function rawpheno_download_submit($form, &$form_state) {
     $file->fid = NULL;
     $file->uri = $uri; // This is where the file actually is.
     $file->filename = $filename; //This is what we want the file to be named when downloaded.
-    $file->filemime = file_get_mimetype($file->uri);
+    $file->filemime = 'text/csv';
     $file->uid = $user->uid;
     file_save($file);
     // Now open the file for writting.
@@ -236,14 +235,14 @@ function rawpheno_download_submit($form, &$form_state) {
   fclose($OUT);
   
   // Notify the drupal filesystem of the size change.
-  $file->filesize = filesize($file->uri);
+  $file->filesize = filesize(drupal_realpath($file->uri));
   file_save($file);
 
   // Set page headers.
   $http_headers = array(
     'Content-Type' => 'text/csv',
     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    'Content-Length' => filesize($uri),
+    'Content-Length' => filesize(drupal_realpath($file->uri)),
   );
 
   if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {

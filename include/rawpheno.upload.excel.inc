@@ -20,7 +20,6 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
   // Unserialize and remove formating for the headers that should be saved as 
   // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
-  $plantprop_headers = array_map('rawpheno_function_delformat', $plantprop_headers);
   
   // First we load the file.
   $file = file_load($fid);
@@ -153,7 +152,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
         if (!empty($cell_entry)  OR (strval($cell_entry) === 0)) {
 
           // Get the column header of a cell.
-          $cell_colheader = rawpheno_function_delformat($header[$cell_index]);
+          $cell_colheader = str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]);
         
           // We always want to strip flanking white space.
           // FYI: This is done when the data is validated as well.
@@ -208,19 +207,14 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
           elseif (!empty($cell_colheader)) {
             // Determine if column header is New or not
             if (count($new_header) > 0 && in_array($cell_colheader, $new_header)) {
-              // NEW
-              // Test if column header of cell is a new trait.
-              // Replace any extra spaces to underscore and create an exact match of
-              // cvterm name inserted into cvterm table.
-              $cv_name = str_replace(' ', '_', $cell_colheader);
-              $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
-              $type_id = $type->cvterm_id;
+              // Get the cvterm_id for the trait measurement.
+              $type_id = rawpheno_get_trait_id($cell_colheader);
               if (!$type_id) {
                 tripal_report_error(
                   'rawpheno',
                   TRIPAL_ERROR,
-                  'Uploading Phenoypic Data: Plant Measurement Type (New Trait; Term=!name; Header=!colheader).',
-                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  'Uploading Phenoypic Data: Missing Plant Measurement Type (New Trait; Header=!colheader).',
+                  array('!colheader' => $cell_colheader),
                   array('print' => TRUE)
                 );
                 $TRANSACTION->rollback();
@@ -249,27 +243,16 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
                 exit(36);
               }
             }
+            // NOT NEW.
             else {
-              // NOT NEW
-              // Column header is not a new trait.
-              // Remove unit from the header.
-              if (in_array($cell_colheader, $arr_multiheaders)) {
-                $cv_name = trim(str_replace(array(' cm', ' count'), '', $cell_colheader));
-              }
-              else {
-                $cv_name = trim(preg_replace('/\([^)]+\)/', '', $cell_colheader));
-              }
-          
-              $cv_name = str_replace(' ', '_', $cv_name);
-
-              $type = tripal_get_cvterm(array('name' => $cv_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
-              $type_id = $type->cvterm_id;
+              // Get the cvterm_id for the trait measurement.
+              $type_id = rawpheno_get_trait_id($cell_colheader);
               if (!$type_id) {
                 tripal_report_error(
                   'rawpheno',
                   TRIPAL_ERROR,
-                  'Uploading Phenoypic Data: Plant Measurement Type (Term=!name; Header=!colheader).',
-                  array('!name' => $cv_name, '!colheader' => $cell_colheader),
+                  'Uploading Phenoypic Data: Missing Plant Measurement Type (Header=!colheader).',
+                  array('!colheader' => $cell_colheader),
                   array('print' => TRUE)
                 );
                 $TRANSACTION->rollback();
@@ -713,16 +696,8 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
  *   The cvterm_id for the trait.
  */
 function rawpheno_get_trait_id($header) {
-
-  // Remove formats.
-  $trait_name = rawpheno_function_delformat($header);
   
-  // Furhter process it.
-  $trait_name = trim(str_replace(array(' cm', ' count'), '', $trait_name));
-  $trait_name = trim(preg_replace('/\([^)]+\)/', '', $trait_name));
-  $trait_name = str_replace(' ', '_', $trait_name);
-  
-  $type = tripal_get_cvterm(array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+  $type = tripal_get_cvterm(array('name' => $header, 'cv_id' => array('name' => 'phenotype_measurement_types')));
   
   if ($type) {
     return $type->cvterm_id;

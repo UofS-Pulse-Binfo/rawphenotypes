@@ -208,18 +208,6 @@ function rawpheno_install() {
   
   // Read each header and create cvterm name and cvterm definition.
   foreach($expected_header as $i => $term) {
-    $tmp_term = $term;
-    // cvterm name - Remove unit from the term and convert to lower case.
-    if (in_array($term, $arr_multiheaders)) {
-      // For header with secondary attemp, include 1st and 2nd in the name.
-      $tmp_term = str_replace(array(' cm', ' count'), '', $tmp_term);
-      $cvterm_name = trim(strtolower($tmp_term));  
-    }
-    else {
-      $cvterm_name = trim(strtolower(preg_replace('/\([^)]+\)/', '', $tmp_term)));
-    }
-
-    $cvterm_name = str_replace(' ', '_', $cvterm_name);
     
     // Skip column header if it is Name.
     if ($term == 'Name') { 
@@ -231,12 +219,12 @@ function rawpheno_install() {
     if (in_array($i, $pp_id)) {
       // Term is Plot, Entry, Rep and Location.
       // Term is property type.
-      $pp_terms[$cvterm_name] = $term;      
+      $pp_terms[$term] = $term;      
     }
     else {
       // The rest of the terms.
       // Term is measurement type.
-      $mt_terms[$cvterm_name] = $term;
+      $mt_terms[$term] = $term;
     }
   }
   
