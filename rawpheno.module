@@ -363,7 +363,7 @@ function rawpheno_rawdata_summary_json() {
       $range = ($i == 0) ? 'year' : 'rep';
       // Query materialized view.
       $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM {chado.rawpheno_rawdata_mview}
-        ORDER BY data_range DESC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
+        ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
         
       $r = db_query($sql_range);
       $count_data = $r->rowCount();
@@ -373,25 +373,34 @@ function rawpheno_rawdata_summary_json() {
         // Year/rep count is less than minimum, fill the gap to make the
         // number always to minimum.
            
-        // Initial/starting year/rep. To be used to compute succeeding values.
-        $start_value = $r->fetchField(0);
+        // Initial/starting year/rep.
+        $start_value = $r->fetchField();
         $arr_range[$range][] = $start_value;
         
         // Fill the missing years/rep and push to array.
         for($c = 1; $c < $min_set; $c++) {
-          $arr_range[$range][] = (empty($r->fetchField($c))) ? 
-            $start_value + $c : $r->fetchField($c);
+          // Next year in the SQL result.
+          $d = $r->fetchField();
+          if (empty($d)) {
+            // If it is empty, compute the next year.
+            $start_value += 1;
+            $arr_range[$range][] = $start_value;
+          }
+          else {
+            // Year is present, store and set the start value to this year.
+            $arr_range[$range][] = $d;
+            $start_value = $d;
+          }
         }
       }
       else {
         // There is more than the minimum year/rep returned by the query.
-        // Store all values to years array.
+        // Store all values to years/rep array.
         foreach($r as $range_value) {
           $arr_range[$range][] = $range_value->data_range;
         }
       }
     }
-    
     
     // Construct data set.
     // Read each location available and construct data set.
@@ -406,13 +415,14 @@ function rawpheno_rawdata_summary_json() {
           // Get the entry with the most traits for this particular location, year and rep.
           $sql = "SELECT total_count
             FROM {chado.rawpheno_rawdata_mview}
-            WHERE SUBSTRING(planting_date, 0, 5) = :year AND rep = :rep AND location = :location
+            WHERE location = :location AND SUBSTRING(planting_date, 1, 4) = :year AND rep = :rep
             ORDER BY total_count DESC LIMIT 1";  
+          
           $traits = db_query($sql, array(':year' => $year, 
                                          ':rep' => $rep, 
                                          ':location' => $location))
                     ->fetchField();
-
+          
           $trait_count = (isset($traits) && !empty($traits)) ? $traits : 0;
           
           // Create a json entry with the following keys:

@@ -14,8 +14,12 @@
       //Margins and dimension.
       var height = 460;
       var width = 850;
+      
+      var halfHeight = Math.round(height / 2);
+      var halfWidth = Math.round(width / 2);
+      
       var barBorder = 1;
-      var margin = {top: 40, right: 0, bottom: 100, left: 65};
+      var margin = {top: 40, right: 0, bottom: 90, left: 65};
       
       // Infobox container.
       var infoBox = d3.select('body')
@@ -37,7 +41,7 @@
       captions.append('text')
         .attr('class', 'chart-title')
         .attr('transform', function() {
-          return 'translate('+ Math.round(width/2) +', 15)';
+          return 'translate('+ halfWidth +', 15)';
         })
         .text('Number of Trials per Location');
       
@@ -45,7 +49,7 @@
       captions.append('text')
         .attr('class', 'chart-axes')
         .attr('transform', function() {
-          return 'translate(10, '+ Math.round(height/2) +') rotate(-90)';
+          return 'translate(10, '+ halfHeight +') rotate(-90)';
         })
         .text('Growing Season (year)');
       
@@ -53,7 +57,7 @@
       captions.append('text')
         .attr('class', 'chart-axes')
         .attr('transform', function() {
-          return 'translate('+ Math.round(width/2) +', '+ (height - margin.top) +')';
+          return 'translate('+ halfWidth +', '+ (height - margin.top) +')';
         })
         .text('Locations');
       
@@ -72,7 +76,7 @@
         legend.append('rect')
           .attr('transform', 'translate('+ (31 * j) +', 0)')
           .attr('width', 30)
-          .attr('height', 8)
+          .attr('height', 7)
           .attr('fill', color(m));
           
         legend.append('text')
@@ -143,19 +147,29 @@
           var numberOfLocation = dataByLocation.length;
           var numberOfRep = dataByRep.length;
           var numberOfYear = dataByYear.length;
-          var containerPerLocationWidth = Math.round((width - margin.left) / numberOfLocation) - barBorder;
-          var barHeight = Math.round((height - margin.top - margin.bottom) / numberOfYear);
-          var barWidth = Math.round(containerPerLocationWidth/numberOfRep);
-
+          
+          // Width of the svg less left margin.
+          var chartHeight = height - margin.top - margin.bottom;
+          var chartWidth = width - margin.left;
+          
+          // Container for each location.
+          var locationContainerHeight = chartHeight;
+          var locationContainerWidth = Math.round(chartWidth / numberOfLocation);
+          
+          // Each rect representing rep
+          var barHeight = Math.round(locationContainerHeight / numberOfYear);
+          var barWidth = Math.round(locationContainerWidth / numberOfRep);
+          
           // X axis (locations)
-          var x0 = d3.scale.ordinal().rangeRoundBands([-2, (width - margin.left)]);
+          var x0 = d3.scale.ordinal()
+            .rangeRoundBands([0, chartWidth]);
           var xAxis = d3.svg.axis()
             .scale(x0)
             .orient('bottom');
       
           // Y axis (year)
           var y0 = d3.scale.ordinal()
-            .rangeRoundBands([0, barHeight * numberOfRep - margin.bottom]);
+            .rangeRoundBands([0, chartHeight]);
           var yAxis = d3.svg.axis()
             .scale(y0)
             .orient('left');
@@ -168,7 +182,7 @@
             .append('g')
               .attr('id', function(d, i) { return 'loc' + d.key; })
               .attr('transform', function(d, i) {
-                return 'translate('+ (i * containerPerLocationWidth) +', 0)';      
+                return 'translate('+ (i * locationContainerWidth) +', 0)';      
               });
             
           // Container g for each year.
@@ -223,14 +237,14 @@
             .attr('stroke', '#000000')
             .attr('stroke-width', (barBorder + 1))
             .attr('fill', 'none')
-            .attr('width', containerPerLocationWidth)
+            .attr('width', locationContainerWidth)
             .attr('height', barHeight * numberOfYear);
         
           // Add x axis (location).
           x0.domain(dataByLocation.map(function(d) { return d.key; }));
           chart.append('g')
             .attr('class', 'axis')
-            .attr('transform', 'translate(0,' + (barHeight * numberOfYear) +')')
+            .attr('transform', 'translate(0,' + barHeight * numberOfYear +')')
             .call(xAxis);  
           
           // Add y axis (year).
