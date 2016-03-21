@@ -126,8 +126,16 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#progress_message' => 'Please wait...',
     '#allow_replace' => 1,
     '#standard_upload' => 1,
+    // We are adding our own element process function so that we can make a successfully
+    // uploaded/validated file permanent during the AJAX process rather than waiting for
+    // them to click the "Next" button.
+    '#process' => array(
+      'file_managed_file_process',
+      'dragndrop_upload_element_element_process',
+      'rawpheno_phenotype_upload_file_element_process',
+    ),
   );
-
+  
   return $form;  
 }
 
@@ -385,40 +393,74 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  */
 function rawpheno_file_validate($file) {
 
+  if ($file->source == 'dnd') {
+    // Validate the file.
+    // The following function will return an array specifying which of the validation
+    // steps passed and providing infomration for those that failed.
+    $status = rawpheno_validate_excel_file($file);
   
-  // Validate the file.
-  // The following function will return an array specifying which of the validation
-  // steps passed and providing infomration for those that failed.
-  $status = rawpheno_validate_excel_file($file);
+    // We want to show the user which steps passed/failed even if all of them passed,
+    // so lets do that now. We use drupal_set_message() because returning from this function
+    // creates an error message and halts file upload, whereas, using drupal_set_message()
+    // allows us to print to the screen regardless of failure/success.
+    drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
   
-  // We want to show the user which steps passed/failed even if all of them passed,
-  // so lets do that now. We use drupal_set_message() because returning from this function
-  // creates an error message and halts file upload, whereas, using drupal_set_message()
-  // allows us to print to the screen regardless of failure/success.
-  drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
+    // Now we want to determine if validation passed or failed as a whole.
+    // To do that we have to look at each step and only if all steps passed 
+    // did the file pass validation and can be uploaded.
+    $all_passed = TRUE;
+    foreach ($status as $test_result) {
+      if ($test_result !== TRUE) {
+        $all_passed = FALSE;
+        break; break;
+      }
+    }
   
-  // Now we want to determine if validation passed or failed as a whole.
-  // To do that we have to look at each step and only if all steps passed 
-  // did the file pass validation and can be uploaded.
-  $all_passed = TRUE;
-  foreach ($status as $test_result) {
-    if ($test_result !== TRUE) {
-      $all_passed = FALSE;
-      break; break;
+    // hook_file_validate() expects an array of error messages if validation failed and
+    // and empty array if there are no errors. We don't want this system to print the errors
+    // for us since we are using our more friendly theme (see drupal_set_message() above).
+    // The work-around is to pass FALSE if validation failed.
+    if ($all_passed) {
+      drupal_set_message('<span id="rawpheno-upload-successful">Your file uploaded successfully. Please click "Next" to continue.</span>');
+      return array();
+    }
+    else {
+      return FALSE;
     }
   }
+}
+
+/**
+ * Make the phenotype excel file permanent on successful upload.
+ *
+ * This is an additional process handler used by the form API to generate the form array
+ * for a given element. Usually it is used to make a custom form element or enhance a 
+ * standard form element. 
+ *
+ * We are using it to capture the just uploaded file within the AJAX call by checking
+ * when the element is rendered if it has a fid (ie: has been saved).
+ */
+function rawpheno_phenotype_upload_file_element_process($element, &$form_state, $form) {
   
-  // hook_file_validate() expects an array of error messages if validation failed and
-  // and empty array if there are no errors. We don't want this system to print the errors
-  // for us since we are using our more friendly theme (see drupal_set_message() above).
-  // The work-around is to pass FALSE if validation failed.
-  if ($all_passed) {
-    drupal_set_message('<span id="rawpheno-upload-successful">Your file uploaded successfully. Please click "Next" to continue.</span>');
-    return array();
+  if (isset($element['#value']['fid']) AND !empty($element['#value']['fid'])) {
+
+    $file = file_load($element['#value']['fid']);
+    if ($file) {
+    
+      // Make the file permanent.
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+    
+      // Also, point out that we are using it ;-)
+      // Note, the file_usage_add() function expects a numerical unique id which we don't have.
+      // We have gotten around this by using the uid concatenated with the timestamp using
+      // the assumption that a single user cannot upload more than one phenotype file within a second.
+      file_usage_add($file, 'rawpheno', 'rawphenotypes-file', $file->uid . $file->timestamp);  
+    }
+  
   }
-  else {
-    return FALSE;
-  }
+  
+  return $element;
 }
 
 /**
