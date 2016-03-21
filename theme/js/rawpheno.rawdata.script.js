@@ -154,7 +154,7 @@
           
           // Container for each location.
           var locationContainerHeight = chartHeight;
-          var locationContainerWidth = Math.round(chartWidth / numberOfLocation);
+          var locationContainerWidth = Math.round(chartWidth / numberOfLocation) - (barBorder * 2);
           
           // Each rect representing rep
           var barHeight = Math.round(locationContainerHeight / numberOfYear);

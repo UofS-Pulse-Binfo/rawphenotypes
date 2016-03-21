@@ -194,6 +194,8 @@ function rawpheno_preprocess(&$variables) {
     'rawpheno_upload' => url('phenotypes/raw/upload')
   );
   
+  $variables['page_url'] = $arr_url; 
+  
   // Cross-link page.
   // Rawdata and download page.
   // Instructions and upload page.

@@ -161,8 +161,66 @@ function rawpheno_schema() {
   return $schema;
 }
 
-// Include function to manage column headers.
+// Include function to manage column headers, cv terms and variable names.
 module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
+
+/**
+ * Function to manage terms used by this module.
+ *
+ * @return 
+ *   An array of string representing scale measurements, variable names,
+ *   controlled vocabulary and measurement units.
+ */
+function rawpheno_function_terms($type) {
+  switch($type) {
+    case 'defaults':
+      // Default colour scheme and heading/title.
+      return array('colour'       => '#304356',
+                   'rawdata'      => 'Phenotypic data available through KnowPulse',
+                   'download'     => 'Select locations and traits that you want to download',
+                   'instructions' => 'Standard Phenotyping Procedure',
+                   'upload'       => 'Drag and Drop phenotypic data collection spreadsheet',);
+      break;
+      
+    case 'scales':
+      // Scale equivalent for scale units.
+      return array(1 => 'Vertical/upright', 
+                   2 => 'Leaning',
+                   3 => 'Most plants at 45 degrees angle',
+                   4 => 'All plants 10-45 degrees from ground',
+                   5 => 'Most plants flat/prostrate');
+      break;
+    
+    case 'variables':
+      // Configuration variable names.
+      return array('rawpheno_colour_scheme', 
+                   'rawpheno_rawdata_title',
+                   'rawpheno_download_title', 
+                   'rawpheno_instructions_title', 
+                   'rawpheno_upload_title');
+      break;
+    
+    case 'vocabularies':
+      // Controlled vocabularies.
+      return array('phenotype_plant_property_types', 
+                   'phenotype_measurement_types', 
+                   'phenotype_measurement_units');
+      
+      break;
+    
+    case 'units':
+      // Units available in the spreadsheet.
+      return array('date'  => 'Date',
+                   'count' => 'Count',
+                   'days'  => 'Days',
+                   'cm'    => 'Centimeters',
+                   'y/n/?' => 'Yes, No or ? - Not sure',
+                   'scale' => 'Scale: 1-5',
+                   'g'     => 'Grams (g)',
+                   'text'  => 'Alphanumeric');
+      break;
+  }
+}
 
 /**
  * Implements hook_install().
@@ -172,14 +230,11 @@ function rawpheno_install() {
   // 1. Populate pheno_scale_member table.
   // 2. Insert cvterms property type, measurement unit and measurement types. 
   // 3. Create materialized view.
+  // 4. Set default values of module configuration.
   
   // 1.
   // From standard phenotype data collection, scale is 1 - 5.
-  $scale_value = array(1 => 'Vertical/upright', 
-                       2 => 'Leaning',
-                       3 => 'Most plants at 45 degrees angle',
-                       4 => 'All plants 10-45 degrees from ground',
-                       5 => 'Most plants flat/prostrate');
+  $scale_value = rawpheno_function_terms('scales');
   
   // Insert scale values 1 - 5                    
   foreach($scale_value as $i => $value) {
@@ -203,12 +258,9 @@ function rawpheno_install() {
   // Index number of Plot, Entry, Rep and Location in traits array.
   // These id set is inserted into {chado.cvterm} as property types.
   $pp_id = array(0,1,3,4);
-  // Array to hold column headers with first and second try.
-  $arr_multiheaders = rawpheno_function_headers('multi-trial');
   
   // Read each header and create cvterm name and cvterm definition.
   foreach($expected_header as $i => $term) {
-    
     // Skip column header if it is Name.
     if ($term == 'Name') { 
       continue;
@@ -229,19 +281,10 @@ function rawpheno_install() {
   }
   
   // Measurement unit terms array.
-  $mu_terms = array('date'  => 'Date',
-                    'count' => 'Count',
-                    'days'  => 'Days',
-                    'cm'    => 'Centimeters',
-                    'y/n/?' => 'Yes, No or ? - Not sure',
-                    'scale' => 'Scale: 1-5',
-                    'g'     => 'Grams (g)',
-                    'text'  => 'Alphanumeric');
+  $mu_terms = rawpheno_function_terms('units');
                     
   // Vocabulary terms array.
-  $cv_vocabulary = array('phenotype_plant_property_types', 
-                         'phenotype_measurement_types', 
-                         'phenotype_measurement_units');
+  $cv_vocabulary = rawpheno_function_terms('vocabularies');
   
   // Insert 0. plant property, 1. measurment type and 2. measurement unit.
   $arr_terms = array($pp_terms, $mt_terms, $mu_terms);
@@ -270,23 +313,22 @@ function rawpheno_install() {
   $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
 
   // Create a summary of data in the following format:
-  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ...., total trait count excluding planting_date
-  // plant_id, Location, Rep, trait id=trait value:trait id=trait value: ...., total trait count excluding planting_date
-  // ...
-  // Summary of traits will be processed and counted to become the trait count,
-  // excluding planting date. This summary will also provide the year and list of traits with data.
-  $mv_sql = "SELECT DISTINCT t1.plant_id,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Location' THEN t2.value END), '') AS location,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Rep' THEN t2.value END), '') AS rep,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT CASE WHEN t4.name = 'Planting Date (date)' THEN t3.value END), '') AS planting_date,
-      COUNT(DISTINCT t3.type_id) - 1 AS count_measurement
-    FROM pheno_plant AS t1 
-      left JOIN pheno_plantprop AS t2 ON t1.plant_id = t2.plant_id
-      left JOIN pheno_measurements AS t3 ON t1.plant_id = t3.plant_id
-      left JOIN chado.cvterm AS t4 ON t4.cvterm_id IN(t2.type_id, t3.type_id)
-    WHERE t3.value <> ''
-    GROUP BY t1.plant_id
-    ORDER BY t1.plant_id ASC";
+  // Plant id, Location, Rep, Planting Date and Total traits count.
+  $mv_sql = "SELECT t1.plant_id, 
+      t2.value AS location, 
+      t3.value AS rep, 
+      t5.value AS planting_year,
+      COUNT(DISTINCT t4.type_id) AS total_count
+    FROM pheno_plant AS t1
+      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
+      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
+      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
+      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+    WHERE
+      t2.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Location' LIMIT 1) AND 
+      t3.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Rep' LIMIT 1) AND
+      t5.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+    GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
   
   // Schema array.
   $mv_schema = array (
@@ -294,83 +336,70 @@ function rawpheno_install() {
     'fields' => array (
     'plant_id' => array (
       'type' => 'varchar',
-      'length' => 20),
+      'length' => 255),
     'location' => array (
       'type' => 'varchar',
       'length' => 255),
     'rep' => array (
       'type' => 'varchar',
-      'length' => 5),
+      'length' => 255),
     'planting_date' => array (
       'type' => 'varchar',
-      'length' => 12),
+      'length' => 255),
     'total_count' => array (
       'type' => 'varchar',
-      'length' => 20),
+      'length' => 255),
     )
   );
   
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
   
+  // 4.
   // Set default colour scheme and page titles.
-  variable_set('rawpheno_colour_scheme', '#304356');
-  variable_set('rawpheno_rawdata_title', 'Phenotypic data available through KnowPulse');
-  variable_set('rawpheno_download_title', 'Select locations and traits that you want to download');
-  variable_set('rawpheno_instructions_title', 'Standard Phenotyping Procedure');
-  variable_set('rawpheno_upload_title', 'Drag and Drop phenotypic data collection spreadsheet');
+  $vars = rawpheno_function_terms('variables');
+  $config = rawpheno_function_terms('defaults');
+  variable_set($vars[0], $config['colour']);
+  variable_set($vars[1], $config['rawdata']);
+  variable_set($vars[2], $config['download']);
+  variable_set($vars[3], $config['instructions']);
+  variable_set($vars[4], $config['upload']);
 }
 
 /**
  * Implements hook_uninstall().
  */
 function rawpheno_uninstall() { 
-  // Delete settings variables.
-  if (variable_get('rawpheno_colour_scheme')) {
-    // Holds new column headers.
-    variable_del('rawpheno_colour_scheme');
+  // When module is uninstalled, perform the following:
+  // 1. Delete persistent variables used by module configuration.
+  // 2. Remove materialized view.
+  // 3. Delete cvterms records.
+  
+  // 1.
+  // Delete persistent variables.
+  $vars = rawpheno_function_terms('variables');
+  foreach($vars as $var) {
+    if (variable_get($var)) {
+      variable_del($var);
+    }
   }
   
-  // Rawdata page title.
-  if (variable_get('rawpheno_rawdata_title')) {
-    // Holds new column headers.
-    variable_del('rawpheno_rawdata_title');
-  }  
-  
-  // Download page title.
-  if (variable_get('rawpheno_download_title')) {
-    // Holds new column headers.
-    variable_del('rawpheno_download_title');
-  }
-  
-  // Instructions page title.
-  if (variable_get('rawpheno_instructions_title')) {
-    // Holds new column headers.
-    variable_del('rawpheno_instructions_title');
-  }
-  
-  // Upload page title.
-  if (variable_get('rawpheno_upload_title')) {
-    // Holds new column headers.
-    variable_del('rawpheno_upload_title');
-  }
-  
-  // Remove materialized view on uninstall.
+  // 2.
+  // Remove materialized.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
   $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
-              ->fetchField();
+    ->fetchField();
               
   if (isset($mview_id) && $mview_id > 0) {
     // Delete materialized view.
     tripal_delete_mview($mview_id);
   }
   
+  // 3.
   // Remove cvterm records then controlled vocabulary.
-  $cv_vocabulary = array('phenotype_plant_property_types', 
-                         'phenotype_measurement_types', 
-                         'phenotype_measurement_units');
+  $cv_vocabulary = rawpheno_function_terms('vocabularies');
   
   foreach($cv_vocabulary as $vocabulary) {
     // Delete all cvterm under a controlled vocabulary.
