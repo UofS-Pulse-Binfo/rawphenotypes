@@ -151,7 +151,7 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
         // We don't want to insert empty data.
         // That said, while PHP thinks 0 is empty, we do not.
-        if (!empty($cell_entry)  OR (strval($cell_entry) === 0)) {
+        if (!empty($cell_entry)  OR (strval($cell_entry) === '0')) {
 
           // Get the column header of a cell.
           $cell_colheader = str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]);
