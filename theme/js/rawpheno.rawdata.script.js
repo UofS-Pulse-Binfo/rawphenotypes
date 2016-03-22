@@ -3,9 +3,14 @@
  * Create graphical representation of phenotypic data.
  */
 (function($) {
-  Drupal.behaviors.rawphenoRawData = {
+  Drupal.behaviors.rawphenoRawDataCreateHeatMap = {
     attach: function (context, settings) {
       startColour = 'green';
+      chartTitle = 'Number of Trials per Location';
+      chartXTitle = 'Locations';
+      chartYTitle = 'Growing Season (year)';
+      chartLegendTitle = 'Number of traits';
+      
       // Colour map chart.
       var color = d3.scale.linear()
         .domain([0, 5, 10, 15, 20, 25, 30])
@@ -43,7 +48,7 @@
         .attr('transform', function() {
           return 'translate('+ halfWidth +', 15)';
         })
-        .text('Number of Trials per Location');
+        .text(chartTitle);
       
       // Growing season - y axis
       captions.append('text')
@@ -51,7 +56,7 @@
         .attr('transform', function() {
           return 'translate(10, '+ halfHeight +') rotate(-90)';
         })
-        .text('Growing Season (year)');
+        .text(chartYTitle);
       
       // Location - x axis
       captions.append('text')
@@ -59,7 +64,7 @@
         .attr('transform', function() {
           return 'translate('+ halfWidth +', '+ (height - margin.top) +')';
         })
-        .text('Locations');
+        .text(chartXTitle);
       
       // Legend
       var legend = svg.append('g')
@@ -68,7 +73,7 @@
     
       legend.append('text')
         .attr('class', 'legend-text')
-        .text('Number of traits')
+        .text(chartLegendTitle)
         .attr('y', -5);        
 
       var j = 0;
@@ -128,7 +133,7 @@
             .key(function(d) { return d.year; })
             .sortKeys(d3.descending)
             .key(function(d) { return d.rep; })
-            .sortKeys(d3.ascending)
+            .sortKeys(d3.sort)
             .rollup(function(v) { 
               return d3.sum(v, function(d) { return d.trait; });
             })
@@ -154,7 +159,7 @@
           
           // Container for each location.
           var locationContainerHeight = chartHeight;
-          var locationContainerWidth = Math.round(chartWidth / numberOfLocation) - (barBorder * 2);
+          var locationContainerWidth = Math.round(chartWidth / numberOfLocation) - barBorder;
           
           // Each rect representing rep
           var barHeight = Math.round(locationContainerHeight / numberOfYear);
@@ -239,20 +244,20 @@
             .attr('fill', 'none')
             .attr('width', locationContainerWidth)
             .attr('height', barHeight * numberOfYear);
-        
+
           // Add x axis (location).
           x0.domain(dataByLocation.map(function(d) { return d.key; }));
           chart.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(0,' + barHeight * numberOfYear +')')
-            .call(xAxis);  
-          
+            .call(xAxis);
+
           // Add y axis (year).
           y0.domain(dataByYear.map(function(d) { return d.key; }));
           chart.append('g')
             .attr('class', 'axis')
             .attr('transform', 'translate(1,0)')
-            .call(yAxis);  
+            .call(yAxis);
         }
       ///
       });
