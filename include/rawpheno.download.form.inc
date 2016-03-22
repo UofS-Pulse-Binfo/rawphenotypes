@@ -19,7 +19,7 @@ function rawpheno_download($form, &$form_state) {
   // Navigation button. Related page of download page is rawdata/summary page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => t('View Summary <span>&#10095;</span>'),
+    '#markup' => t('View Summary &#10095;'),
   );  
   
   // Primary select field - an AJAX chained select that updates secondary
@@ -136,19 +136,20 @@ function rawpheno_download_submit($form, &$form_state) {
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
   // it will allow us to handle missing data.
-  $sql = "SELECT 'B'||t2.cvterm_id as id, t2.definition 
-            FROM pheno_plantprop t1 
-            LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
-            WHERE t1.plant_id IN (SELECT plant_id FROM pheno_plantprop WHERE value IN (:location))
-        UNION
-          SELECT 'C'||t2.cvterm_id as id, t2.definition 
-            FROM pheno_measurements t1 
-            LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
-            WHERE t1.plant_id IN (SELECT plant_id FROM pheno_plantprop WHERE value IN (:location)) 
-              AND t2.cvterm_id IN (:traits)
-        GROUP BY t2.cvterm_id, t2.definition";
+  $sql = "SELECT 'B'||t2.cvterm_id AS id, t2.definition 
+    FROM {pheno_plantprop} t1 
+      LEFT JOIN {chado.cvterm} t2 ON t2.cvterm_id=t1.type_id 
+    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
+    UNION
+    SELECT 'C'||t2.cvterm_id AS id, t2.definition 
+    FROM {pheno_measurements} t1 
+      LEFT JOIN {chado.cvterm} t2 ON t2.cvterm_id=t1.type_id 
+    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location)) 
+      AND t2.cvterm_id IN (:traits)
+    GROUP BY t2.cvterm_id, t2.definition";
   $result = db_query($sql, array(':location' => $location, ':traits' => $traits))->fetchAll();
   $header = array('A0' => 'Name');
+  
   foreach ($result as $r) {
     $header[ $r->id ] = $r->definition;
   }
@@ -160,13 +161,13 @@ function rawpheno_download_submit($form, &$form_state) {
   // row is Name - containing the stock name.
   // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
   // Thus first we select the name. Note that  the tid is 0 because this doesn't have a cvterm (ie: not a trait).
-  $sql = "SELECT t2.plant_id AS id, '0' as tid, 'Name' AS def, t1.name AS value, 'A' as grp
+  $sql = "SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
     FROM {chado.stock} AS t1 
       INNER JOIN {pheno_plant} AS t2 USING(stock_id)
     WHERE t2.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))"
     // Then we add on the required information (ie: plot, entry, rep, location)
     ." UNION
-    SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS value, 'B' as grp
+    SELECT t1.plant_id AS id, t1.type_id AS tid, t2.definition AS def, t1.value AS value, 'B' AS grp
     FROM {pheno_plantprop} AS t1
       INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))"

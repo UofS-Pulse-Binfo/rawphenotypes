@@ -124,7 +124,64 @@
       ?>
       
       <div id="container-upload">
-        <?php print drupal_render_children($form); ?>
+        <div class="window-info">  
+          <div id="txt-help-text">
+            <ul>
+              <li>
+                This form will guide you through uploading your raw phenotypic data. Your data should be in a 
+                <em>Microsoft Excel Workbook (XLSX) following the format described on the 
+                <a href="<?php print $page_url['rawpheno_instructions'] ?>" target="_blank">Instructions Page</a></em>.
+              </li> 
+            
+              <li>
+                In the second step we ask that you <em>describe any additional phenotypes</em>.
+              </li>
+            
+              <li>
+                Finally, the spreadsheet is saved to KnowPulse, at which point the 
+                <em>phenotypic data is available through 
+                <a href="<?php print $page_url['rawpheno_rawdata'] ?>" target="_blank">summaries</a> and 
+                <a href="<?php print $page_url['rawpheno_download'] ?>" target="_blank">downloads</a></em>.
+              </li>
+            </ul>
+          </div>
+        </div>
+        <hr class="button-collapse-infowindow window-on" />
+        
+        <?php 
+        if ($form['current_stage']['#value'] == 'save') { 
+      
+        print drupal_render($form['notice']);
+        ?>
+          
+        <div class="container-status">
+          <?php print drupal_render($form['status']); ?>
+          <div class="container-buttons">
+            <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons">
+              <span>Upload New Data</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_download']; ?>" target="_blank" class="nav-buttons">
+              <span>Download Data</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_rawdata']; ?>" target="_blank" class="nav-buttons">
+              <span>Data Summary</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_instructions']; ?>" target="_blank" class="nav-buttons">
+              <span>Standard Procedure</span>
+            </a>
+            
+            <div style="clear: both;"></div>
+          </div>
+        </div>
+        
+        <?php 
+        }
+        
+        print drupal_render_children($form);  
+        ?>
       </div>
       
       <?php 
@@ -138,7 +195,7 @@
       <div id="container-instructions">
         <div id="phenotype-page">
           <div id="container-search-result"></div>
- 
+          
           <div id="tabs">
             <ul>
               <li><a href="#fragment-1">Standard Procedure</a></li>

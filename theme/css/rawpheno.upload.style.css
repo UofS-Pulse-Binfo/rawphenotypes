@@ -68,24 +68,30 @@ em {
 /* Right align the next button */
 input#edit-next-step {
   float: right;
+  font-size: 1em;
+  height: 40px;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin: 10px 0 0 0;
 }
+
 input#edit-next-step.form-button-disabled {
   display: none;
 }
 
 /* Close window error */
 h3 a, h3 a:link, h3 a:active, h3 a:visited {
-  float: right;
-  font-size: 0.8em;
-  margin: 0 20px 0 0;
   background-color: #666666;
   border: 1px solid black;
   color: #FFFFFF;
-  padding: 5px 7px 3px 7px;
+  float: right;
+  font-size: 0.8em;
   font-family: sans-serif;
   font-size: 0.6em;
   font-weight: 100;
   letter-spacing: 1px;
+  margin: 0 20px 0 0;
+  padding: 5px 7px 3px 7px;
   text-decoration: none;
 }
 
@@ -97,4 +103,9 @@ h3 a:hover {
   -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
   -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
   box-shadow:         1px 1px 5px 1px #CCCCCC;
+}
+
+/* Error message box */
+.messages {
+  margin: 0 0 15px 0 !important;
 }

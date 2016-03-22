@@ -103,4 +103,3 @@ function rawpheno_function_headers($type) {
 
   return $arr_requested_trait;
 }
- 

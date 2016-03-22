@@ -34,23 +34,14 @@ function rawpheno_upload_form_master($form, &$form_state) {
     $form_state['stage'] = 'save';
   }
   
-  // Display some basic information/guidance.
-  $form['help']['help_text'] = array(
-    '#type' => 'markup',
-    '#markup' => '<div id="txt-help-text"><ul>'
-    . t('<li>This form will guide you through uploading your raw phenotypic data. Your data should be in a <em>Microsoft Excel Workbook (XLSX) following the format described on the <a href="@instructions-page" target="_blank">Instructions Page</a></em>.</li> 
-         <li>In the second step we ask that you <em>describe any additional phenotypes</em>. </li>
-         <li>Finally, the spreadsheet is saved to KnowPulse, at which point the <em>phenotypic data is available through <a href="@summary-page" target="_blank">summaries</a> and <a href="@download-page" target="_blank">downloads</a></em>.</li>',
-      array(
-        '@instructions-page' => url('phenotypes/raw/instructions'),
-        '@summary-page' => url('phenotypes/raw'),
-        '@download-page' => url('phenotypes/raw/download'),
-      ))
-    .'</ul></div><hr />'
-  );
-  
   // Add the stage tracker/header.
   $form = rawpheno_get_header($form, $form_state);
+
+  // Stage indicator for theme function.
+  $form['current_stage'] = array(
+    '#type' => 'value',
+    '#value' => $form_state['stage'],
+  );
 
   // Add the next button for all but the last step.
   if ($form_state['stage'] != 'save') {
@@ -105,27 +96,27 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
   
   // Create an instance of DragNDrop Upload.
   // SETTINGS:
-  //   file_upload_max_size: max file size allowed
-  //   upload_location: destination of file
-  //   upload_event: manual - show an upload button or auto - uploads after drag drop
-  //   upload_validators: allowed file extensions
-  //   upload_button_text: label of upload button
-  //   droppable_area_text: text in drop area
-  //   progress_indicator: none, throbber or bar
-  //   progress_message: message to display while processing
-  //   allow_replace: allow the browse button to be displayed even the when there is a already a file
-  //   standard_upload: show browse button or not
+  //  #file_upload_max_size: max file size allowed
+  //  #upload_location: destination of file
+  //  #upload_event: manual - show an upload button or auto - uploads after drag drop
+  //  #upload_validators: allowed file extensions
+  //  #upload_button_text: label of upload button
+  //  #droppable_area_text: text in drop area
+  //  #progress_indicator: none, throbber or bar
+  //  #progress_message: message to display while processing
+  //  #allow_replace: allow user to replace file by drag and drop another file
+  //  #standard_upload: show browse button or not
   $form['dnd'] = array(
-    '#type' => 'dragndrop_upload',
+    '#type'                 => 'dragndrop_upload',
     '#file_upload_max_size' => '10M',
-    '#upload_location' => 'public://',
-    '#upload_event' => 'auto',
-    '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
-    '#droppable_area_text' => t('Drag Phenotype Data Collection file here'),
-    '#progress_indicator' => 'throbber',
-    '#progress_message' => 'Please wait...',
-    '#allow_replace' => 1,
-    '#standard_upload' => 1,
+    '#upload_location'      => 'public://',
+    '#upload_event'         => 'auto',
+    '#upload_validators'    => array('file_validate_extensions' => array('xlsx xls')),
+    '#droppable_area_text'  => t('Drag Phenotype Data Collection file here'),
+    '#progress_indicator'   => 'throbber',
+    '#progress_message'     => 'Please wait...',
+    '#allow_replace'        => 1,
+    '#standard_upload'      => 1,
   );
 
   return $form;  
@@ -186,7 +177,6 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
   
   // Otherwise, we need a form!
   // Main fieldset container for form elements.
-  
   $form['xls_review_fldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Check the traits that you want to describe and save'),
@@ -327,54 +317,11 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
   
   // We make a DIV which the progress bar can occupy. You can see this in use
   // in ajax_example_progressbar_callback().
-  $form['container_status'] = array(
+  $form['status'] = array(
     '#type' => 'markup',
-    '#prefix' => '<div class="container-status">',
-    '#suffix' => '</div>',  
+    '#markup' => theme('progress_bar', array('percent' => $percent_complete, 'message' => $message)),
   );
-    $form['container_status']['status'] = array(
-      '#type' => 'markup',
-      '#markup' => theme('progress_bar', array('percent' => $percent_complete, 'message' => $message)),
-    );
   
-  $form['container_status']['container_buttons'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<div class="container-buttons">',
-    '#suffix' => '</div>',
-  ); 
-  
-    $form['container_status']['container_buttons']['upload'] = array(
-      '#type' => 'markup',
-      '#markup' => t('<div class="nav-buttons">
-                      <a href="@upload" target="_blank">Upload New Data</a>
-                      </div>', array('@upload' => url('phenotypes/raw/upload'))),
-    ); 
-  
-    $form['container_status']['container_buttons']['download'] = array(
-      '#type' => 'markup',
-      '#markup' => t('<div class="nav-buttons">
-                      <a href="@upload" target="_blank">Download Data</a>
-                      </div>', array('@upload' => url('phenotypes/raw/download'))),
-    ); 
-    
-    $form['container_status']['container_buttons']['summary'] = array(
-      '#type' => 'markup',
-      '#markup' => t('<div class="nav-buttons">
-                      <a href="@upload" target="_blank">Data Summary</a>
-                      </div>', array('@upload' => url('phenotypes/raw'))),
-    ); 
-
-    $form['container_status']['container_buttons']['instructions'] = array(
-      '#type' => 'markup',
-      '#markup' => t('<div class="nav-buttons">
-                      <a href="@upload" target="_blank">Standard Procedure</a>
-                      </div>', array('@upload' => url('phenotypes/raw/instructions'))),
-    ); 
-    
-    $form['container_status']['container_buttons']['clear'] = array(
-      '#type' => 'markup',
-      '#markup' => '<div style="clear:left"> </div>',
-    ); 
   return $form;
 }
 

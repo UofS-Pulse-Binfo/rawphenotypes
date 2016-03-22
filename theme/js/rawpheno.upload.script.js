@@ -4,41 +4,27 @@
  */
 (function($) {
   Drupal.behaviors.rawphenoToggleWindows = {
-    attach: function (contex, settings) {
-      // Allow user to collapse upload instructions message box.
-      $('hr').click(function() {
-        var helpTextWindow = $('#txt-help-text');
-     
-        if ($(this).attr('class') == 'icon-up') {
-          // Help window text open.
-          helpTextWindow.stop().animate({height : '140px'}, 300, function() { 
-            $('hr').removeClass('icon-up');
-          });
-        } 
-        else {
-          // Help window text collapse.
-          helpTextWindow.stop().animate({height : '0px'}, 300, function() { 
-            $('hr').addClass('icon-up');
-          });
-        }
-      });
-         
-      // Allow user to close error window
-      $('h3 a').click(function(event) {
-        event.preventDefault();
-        var validationResultWindow = $('div.rawpheno-validate-progress');
-        
-        if ($(this).text() == 'Close window') {
-          validationResultWindow.stop().animate({height: '44px'}, 300, function() {
-            $('h3 a').text('Open window');
+    attach: function (context, settings) {
+      // Allow user to collapse upload information window.
+      $('hr.button-collapse-infowindow').click(function() {
+        var selected = $(this);
+        var divContainer = selected.prev('div.window-info');
+        if ($(this).hasClass('window-on')) {
+          divContainer.stop().animate({height : '0'}, 300, function() {
+            selected.removeClass('window-on');
           });
         }
         else {
-          validationResultWindow.stop().animate({height: '100%'}, 300, function() {
-            $('h3 a').text('Close window');
+          // Get the height of div.
+          var h = divContainer.css('height', '100%').height();
+          divContainer.css('height', 0);
+          
+          // Use the height to animate.
+          divContainer.stop().animate({height : h}, 300, function() {
+            selected.addClass('window-on');
           });
         }
-      });
+      }); 
     }
   };
 }(jQuery));

@@ -95,9 +95,8 @@ ol.progress-meter li.todo:before {
 
 /* Text help text */
 #txt-help-text {
-  border-bottom: 1px solid #AAAAAA;
   font-size: 0.95em;
-  height: 135px;
+  height: 120px;
   margin: 0;
   overflow: hidden;
   padding: 0;
@@ -112,7 +111,7 @@ ol.progress-meter li.todo:before {
   display: inline;
   float: left;
   list-style-type: none;
-  height: 120px;
+  height: 100px;
   margin: 0 5px;
   padding: 0 10px 0 40px;
   width: 240px;
@@ -120,6 +119,8 @@ ol.progress-meter li.todo:before {
 
 #txt-help-text ul li:nth-child(1) {
   background: url('../img/01_stage.gif') no-repeat left top;
+  margin-left: 20px;
+  width: 260px;
 }
 
 #txt-help-text ul li:nth-child(2) {
@@ -128,26 +129,12 @@ ol.progress-meter li.todo:before {
   border-left: 1px solid #CCCCCC;
   border-right: 1px solid #CCCCCC;
   padding-left: 50px;
+  width: 210px;
 }
 
 #txt-help-text ul li:nth-child(3) {
   background: url('../img/03_stage.gif') no-repeat left top;
   width: 230px;
-}
-
-/* Horizontal clickable to collapse the help window */
-hr {
-	background: url('../img/icon-up.gif') no-repeat center;
-  border: none; 
-	cursor: pointer;
-  height: 25px;
-	margin: 0;
-	margin-top: -12px;
-	margin-bottom: 11px;
-}
-
-.icon-up {
-  background: url('../img/icon-down.gif') no-repeat center;	
 }
 
 /* Wait animation of file upload */

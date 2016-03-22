@@ -71,12 +71,10 @@
 
 /* AJAX wait animation */
 div.droppable-controls {
-  top: -150px;
-  left: 10px;
-  margin: 0 auto;
+  margin: 380px auto 0 auto;
   padding: 0;
   text-align: center;
-  position: relative;
+  position: absolute;
   width: 150px;
 }
 
@@ -97,14 +95,13 @@ div.droppable-controls {
   display: none; 
 }
 
-
-/* stage 01 error message */
-.messages {
-  margin: 0 0 15px 0 !important;
+.rawpheno-validate-progress {
+  border: none !important;
+  padding: 0 !important;
 }
 
-.rawpheno-validate-progress {
-  padding: 0 !important;
+#window-validation-result {
+  border: 1px solid #AAAAAA;
 }
 
 div.rawpheno-validate-progress h3 {
