@@ -208,7 +208,7 @@
             <div id="fragment-1">
               <div class="container-link">
                 <div class="download-template-instructions"><em>The following excel document should be used as a template for collecting phenotypic data:</em></div>
-                <a href="../../sites/default/files/AGILE-PhenotypeDataCollection-v5.xlsx" target="_blank" class="button">Download</a> Download AGILE - Phenotype Data Collection (AGILE-PhenotypeDataCollection-v5.xlsx)
+                <a href="../../sites/default/files/AGILE-PhenotypeDataCollection-v5.xlsx.zip" target="_blank" class="button">Download</a> Download AGILE - Phenotype Data Collection (AGILE-PhenotypeDataCollection-v5.xlsx)
               </div>
        
               <h3>Spreadsheet Tips</h3>

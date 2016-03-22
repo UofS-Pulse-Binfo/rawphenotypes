@@ -175,11 +175,11 @@ function rawpheno_function_terms($type) {
   switch($type) {
     case 'defaults':
       // Default colour scheme and heading/title.
-      return array('colour'       => '#304356',
-                   'rawdata'      => 'Phenotypic data available through KnowPulse',
-                   'download'     => 'Select locations and traits that you want to download',
+      return array('colour' => '#304356',
+                   'rawdata' => 'Phenotypic data available through KnowPulse',
+                   'download' => 'Select locations and traits that you want to download',
                    'instructions' => 'Standard Phenotyping Procedure',
-                   'upload'       => 'Drag and Drop phenotypic data collection spreadsheet',);
+                   'upload' => 'Drag and Drop phenotypic data collection spreadsheet',);
       break;
       
     case 'scales':
@@ -188,7 +188,7 @@ function rawpheno_function_terms($type) {
                    2 => 'Leaning',
                    3 => 'Most plants at 45 degrees angle',
                    4 => 'All plants 10-45 degrees from ground',
-                   5 => 'Most plants flat/prostrate');
+                   5 => 'Most plants flat/prostrate',);
       break;
     
     case 'variables':
@@ -197,27 +197,27 @@ function rawpheno_function_terms($type) {
                    'rawpheno_rawdata_title',
                    'rawpheno_download_title', 
                    'rawpheno_instructions_title', 
-                   'rawpheno_upload_title');
+                   'rawpheno_upload_title',);
       break;
     
     case 'vocabularies':
       // Controlled vocabularies.
       return array('phenotype_plant_property_types', 
                    'phenotype_measurement_types', 
-                   'phenotype_measurement_units');
+                   'phenotype_measurement_units',);
       
       break;
     
     case 'units':
       // Units available in the spreadsheet.
-      return array('date'  => 'Date',
+      return array('date' => 'Date',
                    'count' => 'Count',
-                   'days'  => 'Days',
-                   'cm'    => 'Centimeters',
+                   'days' => 'Days',
+                   'cm' => 'Centimeters',
                    'y/n/?' => 'Yes, No or ? - Not sure',
                    'scale' => 'Scale: 1-5',
-                   'g'     => 'Grams (g)',
-                   'text'  => 'Alphanumeric');
+                   'g' => 'Grams (g)',
+                   'text' => 'Alphanumeric',);
       break;
   }
 }
@@ -231,6 +231,7 @@ function rawpheno_install() {
   // 2. Insert cvterms property type, measurement unit and measurement types. 
   // 3. Create materialized view.
   // 4. Set default values of module configuration.
+  // 5. Add data collection spreadsheet into public:// directory.
   
   // 1.
   // From standard phenotype data collection, scale is 1 - 5.
@@ -295,11 +296,11 @@ function rawpheno_install() {
     
     // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
     foreach($arr_terms[$cv_i] as $term_name => $term_def) {
-      $arr_terms_param = array('id'         => 'tripal:'.$term_name,
-                               'name'       => $term_name,
+      $arr_terms_param = array('id' => 'tripal:'.$term_name,
+                               'name' => $term_name,
                                'definition' => $term_def,
-                               'cv_name'    => $cv_name);
-      
+                               'cv_name' => $cv_name);
+                               
       // Insert cvterm.                         
       tripal_insert_cvterm($arr_terms_param);  
     }
@@ -314,6 +315,7 @@ function rawpheno_install() {
 
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
+  // NOTE: trait count includes planting date. 
   $mv_sql = "SELECT t1.plant_id, 
       t2.value AS location, 
       t3.value AS rep, 
@@ -364,6 +366,20 @@ function rawpheno_install() {
   variable_set($vars[2], $config['download']);
   variable_set($vars[3], $config['instructions']);
   variable_set($vars[4], $config['upload']);
+    
+  // 5.
+  // Add data collection spreadsheet to public:// directory, 
+  // and link this file for download in instructions page.
+  $destination = file_default_scheme() . '://';
+  if (file_prepare_directory($destination, FILE_MODIFY_PERMISSIONS)) {
+    // Add this file if directory is writable.
+    // File is in zip format as it is more friendly for download than xlsx.
+    $file = 'AGILE-PhenotypeDataCollection-v5.xlsx.zip';
+    $source = drupal_get_path('module', 'rawpheno') . '/theme/' . $file;
+    // Copy file without creating an entry in drupal database.
+    // If file is present, replace it with the same file.
+    file_unmanaged_copy($source, $destination, FILE_EXISTS_REPLACE);
+  }
 }
 
 /**
@@ -385,7 +401,7 @@ function rawpheno_uninstall() {
   }
   
   // 2.
-  // Remove materialized.
+  // Remove materialized view.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
   $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
