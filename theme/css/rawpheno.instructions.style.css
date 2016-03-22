@@ -258,3 +258,8 @@ a.button:hover {
   font-weight:1.01em;
   padding-bottom: 10px;
 }
+
+/* Error message box */
+.messages {
+  margin: 0 0 15px 0 !important;
+}

@@ -7,7 +7,7 @@ function rawpheno_instructions($form, &$form_state) {
   // Navigation button. Related page of instructions page is upload page.
   $form['page_button'] = array(
     '#type' => 'markup',
-    '#markup' => t('Upload Data <span>&#10095;</span>'),
+    '#markup' => t('Upload Data &#10095;'),
   );
   
   // Search field with autocomplete feature.
@@ -32,13 +32,13 @@ function rawpheno_instructions($form, &$form_state) {
     '#attributes' => array('id' => array('traits-json'))
   );  
   
+  // Attach JQuery UI library.
+  $form['#attached']['library'][] = array('system', 'ui.tabs');
+  
   // Attach CSS and JavaScript.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.instructions.style.css');
   $form['#attached']['js']  = array($path . 'js/rawpheno.instructions.script.js');
-  
-  // Attach JQuery UI library.
-  $form['#attached']['library'][] = array('system', 'ui.tabs');
  
   return $form;
 }
