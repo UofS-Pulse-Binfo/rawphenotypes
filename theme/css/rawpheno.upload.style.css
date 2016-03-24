@@ -27,40 +27,6 @@
   font-family: Georgia,"Times New Roman",Times,serif;
 }
 
-.error-message-cell {
-  background-color: #FFFFFF;
-  border: 1px solid #969696;
-  cursor: pointer;
-  display: inline;
-  float: left;
-  font-weight: normal;
-  margin: 3px 1px;
-  padding: 2px 7px;
-  text-align: center;
-}
-
-.error-message-cell:hover {
-  -moz-box-shadow:    1px 1px 1px 1px #CCCCCC;
-  -webkit-box-shadow: 1px 1px 1px 1px #CCCCCC;
-  box-shadow:         1px 1px 1px 1px #CCCCCC;
-  
-  border: 1px solid #666666;
-}
-
-.error-message-text, .error-message-em {
-  clear: left;  
-  display: block;
-  font-weight: normal;
-  font-size: 1.2em;
-  margin: 0;  
-  padding: 0;
-}
-
-.error-message-em {
-  font-weight: normal;
-  font-size: 1.5em;
-}
-
 em {
   font-weight: bold;
 }
@@ -68,41 +34,11 @@ em {
 /* Right align the next button */
 input#edit-next-step {
   float: right;
-  font-size: 1em;
-  height: 40px;
-  padding-left: 20px;
-  padding-right: 20px;
   margin: 10px 0 0 0;
 }
 
 input#edit-next-step.form-button-disabled {
   display: none;
-}
-
-/* Close window error */
-h3 a, h3 a:link, h3 a:active, h3 a:visited {
-  background-color: #666666;
-  border: 1px solid black;
-  color: #FFFFFF;
-  float: right;
-  font-size: 0.8em;
-  font-family: sans-serif;
-  font-size: 0.6em;
-  font-weight: 100;
-  letter-spacing: 1px;
-  margin: 0 20px 0 0;
-  padding: 5px 7px 3px 7px;
-  text-decoration: none;
-}
-
-h3 a:hover {
-  border: 1px solid #666666;
-  color: #FFFFFF;
-  text-decoration: none;
-  
-  -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
-  -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
-  box-shadow:         1px 1px 5px 1px #CCCCCC;
 }
 
 /* Error message box */

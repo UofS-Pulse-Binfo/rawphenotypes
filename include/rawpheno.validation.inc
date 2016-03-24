@@ -195,6 +195,7 @@ function validator_column_exists_validate_header($header) {
   // First check that all the essential traits are there.
   $delformat_header = array();
   $nospace_header = array();
+  
   foreach ($header as $h) {
     $delformat_header[] = $h['no units'];
     $nospace_header[] = str_replace(' ','', $h['no format']);
@@ -216,6 +217,7 @@ function validator_column_exists_validate_header($header) {
     'Days till Harvest',
     'Diseases Present'
   );
+  
   $missing_traits = array_diff($essential_traits, $delformat_header);
   
   if (!empty($missing_traits)) {

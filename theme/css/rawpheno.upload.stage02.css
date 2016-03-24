@@ -56,58 +56,10 @@ input[type=checkbox] {
   -webkit-transform: scale(1.2);
 }
 
+/* Form fields elements */
 .container-form-wrapper {
   background-color: #FFFFFF;
   padding: 20px 30px;
-}
-
-#container-fields {
-  background-color: #FAFAFA;
-  border: 1px solid #AAAAAA;
-  padding: 40px;
-  
-  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
-  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
-  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
-  
-  margin-bottom: 20px; 
-}
-
-.row-shade, .row-plain {
-  border: 1px solid #AAAAAA;
-  padding: 20px 20px 10px 20px;
-}
-
-p {
-  font-size: 1.2em;
-  margin: 0;
-  padding: 0;
-}
-
-.row-shade {
-  background-color: #D1D1D1;
-}
-
-.row-plain {
-  background-color: #EAEAEA ;
-}
-
-.form-left {
-  float: left;
-  width: 45%
-  min-width: 450px;
-  margin-right: 40px;
-}
-
-.form-right {
-  float: left;
-  width: 45%;
-}
-
-/* Progress bar when check box is clicked */
-.ajax-progress {
-  float: right;
-  margin-right: 20px;
 }
 
 div.container-trait:nth-child(even) {
@@ -134,4 +86,45 @@ div.container-trait div.form-item {
   border: none;
   margin-top: 0 !important;
   padding: 10px 45px;
+}
+
+/* Progress bar when check box is clicked */
+.ajax-progress {
+  float: right;
+  margin-right: 20px;
+}
+
+/* Traits container */
+.error-message-cell {
+  background-color: #FFFFFF;
+  border: 1px solid #969696;
+  cursor: pointer;
+  display: inline;
+  float: left;
+  font-weight: normal;
+  margin: 3px 1px;
+  padding: 2px 7px;
+  text-align: center;
+}
+
+.error-message-cell:hover {
+  -moz-box-shadow:    1px 1px 1px 1px #CCCCCC;
+  -webkit-box-shadow: 1px 1px 1px 1px #CCCCCC;
+  box-shadow:         1px 1px 1px 1px #CCCCCC;
+  
+  border: 1px solid #666666;
+}
+
+.error-message-text, .error-message-em {
+  clear: left;  
+  display: block;
+  font-weight: normal;
+  font-size: 1.2em;
+  margin: 0;  
+  padding: 0;
+}
+
+.error-message-em {
+  font-weight: normal;
+  font-size: 1.5em;
 }

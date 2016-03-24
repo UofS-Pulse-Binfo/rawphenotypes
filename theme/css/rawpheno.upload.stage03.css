@@ -11,26 +11,7 @@ a.button:hover {
   background: #DEDEDE none repeat scroll 0% 0%;
 }
 
-.upload-buttons.step3 {
-  display: inline-flex;
-  justify-content: space-between;
-  width: 94%;
-  margin: 40px 20px;
-  text-align: center;
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
-.upload-buttons.step3 img {
-  border: 0;
-  width: 80px;
-  height: 80px;
-}
-
-.messages {
-  margin: 0 0 15px 0 !important;
-}
-
+/* Main container of the progress bar */
 .container-status {
   background-color: #F7F7F7;
   border: 1px solid #CCCCCC;
@@ -38,6 +19,7 @@ a.button:hover {
   padding: 25px 25px 0 25px;
 }
 
+/* Links to the rest of the pages */
 .container-buttons {
   border-top: 1px solid #CCCCCC;
   padding: 30px 0 20px 0;
@@ -75,6 +57,7 @@ a.nav-buttons span {
   padding: 5px 0;
 }
 
+/* Progress bar */
 .progress {
   background-color: #FFFFFF;
   padding: 20px;

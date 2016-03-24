@@ -127,6 +127,8 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     ),
   );
   
+  drupal_add_library('system', 'drupal.collapse');
+  
   return $form;  
 }
 
