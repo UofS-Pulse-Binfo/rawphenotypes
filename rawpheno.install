@@ -184,11 +184,15 @@ function rawpheno_function_terms($type) {
       
     case 'scales':
       // Scale equivalent for scale units.
-      return array(1 => 'Vertical/upright', 
-                   2 => 'Leaning',
-                   3 => 'Most plants at 45 degrees angle',
-                   4 => 'All plants 10-45 degrees from ground',
-                   5 => 'Most plants flat/prostrate',);
+      return array(
+        'Lodging (Scale: 1-5) upright - lodged' => array(
+          1 => 'Vertical/upright', 
+          2 => 'Leaning',
+          3 => 'Most plants at 45 degrees angle',
+          4 => 'All plants 10-45 degrees from ground',
+          5 => 'Most plants flat/prostrate',
+        )
+      );
       break;
     
     case 'variables':
@@ -227,27 +231,13 @@ function rawpheno_function_terms($type) {
  */
 function rawpheno_install() {
   // After custom tables are created, perform the following:
-  // 1. Populate pheno_scale_member table.
-  // 2. Insert cvterms property type, measurement unit and measurement types. 
+  // 1. Insert cvterms property type, measurement unit and measurement types. 
+  // 2. Populate pheno_scale_member table.
   // 3. Create materialized view.
   // 4. Set default values of module configuration.
   // 5. Add data collection spreadsheet into public:// directory.
   
   // 1.
-  // From standard phenotype data collection, scale is 1 - 5.
-  $scale_value = rawpheno_function_terms('scales');
-  
-  // Insert scale values 1 - 5                    
-  foreach($scale_value as $i => $value) {
-    $tmp = db_insert('pheno_scale_member')
-      ->fields(array('member_id' => $i, 
-                     'scale_id' => $i, 
-                     'code' => $i, 
-                     'value' => $value))
-      ->execute();
-  }
-  
-  // 2.
   // Create cvterm entry for each traits.
   // Array to hold array of cvterms.
   $pp_terms = array();
@@ -306,6 +296,27 @@ function rawpheno_install() {
     }
   }
 
+  // 2.
+  // From standard phenotype data collection, scale is 1 - 5.
+  $scales = rawpheno_function_terms('scales');
+  
+  // Insert scale values 1 - 5       
+  foreach ($scales as $measurement_name => $scale) {
+    $measurement = tripal_get_cvterm(array('name' => $measurement_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+    if ($measurement) {
+      $measurement_id = $measurement->cvterm_id;;
+      foreach($scale as $code => $value) {
+        $tmp = db_insert('pheno_scale_member')
+          ->fields(array(
+             'scale_id' => $measurement_id, 
+             'code' => $code, 
+            'value' => $value
+          ))
+          ->execute();
+      }
+    }
+  }
+  
   // 3.
   // Create materialized view used in phenotypes/rawdata.
   // Using Tripal: tripal_add_mview().

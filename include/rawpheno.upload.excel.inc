@@ -681,6 +681,8 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
  */
 function rawpheno_get_trait_id($header) {
   
+  $header = str_replace(array("\n", "\r", "  "), ' ', $header);
+  
   $type = tripal_get_cvterm(array('name' => $header, 'cv_id' => array('name' => 'phenotype_measurement_types')));
   
   if ($type) {
