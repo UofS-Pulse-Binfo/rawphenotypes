@@ -167,7 +167,7 @@
           
           // X axis (locations)
           var x0 = d3.scale.ordinal()
-            .rangeRoundBands([0, chartWidth]);
+            .rangeRoundBands([0, locationContainerWidth * numberOfLocation]);
           var xAxis = d3.svg.axis()
             .scale(x0)
             .orient('bottom');
@@ -218,8 +218,6 @@
             })                  
             .on('mouseout', function(d) {       
               d3.select(this)
-                .transition() 
-                .delay(200)
                 .style('opacity', 1);  
               infoBox.transition()        
                 .style('opacity', 0);   
