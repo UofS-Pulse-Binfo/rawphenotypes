@@ -426,14 +426,14 @@ function rawpheno_rawdata_summary_json() {
                     ->fetchField();
           
           // Less one to exclude trait Planting Data (date).
-          $trait_count = (isset($traits) && !empty($traits)) ? $traits : 0;
+          $trait_count = (isset($traits) && !empty($traits)) ? ($traits - 1) : 0;
           
           // Create a json entry with the following keys:
           // location, year, rep and trait.
           $arr_json[] = array('location' => $location,
                               'year' => $year,
                               'rep' => $rep,
-                              'trait' => ($trait_count - 1));
+                              'trait' => $trait_count);
         }
       }
     }

@@ -360,8 +360,7 @@ function rawpheno_install() {
       'type' => 'varchar',
       'length' => 255),
     'total_count' => array (
-      'type' => 'varchar',
-      'length' => 255),
+      'type' => 'int'),
     )
   );
   
