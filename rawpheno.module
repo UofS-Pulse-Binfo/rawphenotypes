@@ -91,83 +91,19 @@ function rawpheno_menu() {
     'weight' => 3,
   );
   
-  // ADMIN COLOUR SETTINGS PAGE
+  // ADMININSTRATIVE PAGE OF THIS MODULE
   // A page for changing page colour and page title.
   $items['admin/config/user-interface/rawpheno_testadmin'] = array(
     'title' => 'Rawpheno Page Configurations',
     'description' => 'Apply a colour scheme and change page title.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('rawpheno_colourscheme'),
+    'page arguments' => array('rawpheno_admin_interface'),
     'access arguments' => array('access administration pages'),
+    'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
   
   return $items;
-}
-
-/**
- * Function callback: construct settings form to change colour scheme and page title.
- */
-function rawpheno_colourscheme($form, &$form_state) {
-  $form['rawpheno_colour_scheme'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Enter colour:'),
-    '#default_value' => variable_get('rawpheno_colour_scheme'),
-    '#size' => 40,
-    '#maxlength' => 20,
-    '#description' => t('eg. HEX: #304356, blue | <a href="@adobe-kuler" target="_blank">get more colours here</a>', 
-                        array('@adobe-kuler' => url('https://color.adobe.com/'))),
-    '#required' => TRUE,
-  );
-  
-  // Headers and title
-  $form['fieldset'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Page title'),
-    '#collapsed' => FALSE,
-  );
-    
-    // Rawdata page.
-    $form['fieldset']['rawpheno_rawdata_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Title of Rawdata page:'),
-      '#default_value' => variable_get('rawpheno_rawdata_title'),
-      '#size' => 120,
-      '#maxlength' => 220,
-      '#required' => TRUE,
-    );
-    
-    // Download Page.
-    $form['fieldset']['rawpheno_download_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Title of Download page:'),
-      '#default_value' => variable_get('rawpheno_download_title'),
-      '#size' => 120,
-      '#maxlength' => 220,
-      '#required' => TRUE,
-    );  
-    
-    // Instructions page.
-    $form['fieldset']['rawpheno_instructions_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Title of Instructions page:'),
-      '#default_value' => variable_get('rawpheno_instructions_title'),
-      '#size' => 120,
-      '#maxlength' => 220,
-      '#required' => TRUE,
-    );  
-  
-    // Upload page.
-    $form['fieldset']['rawpheno_upload_title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Title of Upload page:'),
-      '#default_value' => variable_get('rawpheno_upload_title'),
-      '#size' => 120,
-      '#maxlength' => 220,
-      '#required' => TRUE,
-    );  
-  
-  return system_settings_form($form);
 }
 
 /**
@@ -256,6 +192,7 @@ function rawpheno_theme($existing, $type, $theme, $path) {
       'template' => 'rawpheno_upload_validation_report',
       'path' => $path . '/theme',
     );
+    
   return $items;
 }
 
@@ -347,7 +284,7 @@ function rawpheno_rawdata_summary_json() {
   // Minimum rep per year per location.
   $min_set = 3;
   // Select all location present in the materialized view.
-  $sql_location = "SELECT DISTINCT location FROM {chado.rawpheno_rawdata_mview}
+  $sql_location = "SELECT DISTINCT location FROM chado.rawpheno_rawdata_mview
     ORDER BY location ASC";
 
   $result_location = db_query($sql_location);
@@ -364,7 +301,7 @@ function rawpheno_rawdata_summary_json() {
     for($i = 0; $i < 2; $i++) {
       $range = ($i == 0) ? 'year' : 'rep';
       // Query materialized view.
-      $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM {chado.rawpheno_rawdata_mview}
+      $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
         ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
         
       $r = db_query($sql_range);
@@ -416,9 +353,9 @@ function rawpheno_rawdata_summary_json() {
           
           // Get the entry with the most traits for this particular location, year and rep.
           $sql = "SELECT total_count
-            FROM {chado.rawpheno_rawdata_mview}
+            FROM chado.rawpheno_rawdata_mview
             WHERE location = :location AND SUBSTRING(planting_date, 1, 4) = :year AND rep = :rep
-            ORDER BY total_count DESC LIMIT 1";  
+            ORDER BY total_count DESC LIMIT 1";
           
           $traits = db_query($sql, array(':year' => $year, 
                                          ':rep' => $rep, 

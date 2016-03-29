@@ -9,7 +9,7 @@
  * - $rel_url: An array of urls. Each page has a link to a related page.
  * - $theme_colour: Colour setting selected by user in administration panel. Default to navyblue/#304356.
  * - $page_title: Page title from admin configuration.
- * - $rel_url: An array containing url of related pages.
+ * - $page_url: An array containing url of pages.
  * - $traits: Is an array containing column headers that requires phenotyping instructions.
  *     Index number - Trait equivalent
  *     see include/rawpheno.function.measurements.inc

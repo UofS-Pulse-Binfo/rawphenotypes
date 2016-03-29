@@ -21,7 +21,7 @@ function rawpheno_get_header($form, &$form_state) {
   
   // Array of stage indicators.
   $stages = array(1 => '1. Validate Spreadsheet',
-                  2 => '2. Describe New Traits',
+                  2 => '2. Describe Additional Traits',
 				          3 => '3. Save Spreadsheet');
 	
 	// Container for progress meter markup			  

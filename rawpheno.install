@@ -338,9 +338,9 @@ function rawpheno_install() {
       INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
       INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Location' LIMIT 1) AND 
-      t3.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM {chado.cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND 
+      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
+      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
   
   // Schema array.
@@ -432,11 +432,11 @@ function rawpheno_uninstall() {
     $cv_id = tripal_get_cv(array('name' => $vocabulary));
     if (isset($cv_id->cv_id)) {
       // Delete all the cvterm under this vocabulary.
-      $del = "DELETE FROM {chado.cvterm} WHERE cv_id = :cv_id";
+      $del = "DELETE FROM chado.cvterm WHERE cv_id = :cv_id";
       db_query($del, array(':cv_id' => $cv_id->cv_id));
       
       // Then delete controlled vocabulary terms.
-      $del = "DELETE FROM {chado.cv} WHERE cv_id = :cv_id AND name = :cv";
+      $del = "DELETE FROM chado.cv WHERE cv_id = :cv_id AND name = :cv";
       db_query($del, array(':cv_id' => $cv_id->cv_id, ':cv' => $vocabulary));
     }
   }

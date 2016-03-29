@@ -28,7 +28,7 @@ function rawpheno_download($form, &$form_state) {
   // Query all locations available.
   $location = db_query("SELECT DISTINCT t1.value, t1.value AS location
     FROM {pheno_plantprop} AS t1
-      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t2.name = 'Location'
     ORDER BY t1.value ASC")
     ->fetchAllKeyed();  
@@ -51,7 +51,13 @@ function rawpheno_download($form, &$form_state) {
   // Secondary select field - list of traits avaliable for download.
   // Query all traits available per location.
   // Note: planting date is excluded from the list in the same manner it is
-  // excluded from the rawdata heat map.
+  //  excluded from the rawdata heat map.  
+  // Note: The total number of traits does not necessarily be the same as the
+  //  total number of traits in rawdata. In some cases there are more traits
+  //  in download page than what is shown in rawdata heat map, that is because 
+  //  the total count of traits in download is the count of traits from combining
+  //  all year/entry/reps (union) from a specific location.
+  
   // Determine default traits to display based on value of location.
   if (isset($form_state['values']['location'])) {
     // When user has selected a location.
@@ -65,7 +71,7 @@ function rawpheno_download($form, &$form_state) {
   
   $traits = db_query("SELECT DISTINCT t1.type_id, t2.definition
     FROM {pheno_measurements} AS t1
-      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN
       (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t1.value <> ''
@@ -138,12 +144,12 @@ function rawpheno_download_submit($form, &$form_state) {
   // it will allow us to handle missing data.
   $sql = "SELECT 'B'||t2.cvterm_id AS id, t2.definition 
     FROM {pheno_plantprop} t1 
-      LEFT JOIN {chado.cvterm} t2 ON t2.cvterm_id=t1.type_id 
+      LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
     UNION
     SELECT 'C'||t2.cvterm_id AS id, t2.definition 
     FROM {pheno_measurements} t1 
-      LEFT JOIN {chado.cvterm} t2 ON t2.cvterm_id=t1.type_id 
+      LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location)) 
       AND t2.cvterm_id IN (:traits)
     GROUP BY t2.cvterm_id, t2.definition";
@@ -169,13 +175,13 @@ function rawpheno_download_submit($form, &$form_state) {
     ." UNION
     SELECT t1.plant_id AS id, t1.type_id AS tid, t2.definition AS def, t1.value AS value, 'B' AS grp
     FROM {pheno_plantprop} AS t1
-      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))"
     // Finally we add in all the traits.
     ."UNION
     SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS value, 'C' as grp
     FROM {pheno_measurements} AS t1
-      INNER JOIN {chado.cvterm} AS t2 ON t1.type_id = t2.cvterm_id
+      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t2.cvterm_id IN (:traits)"
     // Lastly we order the results by plant_id and grouping string, and tid.

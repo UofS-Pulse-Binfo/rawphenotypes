@@ -58,6 +58,9 @@ function rawpheno_upload_form_master($form, &$form_state) {
   // Load corresponding form together with JavaScript and CSS.
   switch($form_state['stage']) {
     case 'check':
+      // Attach JS Collapse library.
+      $form['#attached']['library'][] = array('system', 'drupal.collapse');
+
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
       $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js',
@@ -126,8 +129,6 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
       'rawpheno_phenotype_upload_file_element_process',
     ),
   );
-  
-  drupal_add_library('system', 'drupal.collapse');
   
   return $form;  
 }
