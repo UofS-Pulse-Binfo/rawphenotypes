@@ -33,7 +33,7 @@ function rawpheno_menu() {
     'title' => 'Raw Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_rawdata'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('access rawpheno'),
     'file' => 'include/rawpheno.rawdata.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
@@ -53,7 +53,7 @@ function rawpheno_menu() {
     'title' => 'Instructions',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_instructions'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('access rawpheno'),
     'file' => 'include/rawpheno.instructions.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 0,
@@ -63,7 +63,7 @@ function rawpheno_menu() {
     // in instructions page.
     $items['autocomplete'] = array(
       'page callback' => 'rawpheno_instructions_autocomplete_search',
-      'access arguments' => array('access content'),
+      'access arguments' => array('access rawpheno'),
       'type' => MENU_CALLBACK,
     );
   
@@ -73,7 +73,7 @@ function rawpheno_menu() {
     'title' => 'Download Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_download'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('access rawpheno'),
     'file' => 'include/rawpheno.download.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 6,
@@ -85,7 +85,7 @@ function rawpheno_menu() {
     'title' => 'Upload Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_upload_form_master'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('upload rawpheno'),
 	  'file' => 'include/rawpheno.upload.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 3,
@@ -104,6 +104,20 @@ function rawpheno_menu() {
   );
   
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function rawpheno_permission() {
+  return array(
+    'access rawpheno' => array(
+      'title' => t('Access raw phenotypic data and summaries'),
+    ),
+    'upload rawpheno' => array(
+      'title' => t('Upload raw phenotypic data'),
+    ),
+  );
 }
 
 /**
