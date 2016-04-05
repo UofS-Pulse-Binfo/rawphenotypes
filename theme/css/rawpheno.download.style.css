@@ -32,6 +32,7 @@ select:disabled {
 
 .form-wrapper {
   display: inline-block;
+  margin: 0 30px;
 }
 
 #div-location, #div-measurements {
@@ -44,7 +45,7 @@ select:disabled {
 }
 
 #div-measurements {
-  float: right;
+  float: left;
 }
 
 #div-button {

@@ -55,3 +55,8 @@ div.tool-tip {
   pointer-events: none;     
   text-align: center;                       
 }
+
+#container-rawdata {
+  height: 450px; 
+  width: 100%;
+}

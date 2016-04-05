@@ -116,6 +116,23 @@ em {
   background: #FCFDFD;
 }
 
+
+@media(max-width: 1300px) {
+  #tabs .ui-tabs-nav li {
+    font-size: 0.78em;
+  }
+  
+  div.subtitle-right {
+    display: none;
+  }
+  
+  div.gallery-img img, div.gallery-img {
+    width: 410px;
+    text-align: center;
+  }
+}
+
+
 #tabs .ui-tabs-nav {
   background: transparent;
   border-width: 0px 0px 1px 0px;
@@ -172,7 +189,7 @@ em {
 
 /* Tab 1 */
 #fragment-1 {
-  min-width: 780px;
+  /* min-width: 780px;*/
 }
 
 #fragment-1 p {

@@ -7,10 +7,6 @@
 @import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
-a.button:hover {
-  background: #DEDEDE none repeat scroll 0% 0%;
-}
-
 /* Main container of the progress bar */
 .container-status {
   background-color: #F7F7F7;
@@ -24,14 +20,24 @@ a.button:hover {
   border-top: 1px solid #CCCCCC;
   padding: 30px 0 20px 0;
   margin: 30px 0 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+div.buttons-wrapper {
+  display: inline-block;
+  margin: 0 auto;
+  width: 90%;
 }
 
 a.nav-buttons {
   float: left;
-  padding: 20px;
-  margin: 0 32px;
+  padding: 20px 0 0 0;
   height: 50px;
   font-size: 1em;
+  text-align:center;
+  width: 20%;
+  margin: 0 2.5%;
 }
 
 a.nav-buttons:nth-child(1) {

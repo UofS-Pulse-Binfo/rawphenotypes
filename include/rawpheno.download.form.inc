@@ -48,6 +48,16 @@ function rawpheno_download($form, &$form_state) {
     ),
   );
   
+  // Disable select location when there is no locations in the select box.
+  // This is to prevent calling AJAX with null or empty query string
+  // that causes an alert window.
+  $is_disabled = (count($location) > 0) ? '' : TRUE;
+  $form['chk_select_all_locations'] = array(
+    '#title' => t('Select all locations'),
+    '#type' => 'checkbox',
+    '#default_value' => 0,
+    '#disabled' => $is_disabled,
+  );
   // Secondary select field - list of traits avaliable for download.
   // Query all traits available per location.
   // Note: planting date is excluded from the list in the same manner it is
@@ -94,7 +104,7 @@ function rawpheno_download($form, &$form_state) {
     '#size' => 17,
   );
   
-  $form['ajax_wrapper']['chk_select_all'] = array(
+  $form['ajax_wrapper']['chk_select_all_traits'] = array(
     '#title' => t('Select all traits'),
     '#type' => 'checkbox',
     '#default_value' => 0,

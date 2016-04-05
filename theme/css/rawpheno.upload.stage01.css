@@ -3,20 +3,14 @@
  * Style phenotypes/upload stage 01 - validate spreadsheet.
  */
 
-/* Import global css */
+/* Import global css: */
 @import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
 /* Main container of DND. The dropzone. */
-#edit-dnd-upload {
-  margin: 0 auto;
-  padding: 0;
-  width: 100%;
-}
-
 #droppable-dnd {
   background: url('../../theme/img/icon-excel.gif') no-repeat top center;
-  background-position: 50% 145px;
+  background-position: 50% 160px;
   background-color: #FCFDFD;
   border: 1px solid #AAAAAA;
 
@@ -24,32 +18,40 @@
   -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
   box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
   
-  height: 420px;
-  margin: 0;
-  padding: 10px;
-  width: 890px;
+  height: 475px;
+  margin: 0; 
+  padding: 0px;
+  width: 100%;
 }
 
 /* Drag file here message and link container */
 .droppable-message {
-  border: 3px solid none;
-  color: #666666;
-  font-size: 1.3em;
-  margin: 0 auto;
-  width: 99%;
-  height: 225px;
-  line-height: 25px;
-  padding-top: 190px;
+  border: medium none;
+  margin: 20px;
+  height: 90%;
 }
 
-/* Choose file link container */
-.droppable-standard-upload {
-  margin: 0;
+.droppable-message > span {
+  color: #666666;
+  font-size: 1.3em;
+  display: block;
+  line-height: normal;
+  margin: 215px 0 0 0;
   padding: 0;
 }
 
 /* Choose file link */
-#droppable-dnd a, 
+div.droppable-standard-upload {
+  color: #666666;
+  font-family: inherit;
+  font-size: 1.3em;
+  line-height: normal;
+  min-height: 20px;
+  margin: 7px 0 0 0;
+  padding:0;
+}
+
+#droppable-dnd a,
 #droppable-dnd a:link {
   background: none;
   border: none;
@@ -74,11 +76,11 @@
 
 /* AJAX wait animation */
 div.droppable-controls {
-  margin: 380px auto 0 auto;
-  padding: 0;
-  text-align: center;
+  left: 0;
   position: absolute;
-  width: 150px;
+  text-align: center;
+  width: 100%;
+  top: 80%;
 }
 
 .droppable-controls div {
@@ -88,10 +90,10 @@ div.droppable-controls {
 }
 
 /* Remove button */
-#edit-dnd-remove-button, .file { 
-  display: none; 
+#edit-dnd-remove-button, .file {
+  display: none;
   height: 0;
-  width: 0; 
+  width: 0;
 }
 
 .rawpheno-validate-progress {
@@ -99,9 +101,9 @@ div.droppable-controls {
   padding: 0 !important;
 }
 
-/* list validation result */
+/* Validation result */
 .error-main {
- list-style-type: none; 
+ list-style-type: none;
 }
 
 ul.error-main > li {
@@ -113,7 +115,7 @@ ul.error-main > li em {
 }
 
 ul.error-main {
-  padding: 15px; 
+  padding: 15px;
   margin: 0 15px 0 0;
 }
 
@@ -127,7 +129,7 @@ li.error-item {
   margin-left: 20px;
 }
 
-/* success and failed icon */
+/* Success and Failed rule */
 .success {
   background: url('../img/icon-success.jpg') no-repeat;
   background-position: 5px 0;

@@ -12,42 +12,7 @@
   padding: 10px 20px 20px 20px;
 }
 
-/* Container for each trait */
-.container-form {
-  padding: 15px 10px 7px 25px;
-}
-
-.container-form:nth-child(odd) {
-  background-color: #F7F7F7;
-}
-
-.container-form:nth-child(even) {
-  background-color: #EAEAEA;
-}
-
-label.option {
-  background-color: #FFFFFF;
-  border: 1px solid #969696;
-  cursor: pointer;
-  font-weight: normal;
-  margin: 3px 1px;
-  padding: 4px 10px;
-  text-align: center;
-  font-size: 2.5em;
-}
-
-label.option:hover {
-  -moz-box-shadow:    1px 1px 1px 1px #CCCCCC;
-  -webkit-box-shadow: 1px 1px 1px 1px #CCCCCC;
-  box-shadow:         1px 1px 1px 1px #CCCCCC;
-  
-  border: 1px solid #666666;
-}
-
-#stage02-window-error {
-  display: none;
-}
-
+/* Checkbox and Trait link */
 input[type=checkbox] {
   margin-right: 10px;
   /* All browsers except webkit*/
@@ -56,18 +21,22 @@ input[type=checkbox] {
   -webkit-transform: scale(1.2);
 }
 
+label.option {
+  color: #118324;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 3px 1px;
+  padding: 4px 0px;
+  font-size: 2.5em;
+}
+
+label.option:hover {
+  text-decoration: underline;
+}
+
 /* Form fields elements */
-.container-form-wrapper {
-  background-color: #FFFFFF;
-  padding: 20px 30px;
-}
-
-div.container-trait:nth-child(even) {
-  background-color: #F7F7F7;
-}
-
-div.container-trait:nth-child(odd) {
-  background-color: #FAFAFA;
+input[type=text] {
+  width: 465px;
 }
 
 .form-item {
@@ -85,46 +54,11 @@ div.container-trait div {
 div.container-trait div.form-item {
   border: none;
   margin-top: 0 !important;
-  padding: 10px 45px;
+  padding: 10px 30px 10px 35px;
 }
 
 /* Progress bar when check box is clicked */
 .ajax-progress {
   float: right;
   margin-right: 20px;
-}
-
-/* Traits container */
-.error-message-cell {
-  background-color: #FFFFFF;
-  border: 1px solid #969696;
-  cursor: pointer;
-  display: inline;
-  float: left;
-  font-weight: normal;
-  margin: 3px 1px;
-  padding: 2px 7px;
-  text-align: center;
-}
-
-.error-message-cell:hover {
-  -moz-box-shadow:    1px 1px 1px 1px #CCCCCC;
-  -webkit-box-shadow: 1px 1px 1px 1px #CCCCCC;
-  box-shadow:         1px 1px 1px 1px #CCCCCC;
-  
-  border: 1px solid #666666;
-}
-
-.error-message-text, .error-message-em {
-  clear: left;  
-  display: block;
-  font-weight: normal;
-  font-size: 1.2em;
-  margin: 0;  
-  padding: 0;
-}
-
-.error-message-em {
-  font-weight: normal;
-  font-size: 1.5em;
 }

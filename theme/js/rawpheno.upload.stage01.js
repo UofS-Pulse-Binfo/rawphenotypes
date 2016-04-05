@@ -19,7 +19,7 @@
 		    dropZone.addEventListener('dragover', function() {
 		      dropMessage.css('border','3px dashed #AAAAAA');
           // Create a new instruction to user.
-          dropMessage.html('Drop to upload and validate your spreadsheet'); 										
+          dropMessage.html('<span>Drop to upload and validate your spreadsheet</span>'); 										
 	  	  });
 	    
 		    // User cancels file drop.

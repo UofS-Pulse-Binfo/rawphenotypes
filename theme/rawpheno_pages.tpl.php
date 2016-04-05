@@ -100,12 +100,15 @@
       <div id="container-download" class="form-wrapper">
         <?php print drupal_render($form['download_window_error']); ?>
         <div id="div-location">
-          <?php print drupal_render($form['location']); ?>
+          <?php 
+            print drupal_render($form['location']); 
+            print drupal_render($form['chk_select_all_locations']);
+          ?>
         </div>
         <?php
           print drupal_render($form['ajax_wrapper']);
           print drupal_render($form['ajax_wrapper']['traits']);
-          print drupal_render($form['ajax_wrapper']['chk_select_all']);
+          print drupal_render($form['ajax_wrapper']['chk_select_all_traits']);
         ?>
         <div id="div-button">
           <?php 
@@ -146,7 +149,7 @@
             </ul>
           </div>
         </div>
-        <hr class="button-collapse-infowindow window-on" />
+        <hr class="button-collapse-infowindow" title="Need Help?" />
         
         <?php 
         if ($form['current_stage']['#value'] == 'save') { 
@@ -157,23 +160,25 @@
         <div class="container-status">
           <?php print drupal_render($form['status']); ?>
           <div class="container-buttons">
-            <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons">
-              <span>Upload New Data</span>
-            </a>
+            <div class="buttons-wrapper">
+              <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons">
+                <span>Upload New Data</span>
+              </a>
 
-            <a href="<?php print $page_url['rawpheno_download']; ?>" target="_blank" class="nav-buttons">
-              <span>Download Data</span>
-            </a>
+              <a href="<?php print $page_url['rawpheno_download']; ?>" target="_blank" class="nav-buttons">
+                <span>Download Data</span>
+              </a>
 
-            <a href="<?php print $page_url['rawpheno_rawdata']; ?>" target="_blank" class="nav-buttons">
-              <span>Data Summary</span>
-            </a>
+              <a href="<?php print $page_url['rawpheno_rawdata']; ?>" target="_blank" class="nav-buttons">
+                <span>Data Summary</span>
+              </a>
 
-            <a href="<?php print $page_url['rawpheno_instructions']; ?>" target="_blank" class="nav-buttons">
-              <span>Standard Procedure</span>
-            </a>
+              <a href="<?php print $page_url['rawpheno_instructions']; ?>" target="_blank" class="nav-buttons">
+                <span>Standard Procedure</span>
+              </a>
             
-            <div style="clear: both;"></div>
+              <div style="clear: both;"></div>
+            </div>
           </div>
         </div>
         

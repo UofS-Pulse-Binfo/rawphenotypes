@@ -9,7 +9,6 @@
   border-top-left-radius: 5px;
   color: #FFFFFF;
   font-size: 1.1em;
-  min-width: 970px;
   padding: 10px 0 10px 20px;
 }
 
@@ -25,10 +24,6 @@
   box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
   
   background-color: #FFFFFF;
- 
-  /* min-width of div is 950 */
-  /* less padding and border */
-  min-width: 908px;
   padding: 20px 40px 40px 40px;
   text-align: center;
 }
@@ -37,13 +32,13 @@
   display: inline-block;
   margin: 0 auto;
   padding: 0;
+  width: 100%;
 }
 
 /* Page Subtitle */
 .container-subtitle {
   border-bottom: 1px solid #CCCCCC;
   height: 65px;
-  width: 910px;
   text-align: left;
 }
 
@@ -55,6 +50,7 @@
 .subtitle-left {
   float: left;
   margin-left: 70px;
+  width: 55%;
 }
 
 .subtitle-right {
@@ -67,7 +63,7 @@
   clear: both;
   margin-top: 25px;
   padding: 30px 0;
-  width: 910px;
+  width: 100%;
 }
 
 /* Navigation */
@@ -95,7 +91,7 @@
 
 /* Collapsible window */
 div.window-info {
-  border-bottom: 1px solid #AAAAAA;
+  border-bottom: 1px solid #999999;
   font-size: 0.95em;
   margin: 0;
   min-width: inherit;
@@ -104,15 +100,22 @@ div.window-info {
 }
 
 hr.button-collapse-infowindow {
-	background: url('../img/icon-down.gif') no-repeat center;
+	background: url('../img/icon-collapse.gif') no-repeat center;
+  background-position: 50% 0;
   border: none; 
 	cursor: pointer;
   height: 25px;
 	margin: 0;
-	margin-top: -12px;
+	margin-top: -13px;
 	margin-bottom: 11px;
 }
 
-hr.window-on {
-	background: url('../img/icon-up.gif') no-repeat center;
+hr.button-collapse-infowindow:hover {
+	background: url('../img/icon-collapse.gif') no-repeat center;
+  background-position: 50% -26;
+}
+
+hr.window-on, hr.window-on:hover {
+	background: url('../img/icon-collapse.gif') no-repeat center;
+	background-position: 50% -53px;
 }

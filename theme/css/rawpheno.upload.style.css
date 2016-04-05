@@ -45,3 +45,9 @@ input#edit-next-step.form-button-disabled {
 .messages {
   margin: 0 0 15px 0 !important;
 }
+
+@media(max-width: 1300px) {
+  ol.progress-meter li {
+    font-size: 9px !important;
+  }
+}

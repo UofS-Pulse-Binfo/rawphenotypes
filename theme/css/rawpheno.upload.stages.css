@@ -4,20 +4,21 @@
  * 
  * Credits to: http://codepen.io/aniket/pen/whDqz
  */
-
 .progress-container {
   /* margin: 30px auto 20px auto; */
   text-align: left;
-  width: 630px;
+  width: 100%;
   font-family: sans-serif;
   font-weight: 300;
-  padding-bottom: 6px;
+  padding: 0 0 6px 0;
   clear: both;
   margin-top: -20px;
+  white-space: nowrap;
 }
 
 .progress-meter, .region-content ul, .region-content ol {
   padding: 0;
+  margin: 0;
 }
 
 ol.progress-meter {
@@ -35,7 +36,7 @@ ol.progress-meter li {
   height: 27px;
   text-align: center;
   text-indent: -19px;
-  width: 30.32%;
+  width: 34.32%;
 }
 
 ol.progress-meter li:before {
@@ -93,54 +94,50 @@ ol.progress-meter li.todo:before {
   color: #D5D5D5;
 }
 
-/* Text help text */
-#txt-help-text {
-  font-size: 0.95em;
-  height: 120px;
-  margin: 0;
-  overflow: hidden;
-  padding: 0;
-}
-
-#txt-help-text ul {
-  margin: 0;
-  padding: 0;
-}
-
-#txt-help-text ul li {
-  display: inline;
-  float: left;
-  list-style-type: none;
-  height: 100px;
-  margin: 0 5px;
-  padding: 0 10px 0 40px;
-  width: 240px;
-}
-
-#txt-help-text ul li:nth-child(1) {
-  background: url('../img/01_stage.gif') no-repeat left top;
-  margin-left: 20px;
-  width: 260px;
-}
-
-#txt-help-text ul li:nth-child(2) {
-  background: url('../img/02_stage.gif') no-repeat left top;
-  background-position: 10px 0;
-  border-left: 1px solid #CCCCCC;
-  border-right: 1px solid #CCCCCC;
-  padding-left: 50px;
-  width: 210px;
-}
-
-#txt-help-text ul li:nth-child(3) {
-  background: url('../img/03_stage.gif') no-repeat left top;
-  width: 230px;
-}
-
 /* Wait animation of file upload */
 .droppable-controls {
   text-align: center;
   position: absolute;
   top: 270px;
   left: 45%;
+}
+
+/* Text help text */
+#txt-help-text {
+  margin: 0 auto 20px auto;
+  padding-left: 20px;
+}
+
+#txt-help-text ul {
+  list-style-type: none;
+  padding: 0;
+  display: table-row;
+}
+
+#txt-help-text ul li {
+  width: 33.3333333%;
+  display: table-cell;
+  padding-left: 40px;
+}
+
+#txt-help-text ul li:nth-child(1) {
+  background: url('../img/01_stage.gif') no-repeat left top;
+  padding-right: 5px;
+}
+
+#txt-help-text ul li:nth-child(2) {
+  background: url('../img/02_stage.gif') no-repeat left top;
+  width: 20%;
+  border-left: 10px solid #FFFFFF;
+  border-right: 10px solid #FFFFFF;
+}
+
+#txt-help-text ul li:nth-child(3) {
+  background: url('../img/03_stage.gif') no-repeat left top;
+  margin-right: 0;
+}
+
+/* Collapse help text window by default */
+.window-info {
+  height: 0;
 }

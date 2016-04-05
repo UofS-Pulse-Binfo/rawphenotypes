@@ -231,7 +231,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             '#title' => t('Definition'),
             '#required' => TRUE,
             '#description' => t('A human-readable text definition'),
-            '#maxlength' => 150,
+            '#maxlength' => 200,
           );
           // UNIT
           $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i] = array(
