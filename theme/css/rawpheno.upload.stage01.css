@@ -36,8 +36,11 @@
   font-size: 1.3em;
   display: block;
   line-height: normal;
-  margin: 215px 0 0 0;
-  padding: 0;
+  margin: 0 auto;
+  position: relative;
+  text-align: center;
+  top: 200px;
+  width: 380px;
 }
 
 /* Choose file link */
@@ -46,9 +49,12 @@ div.droppable-standard-upload {
   font-family: inherit;
   font-size: 1.3em;
   line-height: normal;
+  margin: 0 auto;
   min-height: 20px;
-  margin: 7px 0 0 0;
-  padding:0;
+  padding: 0;
+  position: relative;
+  top: 200px;
+  width: 165px;
 }
 
 #droppable-dnd a,
