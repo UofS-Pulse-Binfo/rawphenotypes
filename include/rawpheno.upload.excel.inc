@@ -15,10 +15,11 @@
  * @param $job_id
  *   The tripal job id.
  */
-function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
+function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $job_id) {
   // Unserialize and remove formating for the headers that should be saved as 
   // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
+  $arr_newheaders = unserialize($arr_newheaders);
   
   // First we load the file.
   $file = file_load($fid);
@@ -154,7 +155,16 @@ function rawpheno_load_spreadsheet($fid, $plantprop_headers, $job_id) {
 
           // Get the column header of a cell.
           $cell_colheader = str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]);
-        
+          
+          // Determine if user wants to save this trait.
+          if (count($arr_newheaders) > 0 AND array_key_exists($cell_colheader, $arr_newheaders)) {
+            if ($arr_newheaders[$cell_colheader] == 0) {
+              // Skip this cell if it is a new column header and user does not want to save
+              // this new trait;
+              continue;
+            }
+          }
+          
           // We always want to strip flanking white space.
           // FYI: This is done when the data is validated as well.
           $cell_entry = trim($cell_entry);

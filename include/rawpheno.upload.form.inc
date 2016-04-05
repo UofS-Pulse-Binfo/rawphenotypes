@@ -479,12 +479,19 @@ function rawpheno_submit_review($form, &$form_state) {
   // Read variable that holds new column headers.
   $new_header = $form_state['multistep_values']['new_headers'];
   
+  // Create an array of new hearders with flag/status if user wants to save it.
+  // This array will be passed to rawpheno_load_spreadsheet.
+  $arr_newheaders = array();
+
   // Determine if there is new header.
   if (count($new_header) > 0) {
   
     // Read each column header.
     foreach($new_header as $i => $header) { 
-    
+       
+      $flag = ($form_state['values']['chk_' . $i] == 1) ? 1 : 0;  
+      $arr_newheaders[$header] = $flag;
+     
       // Determine if the form in review traits has been filled out and checkbox
       // has been checked by user. If it has been chcked then save the trait.
       if ($form_state['values']['chk_' . $i] == 1) {  
@@ -571,6 +578,7 @@ function rawpheno_submit_review($form, &$form_state) {
       'rawpheno',
       'rawpheno_load_spreadsheet',
       array(
+        serialize($arr_newheaders),
         $form_state['multistep_values']['fid'],
         serialize($plantprop_headers)
       ),

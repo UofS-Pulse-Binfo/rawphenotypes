@@ -49,6 +49,7 @@
         d3.json(file, function(error, data) {
           if (error) {
             // Error reading JSON
+            throw error;
           }
           else if(data == 0) {
             // No data.
@@ -64,7 +65,7 @@
           }
           else {
             // Generate Chart.
-            initializeChart(data)
+            initializeChart(data);
           }
         });
         
