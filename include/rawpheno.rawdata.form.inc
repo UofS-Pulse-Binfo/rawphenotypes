@@ -17,6 +17,28 @@ function rawpheno_rawdata($form, &$form_state) {
     '#markup' => '<svg class="data-chart"></svg>',
   );
   
+  // Allow users to filter the chart based on traits.
+  // List all traits available.
+  
+  // Get the cv_id of phenotype_measurement_types
+  $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  
+  // Get all traits under phenotypes measurements type.
+  $traits = db_query("SELECT cvterm_id, cvterm_id || '-' || name 
+    FROM chado.cvterm
+    WHERE name <> 'Planting Date (date)' AND cv_id = :cv_id
+    ORDER BY cvterm_id ASC", array(':cv_id' => $cv_id->cv_id))
+    ->fetchAllKeyed();  
+
+  $traits = array(0 => 'Select trait to highlight in the chart') + $traits;
+
+  $form['select_trait'] = array(
+    '#title' => '',
+    '#type' => 'select',
+    '#options' => $traits,
+    '#default_value' => reset($traits),
+  );
+  
   // Hidden field containing url to JSON.
   $form['json_url'] = array(
     '#type' => 'hidden',

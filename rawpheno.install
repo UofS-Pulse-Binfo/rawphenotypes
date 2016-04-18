@@ -331,7 +331,8 @@ function rawpheno_install() {
       t2.value AS location, 
       t3.value AS rep, 
       t5.value AS planting_year,
-      COUNT(DISTINCT t4.type_id) AS total_count
+      COUNT(DISTINCT t4.type_id) AS total_count,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
       INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
       INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
@@ -361,6 +362,8 @@ function rawpheno_install() {
       'length' => 255),
     'total_count' => array (
       'type' => 'int'),
+    'all_traits' => array(
+      'type' => 'text'),  
     )
   );
   
