@@ -4,21 +4,20 @@
  */
 
 /* Import global css */
-@import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
 /* Main container of the progress bar */
 .container-status {
   background-color: #F7F7F7;
   border: 1px solid #CCCCCC;
-  margin: -10px 0 0 0;
-  padding: 25px 25px 0 25px;
+  margin: 30px 0 0 0;
+  padding: 25px;
 }
+
 
 /* Links to the rest of the pages */
 .container-buttons {
-  border-top: 1px solid #CCCCCC;
-  padding: 30px 0 20px 0;
+  padding: 30px 0 0 0;
   margin: 30px 0 0 0;
   text-align: center;
   width: 100%;
@@ -35,9 +34,9 @@ a.nav-buttons {
   padding: 20px 0 0 0;
   height: 50px;
   font-size: 1em;
+  margin: 0 2.5%;
   text-align:center;
   width: 20%;
-  margin: 0 2.5%;
 }
 
 a.nav-buttons:nth-child(1) {
@@ -57,16 +56,18 @@ a.nav-buttons:nth-child(4) {
 }
 
 a.nav-buttons span {
-  background-color: #F7F7F7;
-  margin-top: 24px;
+  background-color: #FFFFFF;
   display: block;
+  margin-top: 24px;
   padding: 5px 0;
 }
 
-/* Progress bar */
-.progress {
-  background-color: #FFFFFF;
-  padding: 20px;
-  border-radius: 5px;
-  border: 1px solid #CCCCCC;
+
+/* Status message */
+div.messages {
+  margin: 0 0 15px 0 !important;
+}
+
+.fieldset-wrapper {
+  margin-top: 20px !important;
 }

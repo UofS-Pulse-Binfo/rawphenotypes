@@ -42,7 +42,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     '#type' => 'value',
     '#value' => $form_state['stage'],
   );
-
+   
   // Add the next button for all but the last step.
   if ($form_state['stage'] != 'save') {
     $form['next_step'] = array(
@@ -115,7 +115,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_location' => 'public://',
     '#upload_event' => 'auto',
     '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
-    '#droppable_area_text' => t('Drag Phenotype Data Collection file here'),
+    '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => 'Please wait...',
     '#allow_replace' => 1,
@@ -178,6 +178,31 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
   
   // If there are no new headers then they don't have to do anything.
   if (empty($new_header)) {
+    $all_headers = rawpheno_all_headers($file);
+    $plant_prop = rawpheno_function_headers('required');
+    
+    $markup = '
+      <ul class="error-main">
+        <li class="info">
+          <em>' . (count($all_headers) - count($plant_prop)) . ' Phenotypes Measured.</em>
+        </li>
+        
+        <li class="info">
+          <em>No New or Additional Traits Found.</em>
+        </li>
+      </ul>
+    ';
+    
+    $form['xls_summary_fldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Describe new trait'),
+    );
+  
+    $form['xls_summary_fldset']['information'] = array(
+      '#type' => 'markup',
+      '#markup' => $markup,
+    );
+    
     $form['notice'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="messages status">No new traits were detected in the spreadsheet. Please click "Next Step".</div>',
@@ -252,7 +277,12 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     }
   } 
   
-   return $form;
+  $form['traits_checked'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div class="messages status">You have described <span id="traits-checked">0</span> trait. Please click "Next Step".</div>'
+  );
+
+  return $form;
 }
 
 /*
@@ -323,7 +353,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
     '#type' => 'markup',
     '#markup' => '<div class="messages status">Your spreadsheet has been successfully submitted and <em>will not be interupted</em> if you choose to leave this page.</div>'
       . '<div class="messages warning">The progress bar below indicates our progress updating KnowPulse. <em>Your data will not be available until the progress bar below completes</em>.</div>'
-      . '<br />'
+      
   );
   
   // We make a DIV which the progress bar can occupy. You can see this in use

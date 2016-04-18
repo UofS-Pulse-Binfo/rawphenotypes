@@ -21,17 +21,17 @@ function rawpheno_get_header($form, &$form_state) {
   
   // Array of stage indicators.
   $stages = array(1 => '1. Validate Spreadsheet',
-                  2 => '2. Describe Additional Traits',
+                  2 => '2. Describe New Trait',
 				          3 => '3. Save Spreadsheet');
 	
-	// Container for progress meter markup			  
-  $markup = '<div class="progress-container"><ol class="progress-meter">'; 
+	$markup = '';
   foreach($stages as $k => $v) {
-    $class = ($k <= $current_step) ? 'progress-point done' : 'progress-point todo';
-    $markup .= '<li class="'.$class.'">'.$v.'</li>'; 
+    $class = ($k <= $current_step) ? '' : ' progress-stage-todo';
+    $markup .= '<div class="progress-stage' . $class . '" title="Need help?">
+                  <span>&nbsp;</span>' . $v . '<span>&nbsp;</span>
+                </div>';
   }
-  $markup .= '</ol></div>';
-  
+
   // Add header to each stage with corresponding
   // stage information defined above.
   $form['header_upload'] = array(

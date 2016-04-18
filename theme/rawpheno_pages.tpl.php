@@ -37,7 +37,7 @@
  
  $page_id = $form['#form_id'];
  // TODO: rename callback function of rawpheno upload in the same format as in the other pages.
- //       then this condition in unecessary.
+ //       then this condition is unnecessary.
  if ($page_id == 'rawpheno_upload_form_master') {
    $page_id = 'rawpheno_upload';
  }
@@ -58,7 +58,14 @@
          }
          elseif ($page_id == 'rawpheno_upload') {
            // Stage indicator in upload page.
-           print drupal_render($form['header_upload']);
+           $current_stage = $form['current_stage']['#value'];
+           $stages = array_keys($upload_stages);
+           $stage_number = array_search($current_stage, $stages) + 1;
+           print 'Stage ' . $stage_number . ' of 3 - ' . $upload_stages[$current_stage];
+         }
+         elseif ($page_id == 'rawpheno_rawdata') {
+           // Select a trait field in rawdata.
+           print drupal_render($form['select_trait']);
          }
          else {
            print '&nbsp;';
@@ -83,12 +90,17 @@
         /////////////////////////////////////
       ?>
       
+      <div id="container-marker-information" title="Click to clear chart">
+        <h2 id="title-pheno">&nbsp;</h2>
+        &nbsp;: are measured in <em id="text-rep">&nbsp;</em> with a leaf symbol (<span>&nbsp;</span>) <a href="#">Clear chart</a>
+      </div>
+      
       <div id="container-rawdata" class="form-wrapper">
         <?php 
           print drupal_render_children($form);
         ?>
       </div>
-      
+
       <?php 
         // End rawdata page.
       } 
@@ -125,60 +137,79 @@
         // Begin upload page.
         /////////////////////////////////////
       ?>
-      
+
       <div id="container-upload">
-        <div class="window-info">  
-          <div id="txt-help-text">
+        <div id="container-progress">
+          <a href="#" id="link-help">Need help?</a>
+          
+          <div id="container-help-information" title="Click to collapse Help Window">
             <ul>
               <li>
-                This form will guide you through uploading your raw phenotypic data. Your data should be in a 
-                <em>Microsoft Excel Workbook (XLSX) following the format described on the 
+                <h2>Stage 1 - Validate Spreadsheet</h2>
+                This form will guide you through uploading your raw phenotypic data. Your data should be in a
+                <em>Microsoft Excel Workbook (XLSX) following the format described on the
                 <a href="<?php print $page_url['rawpheno_instructions'] ?>" target="_blank">Instructions Page</a></em>.
-              </li> 
+              </li>
             
               <li>
+                <h2>Stage 2 - Describe New Trait</h2>
                 In the second step we ask that you <em>describe any additional phenotypes</em>.
               </li>
             
               <li>
-                Finally, the spreadsheet is saved to KnowPulse, at which point the 
-                <em>phenotypic data is available through 
-                <a href="<?php print $page_url['rawpheno_rawdata'] ?>" target="_blank">summaries</a> and 
+                <h2>Stage 3 - Save Spreadsheet</h2>
+                Finally, the spreadsheet is saved to KnowPulse, at which point the
+                <em>phenotypic data is available through
+                <a href="<?php print $page_url['rawpheno_rawdata'] ?>" target="_blank">summaries</a> and
                 <a href="<?php print $page_url['rawpheno_download'] ?>" target="_blank">downloads</a></em>.
               </li>
             </ul>
           </div>
+          
+          <div>
+            <?php print drupal_render($form['header_upload']); ?>
+            <div class="clear-both"></div>
+          </div>
         </div>
-        <hr class="button-collapse-infowindow" title="Need Help?" />
         
         <?php 
+        // In Stage #3 Save Spreadsheet, show progress bar and links to other pages
         if ($form['current_stage']['#value'] == 'save') { 
-      
-        print drupal_render($form['notice']);
+         
         ?>
-          
-        <div class="container-status">
-          <?php print drupal_render($form['status']); ?>
-          <div class="container-buttons">
-            <div class="buttons-wrapper">
-              <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons">
-                <span>Upload New Data</span>
-              </a>
-
-              <a href="<?php print $page_url['rawpheno_download']; ?>" target="_blank" class="nav-buttons">
-                <span>Download Data</span>
-              </a>
-
-              <a href="<?php print $page_url['rawpheno_rawdata']; ?>" target="_blank" class="nav-buttons">
-                <span>Data Summary</span>
-              </a>
-
-              <a href="<?php print $page_url['rawpheno_instructions']; ?>" target="_blank" class="nav-buttons">
-                <span>Standard Procedure</span>
-              </a>
+        
+        <fieldset>
+          <legend>
+            <span class="fieldset-legend">Spreadsheet submitted</span>
+          </legend>
+          <div class="fieldset-wrapper"> 
+            <?php  print drupal_render($form['notice']); ?>
             
-              <div style="clear: both;"></div>
+            <div class="container-status">
+              <?php print drupal_render($form['status']); ?>
             </div>
+          </div>
+        </fieldset>
+        
+        <div class="container-buttons">
+          <div class="buttons-wrapper">
+            <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons">
+              <span>Upload New Data</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_download']; ?>" target="_blank" class="nav-buttons">
+              <span>Download Data</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_rawdata']; ?>" target="_blank" class="nav-buttons">
+              <span>Data Summary</span>
+            </a>
+
+            <a href="<?php print $page_url['rawpheno_instructions']; ?>" target="_blank" class="nav-buttons">
+              <span>Standard Procedure</span>
+            </a>
+            
+            <div style="clear: both;"></div>
           </div>
         </div>
         

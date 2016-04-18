@@ -4,13 +4,7 @@
  */
 
 /* Import global css */
-@import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
-
-/* Main fieldset container */
-#edit-xls-review-fldset {
-  padding: 10px 20px 20px 20px;
-}
 
 /* Checkbox and Trait link */
 input[type=checkbox] {
@@ -34,21 +28,28 @@ label.option:hover {
   text-decoration: underline;
 }
 
+
 /* Form fields elements */
 input[type=text] {
   width: 465px;
 }
 
 .form-item {
+  border: 1px solid #CCCCCC;
+  border-bottom: none;
   background-color: #F7F7F7;
-  border-bottom: 1px solid #FFFFFF;
   margin: 0 !important;
   padding: 15px;
 }
 
+div.container-trait {
+  border: 1px solid #CCCCCC;
+  border-top: none;
+}
+
 div.container-trait div {
   border-bottom: none;
-  background-color: #EAEAEA;
+  background-color: #FFFFFF;
 }
 
 div.container-trait div.form-item {
@@ -56,6 +57,7 @@ div.container-trait div.form-item {
   margin-top: 0 !important;
   padding: 10px 30px 10px 35px;
 }
+
 
 /* Progress bar when check box is clicked */
 .ajax-progress {

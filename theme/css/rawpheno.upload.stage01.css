@@ -4,7 +4,6 @@
  */
 
 /* Import global css: */
-@import 'rawpheno.upload.stages.css';
 @import 'rawpheno.upload.style.css';
 
 /* Main container of DND. The dropzone. */
@@ -12,17 +11,18 @@
   background: url('../../theme/img/icon-excel.gif') no-repeat top center;
   background-position: 50% 160px;
   background-color: #FCFDFD;
-  border: 1px solid #AAAAAA;
+  border: 2px solid #AAAAAA;
 
-  -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
-  -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
-  box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
+  -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 3px #EAEAEA;
   
   height: 475px;
   margin: 0; 
   padding: 0px;
-  width: 100%;
+  width: 99.7%;
 }
+
 
 /* Drag file here message and link container */
 .droppable-message {
@@ -33,15 +33,20 @@
 
 .droppable-message > span {
   color: #666666;
-  font-size: 1.3em;
+  font-size: 1.6em;
   display: block;
   line-height: normal;
   margin: 0 auto;
   position: relative;
   text-align: center;
   top: 200px;
-  width: 380px;
+  width: 480px;
 }
+
+.droppable-message span.text-drag {
+  width: 480px !important;
+}
+
 
 /* Choose file link */
 div.droppable-standard-upload {
@@ -49,7 +54,7 @@ div.droppable-standard-upload {
   font-family: inherit;
   font-size: 1.3em;
   line-height: normal;
-  margin: 0 auto;
+  margin: 7px auto 0 auto;
   min-height: 20px;
   padding: 0;
   position: relative;
@@ -71,6 +76,7 @@ div.droppable-standard-upload {
   text-decoration: underline;
 }
 
+
 /* Preview file */
 .droppable-preview {
   position: absolute;
@@ -79,6 +85,7 @@ div.droppable-standard-upload {
   overflow: hidden;
   width: 0;
 }
+
 
 /* AJAX wait animation */
 div.droppable-controls {
@@ -95,53 +102,10 @@ div.droppable-controls {
   padding: 0 12px 0 0 !important;
 }
 
+
 /* Remove button */
 #edit-dnd-remove-button, .file {
   display: none;
   height: 0;
   width: 0;
-}
-
-.rawpheno-validate-progress {
-  border: none !important;
-  padding: 0 !important;
-}
-
-/* Validation result */
-.error-main {
- list-style-type: none;
-}
-
-ul.error-main > li {
-  padding: 0 0 15px 10px;
-}
-
-ul.error-main > li em {
-  margin-left: 18px;
-}
-
-ul.error-main {
-  padding: 15px;
-  margin: 0 15px 0 0;
-}
-
-.error-detail {
-  background-color: #F7F7F7;
-  margin: 0 20px 0 0 !important;
-  padding: 10px !important;
-}
-
-li.error-item {
-  margin-left: 20px;
-}
-
-/* Success and Failed rule */
-.success {
-  background: url('../img/icon-success.jpg') no-repeat;
-  background-position: 5px 0;
-}
-
-.failed {
-  background: url('../img/icon-failed.jpg') no-repeat;
-  background-position: 5px 0;
 }

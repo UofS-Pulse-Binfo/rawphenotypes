@@ -190,8 +190,6 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
                                'value' => $cell_entry))
                 ->execute();
           
-              
-              
               if (!$tmp) {
                 tripal_report_error(
                   'rawpheno',
@@ -257,72 +255,71 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
               exit(37);
             }
       
-          // Determine if cell requires scale member code.
-          // When unit is scale, find code equivalent in pheno_scale_member table.  
-          if ($unit == 'scale') {
-            // Get pheno scale member code 
-            $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
+            // Determine if cell requires scale member code.
+            // When unit is scale, find code equivalent in pheno_scale_member table.  
+            if ($unit == 'scale') {
+              // Get pheno scale member code 
+              $cvalue_id = db_query("SELECT member_id FROM {pheno_scale_member} 
                                    WHERE code = :code LIMIT 1", 
                                    array(':code' => trim($cell_entry)))
               ->fetchField(); 
-            // We want to report an error if we can't find the scale memeber 
-            // but only if there are any in the first place!
-            $num_members = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:unit_id',
-              array(':unit_id' => $unit_id))->fetchField();
-            if (!$cvalue_id AND !empty($num_members)) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_WARNING,
-                'Uploading Phenoypic Data: Unable to find scale id for Plant Measurement Type (Trait=!trait; Term=!name; Type ID=!id; Scale Value=!scale).',
-                array('!trait' => $cell_colheader, '!name' => $unit, '!id' => $unit_id, '!scale' => $cell_entry),
-                array('print' => TRUE)
-              );
-            }
+              // We want to report an error if we can't find the scale memeber 
+              // but only if there are any in the first place!
+              $num_members = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:unit_id',
+                array(':unit_id' => $unit_id))->fetchField();
+              if (!$cvalue_id AND !empty($num_members)) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_WARNING,
+                  'Uploading Phenoypic Data: Unable to find scale id for Plant Measurement Type (Trait=!trait; Term=!name; Type ID=!id; Scale Value=!scale).',
+                  array('!trait' => $cell_colheader, '!name' => $unit, '!id' => $unit_id, '!scale' => $cell_entry),
+                  array('print' => TRUE)
+                );
+              }
           
-            // Use default value in the cell if query to find scale member code 
-            // has no equivalent value.
-            $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
-          } 
-          else {
-            // No scale member value for the rest of traits.
-            $cvalue_id = '';
-          }
+              // Use default value in the cell if query to find scale member code 
+              // has no equivalent value.
+              $cvalue_id = (isset($cvalue_id) && $cvalue_id > 0) ? $cvalue_id : $cell_entry;
+            } 
+            else {
+              // No scale member value for the rest of traits.
+              $cvalue_id = '';
+            }
 
-
-          // Insert trait only when type_id and unit_id are not null.
-          if (isset($type_id) && isset($unit_id)) {
+            // Insert trait only when type_id and unit_id are not null.
+            if (isset($type_id) && isset($unit_id)) {
             
-            $temp = db_insert('pheno_measurements')
-              ->fields(array('plant_id' => $pheno_plantid, 
-                             'type_id' => $type_id, 
-                             'unit_id' => $unit_id, 
-                             'cvalue_id' => $cvalue_id,
-                             'value' => $cell_entry,
-                             'modified' => date("D M d, Y h:i:s a", time())))
-              ->execute();
-              
-              
-            if (!$temp) {
-              tripal_report_error(
-                'rawpheno',
-                TRIPAL_ERROR,
-                'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
-                array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
+              $temp = db_insert('pheno_measurements')
+                ->fields(array('plant_id' => $pheno_plantid, 
+                               'type_id' => $type_id, 
+                               'unit_id' => $unit_id, 
+                               'cvalue_id' => $cvalue_id,
+                               'value' => $cell_entry,
+                               'modified' => date("D M d, Y h:i:s a", time())))
+                ->execute();
+                
+                if (!$temp) {
+                tripal_report_error(
+                  'rawpheno',
+                  TRIPAL_ERROR,
+                  'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
+                  array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
                              'type_id' => $type_id, 
                              'unit_id' => $unit_id, 
                              'cvalue_id' => $cvalue_id,
                              'value' => $cell_entry,
                              'modified' => date("D M d, Y h:i:s a", time())),TRUE)),
-                array('print' => TRUE)
-              );
-              $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
-              exit(38);
+                  array('print' => TRUE)
+                );
+                $TRANSACTION->rollback();
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                exit(38);
+              }
             }
-          }
-        }  
+          }  
         }
       }
+      
       $i++;
     }
   }
@@ -339,8 +336,8 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
   print "\nUpdating the materialized view summarizing phenotypic data.\n";
   $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');
   if ($mview_id) tripal_populate_mview($mview_id);
-
 }
+
 
 /**
  * Validates an excel file using any validators registered with rawpheno.
@@ -655,6 +652,32 @@ function rawpheno_indicate_new_headers($file) {
 }
 
 /**
+ * Get all column headers.
+ *
+ * @param $file
+ *    The full path to the excel file containing data.
+ *
+ * @return
+ *    An array of headers.
+ */
+function rawpheno_all_headers($file) {
+  // Retrieve the header for the indicated file.
+  rawpheno_add_parsing_libraries();
+  $xls_obj = rawpheno_open_file($file);
+  rawpheno_change_sheet($xls_obj, 'measurements');
+  // Note: we use the foreach here 
+  // because the library documentation doesn't have a single fetch function.
+  
+  $arr_headers = array();
+  foreach ($xls_obj as $xls_headers) {
+    $arr_headers = $xls_headers;
+    break;
+  }
+  
+  return $arr_headers;
+}
+
+/**
  * Adds the necessary files for EXCEL parsing.
  */
 function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
@@ -722,10 +745,11 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
   $unit = db_query("SELECT rel.object_id as id, cvt.name as name 
-                        FROM chado.cvterm_relationship rel
-                        LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id=rel.object_id
-                        WHERE rel.subject_id = :trait LIMIT 1",
-                      array(':trait' => $trait_id))->fetchAll();
+                    FROM chado.cvterm_relationship rel
+                    LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id=rel.object_id
+                    WHERE rel.subject_id = :trait LIMIT 1",
+                    array(':trait' => $trait_id))->fetchAll();
+  
   if (sizeof($unit) == 1) {
     return $unit[0];
   }

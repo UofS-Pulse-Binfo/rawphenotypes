@@ -22,8 +22,8 @@ $validators = module_invoke_all('rawpheno_validators');
       <span class="summary"></span>
     </span>
   </legend>
-  <div class="fieldset-wrapper">
-    <br />
+  
+  <div class="fieldset-wrapper" title="Click to collapse Validation Result">
     <ul class="error-main">
       <?php 
         foreach ($status as $key => $result) {

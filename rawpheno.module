@@ -166,6 +166,11 @@ function rawpheno_preprocess(&$variables) {
   $arr_headers['rawpheno_upload'] = variable_get('rawpheno_upload_title');
   
   $variables['page_title'] = $arr_headers;
+  
+  // Stages in upload page.
+  $variables['upload_stages'] = array('check' => 'Validate Spreadsheet', 
+                                      'review' => 'Describe New Trait', 
+                                      'save' => 'Save Spreadsheet');
 }
 
 /**
@@ -366,7 +371,7 @@ function rawpheno_rawdata_summary_json() {
           $location = $data['location'];
           
           // Get the entry with the most traits for this particular location, year and rep.
-          $sql = "SELECT total_count
+          $sql = "SELECT total_count, all_traits
             FROM chado.rawpheno_rawdata_mview
             WHERE location = :location AND SUBSTRING(planting_date, 1, 4) = :year AND rep = :rep
             ORDER BY total_count DESC LIMIT 1";
@@ -374,17 +379,23 @@ function rawpheno_rawdata_summary_json() {
           $traits = db_query($sql, array(':year' => $year, 
                                          ':rep' => $rep, 
                                          ':location' => $location))
-                    ->fetchField();
-          
+            ->fetchObject();
+             
           // Less one to exclude trait Planting Data (date).
-          $trait_count = (isset($traits) && !empty($traits)) ? ($traits - 1) : 0;
+          $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
+            ? ($traits->total_count - 1) : 0;
           
+          // List of traits measured.
+          $trait_list = (isset($traits->all_traits) && !empty($traits->all_traits)) 
+            ? $traits->all_traits : 0; 
+            
           // Create a json entry with the following keys:
           // location, year, rep and trait.
           $arr_json[] = array('location' => $location,
                               'year' => $year,
                               'rep' => $rep,
-                              'trait' => $trait_count);
+                              'trait' => $trait_count,
+                              'type_id' => $trait_list);
         }
       }
     }
