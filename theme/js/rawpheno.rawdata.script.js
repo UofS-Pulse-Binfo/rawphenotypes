@@ -337,11 +337,19 @@
              infoWindow();
              // Tell user how many reps a trait was measured.
              $('#text-rep').text(countRep + ' Rep');
+             // Remove trait not found message, if present.
+             if ($('#text-not-found').length > 0) {
+               $('#text-not-found').remove();
+             }
+             
              return $('#edit-select-trait option:selected').text();
            })
          }
          else {
            infoWindow('off');
+           if (traitSelected != '0') {
+             $('.subtitle-left .form-item').append('<span id="text-not-found">&nbsp; Trait not found</span>');
+           }
          }
        }
   
@@ -389,7 +397,8 @@
              .style('opacity', 0)
              .transition()
              .duration(function() { return randomNumber(); })
-             .style('opacity', 1);
+             .style('opacity', 1)
+             .attr('filter', 'url(#dropshadow)');
          
          }
        }

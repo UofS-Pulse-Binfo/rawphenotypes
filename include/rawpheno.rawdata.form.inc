@@ -14,7 +14,15 @@ function rawpheno_rawdata($form, &$form_state) {
   // SVG canvas.
   $form['page_content'] = array(
     '#type' => 'markup',
-    '#markup' => '<svg class="data-chart"></svg>',
+    '#markup' => '<svg class="data-chart">
+      <defs>
+        <filter id="dropshadow" x="0" y="0" width="170%" height="200%">
+          <feOffset result="offOut" in="SourceAlpha" dx="12" dy="9" />
+          <feGaussianBlur result="blurOut" in="offOut" stdDeviation="7" />
+          <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+        </filter>
+      </defs>
+    </svg>',
   );
   
   // Allow users to filter the chart based on traits.
