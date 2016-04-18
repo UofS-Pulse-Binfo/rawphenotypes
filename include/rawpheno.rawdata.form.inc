@@ -24,7 +24,7 @@ function rawpheno_rawdata($form, &$form_state) {
   $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
   
   // Get all traits under phenotypes measurements type.
-  $traits = db_query("SELECT cvterm_id, cvterm_id || '-' || name 
+  $traits = db_query("SELECT cvterm_id, name 
     FROM chado.cvterm
     WHERE name <> 'Planting Date (date)' AND cv_id = :cv_id
     ORDER BY cvterm_id ASC", array(':cv_id' => $cv_id->cv_id))
