@@ -63,24 +63,35 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
   // Change to the correct spreadsheet.
   rawpheno_change_sheet($xls_obj, 'measurements');
 
+  // File to write progress status.         
+  $tmp = file_directory_temp();
+  $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
+  // Count all the rows in the spreadsheet and use this count to compute
+  // the percentage of the currently saved rows.
+  $row_count = rawpheno_count_rows($xls_obj);
+    
   // Start Transaction.
   $TRANSACTION = db_transaction();
   try {
+  
     // Read each row.
-    print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: ";
+    print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
     // Each row in the spreadsheet.
     foreach ($xls_obj as $row) {
       // print update every 25 lines.
       if (($i % 25) == 0 AND $i !== 0) {
-        print $i . "... ";
+        print $i . " of " . $row_count . ' - ' . $percent . '%'."\n";
+        
+        $percent = round(($i/$row_count) * 100);
+        file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
       }
       
       // Update job status every 5%
       // There is no point doing this because the transaction ensures 
       // we don't see any results until the job is done...
-      //$percent_complete = round(($i / $num_rows) * 100);
+      // $percent_complete = round(($i / $num_rows) * 100);
       //if (($percent_complete % 5) == 0) {
       //  tripal_set_job_progress($job_id, $percent_complete);
       //}
@@ -678,6 +689,27 @@ function rawpheno_all_headers($file) {
 }
 
 /**
+ * Count all rows in a spreadsheet
+ *
+ * @param $data_sheet
+ *    The tab/sheet containing all data.
+ *
+ * @return
+ *    An integer value of the total rows.
+ */
+function rawpheno_count_rows($data_sheet) {
+  $count_rows = 0;
+  foreach ($data_sheet as $row) {
+    if (strlen(implode('', $row)) > 2) {
+      $count_rows++;
+    }
+  }
+  
+  // Less header row.
+  return $count_rows - 1;
+}
+
+/**
  * Adds the necessary files for EXCEL parsing.
  */
 function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
@@ -745,10 +777,10 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
   $unit = db_query("SELECT rel.object_id as id, cvt.name as name 
-                    FROM chado.cvterm_relationship rel
-                    LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id=rel.object_id
-                    WHERE rel.subject_id = :trait LIMIT 1",
-                    array(':trait' => $trait_id))->fetchAll();
+    FROM chado.cvterm_relationship rel
+    LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id=rel.object_id
+    WHERE rel.subject_id = :trait LIMIT 1",
+    array(':trait' => $trait_id))->fetchAll();
   
   if (sizeof($unit) == 1) {
     return $unit[0];

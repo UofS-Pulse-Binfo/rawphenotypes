@@ -170,7 +170,8 @@ function validator_column_exists_generate_msg($error_info) {
   $messages = array();
   
   if (isset($error_info['missing'])) {
-    $messages[] = 'The following columns must exist: "' . implode('", "',$error_info['missing']). '".';
+    $text1 = 'The following columns must exist: "' . implode('", "',$error_info['missing']). '". Please add empty column in your spreadsheet for each of the missing trait mentioned.';
+    $messages[] = $text1;
   }
   
   if (isset($error_info['duplicates'])) {
@@ -547,7 +548,7 @@ function validator_germplasm_present_generate_msg($error_info) {
   
   $messages = array();
   if (!empty($nonexistant)) {
-    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant).'.';
+    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please contact the website administrator.';
   }
   if (!empty($nonunique)) {
     $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please notify the administrator of this duplication.';

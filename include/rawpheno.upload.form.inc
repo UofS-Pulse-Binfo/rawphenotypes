@@ -17,6 +17,7 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
  * @see rawpheno_element_submit()
  */
 function rawpheno_upload_form_master($form, &$form_state) {    
+  
   // Navigation button. Related page of upload page is instructions page.
   $form['page_button'] = array(
     '#type' => 'markup',
@@ -307,7 +308,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
   $job_id = NULL;
   $percent_complete = 0;
   $message = 'Waiting for job system';
-  
+
   if (isset($form_state['build_info']['args'][0])) {
     $job_id = $form_state['build_info']['args'][0];
     
@@ -318,7 +319,12 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
 
       // Set the progress bar based on the job.
       if ($job->status == 'Running') {
-        $percent_complete = $job->progress;
+        $tmp = file_directory_temp();
+        $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
+        if (file_exists($filename) && file_get_contents($filename) !== FALSE) {
+          $percent_complete = file_get_contents($filename);
+        }
+        
         $message = 'Loading Spreadsheet...';
       }
       elseif($job->status == 'Completed') {
@@ -348,7 +354,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
       drupal_set_message('We are unable to find the job tasked with loading your spreadsheet. Please contact the administrator.','error');
     }
   }
-
+  
   $form['notice'] = array(
     '#type' => 'markup',
     '#markup' => '<div class="messages status">Your spreadsheet has been successfully submitted and <em>will not be interupted</em> if you choose to leave this page.</div>'
@@ -604,7 +610,7 @@ function rawpheno_submit_review($form, &$form_state) {
   global $user;
   if (isset($xls_file) && !empty($xls_file)) {
     $job_id = tripal_add_job(
-      "Upload Phenoypic data: ".$xls_file,
+      "Upload Phenoypic data: " . $xls_file,
       'rawpheno',
       'rawpheno_load_spreadsheet',
       array(

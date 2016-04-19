@@ -35,7 +35,7 @@
        margin.top = 40;
        margin.left = 90;
        margin.bottom = 80;
-       margin.right = 10;
+       margin.right = 30;
   
        // Height of the chart defined in the css rule for #container-rawdata.
        height = parseInt(divChartContainer.style('height'), 10);
