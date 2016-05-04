@@ -107,7 +107,9 @@
       btnSearch.click(function() { 
         // Clear or reset previous search.
         removeElements();
-      
+
+        $('#container-search-result').addClass('search-on');
+ 
         if (txtField.val() == null || txtField.val().trim() == '' || txtField.val().length <= 1) {
           // Search field is blank.
           var title = 'Invalid value in search field.';
@@ -223,7 +225,12 @@
         if ($('#container-search-result table').length > 0) {
           $('#container-search-result table, #container-search-result em').hide('slow').remove();
         }
-        
+
+        // Remove any search result from previous search.
+        if ($('#container-search-result').length > 0) {
+          $('#container-search-result').removeClass('search-on');
+        }        
+
         // Remove clear button from previous search.
         if ($('#lnk-reset').length > 0) {
           $('#lnk-reset').remove();

@@ -46,6 +46,15 @@ function rawpheno_menu() {
       'type' => MENU_CALLBACK,
     );
   
+    // Menu callback which returns all data.
+    $items['rawdata_all'] = array(
+      'page callback' => 'rawpheno_rawdata_all_json', 
+      'access callback' => true, 
+      'delivery callback' => 'drupal_json_output',
+      'type' => MENU_CALLBACK,
+    );
+  
+  
   // INSTRUCTIONS PAGE
   // A page containing standard phenotyping procedure and
   // providing data collection spreadsheet.
@@ -297,9 +306,14 @@ function rawpheno_instructions_autocomplete_search($key = '') {
  *
  * @return
  *   A JSON and each member has the following objects:
- *   location, year, rep, # traits.
+ *   location, year, rep, # traits, list of traits with value.
  */
 function rawpheno_rawdata_summary_json() {
+  // Get trait id of planting data.
+  $planting_date = rawpheno_get_trait_id('Planting Date (date)');
+  // get trait id of # of seeds planted
+  $seeds_planted = rawpheno_get_trait_id('# of Seeds Planted (count)');
+
   // Minimum rep per year per location.
   $min_set = 3;
   // Select all location present in the materialized view.
@@ -381,13 +395,30 @@ function rawpheno_rawdata_summary_json() {
                                          ':location' => $location))
             ->fetchObject();
              
-          // Less one to exclude trait Planting Data (date).
-          $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
-            ? ($traits->total_count - 1) : 0;
           
           // List of traits measured.
           $trait_list = (isset($traits->all_traits) && !empty($traits->all_traits)) 
             ? $traits->all_traits : 0; 
+          
+          // NOTE:
+          // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
+          // Before doing that, test if these two traits were part of the traits the count is based on.
+          if ($trait_list != 0) {
+            $less = 0;
+            if (strstr($trait_list, $planting_date)) {
+              $less++;
+            }
+            
+            if (strstr($trait_list, $seeds_planted)) {
+              $less++;
+            }
+          }
+          
+          $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
+            ? ($traits->total_count - $less) : 0;
+          
+          
+          
             
           // Create a json entry with the following keys:
           // location, year, rep and trait.
@@ -406,4 +437,166 @@ function rawpheno_rawdata_summary_json() {
     // No data.
     return 0;
   }
+}
+
+/**
+ * Function callback: Generate data for the bar chart.
+ *
+ * @see hook_menu()
+ *
+ * @return
+ *   A JSON containing the bins and data.
+ *   bins is a list of computed bins and each data
+ *   has location and bin objects.
+ */
+function rawpheno_rawdata_all_json() {  
+  // Get the trait id.
+  if (!isset($_GET['t'])) { return 0; }
+  
+  $trait_id = trim(strip_tags($_GET['t']));
+  
+  if (isset($trait_id) AND strlen($trait_id) <= 10) {
+    // Array to hold the computed Bin.
+    $arr_bin_json = array();
+    // Array to hold the data.
+    $arr_data_json = array();
+    // Trait that have non numeric value or scale.
+    $arr_trait_names = array('Diseases Present (y/n/?)', 'Lodging (Scale: 1-5) upright - lodged');
+
+    // Test if the trait is a comment, scale or other.
+    $t = db_query("SELECT name FROM chado.cvterm WHERE cvterm_id = :trait_id LIMIT 1", 
+      array(':trait_id' => (int)$trait_id));
+    
+    $trait_name = $t->fetchField();
+    
+    if (in_array($trait_name, $arr_trait_names)) {
+      // Trait is yes, no and ? or scale 1,2,3,4,5.
+      $sql = "SELECT t3.value AS location, t2.value AS v
+        FROM {pheno_plant} AS t1 
+          INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
+          INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
+        WHERE t2.type_id = :trait_id AND
+          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+        ORDER BY t3.value ASC";
+
+      $d = db_query($sql ,array(':trait_id' => (int)$trait_id));
+      $l = db_query($sql ,array(':trait_id' => (int)$trait_id));
+      $all_locations = array_unique($l->fetchCol(0));
+      
+      if ($trait_name == $arr_trait_names[0]) {
+        // Trait is Diseases Present (y/n/?)
+        // Bins.
+        $arr_bin_json = array('Yes', 'No', '?');
+        
+        // Data.
+        // Trait is yes, no and ?.
+        if ($d->rowCount() > 0) {
+          foreach($d as $e) {
+            if (in_array(strtolower($e->v), array('y', 'yes')))
+              $bin = 'Yes';
+            else if (in_array(strtolower($e->v), array('n', 'no')))
+              $bin = 'No';
+            else if ($e->v == '?') 
+              $bin = '?';
+          
+            $arr_data_json[] = ['location' => $e->location, 'bin' => $bin];
+          } 
+        }
+        else {
+          return 0;
+        }
+      }
+      else {
+        // Lodging (Scale: 1-5) upright - lodged
+        // Bin.
+        $s = db_query("SELECT code FROM {pheno_scale_member} ORDER BY code ASC");
+        if ($s->rowCount() > 0) {
+          foreach($s as $b) {
+            $arr_bin_json[] = $b->code;
+          }
+        }
+        
+        // Data.
+        // Trait is scale.
+        if ($d->rowCount() > 0) {
+          foreach($d as $e) {
+            $arr_data_json[] = ['location' => $e->location, 'bin' => $e->v];
+          }
+        }
+        else {
+          return 0;
+        }
+      }
+    }
+    else {
+      // Other triats that have numeric value.
+      $sql = "SELECT t1.stock_id AS stock, t3.value AS location, 
+          ROUND(AVG(t2.value::integer)) AS average
+        FROM {pheno_plant} AS t1 
+          INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
+          INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
+        WHERE t2.type_id = :trait_id AND
+          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+        GROUP BY t3.value, t1.stock_id, t2.value
+        ORDER BY t3.value, average ASC";      
+      
+      $d = db_query($sql ,array(':trait_id' => $trait_id));
+      $l = db_query($sql ,array(':trait_id' => (int)$trait_id));
+      $all_locations = array_unique($l->fetchCol(0));
+      
+      if ($d->rowCount() > 0) {
+        // Bins.
+        // Get the min and max values from the averages.
+        $all_average = $d->fetchCol(2);
+        $max = max($all_average);
+        $min = min($all_average);
+      
+        $total_bins = 4; 
+        $interval = round($max/$total_bins);     
+      
+        $i = 0;
+        $to = 0;
+        $from = $min;
+      
+        while($to < $max) {
+          $from = ($i ==0) ? $min : ($to + 1);
+          $to = $from + $interval;
+        
+          $arr_bin_json[$i] = $from . '-' . $to;
+          $i++; 
+        }
+      
+        // Assign each row with a bin.
+        $m = db_query($sql ,array(':trait_id' => $trait_id))
+          ->fetchAll();
+        
+        foreach($m as $stock) {
+          $stock_avg = (int)$stock->average;
+        
+          // Find the bin for this row.
+          foreach($arr_bin_json as $b) {
+            list($from, $to) = explode('-', $b);
+            if ($stock_avg >= $from AND $stock_avg <= $to) {
+              $stock_bin = $b;
+              break;
+            }  
+          }
+        
+          // Add entry to json
+          $arr_data_json[] = array('location' => $stock->location,
+                                   'bin' => $stock_bin);
+        }
+      }
+      else {
+        return 0;
+      }
+    }
+    
+    // Return bin and data.
+    return ['bin' => $arr_bin_json, 'data' => $arr_data_json];       
+  }
+  else {
+    // Trait is not found.
+    return 0;
+  }    
 }

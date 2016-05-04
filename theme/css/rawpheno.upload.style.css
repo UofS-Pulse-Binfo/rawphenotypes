@@ -163,15 +163,18 @@ div.clear-both {
 
 /* Error message box */
 .messages {
-  margin: 25px 0 15px 0 !important;
+  margin: 0 0 15px 0 !important;
 }
 
+div.status {
+  margin-top: 25px !important;
+}
 
 /* Validation result container */
 .rawpheno-validate-progress {
   border: none !important;
   padding: 0 !important;
-  margin: 0 !important;
+  margin: 0 0 40px 0 !important;
 }
 
 

@@ -20,12 +20,35 @@
 /* SVG container. Height and width will be used by render function */
 #container-rawdata {
   background-color: #FCFDFD;
-  height: 450px; 
+  height: 500px; 
   padding: 30px 0;
   width: 100%;
 }
 
+/* SVG container for Bar Chart */
+#container-barchart {
+  background-color: #F2F3F3; 
+  display: inline-block;
+  margin-bottom: 0 !important;
+  opacity: 0;
+  padding: 15px 0;
+  text-align: center;
 
+}
+
+#container-barchart h2 {
+  color: #FFFFFF;
+  font-family: inherit;
+  font-style: italic;
+  font-size: 14px !important;
+  font-weight: normal;
+  text-align: center;
+  margin-bottom: 15px !important;
+  padding: 15px;
+  background-color: #000000;
+  display: inline-block;
+}
+ 
 /* Main title */
 .chart-title {
   font-family: sans-serif;
@@ -58,6 +81,9 @@
   text-anchor: middle;
 }
 
+rect {
+  shape-rendering: crispEdges;
+}
 
 /* Rect in Rep */
 .rect-each-rep {
@@ -76,7 +102,7 @@
 /* Leaf marker */
 .marker-rep {
   /* fill: #007F00; */
-  fill: #4E8E00;
+  fill: #FFFFFF;
   stroke-width: 0;
   stroke: #000000;
 }
@@ -163,4 +189,23 @@ div.tool-tip {
 
 #container-marker-information em {
   font-weight: bold;
+}
+
+
+/* Barchart */
+.barchart-axis line, .barchart-axis path {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.barchart-axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+}
+
+line {
+  opacity: 1;
 }

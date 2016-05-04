@@ -85,7 +85,7 @@ function rawpheno_download($form, &$form_state) {
     WHERE t1.plant_id IN
       (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
       AND t1.value <> ''
-      AND t2.name <> 'Planting Date (date)'
+      AND t2.name NOT IN ('Planting Date (date)', '# of Seeds Planted (count)')
     ORDER BY t1.type_id ASC", array(':location' => $loc))
     ->fetchAllKeyed();
   

@@ -100,7 +100,7 @@
           print drupal_render_children($form);
         ?>
       </div>
-
+      
       <?php 
         // End rawdata page.
       } 
@@ -175,7 +175,6 @@
         <?php 
         // In Stage #3 Save Spreadsheet, show progress bar and links to other pages
         if ($form['current_stage']['#value'] == 'save') { 
-         
         ?>
         
         <fieldset>
@@ -227,7 +226,6 @@
         // Begin instructions page.
         /////////////////////////////////////
       ?>
-      
       <div id="container-instructions">
         <div id="phenotype-page">
           <div id="container-search-result"></div>
