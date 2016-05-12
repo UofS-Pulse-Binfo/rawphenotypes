@@ -55,17 +55,10 @@ function rawpheno_rawdata($form, &$form_state) {
   // Hidden field containing url to JSON (summary data).
   $form['json_url'] = array(
     '#type' => 'hidden',
-    '#value' => url('/rawdata'),
+    '#value' => url('/'),
     '#attributes' => array('id' => array('rawdata-json'))
   );
-  
-  // Hidden field containing url to JSON (all data).
-  $form['json_url_all'] = array(
-    '#type' => 'hidden',
-    '#value' => url('/rawdata_all'),
-    '#attributes' => array('id' => array('rawdata-json-all'))
-  );
-  
+
   // Attach D3 JS library.
   $d3_lib = libraries_load('d3');
   if (isset($d3_lib) && !empty($d3_lib['loaded'])) {

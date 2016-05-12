@@ -87,7 +87,7 @@ rect {
 
 /* Rect in Rep */
 .rect-each-rep {
-  stroke: #000000;
+  stroke: #333333;
 }
 
 
@@ -195,7 +195,7 @@ div.tool-tip {
 /* Barchart */
 .barchart-axis line, .barchart-axis path {
   fill: none;
-  stroke: black;
+  stroke: #000000;
   stroke-width: 1;
   shape-rendering: crispEdges;
 }

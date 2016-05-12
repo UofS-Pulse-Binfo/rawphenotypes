@@ -681,7 +681,11 @@ function rawpheno_all_headers($file) {
   
   $arr_headers = array();
   foreach ($xls_obj as $xls_headers) {
-    $arr_headers = $xls_headers;
+    foreach($xls_headers as $h) {
+      if (strlen($h) > 2) {
+        $arr_headers[] = trim($h);
+      }
+    }
     break;
   }
   

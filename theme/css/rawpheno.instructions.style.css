@@ -134,16 +134,11 @@ em {
     font-size: 0.78em;
   }
   
-  div.subtitle-right {
-    display: none;
-  }
-  
   div.gallery-img img, div.gallery-img {
     width: 410px;
     text-align: center;
   }
 }
-
 
 #tabs .ui-tabs-nav {
   background: transparent;

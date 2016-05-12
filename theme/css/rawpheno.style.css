@@ -88,3 +88,29 @@
   -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
   box-shadow:         1px 1px 5px 1px #CCCCCC;
 }
+
+
+/* Selectbox */
+select {
+  -webkit-appearance: none;
+  background: url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
+  background-position: 98.5% 50%;
+}
+
+/* Administrative Pages */
+fieldset th {
+  background-color: #e1e2dc !important;
+  font-weight: bold !important;
+  width: 50%;
+}
+
+.td_highlight {
+  background-color: #f3f4ee !important;
+}
+
+/* Remove the button when screen is at minimum width */
+@media(max-width: 1300px) {
+  div.subtitle-right {
+    display: none;
+  }
+}

@@ -67,3 +67,18 @@ select:disabled {
 #download-window-error {
   display: none;
 }
+
+/* R Friendly checkbox */
+div.form-item-chk-rfriendly {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+select {
+  background-color: #FFFFFF;
+}
+
+label img {
+  border: none;
+  background: none;
+}

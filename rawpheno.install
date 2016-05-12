@@ -179,7 +179,10 @@ function rawpheno_function_terms($type) {
                    'rawdata' => 'Phenotypic data available through KnowPulse',
                    'download' => 'Select locations and traits that you want to download',
                    'instructions' => 'Standard Phenotyping Procedure',
-                   'upload' => 'Drag and Drop phenotypic data collection spreadsheet',);
+                   'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
+                   'r-words' => 'of,to,have,on,at',
+                   'r-chars' => '(,),/,-,:,;',
+                   'r-replace' => '# = num,/ = div,? = unsure,- = to');
       break;
       
     case 'scales':
@@ -201,7 +204,10 @@ function rawpheno_function_terms($type) {
                    'rawpheno_rawdata_title',
                    'rawpheno_download_title', 
                    'rawpheno_instructions_title', 
-                   'rawpheno_upload_title',);
+                   'rawpheno_upload_title',
+                   'rawpheno_admin_transform_words',
+                   'rawpheno_admin_transform_characters',
+                   'rawpheno_admin_transform_replace');
       break;
     
     case 'vocabularies':
@@ -231,13 +237,24 @@ function rawpheno_function_terms($type) {
  */
 function rawpheno_install() {
   // After custom tables are created, perform the following:
-  // 1. Insert cvterms property type, measurement unit and measurement types. 
+  // 1 - a. Define R transformation rule default.
+  // 1 - b. Insert cvterms property type (with R compatible version), measurement unit and measurement types. 
   // 2. Populate pheno_scale_member table.
   // 3. Create materialized view.
   // 4. Set default values of module configuration.
   // 5. Add data collection spreadsheet into public:// directory.
   
+  $vars = rawpheno_function_terms('variables');
+  $config = rawpheno_function_terms('defaults');
+  
   // 1.
+  // 1 - a.
+  // Initialize R transformation rules.
+  variable_set($vars[5], $config['r-words']);  
+  variable_set($vars[6], $config['r-chars']);  
+  variable_set($vars[7], $config['r-replace']);  
+  
+  // 1 - b.
   // Create cvterm entry for each traits.
   // Array to hold array of cvterms.
   $pp_terms = array();
@@ -284,6 +301,11 @@ function rawpheno_install() {
     // Insert Controlled Vocubalary
     tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
     
+    
+    if ($cv_i == 1) {
+      $cv_obj = tripal_insert_cv('r_compatible_column_header', 'R Compatible Column Headers');  
+    }
+    
     // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
     foreach($arr_terms[$cv_i] as $term_name => $term_def) {
       $arr_terms_param = array('id' => 'tripal:'.$term_name,
@@ -292,10 +314,23 @@ function rawpheno_install() {
                                'cv_name' => $cv_name);
                                
       // Insert cvterm.                         
-      tripal_insert_cvterm($arr_terms_param);  
+      $cvterm_obj = tripal_insert_cvterm($arr_terms_param);  
+    
+      if ($cv_i == 1) {
+        // R Compatible cvterm.
+        $r_compatible = rawpheno_function_make_r_compatible($term_name);
+        
+        // Insert the same trait (r compatible) to cvterm prop.
+        db_insert('chado.cvtermprop')
+          ->fields(array('cvterm_id' => $cvterm_obj->cvterm_id, 
+            'type_id' => $cv_obj->cv_id,
+            'value' => $r_compatible,
+            'rank' => 0))
+          ->execute();
+      }
     }
   }
-
+  
   // 2.
   // From standard phenotype data collection, scale is 1 - 5.
   $scales = rawpheno_function_terms('scales');
@@ -372,8 +407,6 @@ function rawpheno_install() {
   
   // 4.
   // Set default colour scheme and page titles.
-  $vars = rawpheno_function_terms('variables');
-  $config = rawpheno_function_terms('defaults');
   variable_set($vars[0], $config['colour']);
   variable_set($vars[1], $config['rawdata']);
   variable_set($vars[2], $config['download']);
@@ -442,5 +475,16 @@ function rawpheno_uninstall() {
       $del = "DELETE FROM chado.cv WHERE cv_id = :cv_id AND name = :cv";
       db_query($del, array(':cv_id' => $cv_id->cv_id, ':cv' => $vocabulary));
     }
+  }
+  
+  // 4. Remove cvterm prop entries.
+  $sql = "SELECT cv_id FROM chado.cv WHERE name = :cv_name LIMIT 1";
+  $cv_id = db_query($sql, array(':cv_name' => 'r_compatible_column_headers'))
+    ->fetchField();
+  
+  if (isset($cv_id->cv_id)) {  
+    // Then delete cvterm properties.
+    $del = "DELETE FROM chado.cvtermprop WHERE type_id = :cv_id";
+    db_query($del, array(':cv_id' => $cv_id->cv_id));
   }
 }

@@ -75,11 +75,13 @@
         $('#container-barchart').remove();
       });
       
+      // URL to knowpulse.
+      var file = $('#rawdata-json').val();
       
       // Start the heat map chart.
-      // Read JSON data for heat map.
-      var file = $('#rawdata-json').val();
-	    d3.json(file, function(error, data) {
+      // Read JSON data for heat map.	    
+	    heatmapFile = file + '/rawdata/';
+	    d3.json(heatmapFile, function(error, data) {
 		    if (error) {
           // Error reading JSON.
           throw error;
@@ -422,6 +424,8 @@
         infoWindow('off');
         // Remove the bar chart.
         d3.selectAll('#container-barchart').remove();
+        // Reset selectbox
+        $('#edit-select-trait').val('');
       }
           
       // Render heat map chart elements.
@@ -505,7 +509,7 @@
           .attr('width', (barWidth - 2))
           .attr('x', function(d, i) {
             x = (i%dataByLocations.length == 0) ? 0 : x + 1;
-            return x * barWidth; 
+            return x * (barWidth + 1); 
           });
 
         // Render scales
@@ -577,7 +581,7 @@
           legend.append('rect')
             .attr('transform', 'translate('+ (31 * j) +', 0)')
             .attr('width', 30)
-            .attr('height', 9)
+            .attr('height', 8)
             .attr('fill', color[m]);
         
           legend.append('text')
@@ -726,7 +730,8 @@
           }
 
           // Render bar chart.
-          var barchartFile = document.getElementById('rawdata-json-all').value + '?t=' + traitSelectedId;
+          var barchartFile = file + '/rawdata_trait' + '?t=' + traitSelectedId;
+          
           d3.json(barchartFile, function(error, barchartData) {
             if (error) {
               // Error reading JSON.

@@ -7,7 +7,7 @@
     attach: function (context, settings) {
       // Reference form elements.
       // checkboxes to select location and traits.
-      var chkb = $('input:checkbox');
+      var chkb = $('input:checkbox:lt(2)');
       // Select fields for location and traits.
       var sel = $('select');
       // Location and traits fields.

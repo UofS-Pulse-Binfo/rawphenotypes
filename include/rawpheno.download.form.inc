@@ -110,16 +110,22 @@ function rawpheno_download($form, &$form_state) {
     '#default_value' => 0,
   );
   
-  $form['download_submit_download'] = array(
-    '#type' => 'submit',
-    '#value' => 'Download',
-  );
-  
   // Attach CSS and JavaScript
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.download.style.css');
   $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
     
+  $form['chk_rfriendly'] = array(
+    '#title' => t('<img src="@img" alt="Make R Friendly" title="Make R Friendly" align="absmiddle" /> (Make R Friendly)', array('@img' => '../../' . $path . 'img/r.gif')),
+    '#type' => 'checkbox',
+    '#default_value' => 0,
+  );
+
+  $form['download_submit_download'] = array(
+    '#type' => 'submit',
+    '#value' => 'Download',
+  );
+  
   return $form;
 }
 
@@ -148,6 +154,8 @@ function rawpheno_download_submit($form, &$form_state) {
   // Add planting date to the list of traits.
   $planting_date = rawpheno_get_trait_id('Planting Date (date)');
   array_push($traits, $planting_date);
+  $no_seeds = rawpheno_get_trait_id('# of Seeds Planted (count)');
+  array_push($traits, $no_seeds);
   
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
@@ -163,12 +171,29 @@ function rawpheno_download_submit($form, &$form_state) {
     WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location)) 
       AND t2.cvterm_id IN (:traits)
     GROUP BY t2.cvterm_id, t2.definition";
+  
   $result = db_query($sql, array(':location' => $location, ':traits' => $traits))->fetchAll();
   $header = array('A0' => 'Name');
   
   foreach ($result as $r) {
-    $header[ $r->id ] = $r->definition;
+    $def = $r->definition;
+    
+    if ($form_state['values']['chk_rfriendly'] == 1) {
+      // Get the R compatible version.
+      $id_no = (int)trim(str_replace(array('B', 'C'), '', $r->id));
+      $rfreindly = rawpheno_download_r_compatible($id_no);
+      
+      if ($rfreindly == null) {
+        $def = $r->definition;
+      }
+      else {
+        $def = $rfreindly;
+      }  
+    }
+  
+    $header[ $r->id ] = $def;
   }
+  
   ksort($header);
   
   // Query to join data from different tables.
@@ -290,4 +315,21 @@ function rawpheno_download_validate($form, &$form_state) {
     // No location selected.
     form_set_error('location', t('Please select location and try again.'));
   }
+}
+
+/**
+ * Function get the R Compatible version of a trait.
+ *
+ * @param:
+ *  $cvterm_id a numeric value containing the cvterm id number of a given trait.
+ *
+ * @return
+ *  A string containing the R compatible version of the trait.
+ */
+function rawpheno_download_r_compatible($cvterm_id) {
+  $r = db_query("SELECT value AS rcompatible FROM chado.cvtermprop WHERE cvterm_id = :cv_id LIMIT 1",
+    array(':cv_id' => $cvterm_id))
+    ->fetchField();
+
+  return (isset($r) AND !empty($r)) ? $r : null;
 }

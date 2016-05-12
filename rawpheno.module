@@ -47,8 +47,8 @@ function rawpheno_menu() {
     );
   
     // Menu callback which returns all data.
-    $items['rawdata_all'] = array(
-      'page callback' => 'rawpheno_rawdata_all_json', 
+    $items['rawdata_trait'] = array(
+      'page callback' => 'rawpheno_rawdata_trait_json', 
       'access callback' => true, 
       'delivery callback' => 'drupal_json_output',
       'type' => MENU_CALLBACK,
@@ -102,16 +102,27 @@ function rawpheno_menu() {
   
   // ADMININSTRATIVE PAGE OF THIS MODULE
   // A page for changing page colour and page title.
-  $items['admin/config/user-interface/rawpheno_testadmin'] = array(
+  $items['admin/config/user-interface/rawpheno_page_admin'] = array(
     'title' => 'Rawpheno Page Configurations',
     'description' => 'Apply a colour scheme and change page title.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('rawpheno_admin_interface'),
+    'page arguments' => array('rawpheno_admin_page_interface'),
     'access arguments' => array('access administration pages'),
     'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
+  // A page for managing column headers (cvterms).
+  $items['admin/config/user-interface/rawpheno_headers_admin'] = array(
+    'title' => 'Rawpheno Managed Column Headers',
+    'description' => 'Manage column headers/traits.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_admin_headers_interface'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'include/rawpheno.admin.form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
 }
 
@@ -416,9 +427,6 @@ function rawpheno_rawdata_summary_json() {
           
           $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
             ? ($traits->total_count - $less) : 0;
-          
-          
-          
             
           // Create a json entry with the following keys:
           // location, year, rep and trait.
@@ -449,7 +457,7 @@ function rawpheno_rawdata_summary_json() {
  *   bins is a list of computed bins and each data
  *   has location and bin objects.
  */
-function rawpheno_rawdata_all_json() {  
+function rawpheno_rawdata_trait_json() {  
   // Get the trait id.
   if (!isset($_GET['t'])) { return 0; }
   

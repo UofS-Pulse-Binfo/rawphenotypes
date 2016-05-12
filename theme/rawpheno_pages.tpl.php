@@ -124,6 +124,7 @@
         ?>
         <div id="div-button">
           <?php 
+            print drupal_render($form['chk_rfriendly']); 
             print drupal_render($form['download_submit_download']); 
             print drupal_render_children($form);
           ?>

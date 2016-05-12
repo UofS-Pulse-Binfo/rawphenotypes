@@ -180,12 +180,11 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
   // If there are no new headers then they don't have to do anything.
   if (empty($new_header)) {
     $all_headers = rawpheno_all_headers($file);
-    $plant_prop = rawpheno_function_headers('required');
     
     $markup = '
       <ul class="error-main">
         <li class="info">
-          <em>' . (count($all_headers) - count($plant_prop)) . ' Phenotypes Measured.</em>
+          <em>' . count($all_headers) . ' Column Headers.</em>
         </li>
         
         <li class="info">
