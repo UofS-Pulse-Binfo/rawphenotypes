@@ -54,7 +54,6 @@ function rawpheno_menu() {
       'type' => MENU_CALLBACK,
     );
   
-  
   // INSTRUCTIONS PAGE
   // A page containing standard phenotyping procedure and
   // providing data collection spreadsheet.
@@ -112,16 +111,48 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  // A page for managing column headers (cvterms).
+  // A page for managing R Transformation rules.
   $items['admin/config/user-interface/rawpheno_headers_admin'] = array(
-    'title' => 'Rawpheno Managed Column Headers',
-    'description' => 'Manage column headers/traits.',
+    'title' => 'Define R Transformation Rules',
+    'description' => 'Set rules used for converting traits to R Friendly version.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_admin_headers_interface'),
     'access arguments' => array('access administration pages'),
     'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
+
+  // A page for managing project and traits.
+  // List all projects and count traits available.
+  $items['admin/config/user-interface/rawpheno/all_projects'] = array(
+    'title' => 'Manage Projects and Essential Traits',
+    'description' => 'Add or modify traits in a project.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_admin_all_projects'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'include/rawpheno.admin.form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+    
+    // List traits available in a project.
+    $items['admin/config/user-interface/rawpheno/all_projects/project/%'] = array(
+      'title' => 'Manage Traits in Project',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rawpheno_admin_project', 6),
+      'access arguments' => array('access administration pages'),
+      'file' => 'include/rawpheno.admin.form.inc',
+      'type' => MENU_CALLBACK,
+    );
+    
+    // Edit trait in a project.
+    $items['admin/config/user-interface/rawpheno/all_projects/project/%/trait/%'] = array(
+      'title' => 'Manage Traits in Project',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rawpheno_admin_project_trait', 6, 8),
+      'access arguments' => array('access administration pages'),
+      'file' => 'include/rawpheno.admin.form.inc',
+      'type' => MENU_CALLBACK,
+    );
 
   return $items;
 }
