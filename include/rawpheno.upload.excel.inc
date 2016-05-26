@@ -15,7 +15,7 @@
  * @param $job_id
  *   The tripal job id.
  */
-function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $job_id) {
+function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plantprop_headers, $job_id) {
   // Unserialize and remove formating for the headers that should be saved as 
   // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
@@ -141,6 +141,12 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
         $pheno_plantid = db_insert('pheno_plant')
           ->fields(array('stock_id' => $stock_id))
           ->execute();
+      
+        // Map this record to a project.
+        db_insert('pheno_project_stock')
+          ->fields(array('project_id' => $active_project,
+                         'stock_id' => $pheno_plantid))
+          ->execute();               
       } 
       else {
         // Warn the admin tht germplasm is not available...  
@@ -355,8 +361,11 @@ function rawpheno_load_spreadsheet($arr_newheaders, $fid, $plantprop_headers, $j
  *
  * @param $file
  *   A drupal managed_file object describing the uploaded spreadsheet.
+ * @param $project_id
+ *   An integer containing project id selected in the project select box.
+ *   This will map the data submitted to a project.
  */
-function rawpheno_validate_excel_file($file) {
+function rawpheno_validate_excel_file($file, $project_id) {
   $status = array();
   
   // Process the validators to make them easier to use.
@@ -369,6 +378,20 @@ function rawpheno_validate_excel_file($file) {
 
   // Add the libraries needed to parse excel files.
   rawpheno_add_parsing_libraries();
+
+  // Before performing any validation to the excel file. Ensure first that a
+  // project is active or selected and ensure that a project meets the column headers
+  // required (eg. plant property and at least with a column header either essential or options).
+  foreach ($validators['project'] as $prj_validator_name => $prj_validator) {
+    if (isset($prj_validator['validation callback']) AND function_exists($prj_validator['validation callback'])) {
+      $status[ $prj_validator_name ] = call_user_func($prj_validator['validation callback'], $project_id);
+      
+      // If returned false then halt validation.
+      if ($status[ $prj_validator_name ] === FALSE) {
+        return $status;
+      } 
+    }
+  }
 
   // First validate the whole file. If any of these fail then halt validation.
   foreach ($validators['file'] as $validator_name => $validator) {
@@ -626,6 +649,7 @@ function rawpheno_function_unit($xls_header_cell) {
  *    An array of headers for new traits.
  */
 function rawpheno_indicate_new_headers($file) {
+  $active_project = $_SESSION['rawpheno']['active_project'];
 
   // Retrieve the header for the indicated file.
   rawpheno_add_parsing_libraries();
@@ -636,7 +660,8 @@ function rawpheno_indicate_new_headers($file) {
   foreach ($xls_obj as $xls_headers) { break; }
   
   // Array to hold epected column headers.
-  $expected_headers = rawpheno_function_headers('expected');
+  //$expected_headers = rawpheno_function_headers('expected');
+  $expected_headers = rawpheno_project_traits($active_project);
   
   // Remove any formatting in each column headers.
   $expected_headers = array_map('rawpheno_function_delformat', $expected_headers);
@@ -801,4 +826,121 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   }
   
   return FALSE;
+}
+
+/**
+ * Remove the unit part from a trait.
+ *
+ * @param $trait_name
+ *   A string containing the trait name as formatted in cvterm name.
+ * @return 
+ *   A string containing the trait name without the unit.
+ */
+function rawpheno_get_trait_name($trait_name) {
+  $t = explode('(', $trait_name);
+
+  // Given a trait as defined in cvterm name in the following format:
+  // Trait name (Trait Rep; Unit), extract the trait name only and return 
+  // the extracted name.
+  return (count($t) > 1) ? trim(preg_replace('/\(.*/', ' ', $trait_name)) : $trait_name;
+} 
+
+/**
+ * Get all the essential traits in a project selected.
+ *
+ * @param $project_id
+ *   An integer containing the project ID number.
+ * @return 
+ *   An array containing all essential traits in a project.
+ */ 
+function rawpheno_project_essential_traits($project_id) {
+  // Get array of trait types
+  $trait_type = rawpheno_function_trait_types();
+   
+  // Array to hold trait names.
+  $arr_essential_traits = array();
+  
+  // Query essential traits in a project.
+  $sql = "SELECT t2.name AS cvterm
+    FROM pheno_project_cvterms AS t1 
+      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
+    WHERE t1.project_id = :project_id AND t1.type = :essential
+    ORDER BY t2.name ASC";
+   
+  $args = array(':project_id' => $project_id, ':essential' => $trait_type['type1']);  
+  $trait = chado_query($sql, $args);
+  
+  foreach($trait as $t) {
+    $m = rawpheno_get_trait_name($t->cvterm);
+    array_push($arr_essential_traits, $m);
+  }
+  
+  // Add Name column header to the traits returned.
+  array_push($arr_essential_traits, 'Name');
+  
+  return $arr_essential_traits;
+}
+
+/**
+ * Get all the plant property traits in a project selected.
+ *
+ * @param $project_id
+ *   An integer containing the project ID number.
+ * @return 
+ *   An array containing all essential traits in a project.
+ */ 
+function rawpheno_project_plantproperty_traits($project_id) {
+  // Get array of trait types
+  $trait_type = rawpheno_function_trait_types();
+   
+  // Array to hold trait names.
+  $arr_plantproperty_traits = array();
+  
+  // Query essential traits in a project.
+  $sql = "SELECT t2.name AS cvterm
+    FROM pheno_project_cvterms AS t1 
+      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
+    WHERE t1.project_id = :project_id AND t1.type = :plantproperty
+    ORDER BY t2.name ASC";
+   
+  $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);  
+  $trait = chado_query($sql, $args);
+  
+  foreach($trait as $t) {
+    $m = rawpheno_get_trait_name($t->cvterm);
+    array_push($arr_plantproperty_traits, $m);
+  }
+  
+  return $arr_plantproperty_traits;
+}
+
+/**
+ * Get all traits available in a project whether essential or not.
+ *
+ * @param $project_id
+ *   An integer containing the project ID number.
+ * @return 
+ *   An array containing all traits available in a project.
+ */
+function rawpheno_project_traits($project_id) {
+  $arr_trait = array();
+  
+  // Query essential traits in a project.
+  $sql = "SELECT trim(t2.name) AS cvterm
+    FROM pheno_project_cvterms AS t1 
+      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
+    WHERE t1.project_id = :project_id
+    ORDER BY t2.name ASC";
+   
+  $args = array(':project_id' => $project_id);  
+  $trait = chado_query($sql, $args);
+  
+  foreach($trait as $t) {
+    array_push($arr_trait, $t->cvterm);
+  }
+  
+  // Add Name column header to the traits returned.
+  array_push($arr_trait, 'Name');
+  
+  return $arr_trait;
 }

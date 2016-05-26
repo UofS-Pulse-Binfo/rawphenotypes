@@ -83,6 +83,14 @@ function rawpheno_rawpheno_validators() {
     'validation callback' => 'validator_germplasm_present_validate_cell',
   );
   
+  // Ensure that a project is selected from the project select box
+  $validators['project_selected'] = array(
+    'label' => 'Project is selected.',
+    'scope' => 'project',
+    'message callback' => NULL,
+    'validation callback' => 'validator_is_project_selected',
+  );
+  
   return $validators;
 }
 
@@ -191,6 +199,8 @@ function validator_column_exists_generate_msg($error_info) {
  *   TRUE if it passed validation; FALSE otherwise.
  */
 function validator_column_exists_validate_header($header) {
+  $active_project = $_SESSION['rawpheno']['active_project'];
+  
   $result = array();
 
   // First check that all the essential traits are there.
@@ -201,24 +211,8 @@ function validator_column_exists_validate_header($header) {
     $delformat_header[] = $h['no units'];
     $nospace_header[] = str_replace(' ','', $h['no format']);
   }
-
-  $essential_traits = array(
-    'Plot',
-    'Entry',
-    'Name',
-    'Rep',
-    'Location',
-    'Planting Date',
-    '# of Seeds Planted',
-    'Days to Emergence',
-    '# of Emerged Plants',
-    'Days till 10% of Plants have Elongated Tendrils',
-    'Days till 10% of Plants have One Open Flower',
-    'Days till 10% of Plants have 1/2 Pods Mature',
-    'Days till Harvest',
-    'Diseases Present'
-  );
   
+  $essential_traits = rawpheno_project_essential_traits($active_project);
   $missing_traits = array_diff($essential_traits, $delformat_header);
   
   if (!empty($missing_traits)) {
@@ -602,4 +596,24 @@ function validator_germplasm_present_validate_cell($value, $context, &$storage) 
     return array('name' => $value, 'row number' => $context['row index'], 'code' => 9, 'stocks' => $stocks);
   }
 
+}
+
+/**
+ * Ensure that a project is selected before uploading a file.
+ *
+ * @param $project_id
+ *   An integer containing the project id selected.
+ *
+ * @return
+ *   TRUE if a project is selected.
+ *   FALSE if no project is selected.
+ */
+function validator_is_project_selected($project_id) {
+  if ($project_id <= 0) {
+    // No project selected.
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
 }

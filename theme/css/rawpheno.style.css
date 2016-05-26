@@ -94,18 +94,76 @@
 select {
   -webkit-appearance: none;
   background: url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
-  background-position: 98.5% 50%;
+  background-position: 99.3% 50%;
 }
 
-/* Administrative Pages */
-fieldset th {
+
+/* Administrative pages */
+#tbl-project-traits th {
   background-color: #e1e2dc !important;
   font-weight: bold !important;
-  width: 50%;
 }
 
-.td_highlight {
+tr.td-highlight {
   background-color: #f3f4ee !important;
+}
+
+.tbl-project-traits tr:hover, .td_highlight:hover {
+  background-color: #EAEAEA !important;
+}
+
+div.form-item-txt-trait-name, 
+div.form-item-sel-trait-rep, 
+div.form-item-sel-trait-unit {
+  display: inline;
+  float: left;
+  margin: 0 20px 0 0;
+}
+
+div.form-item-txt-trait-rfriendly {
+  clear: left;
+}
+
+div.form-item-txt-trait-def input[type=text],
+div.form-item-txt-trait-name input[type=text],
+div.form-item-txt-trait-rfriendly input[type=text] {
+  width: 370px;
+}
+
+#edit-btn-trait-subtmit, 
+#edit-add-selected-trait {
+  margin-top: 15px;
+}
+
+#edit-sel-project {
+  width: 100%;
+}
+
+#tbl-existing-headers th:first-child {
+  width: 20px !important;
+}
+
+
+/* Style select a project select box */
+#rawpheno-select-project-field {
+  background: #FCFDFD url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
+  background-position: 99.3% 50%;
+  border: 1px solid #AAAAAA;
+  padding: 10px; 
+  font-size: 1.0em;
+  
+  -moz-box-shadow:    1px 1px 4px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 4px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 4px 3px #EAEAEA;
+
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+div.form-item-sel-project {
+  border: none;
+  padding: 0;
+  margin-bottom: 20px !important;
 }
 
 /* Remove the button when screen is at minimum width */

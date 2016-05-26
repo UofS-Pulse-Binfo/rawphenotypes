@@ -7,6 +7,8 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadPageElementBehaviors = {
     attach: function (context, settings) {
+      $('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
+      
       // Link to collapse help window.
       var collapseLink = $('#link-help');
       // Container for help text information.

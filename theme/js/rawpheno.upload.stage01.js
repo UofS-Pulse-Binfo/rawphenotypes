@@ -12,7 +12,7 @@
 	    // Initial/default meassage of the drop area.
 	    var dropMessageHTML = $('.droppable-message').html();
 	    var dropMessage = $('.droppable-message');
-	   
+	    
 	    // Add corresponding message on mouse event.
 	    if (dropZone) {
 	      // User drags file into the drop area.
@@ -54,13 +54,6 @@
           $('div.messages').remove();
         }
       })
-      
-      // Always scroll to the validation result window.
-      // Validation result to optical center.
-      .ajaxComplete(function() { 
-        // AJAX complete
-         $('html, body').animate({scrollTop: $(".container-header").offset().top}, 300);
-      });
       
       //Collapse validation result.
       $('fieldset').click(function() { 

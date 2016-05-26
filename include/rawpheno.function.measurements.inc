@@ -84,6 +84,12 @@ function rawpheno_function_headers($type) {
       // Used in: .install file and Upload Data - save spreadsheet.
       $type_id = array(11,12,16,17,18,19);
       break;
+  
+    case 'essential':
+      // List of essential column headers.
+      // Used in: .install file.
+      $type_id = array(0,1,2,3,4,5,6,7,8,9,10,15,20,21);
+      break;
   } 
   
   $arr_requested_trait = array();
@@ -162,4 +168,24 @@ function rawpheno_function_make_r_compatible($selected_trait) {
 
   // Final transformation is replacing all spaces to dots/period (.)
   return ucfirst(implode('.', $rfriendly));
+}
+
+/**
+ * Function kind/types of column headers. This list will be available
+ * as an option when adding traits. Plant Property is used to indicate
+ * column headers in the pheno_plantprop.
+ */
+function rawpheno_function_trait_types() {
+  return array('type1' => 'essential', 
+               'type2' => 'optional', 
+               'type3' => 'subset', 
+               'type4' => 'plantproperty');
+}
+
+/**
+ * Function list of trait reps or number of trials or R value or number
+ * that precedes the unit of a measurement type.
+ */
+function rawpheno_function_trait_reps() {
+  return array('1st', '2nd', '3rd', 'R1', 'R3', 'R5', 'R7');
 }

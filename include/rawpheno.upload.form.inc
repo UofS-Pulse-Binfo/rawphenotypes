@@ -17,7 +17,6 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
  * @see rawpheno_element_submit()
  */
 function rawpheno_upload_form_master($form, &$form_state) {    
-  
   // Navigation button. Related page of upload page is instructions page.
   $form['page_button'] = array(
     '#type' => 'markup',
@@ -52,7 +51,51 @@ function rawpheno_upload_form_master($form, &$form_state) {
       '#weight' => 100
     );
   }
+
+  // Reset session variable on the initial start of the drag and drop upload.
+  if (!$form_state['submitted'] AND $form_state['stage'] == 'check'){
+    unset($_SESSION['rawpheno']['active_project']);
+  }
   
+  $sql = "SELECT t1.project_id, t1.name, COUNT(t2.cvterm_id) AS prj_trait_count
+    FROM chado.project AS t1 LEFT JOIN pheno_project_cvterms AS t2 USING(project_id)
+    GROUP BY t1.project_id
+    HAVING COUNT(t2.cvterm_id) > 0
+    ORDER BY prj_trait_count DESC";
+ 
+  $p = chado_query($sql);
+ 
+  // Create the select box only when there is projects.
+  // Default the the first project in the select box as the active project.
+  if ($p->rowCount() > 0) {
+    $project = $p->fetchAllKeyed();
+ 
+    // Determine if the select box should be enabled.
+    // Enabled in all stages but stage 01.
+    $options  = array(0 => 'Please Select a Project') + $project;
+    $disabled = ($form_state['stage'] == 'check') ? FALSE : TRUE;
+    $defvalue = (isset($_SESSION['rawpheno']['active_project'])) ? $_SESSION['rawpheno']['active_project'] : reset($options);
+    
+    $form['sel_project'] = array(
+      '#type' => 'select',
+      '#options' => $options,
+      '#default_value' => $defvalue,
+      '#disabled' => $disabled,
+      '#id' => 'rawpheno-select-project-field',
+      '#ajax' => array(
+        'callback' => 'ajax_rawpheno_activate_project_callback',
+        'wrapper' => 'div-select-project',
+        'progress' => array('type' => 'none'),
+      ),
+    );
+  }
+  else {
+    $form['no_project'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="messages error">No Project available. Please contact website administrator.</div>'
+    );
+  }
+
   // Get the directory path to rawpheno module.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   
@@ -97,7 +140,6 @@ function rawpheno_upload_form_master($form, &$form_state) {
  * perform basic compliance test.
  */
 function rawpheno_upload_form_stage_check($form, &$form_state) {
-  
   // Create an instance of DragNDrop Upload.
   // SETTINGS:
   //  #file_upload_max_size: max file size allowed
@@ -132,6 +174,14 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
   );
   
   return $form;  
+}
+
+/**
+ * Function callback: Update session variable containing project id.
+ */
+function ajax_rawpheno_activate_project_callback($form, &$form_state) {
+  // Update the session variable containing the project id.
+  $_SESSION['rawpheno']['active_project'] = $form_state['values']['sel_project'];
 }
 
 /**
@@ -377,19 +427,19 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  * Basic compliance test of spreadsheet submitted.
  */
 function rawpheno_file_validate($file) {
-
   if ($file->source == 'dnd') {
     // Validate the file.
     // The following function will return an array specifying which of the validation
     // steps passed and providing infomration for those that failed.
-    $status = rawpheno_validate_excel_file($file);
-  
+    $active_project = $_SESSION['rawpheno']['active_project'];
+    $status = rawpheno_validate_excel_file($file, $active_project);
+
     // We want to show the user which steps passed/failed even if all of them passed,
     // so lets do that now. We use drupal_set_message() because returning from this function
     // creates an error message and halts file upload, whereas, using drupal_set_message()
     // allows us to print to the screen regardless of failure/success.
     drupal_set_message(theme('rawpheno_upload_validation_report', array('status' => $status)), 'rawpheno-validate-progress');
-  
+
     // Now we want to determine if validation passed or failed as a whole.
     // To do that we have to look at each step and only if all steps passed 
     // did the file pass validation and can be uploaded.
@@ -400,7 +450,7 @@ function rawpheno_file_validate($file) {
         break; break;
       }
     }
-  
+
     // hook_file_validate() expects an array of error messages if validation failed and
     // and empty array if there are no errors. We don't want this system to print the errors
     // for us since we are using our more friendly theme (see drupal_set_message() above).
@@ -426,7 +476,6 @@ function rawpheno_file_validate($file) {
  * when the element is rendered if it has a fid (ie: has been saved).
  */
 function rawpheno_phenotype_upload_file_element_process($element, &$form_state, $form) {
-  
   if (isset($element['#value']['fid']) AND !empty($element['#value']['fid'])) {
 
     $file = file_load($element['#value']['fid']);
@@ -459,7 +508,6 @@ function rawpheno_upload_form_master_validate($form, &$form_state) { }
  * Master submit to handle form submit.
  */
 function rawpheno_upload_form_master_submit(&$form, &$form_state) {
-
   // Which button triggers a submit action.
   $btn_submit = $form_state['triggering_element']['#value'];  
 
@@ -488,7 +536,7 @@ function rawpheno_upload_form_master_submit(&$form, &$form_state) {
     // Save the values from the current step.
     $form_state['multistep_values'][$form_state['stage']] = $form_state['values'];
 
-    // Iterate to the next step.
+    // Iterate to the next step.                                             
     $form_state['new_stage'] = rawpheno_next_page($form, $form_state);
 
     // Ensure the form state is saved and the form is rebuilt.  
@@ -502,6 +550,7 @@ function rawpheno_upload_form_master_submit(&$form, &$form_state) {
  * Save spreadsheet to database.
  */
 function rawpheno_submit_review($form, &$form_state) {
+  $active_project = $_SESSION['rawpheno']['active_project'];
   // Save spreadsheet data in the following order.
   // 1. New column headers.
   // 2. The entire spreadsheet.
@@ -604,8 +653,7 @@ function rawpheno_submit_review($form, &$form_state) {
   $xls_file = drupal_realpath($file->uri);
   
   // Array of required traits excluding Name.
-  $plantprop_headers = rawpheno_function_headers('plantprop');
-
+  $plantprop_headers = rawpheno_project_plantproperty_traits($active_project);
   global $user;
   if (isset($xls_file) && !empty($xls_file)) {
     $job_id = tripal_add_job(
@@ -613,6 +661,7 @@ function rawpheno_submit_review($form, &$form_state) {
       'rawpheno',
       'rawpheno_load_spreadsheet',
       array(
+        $_SESSION['rawpheno']['active_project'],
         serialize($arr_newheaders),
         $form_state['multistep_values']['fid'],
         serialize($plantprop_headers)
