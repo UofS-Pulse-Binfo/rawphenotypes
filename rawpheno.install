@@ -157,6 +157,63 @@ function rawpheno_schema() {
         'columns' => array('plant_id' => 'plant_id')),),
   );
   //
+  
+  // PROJECT-CVTERM
+  // Group a set of traits/cvterm to a project.
+  $schema['pheno_project_cvterms'] = array(
+    'description' => t('Table for grouping set of traits to a project.'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Primary key: A unique ID number.)'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of a project from chado.project table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'cvterm_id' => array(
+        'description' => t('cvterm id number of a trait'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      // This option will allow for grouping of traits. In for AGILE Project, types include:
+      // Essential Traits, Optional Traits, Subset Trait and Plant Property.
+      // Use this field to indicate as such.
+      // A function in rawpheno.function.measurements lists possible types that can be made available
+      // to admin when adding traits in the admin control panel.
+      'type' => array(
+        'description' => t('Indicate a column header is essential, not essential (optional), a plant property and other'),
+        'type' => 'varchar',
+        'length' => 20,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  // PROJECT-PLANT/STOCK
+  $schema['pheno_project_stock'] = array(
+    'description' => t('Table for mapping stock to a project'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Primary key: A nunique ID number.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of a project from chado.project table.'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'stock_id' => array(
+        'description' => t('ID number of stock from pheno_plant table.'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
     
   return $schema;
 }
@@ -181,8 +238,8 @@ function rawpheno_function_terms($type) {
                    'instructions' => 'Standard Phenotyping Procedure',
                    'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
                    'r-words' => 'of,to,have,on,at',
-                   'r-chars' => '(,),/,-,:,;',
-                   'r-replace' => '# = num,/ = div,? = unsure,- = to');
+                   'r-chars' => '(,),/,-,:,;,%',
+                   'r-replace' => '# = num,/ = div,? = unsure,- = to',);
       break;
       
     case 'scales':
@@ -207,7 +264,7 @@ function rawpheno_function_terms($type) {
                    'rawpheno_upload_title',
                    'rawpheno_admin_transform_words',
                    'rawpheno_admin_transform_characters',
-                   'rawpheno_admin_transform_replace');
+                   'rawpheno_admin_transform_replace',);
       break;
     
     case 'vocabularies':
@@ -215,7 +272,6 @@ function rawpheno_function_terms($type) {
       return array('phenotype_plant_property_types', 
                    'phenotype_measurement_types', 
                    'phenotype_measurement_units',);
-      
       break;
     
     case 'units':
@@ -236,36 +292,42 @@ function rawpheno_function_terms($type) {
  * Implements hook_install().
  */
 function rawpheno_install() {
-  // After custom tables are created, perform the following:
-  // 1 - a. Define R transformation rule default.
-  // 1 - b. Insert cvterms property type (with R compatible version), measurement unit and measurement types. 
-  // 2. Populate pheno_scale_member table.
-  // 3. Create materialized view.
-  // 4. Set default values of module configuration.
-  // 5. Add data collection spreadsheet into public:// directory.
+  // Create a cv term for R Friendly version of a column header.
+  $cv_obj = tripal_insert_cv('r_compatible_column_header', 'R Compatible Column Headers');
+
+  // Set the project to AGILE (default).
+  $prj_id = db_query("SELECT project_id FROM chado.project WHERE name = :project_name LIMIT 1",
+  array(':project_name' => 'AGILE: Application of Genomic Innovation in the Lentil Economy'));
+        
+  if ($prj_id->rowCount()) {  
+    $project_ID = $prj_id->fetchField();
+  }
   
+  // Get variable names.
+  $trait_type = rawpheno_function_trait_types();
   $vars = rawpheno_function_terms('variables');
   $config = rawpheno_function_terms('defaults');
   
-  // 1.
-  // 1 - a.
-  // Initialize R transformation rules.
+  // Initialize default R transformation rules.
   variable_set($vars[5], $config['r-words']);  
   variable_set($vars[6], $config['r-chars']);  
   variable_set($vars[7], $config['r-replace']);  
   
-  // 1 - b.
   // Create cvterm entry for each traits.
   // Array to hold array of cvterms.
   $pp_terms = array();
   $mt_terms = array();
   
-  // Get relevant trait set required, in this case all column headers
+  // Get essential traits.
+  $essential_header = rawpheno_function_headers('essential');  
+  
+  // Get the required trait set, in this case all column headers
   // with the exception of Name.
   $expected_header = rawpheno_function_headers('expected');  
+  
   // Index number of Plot, Entry, Rep and Location in traits array.
-  // These id set is inserted into {chado.cvterm} as property types.
-  $pp_id = array(0,1,3,4);
+  // This id array is inserted into {chado.cvterm} as property types.
+  $pp_id = array(0, 1, 3, 4);
   
   // Read each header and create cvterm name and cvterm definition.
   foreach($expected_header as $i => $term) {
@@ -301,11 +363,6 @@ function rawpheno_install() {
     // Insert Controlled Vocubalary
     tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
     
-    
-    if ($cv_i == 1) {
-      $cv_obj = tripal_insert_cv('r_compatible_column_header', 'R Compatible Column Headers');  
-    }
-    
     // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
     foreach($arr_terms[$cv_i] as $term_name => $term_def) {
       $arr_terms_param = array('id' => 'tripal:'.$term_name,
@@ -313,10 +370,15 @@ function rawpheno_install() {
                                'definition' => $term_def,
                                'cv_name' => $cv_name);
                                
-      // Insert cvterm.                         
+      // Insert cv term.                         
       $cvterm_obj = tripal_insert_cvterm($arr_terms_param);  
-    
-      if ($cv_i == 1) {
+      
+      // When inserting a cvterm of type phenotypes_measurement_types,
+      // insert an R Friendly version of the termm into cvtermprop and map
+      // the term to AGILE project only when AGILE is present in projects table.
+      // cvterm measurement types and cvterms plant property.
+      if ($cv_i == 0 OR $cv_i == 1) {
+        // Map cvterm to a project.
         // R Compatible cvterm.
         $r_compatible = rawpheno_function_make_r_compatible($term_name);
         
@@ -327,11 +389,34 @@ function rawpheno_install() {
             'value' => $r_compatible,
             'rank' => 0))
           ->execute();
+         
+        // Map traits to AGILE only when AGILE exists. 
+        // R Friendly version is generated even when AGILE project is not
+        // present since traits will be available in add column header panel.
+        if (isset($project_ID)) {        
+          // Determine if trait is essential, optional or plant property.
+          if($cv_i == 0) {
+            $type = $trait_type['type4']; // plantproperty
+          }
+          else {
+            // Trait is either essential or optional.
+            $type = (in_array($term_def, $essential_header)) ? $trait_type['type1'] : $trait_type['type2'];
+          }
+          
+          // Assign a project to this cvterm.
+          // Name column header is part of the column headers or a project.
+          db_insert('pheno_project_cvterms')
+            ->fields(array(
+              'project_id' => $project_ID,
+              'cvterm_id' => $cvterm_obj->cvterm_id,
+              'type' => $type)
+            )
+            ->execute();
+        }  
       }
     }
   }
   
-  // 2.
   // From standard phenotype data collection, scale is 1 - 5.
   $scales = rawpheno_function_terms('scales');
   
@@ -343,8 +428,8 @@ function rawpheno_install() {
       foreach($scale as $code => $value) {
         $tmp = db_insert('pheno_scale_member')
           ->fields(array(
-             'scale_id' => $measurement_id, 
-             'code' => $code, 
+            'scale_id' => $measurement_id, 
+            'code' => $code, 
             'value' => $value
           ))
           ->execute();
@@ -352,7 +437,6 @@ function rawpheno_install() {
     }
   }
   
-  // 3.
   // Create materialized view used in phenotypes/rawdata.
   // Using Tripal: tripal_add_mview().
   $mv_name = 'rawpheno_rawdata_summary';
@@ -405,7 +489,6 @@ function rawpheno_install() {
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
   
-  // 4.
   // Set default colour scheme and page titles.
   variable_set($vars[0], $config['colour']);
   variable_set($vars[1], $config['rawdata']);
@@ -413,7 +496,6 @@ function rawpheno_install() {
   variable_set($vars[3], $config['instructions']);
   variable_set($vars[4], $config['upload']);
     
-  // 5.
   // Add data collection spreadsheet to public:// directory, 
   // and link this file for download in instructions page.
   $destination = file_default_scheme() . '://';
@@ -425,7 +507,7 @@ function rawpheno_install() {
     // Copy file without creating an entry in drupal database.
     // If file is present, replace it with the same file.
     file_unmanaged_copy($source, $destination, FILE_EXISTS_REPLACE);
-  }
+  }   
 }
 
 /**
@@ -487,4 +569,78 @@ function rawpheno_uninstall() {
     $del = "DELETE FROM chado.cvtermprop WHERE type_id = :cv_id";
     db_query($del, array(':cv_id' => $cv_id->cv_id));
   }
+}
+
+/**
+ * Implements hook_update_N().
+ * Update custom table with tables relating a project to set of cvterms
+ * and project to stock/name.
+ *
+ * N 
+ * 7  - Drupal core compatibility.
+ * 0  - Module's major release version.
+ * 02 - Sequence count.
+ */
+function rawpheno_update_7002() {
+  // Table definition as per definition in hook_schema() above.
+  // PROJECT-CVTERM
+  // Group a set of traits/cvterm to a project.
+  $schema['pheno_project_cvterms'] = array(
+    'description' => t('Table for grouping set of traits to a project.'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Primary key: A unique ID number.)'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of a project from chado.project table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'cvterm_id' => array(
+        'description' => t('cvterm id number of a trait'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      // This option will allow for grouping of traits. In for AGILE Project, types include:
+      // Essential Traits, Optional Traits, Subset Trait and Plant Property.
+      // Use this field to indicate as such.
+      // A function in rawpheno.function.measurements lists possible types that can be made available
+      // to admin when adding traits in the admin control panel.
+      'type' => array(
+        'description' => t('Indicate a column header is essential, not essential (optional), a plant property and other'),
+        'type' => 'varchar',
+        'length' => 20,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  db_create_table('pheno_project_cvterms', $schema['pheno_project_cvterms']);
+  
+  // PROJECT-PLANT/STOCK
+  $schema['pheno_project_stock'] = array(
+    'description' => t('Table for mapping stock to a project'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Primary key: A nunique ID number.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of a project from chado.project table.'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'stock_id' => array(
+        'description' => t('ID number of stock from pheno_plant table.'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  db_create_table('pheno_project_stock', $schema['pheno_project_stock']);
 }
