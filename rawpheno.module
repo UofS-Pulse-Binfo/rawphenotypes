@@ -99,24 +99,36 @@ function rawpheno_menu() {
     'weight' => 3,
   );
   
+  // BACKUP
+  // A page for uploading spreadsheet.
+  $items['phenotypes/raw/backup'] = array(
+    'title' => 'Backup',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('rawpheno_backup'),
+    'access arguments' => array('upload rawpheno'),
+	  'file' => 'include/rawpheno.backup.form.inc',
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 7,
+  );
+  
   // ADMININSTRATIVE PAGE OF THIS MODULE
   // A page for changing page colour and page title.
-  $items['admin/config/user-interface/rawpheno_page_admin'] = array(
+  $items['admin/config/user-interface/rawpheno_page'] = array(
     'title' => 'Rawpheno Page Configurations',
     'description' => 'Apply a colour scheme and change page title.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('rawpheno_admin_page_interface'),
+    'page arguments' => array('rawpheno_admin_page'),
     'access arguments' => array('access administration pages'),
     'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
 
   // A page for managing R Transformation rules.
-  $items['admin/config/user-interface/rawpheno_headers_admin'] = array(
+  $items['admin/config/user-interface/rawpheno_rheaders'] = array(
     'title' => 'Define R Transformation Rules',
     'description' => 'Set rules used for converting traits to R Friendly version.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('rawpheno_admin_headers_interface'),
+    'page arguments' => array('rawpheno_admin_rheaders'),
     'access arguments' => array('access administration pages'),
     'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
@@ -192,7 +204,8 @@ function rawpheno_preprocess(&$variables) {
     'rawpheno_rawdata' => url('phenotypes/raw'),
     'rawpheno_download' => url('phenotypes/raw/download'),  
     'rawpheno_instructions' => url('phenotypes/raw/instructions'),
-    'rawpheno_upload' => url('phenotypes/raw/upload')
+    'rawpheno_upload' => url('phenotypes/raw/upload'),
+    'rawpheno_backup' => url('phenotypes/raw/backup')
   );
   
   $variables['page_url'] = $arr_url; 
@@ -200,11 +213,13 @@ function rawpheno_preprocess(&$variables) {
   // Cross-link page.
   // Rawdata and download page.
   // Instructions and upload page.
+  // Backup and Instructions.
   $arr_assign_url = array(
     'rawpheno_rawdata' => $arr_url['rawpheno_download'],
     'rawpheno_download' => $arr_url['rawpheno_rawdata'],  
     'rawpheno_instructions' => $arr_url['rawpheno_upload'],
-    'rawpheno_upload' => $arr_url['rawpheno_instructions']
+    'rawpheno_upload' => $arr_url['rawpheno_instructions'],
+    'rawpheno_backup' => $arr_url['rawpheno_instructions'],
   );
   
   $variables['rel_url'] = $arr_assign_url;
@@ -215,6 +230,7 @@ function rawpheno_preprocess(&$variables) {
   $arr_headers['rawpheno_download'] = variable_get('rawpheno_download_title');
   $arr_headers['rawpheno_instructions'] = variable_get('rawpheno_instructions_title');
   $arr_headers['rawpheno_upload'] = variable_get('rawpheno_upload_title');
+  $arr_headers['rawpheno_backup'] = variable_get('rawpheno_backup_title');
   
   $variables['page_title'] = $arr_headers;
   
@@ -251,6 +267,13 @@ function rawpheno_theme($existing, $type, $theme, $path) {
     'path' => $path . '/theme',
   );
 
+  // Download page.
+  $items['rawpheno_backup'] = array(
+    'render element' => 'form',
+    'template' => 'rawpheno_pages',
+    'path' => $path . '/theme',
+  );
+  
   // Upload page.
   $items['rawpheno_upload_form_master'] = array(
     'render element' => 'form',
@@ -351,130 +374,149 @@ function rawpheno_instructions_autocomplete_search($key = '') {
  *   location, year, rep, # traits, list of traits with value.
  */
 function rawpheno_rawdata_summary_json() {
-  // Get trait id of planting data.
-  $planting_date = rawpheno_get_trait_id('Planting Date (date)');
-  // get trait id of # of seeds planted
-  $seeds_planted = rawpheno_get_trait_id('# of Seeds Planted (count)');
-
-  // Minimum rep per year per location.
-  $min_set = 3;
-  // Select all location present in the materialized view.
-  $sql_location = "SELECT DISTINCT location FROM chado.rawpheno_rawdata_mview
-    ORDER BY location ASC";
-
-  $result_location = db_query($sql_location);
-  $count_location = $result_location->rowCount();
-  
-  if ($count_location > 0) {
-    // Array to hold data.
-    $data_json = array();
-    // Array to hold planting years and rep.
-    $arr_range['year'] = array();
-    $arr_range['rep'] = array();
-    
-    // Define range of planting years and rep.
-    for($i = 0; $i < 2; $i++) {
-      $range = ($i == 0) ? 'year' : 'rep';
-      // Query materialized view.
-      $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
-        ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
-        
-      $r = db_query($sql_range);
-      $count_data = $r->rowCount();
-
-      // Determine if total number of years is less than minimum number. 
-      if ($count_data < $min_set) {
-        // Year/rep count is less than minimum, fill the gap to make the
-        // number always to minimum.
-           
-        // Initial/starting year/rep.
-        $start_value = $r->fetchField();
-        $arr_range[$range][] = $start_value;
-        
-        // Fill the missing years/rep and push to array.
-        for($c = 1; $c < $min_set; $c++) {
-          // Next year in the SQL result.
-          $d = $r->fetchField();
-          if (empty($d)) {
-            // If it is empty, compute the next year.
-            $start_value += 1;
-            $arr_range[$range][] = $start_value;
-          }
-          else {
-            // Year is present, store and set the start value to this year.
-            $arr_range[$range][] = $d;
-            $start_value = $d;
-          }
-        }
-      }
-      else {
-        // There is more than the minimum year/rep returned by the query.
-        // Store all values to years/rep array.
-        foreach($r as $range_value) {
-          $arr_range[$range][] = $range_value->data_range;
-        }
-      }
-    }
-    
-    // Construct data set.
-    // Read each location available and construct data set.
-    while($data = $result_location->fetchAssoc()) {
-      // In each location, read each planting year.
-      foreach($arr_range['year'] as $year) {
-        // In each year, read each rep.
-        foreach($arr_range['rep'] as $rep) {
-          // Each location in the materialized view
-          $location = $data['location'];
-          
-          // Get the entry with the most traits for this particular location, year and rep.
-          $sql = "SELECT total_count, all_traits
-            FROM chado.rawpheno_rawdata_mview
-            WHERE location = :location AND SUBSTRING(planting_date, 1, 4) = :year AND rep = :rep
-            ORDER BY total_count DESC LIMIT 1";
-          
-          $traits = db_query($sql, array(':year' => $year, 
-                                         ':rep' => $rep, 
-                                         ':location' => $location))
-            ->fetchObject();
-             
-          
-          // List of traits measured.
-          $trait_list = (isset($traits->all_traits) && !empty($traits->all_traits)) 
-            ? $traits->all_traits : 0; 
-          
-          // NOTE:
-          // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
-          // Before doing that, test if these two traits were part of the traits the count is based on.
-          if ($trait_list != 0) {
-            $less = 0;
-            if (strstr($trait_list, $planting_date)) {
-              $less++;
-            }
-            
-            if (strstr($trait_list, $seeds_planted)) {
-              $less++;
-            }
-          }
-          
-          $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
-            ? ($traits->total_count - $less) : 0;
-            
-          // Create a json entry with the following keys:
-          // location, year, rep and trait.
-          $arr_json[] = array('location' => $location,
-                              'year' => $year,
-                              'rep' => $rep,
-                              'trait' => $trait_count,
-                              'type_id' => $trait_list);
-        }
-      }
-    }
-
-    return $arr_json;
-  } 
-  else {
+  // Ensure project id is valid.
+  // Must exists, must not be empty and must not be more that 10 chars/digits.
+  if (!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) {
     // No data.
     return 0;
+  }
+  else {
+    // Get data for this project.
+    $project_id = (int)trim(strip_tags($_GET['p']));
+     
+    // Get trait id of planting data.
+    $planting_date = rawpheno_get_trait_id('Planting Date (date)');
+    // get trait id of # of seeds planted
+    $seeds_planted = rawpheno_get_trait_id('# of Seeds Planted (count)');
+
+    // Minimum rep per year per location.
+    $min_set = 3;
+    // Select all location present in the materialized view.
+    $sql_location = "
+      SELECT DISTINCT location 
+        FROM chado.rawpheno_rawdata_mview INNER JOIN {pheno_project_stock} USING(plant_id)
+        WHERE project_id = :project
+        ORDER BY location ASC";
+
+    $result_location = db_query($sql_location, array(':project' => $project_id));
+    $count_location = $result_location->rowCount();
+  
+    if ($count_location > 0) {
+      // Array to hold data.
+      $data_json = array();
+      // Array to hold planting years and rep.
+      $arr_range['year'] = array();
+      $arr_range['rep'] = array();
+    
+      // Define range of planting years and rep.
+      for($i = 0; $i < 2; $i++) {
+        $range = ($i == 0) ? 'year' : 'rep';
+        // Query materialized view.
+        $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
+          WHERE plant_id IN (SELECT plant_id FROM {pheno_project_stock} WHERE project_id = :project_id)
+          ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
+        
+        $r = db_query($sql_range, array(':project_id' => $project_id));
+        $count_data = $r->rowCount();
+
+        // Determine if total number of years is less than minimum number. 
+        if ($count_data < $min_set) {
+          // Year/rep count is less than minimum, fill the gap to make the
+          // number always to minimum.
+           
+          // Initial/starting year/rep.
+          $start_value = $r->fetchField();
+          $arr_range[$range][] = $start_value;
+        
+          // Fill the missing years/rep and push to array.
+          for($c = 1; $c < $min_set; $c++) {
+            // Next year in the SQL result.
+            $d = $r->fetchField();
+            if (empty($d)) {
+              // If it is empty, compute the next year.
+              $start_value += 1;
+              $arr_range[$range][] = $start_value;
+            }
+            else {
+              // Year is present, store and set the start value to this year.
+              $arr_range[$range][] = $d;
+              $start_value = $d;
+            }
+          }
+        }
+        else {
+          // There is more than the minimum year/rep returned by the query.
+          // Store all values to years/rep array.
+          foreach($r as $range_value) {
+            $arr_range[$range][] = $range_value->data_range;
+          }
+        }
+      }
+    
+      // Construct data set.
+      // Read each location available and construct data set.
+      $sql = "
+        SELECT total_count, all_traits
+        FROM chado.rawpheno_rawdata_mview
+        WHERE location = :location 
+          AND SUBSTRING(planting_date, 1, 4) = :year 
+          AND rep = :rep
+          AND plant_id IN 
+            (SELECT plant_id FROM {pheno_project_stock} WHERE project_id = :project_id)
+        ORDER BY total_count DESC 
+        LIMIT 1";
+          
+      while($data = $result_location->fetchAssoc()) {
+        // In each location, read each planting year.
+        foreach($arr_range['year'] as $year) {
+          // In each year, read each rep.
+          foreach($arr_range['rep'] as $rep) {
+            // Each location in the materialized view
+            $location = $data['location'];
+        
+            $args = array(':year' => $year, ':rep' => $rep, ':location' => $location, ':project_id' => $project_id);
+            // Get the entry with the most traits for this particular location, year and rep.
+            $traits = db_query($sql, $args)
+              ->fetchObject();
+            
+            // List of traits measured.
+            $trait_list = (isset($traits->all_traits) AND !empty($traits->all_traits)) 
+              ? $traits->all_traits : 0; 
+          
+            // NOTE:
+            // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
+            // Before doing that, test if these two traits were part of the traits the count is based on.
+            if ($trait_list != 0) {
+              $less = 0;
+              if (strstr($trait_list, $planting_date)) {
+                $less++;
+              }
+            
+              if (strstr($trait_list, $seeds_planted)) {
+                $less++;
+              }
+            }
+          
+            $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
+              ? ($traits->total_count - $less) : 0;
+            
+            // Create a json entry with the following keys:
+            // location, year, rep and trait.
+            $arr_json[] = array('location' => $location,
+                                'year' => $year,
+                                'rep' => $rep,
+                                'trait' => $trait_count,
+                                'type_id' => $trait_list);
+          }
+        }
+      }
+
+      return $arr_json;
+    } 
+    else {
+      // No data.
+      return 0;
+    }
   }
 }
 
@@ -489,37 +531,49 @@ function rawpheno_rawdata_summary_json() {
  *   has location and bin objects.
  */
 function rawpheno_rawdata_trait_json() {  
-  // Get the trait id.
-  if (!isset($_GET['t'])) { return 0; }
-  
-  $trait_id = trim(strip_tags($_GET['t']));
-  
-  if (isset($trait_id) AND strlen($trait_id) <= 10) {
+  // Ensure project id and trait id are valid.
+  // Must exists, must not be empty and must not be more that 10 chars/digits.
+  if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
+       (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10)) {
+    // No data.
+    return 0;
+  }
+  else {
+    $project_id = (int)trim(strip_tags($_GET['p']));
+    $trait_id = (int)trim(strip_tags($_GET['t']));
+   
     // Array to hold the computed Bin.
     $arr_bin_json = array();
     // Array to hold the data.
     $arr_data_json = array();
-    // Trait that have non numeric value or scale.
+    // Traits that have non numeric value or is scale.
     $arr_trait_names = array('Diseases Present (y/n/?)', 'Lodging (Scale: 1-5) upright - lodged');
 
     // Test if the trait is a comment, scale or other.
     $t = db_query("SELECT name FROM chado.cvterm WHERE cvterm_id = :trait_id LIMIT 1", 
-      array(':trait_id' => (int)$trait_id));
+      array(':trait_id' => $trait_id));
     
     $trait_name = $t->fetchField();
     
     if (in_array($trait_name, $arr_trait_names)) {
       // Trait is yes, no and ? or scale 1,2,3,4,5.
-      $sql = "SELECT t3.value AS location, t2.value AS v
+      // Query the locations trait were measured along with the trait value/data.
+      // Limit the dataset specific to only the project requested. 
+      $sql = "
+        SELECT t3.value AS location, t2.value AS v
         FROM {pheno_plant} AS t1 
           INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
           INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
         WHERE t2.type_id = :trait_id AND
-          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
+          t1.plant_id IN (SELECT plant_id FROM {pheno_project_stock} WHERE project_id = :project_id)
         ORDER BY t3.value ASC";
-
-      $d = db_query($sql ,array(':trait_id' => (int)$trait_id));
-      $l = db_query($sql ,array(':trait_id' => (int)$trait_id));
+      
+      $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
+      // Result set for data/values.
+      $d = db_query($sql, $args);
+      // Result set for locations.
+      $l = db_query($sql, $args);
       $all_locations = array_unique($l->fetchCol(0));
       
       if ($trait_name == $arr_trait_names[0]) {
@@ -569,18 +623,23 @@ function rawpheno_rawdata_trait_json() {
     }
     else {
       // Other triats that have numeric value.
-      $sql = "SELECT t1.stock_id AS stock, t3.value AS location, 
+      $sql = "
+        SELECT t1.stock_id AS stock, t3.value AS location, 
           ROUND(AVG(t2.value::integer)) AS average
         FROM {pheno_plant} AS t1 
           INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
           INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
         WHERE t2.type_id = :trait_id AND
-          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
+          t1.plant_id IN (SELECT plant_id FROM {pheno_project_stock} WHERE project_id = :project_id)
         GROUP BY t3.value, t1.stock_id, t2.value
         ORDER BY t3.value, average ASC";      
       
-      $d = db_query($sql ,array(':trait_id' => $trait_id));
-      $l = db_query($sql ,array(':trait_id' => (int)$trait_id));
+      $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
+      // Result set for data/values.
+      $d = db_query($sql, $args);
+      // Result set for locations.
+      $l = db_query($sql, $args);
       $all_locations = array_unique($l->fetchCol(0));
       
       if ($d->rowCount() > 0) {
@@ -606,7 +665,7 @@ function rawpheno_rawdata_trait_json() {
         }
       
         // Assign each row with a bin.
-        $m = db_query($sql ,array(':trait_id' => $trait_id))
+        $m = db_query($sql, $args)
           ->fetchAll();
         
         foreach($m as $stock) {
@@ -633,9 +692,5 @@ function rawpheno_rawdata_trait_json() {
     
     // Return bin and data.
     return ['bin' => $arr_bin_json, 'data' => $arr_data_json];       
-  }
-  else {
-    // Trait is not found.
-    return 0;
-  }    
+  }  
 }

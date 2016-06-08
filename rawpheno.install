@@ -19,7 +19,7 @@ function rawpheno_schema() {
     'description' => t('Table for phenotype plant.'),
     'fields' => array(
       'plant_id' => array(
-        'description' => t('A unique ID for each data collection.'),
+        'description' => t('A unique ID for each row'),
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -206,13 +206,67 @@ function rawpheno_schema() {
         'type' => 'int',
         'not null' => TRUE,
       ),
-      'stock_id' => array(
+      'plant_id' => array(
         'description' => t('ID number of stock from pheno_plant table.'),
         'type' => 'int',
         'not null' => TRUE,
       ),
     ),
     'primary key' => array('id'),
+  );
+  
+  // PROJECT-USER
+  $schema['pheno_project_user'] = array(
+    'description' => t('This table will hold information about user and project that'),
+    'fields' => array(
+      'project_user_id' => array(
+        'description' => t('Primary Key: A unique ID number'),
+        'type' => 'serial',
+        'not noll' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of project from chado.project table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('ID number of logged in user from user table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('project_user_id'),
+  );
+   
+  // PROJECT-BACKUP-FILE
+  $schema['pheno_backup_file'] = array(
+    'description' => t('This table will hold information about files uploaded by user to a project'),
+    'fields' => array(
+      'file_id' => array(
+        'description' => t('Primary Key: A unique ID number'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_user_id' => array(
+        'description' => t('The project ID number from table pheno_project_user'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('File ID number from file_managed table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'version' => array(
+        'description' => t('The sequence number of the file in relation to a project'),
+        'type' => 'int',
+      ),
+      'notes' => array(
+        'description' => t('Notes, description and comments made to a file'),
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('file_id'),
   );
     
   return $schema;
@@ -230,6 +284,10 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements')
  */
 function rawpheno_function_terms($type) {
   switch($type) {
+    case 'project':
+      return 'AGILE: Application of Genomic Innovation in the Lentil Economy';
+      break;
+    
     case 'defaults':
       // Default colour scheme and heading/title.
       return array('colour' => '#304356',
@@ -237,6 +295,7 @@ function rawpheno_function_terms($type) {
                    'download' => 'Select locations and traits that you want to download',
                    'instructions' => 'Standard Phenotyping Procedure',
                    'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
+                   'backup' => 'My files',
                    'r-words' => 'of,to,have,on,at',
                    'r-chars' => '(,),/,-,:,;,%',
                    'r-replace' => '# = num,/ = div,? = unsure,- = to',);
@@ -262,9 +321,10 @@ function rawpheno_function_terms($type) {
                    'rawpheno_download_title', 
                    'rawpheno_instructions_title', 
                    'rawpheno_upload_title',
-                   'rawpheno_admin_transform_words',
-                   'rawpheno_admin_transform_characters',
-                   'rawpheno_admin_transform_replace',);
+                   'rawpheno_backup_title',
+                   'rawpheno_rtransform_words',
+                   'rawpheno_rtransform_characters',
+                   'rawpheno_rtransform_replace',);
       break;
     
     case 'vocabularies':
@@ -297,7 +357,7 @@ function rawpheno_install() {
 
   // Set the project to AGILE (default).
   $prj_id = db_query("SELECT project_id FROM chado.project WHERE name = :project_name LIMIT 1",
-  array(':project_name' => 'AGILE: Application of Genomic Innovation in the Lentil Economy'));
+  array(':project_name' => rawpheno_function_terms('project')));
         
   if ($prj_id->rowCount()) {  
     $project_ID = $prj_id->fetchField();
@@ -309,9 +369,9 @@ function rawpheno_install() {
   $config = rawpheno_function_terms('defaults');
   
   // Initialize default R transformation rules.
-  variable_set($vars[5], $config['r-words']);  
-  variable_set($vars[6], $config['r-chars']);  
-  variable_set($vars[7], $config['r-replace']);  
+  variable_set($vars[6], $config['r-words']);  
+  variable_set($vars[7], $config['r-chars']);  
+  variable_set($vars[8], $config['r-replace']);  
   
   // Create cvterm entry for each traits.
   // Array to hold array of cvterms.
@@ -446,7 +506,7 @@ function rawpheno_install() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date. 
-  $mv_sql = "SELECT t1.plant_id, 
+  $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id, 
       t2.value AS location, 
       t3.value AS rep, 
       t5.value AS planting_year,
@@ -468,8 +528,7 @@ function rawpheno_install() {
     'table' => 'rawpheno_rawdata_mview',
     'fields' => array (
     'plant_id' => array (
-      'type' => 'varchar',
-      'length' => 255),
+      'type' => 'int'),
     'location' => array (
       'type' => 'varchar',
       'length' => 255),
@@ -495,6 +554,7 @@ function rawpheno_install() {
   variable_set($vars[2], $config['download']);
   variable_set($vars[3], $config['instructions']);
   variable_set($vars[4], $config['upload']);
+  variable_set($vars[5], $config['backup']);
     
   // Add data collection spreadsheet to public:// directory, 
   // and link this file for download in instructions page.
@@ -633,7 +693,7 @@ function rawpheno_update_7002() {
         'type' => 'int',
         'not null' => TRUE,
       ),
-      'stock_id' => array(
+      'plant_id' => array(
         'description' => t('ID number of stock from pheno_plant table.'),
         'type' => 'int',
         'not null' => TRUE,
@@ -643,4 +703,62 @@ function rawpheno_update_7002() {
   );
   
   db_create_table('pheno_project_stock', $schema['pheno_project_stock']);
+
+  // PROJECT-USER
+  $schema['pheno_project_user'] = array(
+    'description' => t('This table will hold information about user and project that'),
+    'fields' => array(
+      'project_user_id' => array(
+        'description' => t('Primary Key: A unique ID number'),
+        'type' => 'serial',
+        'not noll' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('ID number of project from chado.project table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('ID number of logged in user from user table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('project_user_id'),
+  );
+   
+  db_create_table('pheno_project_user', $schema['pheno_project_user']);
+   
+  // PROJECT-BACKUP-FILE
+  $schema['pheno_backup_file'] = array(
+    'description' => t('This table will hold information about files uploaded by user to a project'),
+    'fields' => array(
+      'file_id' => array(
+        'description' => t('Primary Key: A unique ID number'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_user_id' => array(
+        'description' => t('The project ID number from table pheno_project_user'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('File ID number from file_managed table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'version' => array(
+        'description' => t('The sequence number of the file in relation to a project'),
+        'type' => 'int',
+      ),
+      'notes' => array(
+        'description' => t('Notes, description and comments made to a file'),
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('file_id'),
+  );
+  
+  db_create_table('pheno_backup_file', $schema['pheno_backup_file']);  
 }

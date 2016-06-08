@@ -48,12 +48,13 @@
       // Remove validation result and error messages as soon
       // as DND receives a file. This is for both drag and drop and
       // using the choose a file link (file browser).
-      $(document).ajaxStart(function() {
+      $(document)
+      .ajaxStart(function() {
         // AJAX start.
         if ($('div.messages').length > 1) {
           $('div.messages').remove();
         }
-      })
+      });
       
       //Collapse validation result.
       $('fieldset').click(function() { 

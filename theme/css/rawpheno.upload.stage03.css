@@ -71,3 +71,9 @@ div.messages {
 .fieldset-wrapper {
   margin-top: 20px !important;
 }
+
+
+/* Select field */
+select:disabled {
+  color: #000000;
+}

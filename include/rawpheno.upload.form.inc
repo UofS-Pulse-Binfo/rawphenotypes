@@ -54,14 +54,14 @@ function rawpheno_upload_form_master($form, &$form_state) {
 
   // Reset session variable on the initial start of the drag and drop upload.
   if (!$form_state['submitted'] AND $form_state['stage'] == 'check'){
-    unset($_SESSION['rawpheno']['active_project']);
+    unset($_SESSION['rawpheno']['upload_projectID']);          
   }
   
-  $sql = "SELECT t1.project_id, t1.name, COUNT(t2.cvterm_id) AS prj_trait_count
+  $sql = "
+    SELECT t1.project_id, t1.name
     FROM chado.project AS t1 LEFT JOIN pheno_project_cvterms AS t2 USING(project_id)
-    GROUP BY t1.project_id
-    HAVING COUNT(t2.cvterm_id) > 0
-    ORDER BY prj_trait_count DESC";
+    WHERE t2.id IS NOT NULL
+    ORDER BY t1.project_id DESC";
  
   $p = chado_query($sql);
  
@@ -74,7 +74,10 @@ function rawpheno_upload_form_master($form, &$form_state) {
     // Enabled in all stages but stage 01.
     $options  = array(0 => 'Please Select a Project') + $project;
     $disabled = ($form_state['stage'] == 'check') ? FALSE : TRUE;
-    $defvalue = (isset($_SESSION['rawpheno']['active_project'])) ? $_SESSION['rawpheno']['active_project'] : reset($options);
+    // If session variable does not contain any project id, default
+    // to no project selected.
+    $defvalue = (isset($_SESSION['rawpheno']['upload_projectID'])) 
+      ? $_SESSION['rawpheno']['active_project'] : reset($options);
     
     $form['sel_project'] = array(
       '#type' => 'select',
@@ -88,8 +91,15 @@ function rawpheno_upload_form_master($form, &$form_state) {
         'progress' => array('type' => 'none'),
       ),
     );
+    
+    // This will reset the project select box on load and page refresh.
+    drupal_add_js('jQuery(document).ready(function() {
+      jQuery("#rawpheno-select-project-field").val(0);
+    })', 'inline'); 
   }
   else {
+    // No project with column headers assigned to it. In this case, user has to 
+    // contact website administrator about this issue.
     $form['no_project'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="messages error">No Project available. Please contact website administrator.</div>'
@@ -428,6 +438,8 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
  */
 function rawpheno_file_validate($file) {
   if ($file->source == 'dnd') {
+    // Upload data page.
+    
     // Validate the file.
     // The following function will return an array specifying which of the validation
     // steps passed and providing infomration for those that failed.
@@ -462,6 +474,16 @@ function rawpheno_file_validate($file) {
     else {
       return FALSE;
     }
+  }
+  elseif ($file->source == 'bdnd') {
+    // Backup file upload page.
+    $status = rawpheno_validate_excel_file($file, $active_project);
+    dpm($status);
+    
+  }
+  else {
+    // Invalid file source.
+    return FALSE;
   }
 }
 
@@ -661,7 +683,7 @@ function rawpheno_submit_review($form, &$form_state) {
       'rawpheno',
       'rawpheno_load_spreadsheet',
       array(
-        $_SESSION['rawpheno']['active_project'],
+        $active_project,
         serialize($arr_newheaders),
         $form_state['multistep_values']['fid'],
         serialize($plantprop_headers)

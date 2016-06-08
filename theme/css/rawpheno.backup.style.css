@@ -1,0 +1,248 @@
+/**
+ * @file 
+ * Style phenotypes/download page.
+ */
+
+/* Import global css */
+@import 'rawpheno.style.css';
+
+/* Page icon */
+.container-subtitle {
+  background: url('../img/icon-backup.gif') no-repeat left top;
+  background-position: 0 5px;
+}
+
+.form-wrapper {
+  display: inline-block;
+  margin: 0 30px;
+  text-align: left;
+  width: 80%;
+}
+
+.container-contents {
+  background-color: #FFFFFF;
+  padding: 0;
+}
+
+/*
+select {
+  background: #FFFFFF url('../../theme/img/icon-folder.gif') no-repeat top left;
+  background-position: 5px 4px;
+  width: 100%;
+  padding-left: 27px !important;
+  margin-bottom: 10px;
+}
+*/
+
+div.description {
+  margin-bottom: 25px;
+}
+
+#droppable-bdnd {
+  background: url('../../theme/img/icon-excel.gif') no-repeat top center;
+  background-position: 50% 100px;
+  background-color: #FCFDFD;
+  border: 2px solid #AAAAAA;
+
+  -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 3px #EAEAEA;
+  
+  height: 300px;
+  margin: 0 0 15px 0; 
+  padding: 0;
+  width: 99.7%;
+}
+
+
+/* Drag file here message and link container */
+.droppable-message {
+  border: medium none;
+  height: 85%;
+  margin: 20px;
+  padding: 0;
+}
+
+.droppable-message > span {
+  color: #666666;
+  font-size: 1.1em;
+  display: block;
+  line-height: normal;
+  margin: 0 auto;
+  position: relative;
+  text-align: center;
+  top: 140px;
+  width: 480px;
+}
+
+.droppable-message span.text-drag {
+  width: 480px !important;
+}
+
+
+/* Choose file link */
+div.droppable-standard-upload {
+  color: #666666;
+  font-family: inherit;
+  font-size: 1em;
+  line-height: normal;
+  margin: 7px auto 0 auto;
+  min-height: 20px;
+  padding: 0;
+  position: relative;
+  top: 135px;
+  width: 165px;
+}
+
+#droppable-bdnd a,
+#droppable-bdnd a:link {
+  background: none;
+  border: none;
+  color: #118324;
+  font-family: inherit;
+  font-weight: 300;
+  left: 0;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  text-decoration: underline;
+}
+
+
+/* File preview */
+/* Preview the file to be uploaded. */
+div.droppable-preview-file {
+  background-color: #FFFFFF;
+  padding: 5px 15px;
+  position: absolute;
+}
+
+div.preview-remove {
+  display: block;
+}
+
+
+/* Text stage indicator */
+div.subtitle-left {
+  font-size: 2.2em;
+  line-height: 35px;
+}
+
+/* Upload button */
+#edit-bdnd-upload-button {
+  margin-top: 20px;
+  float: right;
+}
+
+
+/* Project file table */
+table {
+  margin: 5px 0 0 0 !important;
+}
+
+table td, table th {
+  border: 1px solid #314355 !important;
+  padding: 10px !important;
+}
+
+table tr td:first-child {
+  background: url('../../theme/img/icon-folder.gif') no-repeat top left;
+  background-position: 10px 10px;
+  padding: 0 0 0 40px !important;
+  
+}
+
+table tr td:last-child {
+  width: 20px;
+  text-align: center;
+}
+
+table tr th:nth-child(1) {
+  width: 90%;
+}
+
+/* Empty table */
+td.empty, td.message {
+  background: none !important;
+  height: 40px;
+}
+
+
+/* Add project */
+#container-add-project {
+  background-color: #EAEAEA;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  display: none;
+}
+
+#add_project_select {
+  width: 100%;
+}
+
+#add_project_submit {
+  float: right;
+  margin: 0;
+}
+
+#container-add-project label {
+  text-align: left;
+}
+
+/* Title add project */
+#container-backup h2 {
+  border-top: 1px solid #CCCCCC;
+  font-size: 1.5em !important;
+  margin: 10px 0 0 0 !important;
+  padding: 10px 0 0 0 !important;
+  text-align: left;
+}
+
+#container-backup h2 a {
+  float: right;
+  font-size: 0.7em;
+  padding: 7px 0 0 0;
+}
+
+
+/* Add File */
+#container-add-file {
+  background-color: #FCFDFD;
+  margin-bottom: 20px;
+  padding: 25px 40px 45px 40px;
+  text-align: left;
+}
+
+
+/* Upload button
+#edit-dnd-upload-button {
+  display: block;
+  visibility: visible;
+  margin: 0;
+}
+*/
+div.droppable-controls{
+  position: absolute;
+  margin-top: 440px;
+  right: 100px;
+} 
+
+
+.droppable-controls input,
+.form-managed-file .droppable-controls input.progress-disabled {
+  display: block !important;
+  margin: 0 !important;
+  margin: 0;
+}
+
+
+/* Add file select project */
+#backup_sel_project {
+  width: 100%;
+}
+
+/* Textarea backup file */
+#edit-backup-txt-description {
+  resize: none;
+}

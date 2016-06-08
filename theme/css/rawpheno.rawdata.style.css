@@ -33,7 +33,6 @@
   opacity: 0;
   padding: 15px 0;
   text-align: center;
-
 }
 
 #container-barchart h2 {
@@ -129,6 +128,7 @@ rect {
 
 
 /* Select trait select box */
+/*
 #edit-select-trait {
   font-family: sans-serif;
   font-size: 0.96em;
@@ -136,7 +136,7 @@ rect {
   padding: 14px;
   width: 355px;
 }
-
+*/
 
 /* Tooltop */
 div.tool-tip {   
@@ -208,4 +208,37 @@ div.tool-tip {
 
 line {
   opacity: 1;
+}
+
+/* ////////////////////////////////////// */
+select {
+  background-color: #FFFFFF;
+  width: 100%;
+}
+
+#container-form-select {
+  display: inline-block;
+  padding: 0 0 20px 0;
+  margin: 0 auto;
+  width: 100%;
+}
+
+#container-form-select div {
+  float: left;
+  text-align: left;
+  width: 49%;
+  margin: 0;
+  padding: 0;
+}
+
+#container-form-select div:first-child {
+  margin: 0 2% 0 0;
+}
+
+div.form-type-select {
+  width: 100% !important;
+}
+
+label {
+  text-align: left;
 }

@@ -111,19 +111,19 @@ function rawpheno_function_headers($type) {
 }
 
 /**
- * Function transform a column header to R compatible version. 
+ * Function to transform a column header to R compatible version. 
  *
- * @params $selected_trait
+ * @params $column_header
  *   A string containing the column header to transform.
  *
  * @return
  *   A string containing the R compatible column header.
  */
-function rawpheno_function_make_r_compatible($selected_trait) {
+function rawpheno_function_make_r_compatible($column_header) {
   // Get R transformation rules set in the admin control panel.
-  $word_rules = variable_get('rawpheno_admin_transform_words');
-  $char_rules = variable_get('rawpheno_admin_transform_characters');
-  $replace_rules = variable_get('rawpheno_admin_transform_replace');    
+  $word_rules = variable_get('rawpheno_rtransform_words');
+  $char_rules = variable_get('rawpheno_rtransform_characters');
+  $replace_rules = variable_get('rawpheno_rtransform_replace');    
 
   $arr_match = array();
   $arr_replace = array();
@@ -145,14 +145,14 @@ function rawpheno_function_make_r_compatible($selected_trait) {
   
   // Remove leading and trailing spaces from the selected trait.
   // Convert string to lowercase.
-  $selected_trait = trim(strtolower($selected_trait));
+  $selected_trait = trim(strtolower($column_header));
   // 1. Break the column header in string to individual words,
   //    and remove all words that matches an entry in the words transfomation rules.
   $w = explode(' ', $selected_trait);
   foreach($w as $c) {
     $c = trim($c);
     
-    // Skip the words in the traits that in present in the 
+    // Skip the words in the traits that are present in the 
     // words transformation rules.
     if (!in_array($c, $word_rules)) {
       // Do match and replace, as well as, removal of special characters
@@ -162,7 +162,11 @@ function rawpheno_function_make_r_compatible($selected_trait) {
       // 3. Remove all special characters listed in remove chars rule.
       $c = str_replace($char_rules, '', $c);
       
-      $rfriendly[] = trim($c);
+      // All transformation rules applied, make sure that
+      // the result is not a blank space.
+      if (!empty($c)) {
+        $rfriendly[] = trim($c);
+      }
     }
   }
 
@@ -171,7 +175,7 @@ function rawpheno_function_make_r_compatible($selected_trait) {
 }
 
 /**
- * Function kind/types of column headers. This list will be available
+ * Function that lists types of column headers. This list will be available
  * as an option when adding traits. Plant Property is used to indicate
  * column headers in the pheno_plantprop.
  */
@@ -183,9 +187,36 @@ function rawpheno_function_trait_types() {
 }
 
 /**
- * Function list of trait reps or number of trials or R value or number
+ * Function that lists trait reps or number of trials or R value/number
  * that precedes the unit of a measurement type.
  */
 function rawpheno_function_trait_reps() {
   return array('1st', '2nd', '3rd', 'R1', 'R3', 'R5', 'R7');
+}
+
+/**
+ * Function to test if the module has a project set up for user.
+ *
+ * @return FALSE when there is no project to work on.
+ */
+function rawpheno_function_project() {
+  $sql = "SELECT FROM pheno_project_cvterms";
+  $project_count = db_query($sql)
+    ->rowCount();
+    
+  return ($project_count <= 0) ? 0 : 1;
+}
+
+/**
+ * Function to test if the module has a project set up for user and
+ * that project has dataset associated to it.
+ *
+ * @return FALSE when there is no data.
+ */
+function rawpheno_function_data() {
+  $sql = "SELECT FROM pheno_project_stock";
+  $stock_count = db_query($sql)
+    ->rowCount();
+    
+  return ($stock_count <= 0) ? 0 : 1;
 }

@@ -12,11 +12,61 @@
   background-position: 0 5px;
 }
 
+.form-wrapper {
+  display: inline-block;
+  margin: 0 30px;
+  text-align: left;
+  width: 80%;
+}
+
+#container-download select {
+  background-image: none;
+  background-color: #FFFFFF;
+  min-width: 480px;
+  width: 100%;
+}
+
+div.form-type-checkbox {
+  text-align: right;
+  margin-top: -15px;
+}
+
 label {
-  font-size: 0.9em;
+  font-size: 1.0em !important;
   font-weight: bold;
   margin: 0 0 5px; 0;
 }
+
+label.option {
+  font-size: 0.9em !important;
+}
+
+
+#div-button {
+  border-top: 1px solid #CCCCCC;
+  clear: both;
+  text-align: right;
+  margin: 35px 0 0 0;
+  padding: 15px 0 0 0;
+}
+
+#edit-download-submit-download {
+  margin: 10px 0 0 0;
+}
+
+
+/* Error message box */
+.messages, .error {
+  text-align: left;
+}
+
+#download-window-error {
+  display: none;
+  margin: 0 0 20px 0 !important;
+  width: 100 !important;
+}
+
+/*
 
 select {
   min-width: 350px;
@@ -30,10 +80,6 @@ select:disabled {
   background: url('../img/throbber-active.gif') no-repeat center;
 }
 
-.form-wrapper {
-  display: inline-block;
-  margin: 0 30px;
-}
 
 #div-location, #div-measurements {
   margin: 0 15px;
@@ -48,25 +94,10 @@ select:disabled {
   float: left;
 }
 
-#div-button {
-  border-top: 1px solid #CCCCCC;
-  clear: both;
-  text-align: right;
-  margin: 0 15px;
-  padding: 15px 0 0 0;
-}
 
-#edit-download-submit-download {
-  margin: 10px 0 0 0;
-}
 
-.messages, .error {
-  text-align: left;
-}
 
-#download-window-error {
-  display: none;
-}
+*/
 
 /* R Friendly checkbox */
 div.form-item-chk-rfriendly {

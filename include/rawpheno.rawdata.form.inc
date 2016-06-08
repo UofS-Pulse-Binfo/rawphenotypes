@@ -9,8 +9,70 @@ function rawpheno_rawdata($form, &$form_state) {
     '#type' => 'markup',
     '#markup' => t('Download Data &#10095;'),
   );
+  
+  // Project.
+  $sql = "
+    SELECT DISTINCT t1.project_id, t1.name 
+    FROM chado.project AS t1 INNER JOIN pheno_project_stock AS t2 USING(project_id) 
+    WHERE plant_id IS NOT NULL 
+    ORDER BY t1.project_id DESC";
  
-  // Page Contents.
+  $project = chado_query($sql)
+    ->fetchAllKeyed();
+  
+  $form['rawdata_txt_project'] = array(
+    '#type' => 'hidden',
+    '#value' => implode(',', array_keys($project))
+  );
+  
+  // Select project select box.
+  $form['rawdata_sel_project'] = array(
+    '#type' => 'select',
+    '#title' => t('Select project and trait:'),
+    '#options' => $project,
+    '#id' => 'rawdata-sel-project',
+  );
+
+  // Select trait select box.
+  // Get the cv_id of phenotype_measurement_types
+  $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  
+  $sql = "
+    SELECT cvterm_id, name 
+    FROM pheno_project_cvterms AS t0 
+      LEFT JOIN chado.cvterm AS t1 USING(cvterm_id) 
+      LEFT JOIN chado.cvterm_relationship AS t2 ON t1.cvterm_id = t2.object_id 
+    WHERE t2.cvterm_relationship_id IS NULL 
+      AND t0.project_id = :project_id
+      AND t1.cv_id = :cv_id 
+      AND t1.name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
+    ORDER BY cvterm_id ASC";
+  
+  $default_option = array(0 => 'Select a trait to hightlight in the chart');
+  
+  // Create the select field and populate it with traits specific to a project.  
+  foreach(array_keys($project) as $p_id) {
+    $q_string = array(':project_id' => $p_id, ':cv_id' => $cv_id->cv_id);
+    $traits = db_query($sql, $q_string)
+      ->fetchAllKeyed();
+    
+    $traits = $default_option + $traits;
+    
+    $form['sel_' . $p_id] = array(
+      '#type' => 'select',
+      '#title' => '&nbsp;',
+      '#options' => $traits,
+      '#default_value' => reset($traits),
+      '#attributes' => array(
+        'name' => 'rawdata-sel-trait'
+      ),
+      '#states' => array(
+        'visible' => array(':input[name="rawdata_sel_project"]' => array('value' => $p_id)),
+      ),
+    );
+  }
+  
+  // SVG elements.
   // SVG canvas.
   $form['page_content'] = array(
     '#type' => 'markup',
@@ -26,32 +88,7 @@ function rawpheno_rawdata($form, &$form_state) {
     
     </svg>',
   );
-  
-  // Allow users to filter the chart based on traits.
-  // List all traits available.
-  
-  // Get the cv_id of phenotype_measurement_types
-  $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
-  
-  // Get all traits under phenotypes measurements type excluding new traits due to unpredictability
-  // of the data they may contain.
-  $traits = db_query("SELECT cvterm_id, name 
-  FROM chado.cvterm AS t1 LEFT JOIN chado.cvterm_relationship AS t2 ON t1.cvterm_id = t2.object_id 
-  WHERE t2.cvterm_relationship_id IS NULL 
-    AND t1.cv_id = :cv_id 
-    AND t1.name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
-  ORDER BY cvterm_id ASC", array(':cv_id' => $cv_id->cv_id))
-  ->fetchAllKeyed();
- 
-  $traits = array(0 => 'Select trait to highlight in the chart') + $traits;
 
-  $form['select_trait'] = array(
-    '#title' => '',
-    '#type' => 'select',
-    '#options' => $traits,
-    '#default_value' => reset($traits),
-  );
-  
   // Hidden field containing url to JSON (summary data).
   $form['json_url'] = array(
     '#type' => 'hidden',
@@ -64,7 +101,7 @@ function rawpheno_rawdata($form, &$form_state) {
   if (isset($d3_lib) && !empty($d3_lib['loaded'])) {
     $form['#attached']['libraries_load'][] = array('d3');
   }
-  
+
   // Attach CSS and JavaScript.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.rawdata.style.css');

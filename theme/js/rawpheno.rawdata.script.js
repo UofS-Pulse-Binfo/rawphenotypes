@@ -6,6 +6,50 @@
   Drupal.behaviors.rawphenoRawDataCreateHeatMap = {
     attach: function (context, settings) {
       ////
+      // Add event listener to window resize.
+      // Reposition elements with the new window width.
+      d3.select(window).on('resize', render);
+      
+      // Add event listener to select fields.      
+      $('select').change(function(i) { 
+        // Determine which select box was changed.
+        var selectID = i.target.id;
+        
+        if (selectID == 'rawdata-sel-project') {
+          // Reset the select trait default to the word
+          // Select a trait to highlight in the chart.
+          $('select[name=rawdata-sel-trait] option:first-child').attr('selected', 'selected');
+  
+          // Clear the chart before any visualizing a dataset.
+          $('g').remove();
+
+          // Start the heat map chart.
+          // Read JSON data for heat map.	 
+          var project_id = i.target.value;   
+          heatmapFile = file + '/rawdata/?p=' + project_id;
+          d3.json(heatmapFile, function(error, data) {
+            if (error) {
+              // Error reading JSON.
+              throw error;
+            }
+            else if(data == 0) {
+              // No data.
+              noData('.data-chart');
+            }
+            else {
+              // Initialize heat map chart by adding all elements (rect, g, text, etc.) into the DOM,
+              // and then call render function and position these element in the right place.
+              initializeHeatmapChart(data);
+            }
+          });
+        }
+        else {
+          var project_id = $('#rawdata-sel-project').val();
+          var traitSelectedName = $('#' + i.target.id + ' option:selected').text();
+          markRep(project_id, i.target.value, traitSelectedName);
+        }
+      });
+
       // Leaf path/symbol used to mark a rep or when there is no data to chart.
       var leaf = 'm2.46906,17.20495c-0.42208,-1.86678 -3.37632,-8.39646 3.06637,-10.19122c6.44269,-1.79476 9.1144,-2.35212 11.17243,-3.20865c2.05803,-0.85653 5.22901,-3.1601 5.15685,-3.77696c-0.07214,-0.61685 1.40663,9.13151 -0.30335,14.13307c-1.70998,5.00156 -5.52874,7.53668 -10.36077,7.28237c-4.83199,-0.25432 -5.67973,-1.27159 -6.61222,-1.10203c-0.9325,0.16953 -1.56016,2.17883 -2.03454,3.39088c-0.47435,1.21206 -0.59338,1.35635 -0.50862,1.35635c0.08476,0 -1.78022,-1.01725 -2.03454,-1.35635c-0.25431,-0.33909 3.98429,-6.86654 8.98585,-8.64676c5.00161,-1.78023 7.19302,-4.28732 7.88385,-5.51021c0.69078,-1.22288 1.52588,-3.13656 1.52588,-3.17895c0,0.04239 -1.15433,3.08336 -3.6452,4.36577c-2.49086,1.2824 -7.79905,2.96701 -9.91833,4.66247c-2.11929,1.69544 -1.95157,3.647 -2.37363,1.78021l-0.00001,0z';
       
@@ -47,14 +91,6 @@
       // Main svg canvas of the heat map.  
       var svg;
   
-      // Add event listener to window resize.
-      // Reposition elements with the new window width.
-      d3.select(window).on('resize', render);
-  
-      // Add event listener to trait selection box.
-      // Add leaf symbol to reps.
-      d3.select('#edit-select-trait').on('change', markRep);
-
 	    // Barchart variables
 	    // Main the svg canvas of the bar chart.
 	    var bsvg;
@@ -78,9 +114,11 @@
       // URL to knowpulse.
       var file = $('#rawdata-json').val();
       
-      // Start the heat map chart.
-      // Read JSON data for heat map.	    
-	    heatmapFile = file + '/rawdata/';
+      // Start the heat map chart default to the first project in the select a
+      // project select box.
+      // Read JSON data for heat map.	 
+      var project_id = $('#rawdata-sel-project').val();   
+	    heatmapFile = file + '/rawdata/?p=' + project_id;
 	    d3.json(heatmapFile, function(error, data) {
 		    if (error) {
           // Error reading JSON.
@@ -641,14 +679,14 @@
 
       // Helper functions: 
       // Mark/hightlight reps and add informaton about the marker.
-      function markRep() {
+      function markRep(project, trait_id, trait_name) {
         d3.select('#text-not-found').remove();
         
         // Selected trait name.
-		    traitSelectedName = $('#edit-select-trait option:selected').text();
+		    traitSelectedName = trait_name;
 		  
 		    // Get selected trait. Trait select box returns cvterm id of a trait.
-        traitSelectedId = $('#edit-select-trait').val();
+        traitSelectedId = trait_id;
         traitSelectedId.toString();
     
         if (traitSelectedId == '0') {
@@ -730,7 +768,7 @@
           }
 
           // Render bar chart.
-          var barchartFile = file + '/rawdata_trait' + '?t=' + traitSelectedId;
+          var barchartFile = file + '/rawdata_trait' + '?p=' + project + '&t=' + traitSelectedId;
           
           d3.json(barchartFile, function(error, barchartData) {
             if (error) {
@@ -833,7 +871,7 @@
         return (Math.random() * (max - min) + min ) * 100;
       }  
      
-      // Get the stock count of a location in a bin
+      // Get the stock count of a location in a bin.
       function getStockCount(bin, loc) {
         var d = dataByBins;
         for(var i = 0; i < d.length; i++) {
@@ -853,9 +891,13 @@
 
       // Text and icon shown when there is no data.
       function noData(canvas) {
+        d3.select('svg:last-child')
+          .attr('width', width)
+          .attr('height', 150);
+          
         var message = d3.select(canvas)
           .append('g')
-          .attr('transform', 'translate(110, 50)');
+          .attr('transform', 'translate('+ (Math.floor(width/2) - 40) +', 50)');
           
         message
           .append('path')
@@ -870,7 +912,7 @@
           .attr('x', 50)
           .text('No data');
       }
-
+      
       // Debugging function. Echo the contents of d.
       function echo(d) {
         //console.log(JSON.stringify(d));

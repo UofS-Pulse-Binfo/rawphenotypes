@@ -142,10 +142,10 @@ function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plan
           ->fields(array('stock_id' => $stock_id))
           ->execute();
       
-        // Map this record to a project.
+        // Map this record/stock to a project.
         db_insert('pheno_project_stock')
           ->fields(array('project_id' => $active_project,
-                         'stock_id' => $pheno_plantid))
+                         'plant_id' => $pheno_plantid))
           ->execute();               
       } 
       else {
@@ -379,9 +379,7 @@ function rawpheno_validate_excel_file($file, $project_id) {
   // Add the libraries needed to parse excel files.
   rawpheno_add_parsing_libraries();
 
-  // Before performing any validation to the excel file. Ensure first that a
-  // project is active or selected and ensure that a project meets the column headers
-  // required (eg. plant property and at least with a column header either essential or options).
+  // Before performing any validation to the excel file. Ensure first that a project is selected.
   foreach ($validators['project'] as $prj_validator_name => $prj_validator) {
     if (isset($prj_validator['validation callback']) AND function_exists($prj_validator['validation callback'])) {
       $status[ $prj_validator_name ] = call_user_func($prj_validator['validation callback'], $project_id);
@@ -896,17 +894,20 @@ function rawpheno_project_plantproperty_traits($project_id) {
   // Array to hold trait names.
   $arr_plantproperty_traits = array();
   
-  // Query essential traits in a project.
-  $sql = "SELECT t2.name AS cvterm
+  // Query plant property traits in a project.
+  $sql = "
+    SELECT t2.name AS cvterm
     FROM pheno_project_cvterms AS t1 
       INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
     WHERE t1.project_id = :project_id AND t1.type = :plantproperty
     ORDER BY t2.name ASC";
-   
+  
+  // traits of type plantproperty. 
   $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);  
   $trait = chado_query($sql, $args);
   
   foreach($trait as $t) {
+    // Remove the trait rep and unit from the trait.
     $m = rawpheno_get_trait_name($t->cvterm);
     array_push($arr_plantproperty_traits, $m);
   }
@@ -926,7 +927,8 @@ function rawpheno_project_traits($project_id) {
   $arr_trait = array();
   
   // Query essential traits in a project.
-  $sql = "SELECT trim(t2.name) AS cvterm
+  $sql = "
+    SELECT trim(t2.name) AS cvterm
     FROM pheno_project_cvterms AS t1 
       INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
     WHERE t1.project_id = :project_id

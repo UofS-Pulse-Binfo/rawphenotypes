@@ -9,131 +9,242 @@
  * Function callback: construct export data form.
  */
 function rawpheno_download($form, &$form_state) {
+  // Attach CSS and JavaScript
+  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno.download.style.css');
+  
+  // Navigation button. Related page of download page is rawdata/summary page.
+  $form['page_button'] = array(
+    '#type' => 'markup',
+    '#markup' => t('View Summary &#10095;'),
+  );
+
+  // PROJECT SELECT BOX.
+  if (isset($form_state['values']['sel_project'])) {
+    // Project selected.
+    $project_selected = $form_state['values']['sel_project'];
+  }
+  
+  $sql = "
+    SELECT DISTINCT t1.project_id, t2.name
+    FROM {pheno_project_stock} AS t1 INNER JOIN chado.project AS t2 USING(project_id)
+    ORDER BY t1.project_id DESC";
+ 
+  $prj = db_query($sql);
+  
+  // Test if there is data.
+  if ($prj->rowCount() > 0) {
+    $opt_project = $prj->fetchAllKeyed();
+  } 
+  else {
+    $form['no_data'] = array(
+      '#markup' => '<h2>No Data</h2>',  
+    );
+  
+    return $form;
+  }
+  
+  
   // This is the error message used in lieu of Drupal form_set_error().
   // This error message will be in close proximity to the interface.
   $form['download_window_error'] = array(
     '#markup' => t('<div id="download-window-error" class="messages error">
                  No traits or location selected. Please try again.</div>'),
   );
-  
-  // Navigation button. Related page of download page is rawdata/summary page.
-  $form['page_button'] = array(
-    '#type' => 'markup',
-    '#markup' => t('View Summary &#10095;'),
-  );  
-  
-  // Primary select field - an AJAX chained select that updates secondary
-  // select field (traits) based on location selected.
-  // Default to the first location in the list.
-  // Query all locations available.
-  $location = db_query("SELECT DISTINCT t1.value, t1.value AS location
-    FROM {pheno_plantprop} AS t1
-      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t2.name = 'Location'
-    ORDER BY t1.value ASC")
-    ->fetchAllKeyed();  
 
-  $form['location'] = array(
-    '#title' => t('Location'),
+  // AJAX wrapper.
+  // Main wrapper
+  $form['ajax_container'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="download-ajax-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  // This a hidden field containing all project id.
+  // This field will allow callback functions to get all project ids which is
+  // the equivalent of the option select all project from the project select box.
+  $form['ajax_container']['txt_project'] = array(
+    '#type' => 'hidden',
+    '#value' => implode(',', array_keys($opt_project)),
+  );
+  
+  $form['ajax_container']['sel_project'] = array(
     '#type' => 'select',
-    '#options' => $location,
-    '#default_value' => reset($location),
-    '#multiple' => TRUE,
-    '#size' => 17,
+    '#title' => t('Project'),
+    '#options' => array(0 => 'All Projects') + $opt_project,
+    '#multiple' => FALSE,
+    '#id' => 'download-sel-project',
     '#ajax' => array(
       'event' => 'change',
-      'callback' => 'rawpheno_download_measurements',
-      'wrapper' => 'div-measurements',
+      'callback' => 'rawpheno_download_get_locations_traits',
+      'wrapper' => 'download-ajax-wrapper',
       'progress' => array('type' => '', 'message' => '')
     ),
   );
   
-  // Disable select location when there is no locations in the select box.
-  // This is to prevent calling AJAX with null or empty query string
-  // that causes an alert window.
-  $is_disabled = (count($location) > 0) ? '' : TRUE;
-  $form['chk_select_all_locations'] = array(
-    '#title' => t('Select all locations'),
-    '#type' => 'checkbox',
-    '#default_value' => 0,
-    '#disabled' => $is_disabled,
-  );
-  // Secondary select field - list of traits avaliable for download.
-  // Query all traits available per location.
-  // Note: planting date is excluded from the list in the same manner it is
-  //  excluded from the rawdata heat map.  
-  // Note: The total number of traits does not necessarily be the same as the
-  //  total number of traits in rawdata. In some cases there are more traits
-  //  in download page than what is shown in rawdata heat map, that is because 
-  //  the total count of traits in download is the count of traits from combining
-  //  all year/entry/reps (union) from a specific location.
-  
-  // Determine default traits to display based on value of location.
-  if (isset($form_state['values']['location'])) {
-    // When user has selected a location.
-    $loc = $form_state['values']['location'];
+  // This will reset the project select box on load and page refresh.
+  drupal_add_js('jQuery(document).ready(function() {
+    jQuery("#download-sel-project").val(0);
+  })', 'inline'); 
+ 
+  // Define the project ids required by the next field.
+  if (isset($project_selected)) {
+    // When a project is selected.
+    // 0 is the first option in the select box and translates to all projects.
+    $project_id = ($project_selected == 0) ? array_keys($opt_project) : $project_selected;
   }
   else {
-    // No selection made or on page load - default location to the first
-    // location available in primary select field.
-    $loc = reset($location);
+    // No project select. This is the defaul select all project.
+    $project_id = array_keys($opt_project);
   }
   
-  $traits = db_query("SELECT DISTINCT t1.type_id, t2.definition
-    FROM {pheno_measurements} AS t1
-      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t1.plant_id IN
-      (SELECT DISTINCT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
-      AND t1.value <> ''
-      AND t2.name NOT IN ('Planting Date (date)', '# of Seeds Planted (count)')
-    ORDER BY t1.type_id ASC", array(':location' => $loc))
+  // LOCATION SELECT BOX.
+  $sql = "
+    SELECT DISTINCT t2.value, t2.value AS prj_location
+    FROM {pheno_project_stock} AS t1
+      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
+      INNER JOIN chado.cvterm AS t3 ON t2.type_id = t3.cvterm_id
+    WHERE t3.name = 'Location' AND t1.project_id IN (:project_id)
+    ORDER BY t2.value ASC";
+ 
+  $opt_location = db_query($sql, array(':project_id' => $project_id))
     ->fetchAllKeyed();
   
-  // Div wrapper to display ajax result.
-  $form['ajax_wrapper'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<div id="div-measurements">',
-    '#suffix' => '</div>'
+  $default_value = reset($opt_location);
+  
+  $form['ajax_container']['sel_location'] = array(
+    '#type' => 'select',
+    '#title' => t('Location'),
+    '#options' => $opt_location,
+    '#multiple' => TRUE,
+    '#size' => 7,
+    '#id' => 'download-sel-location',
+    '#ajax' => array(
+      'event' => 'change',
+      'callback' => 'rawpheno_download_get_traits',
+      'wrapper' => 'download-ajax-wrapper-traits',
+      'progress' => array('type' => '', 'message' => '')
+    ),
   );
 
-  $form['ajax_wrapper']['traits'] = array(
-    '#title' => t('@traits-count Traits available', array('@traits-count'=> count($traits))),
-    '#type' => 'select',
-    '#options' => $traits,
-    '#multiple' => TRUE,
-    '#size' => 17,
-  );
-  
-  $form['ajax_wrapper']['chk_select_all_traits'] = array(
-    '#title' => t('Select all traits'),
+  $form['ajax_container']['chk_select_all_locations'] = array(
+    '#title' => t('Select all Locations'),
     '#type' => 'checkbox',
     '#default_value' => 0,
   );
   
-  // Attach CSS and JavaScript
-  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
-  $form['#attached']['css'] = array($path . 'css/rawpheno.download.style.css');
-  $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
+  $location_id = reset($opt_location);
+
+  // TRAITS.
+  // Select traits wrapper.
+  $form['ajax_container']['ajax_container_traits'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="download-ajax-wrapper-traits">',
+    '#suffix' => '</div>',
+  );
+  
+  // Get traits given a location and project.
+  $opt_trait = rawpheno_download_load_traits($location_id, $project_id);
     
-  $form['chk_rfriendly'] = array(
+  $form['ajax_container']['ajax_container_traits']['sel_trait'] = array(
+    '#type' => 'select',
+    '#title' => t('@trait_count Traits available', array('@trait_count' => count($opt_trait))),
+    '#options' => $opt_trait,
+    '#multiple' => TRUE,
+    '#size' => 15,
+    '#id' => 'download-sel-trait',
+  );
+  
+  $form['ajax_container']['ajax_container_traits']['chk_select_all_traits'] = array(
+    '#title' => t('Select all Traits'),
+    '#type' => 'checkbox',
+    '#default_value' => 0,
+  );
+
+  $form['div_buttons'] = array(
+    '#prefix' => '<div id="div-button">',
+    '#suffix' => '</div>',
+  );
+  
+  $form['div_buttons']['chk_rfriendly'] = array(
     '#title' => t('<img src="@img" alt="Make R Friendly" title="Make R Friendly" align="absmiddle" /> (Make R Friendly)', array('@img' => '../../' . $path . 'img/r.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
   );
 
-  $form['download_submit_download'] = array(
+  $form['div_buttons']['download_submit_download'] = array(
     '#type' => 'submit',
     '#value' => 'Download',
   );
   
+  $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
+    
   return $form;
 }
 
 /**
- * Function callback: set form wrapper for AJAX.
+ * Function callback: AJAX update location and traits select boxes when project is selected.
  */
-function rawpheno_download_measurements($form, $form_state) {
-  return $form['ajax_wrapper'];
+function rawpheno_download_get_locations_traits($form, $form_state) {
+  return $form['ajax_container'];
+}
+
+/**
+ * Function callback: AJAX update trait select box.
+ */
+function rawpheno_download_get_traits($form, $form_state) {
+  $location = $form_state['values']['sel_location'];
+  $project = $form_state['values']['sel_project'];
+  
+  // Determine if the selected project is all project.
+  if ($project == 0) {
+    // Yes, then read the value of the hidden field containing project ids.
+    $t = $form_state['values']['txt_project'];
+    $project = explode(',', $t);
+  }
+  
+  // Get all traits given a location and project.
+  $opt_trait = rawpheno_download_load_traits($location, $project);
+  
+  // Update the #options value of select a trait select box.
+  $form['ajax_container']['ajax_container_traits']['sel_trait']['#options'] = $opt_trait;
+  // Update the title.
+  $form['ajax_container']['ajax_container_traits']['sel_trait']['#title'] = t('@count_trait Traits available', array('@count_trait' => count($opt_trait)));
+  
+  return $form['ajax_container']['ajax_container_traits'];
+}
+
+/**
+ * Function get all traits given a location and project.
+ * 
+ * @param $location
+ *   An array containing selected location from the location select box.
+ *
+ * @param $project
+ *   An array containing the selected project form the project select box.
+ *
+ * @return
+ *   An array containing all traits available.
+ */
+function rawpheno_download_load_traits($location, $project) {
+  $sql = "
+    SELECT DISTINCT t1.type_id, t2.definition
+    FROM {pheno_measurements} AS t1 INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
+    WHERE t1.plant_id IN
+      
+      (SELECT DISTINCT plant_id
+       FROM {pheno_project_stock} INNER JOIN {pheno_plantprop} USING(plant_id)
+       WHERE value IN (:location) AND project_id IN (:project))
+       
+      AND t1.value <> ''
+      AND t2.name NOT IN ('Planting Date (date)', '# of Seeds Planted (count)')
+    ORDER BY t1.type_id ASC";
+ 
+  $args = array(':location' => $location, ':project' => $project);
+  $opt_trait = db_query($sql, $args)
+    ->fetchAllKeyed();
+  
+  return $opt_trait;
 }
 
 /**
@@ -146,54 +257,86 @@ function rawpheno_download_submit($form, &$form_state) {
   // A counter in front-end in sync whith this delay.
   sleep(4);
  
+  // Project or projects selected by user
+  $p = $form_state['values']['sel_project'];
+  // Determine if user wanst all project, if so, use the text box containting
+  // all project ids in the select project select box.
+  if ($p == 0) {
+    // Use the text box.
+    $p = $form_state['values']['txt_project'];
+    $project = explode(',', $p);
+  }
+  else {
+    $project = $p;
+  }
   // Location or locations selected by user.
-  $location = $form_state['values']['location'];
+  $location = $form_state['values']['sel_location'];
   // List of traits selected by user.
-  $traits = $form_state['values']['traits'];
+  $traits = $form_state['values']['sel_trait'];
   
-  // Add planting date to the list of traits.
-  $planting_date = rawpheno_get_trait_id('Planting Date (date)');
-  array_push($traits, $planting_date);
-  $no_seeds = rawpheno_get_trait_id('# of Seeds Planted (count)');
-  array_push($traits, $no_seeds);
+  // Add planting date and # of seeds planted to the list of traits.
+  // But, before doing this, make sure that these two column headers
+  // are part or the project in the first place.
+  $arr_notso_trait = array('Planting Date (date)', '# of Seeds Planted (count)');
+  foreach($arr_notso_trait as $nt) {
+    $sql = "SELECT cvterm_id FROM {pheno_project_cvterms} INNER JOIN chado.cvterm USING(cvterm_id)
+      WHERE name = :cvterm AND project_id IN (:project_id) LIMIT 1";
+    $n = db_query($sql, array(':cvterm' => $nt, ':project_id' => $project));
+    
+    if ($n->rowCount() == 1) {
+      array_push($traits, $n->fetchField());
+    }
+  }
   
+  // Sub-query to select plant_id given a location and project.
+  // NOTE: leading and trailing spaces are required.
+  $sub_sql = " (SELECT plant_id 
+                FROM {pheno_project_stock} INNER JOIN {pheno_plantprop} USING(plant_id)
+                WHERE value IN (:location) AND project_id IN (:project)) ";
+
+  // Query values required by sub query.
+  $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
+    
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
   // it will allow us to handle missing data.
-  $sql = "SELECT 'B'||t2.cvterm_id AS id, t2.definition 
-    FROM {pheno_plantprop} t1 
-      LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
-    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
-    UNION
-    SELECT 'C'||t2.cvterm_id AS id, t2.definition 
-    FROM {pheno_measurements} t1 
-      LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
-    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location)) 
-      AND t2.cvterm_id IN (:traits)
-    GROUP BY t2.cvterm_id, t2.definition";
+  $sql = "
+    SELECT 'B' || t2.cvterm_id AS id, t2.definition 
+    FROM {pheno_plantprop} t1 LEFT JOIN chado.cvterm t2 ON t2.cvterm_id = t1.type_id 
+    WHERE t1.plant_id IN" . $sub_sql . "
+    
+    UNION 
+    
+    SELECT 'C' || t2.cvterm_id AS id, t2.definition 
+    FROM {pheno_measurements} t1 LEFT JOIN chado.cvterm t2 ON t2.cvterm_id=t1.type_id 
+    WHERE t2.cvterm_id IN (:traits) AND t1.plant_id IN" . $sub_sql . " 
+    ROUP BY t2.cvterm_id, t2.definition";
   
-  $result = db_query($sql, array(':location' => $location, ':traits' => $traits))->fetchAll();
+  $result = db_query($sql, $arr_q_string)
+    ->fetchAll();
+  
+  // Array to hold column headers. 
+  //Add Name/Stock name column headers array.
   $header = array('A0' => 'Name');
   
   foreach ($result as $r) {
     $def = $r->definition;
     
+    // Get the R Friendly version when user requests for it.
     if ($form_state['values']['chk_rfriendly'] == 1) {
       // Get the R compatible version.
       $id_no = (int)trim(str_replace(array('B', 'C'), '', $r->id));
       $rfreindly = rawpheno_download_r_compatible($id_no);
       
-      if ($rfreindly == null) {
-        $def = $r->definition;
-      }
-      else {
-        $def = $rfreindly;
-      }  
+      // When no equivalent R version is available, load the definition instead.
+      $def = ($rfreindly == null) ? $r->definition : $rfreindly;
     }
-  
+    
+    // Column headers array.
     $header[ $r->id ] = $def;
   }
   
+  // Sort array by key.
   ksort($header);
   
   // Query to join data from different tables.
@@ -201,27 +344,33 @@ function rawpheno_download_submit($form, &$form_state) {
   // The result is sorted by plant_id and the grouping string ensuring that the first
   // row is Name - containing the stock name.
   // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
+  
   // Thus first we select the name. Note that  the tid is 0 because this doesn't have a cvterm (ie: not a trait).
-  $sql = "SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
-    FROM {chado.stock} AS t1 
-      INNER JOIN {pheno_plant} AS t2 USING(stock_id)
-    WHERE t2.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))"
+  $sql = "
+    SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
+    FROM {chado.stock} AS t1 INNER JOIN {pheno_plant} AS t2 USING(stock_id)
+    WHERE t2.plant_id IN" . $sub_sql
+      
     // Then we add on the required information (ie: plot, entry, rep, location)
-    ." UNION
+    . "UNION 
+    
     SELECT t1.plant_id AS id, t1.type_id AS tid, t2.definition AS def, t1.value AS value, 'B' AS grp
     FROM {pheno_plantprop} AS t1
-      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))"
+    INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
+    WHERE t1.plant_id IN" . $sub_sql
+      
     // Finally we add in all the traits.
-    ."UNION
+    . "UNION 
+    
     SELECT t1.plant_id AS id, t1.type_id as tid, t2.definition AS def, t1.value AS value, 'C' as grp
     FROM {pheno_measurements} AS t1
-      INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
-    WHERE t1.plant_id IN (SELECT plant_id FROM {pheno_plantprop} WHERE value IN (:location))
-      AND t2.cvterm_id IN (:traits)"
+    INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
+    WHERE t2.cvterm_id IN (:traits) AND t1.plant_id IN" . $sub_sql
+    
     // Lastly we order the results by plant_id and grouping string, and tid.
-    ."ORDER BY id, grp, tid ASC";
-  $results = db_query($sql, array(':location' => $location, ':traits' => $traits));
+    . "ORDER BY id, grp, tid ASC";
+  
+  $results = db_query($sql, $arr_q_string);
 
   if ($results) {
 
@@ -303,17 +452,17 @@ function rawpheno_download_submit($form, &$form_state) {
  * Implements hook_validate().
  */
 function rawpheno_download_validate($form, &$form_state) {
-  $traits = $form_state['values']['traits'];
-  $locations = $form_state['values']['location'];
+  $locations = $form_state['values']['sel_location'];
+  $traits = $form_state['values']['sel_trait'];
   
   if (count($traits) <= 0) {
     // No trait selected.
-    form_set_error('traits', t('Please select traits and try again.'));
+    form_set_error('sel_trait', t('Please select traits and try again.'));
   }
   
   if (count($locations) <= 0) {
     // No location selected.
-    form_set_error('location', t('Please select location and try again.'));
+    form_set_error('sel_location', t('Please select location and try again.'));
   }
 }
 

@@ -64,3 +64,9 @@ div.container-trait div.form-item {
   float: right;
   margin-right: 20px;
 }
+
+
+/* Select field */
+select:disabled {
+  color: #000000;
+}
