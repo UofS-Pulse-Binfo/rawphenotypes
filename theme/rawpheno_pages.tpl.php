@@ -250,24 +250,13 @@
                 print drupal_render($form['bdnd']);
                 print drupal_render($form['backup_txt_description']);
                 print drupal_render($form['backup_file_submit']);
+                
+                print drupal_render($form['summary']);
               ?>
             </div>
             
             <div>
-              <h2>Manage My Files: <a href="#" id="link-add-prj">Add Project</a></h2>
-            </div>
-            
-            <div id="container-add-project">
-              <?php 
-                if (isset($form['add_project_select']) AND isset($form['add_project_submit'])) {
-                  print drupal_render($form['add_project_select']); 
-                  print drupal_render($form['add_project_submit']);
-                }
-                else {
-                  print drupal_render($form['no_prj']);
-                }
-              ?>
-              <div class="clear-float"></div>
+              <h2>Manage My Files:</h2>
             </div>
             
             <?php 

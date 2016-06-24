@@ -261,6 +261,33 @@ span.text-next-step {
 }
 
 
+/* Style select a project select box */
+#rawpheno-select-project-field {
+  background: #FCFDFD url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
+  background-position: 99.3% 50%;
+  border: 1px solid #AAAAAA;
+  padding: 10px; 
+  font-size: 1.0em;
+  
+  -moz-box-shadow:    1px 1px 4px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 4px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 4px 3px #EAEAEA;
+
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+#rawpheno-select-project-field option {
+  background-color: #FFFFFF;
+}
+
+div.form-item-sel-project {
+  border: none;
+  padding: 0;
+  margin-bottom: 20px !important;
+}
+
+
 /* Reduce the font-size when window is resized */
 @media(max-width: 1350px) {
   div.progress-stage { 

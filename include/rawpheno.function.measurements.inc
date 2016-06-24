@@ -110,12 +110,12 @@ function rawpheno_function_headers($type) {
   return $arr_requested_trait;
 }
 
+
 /**
  * Function to transform a column header to R compatible version. 
  *
  * @params $column_header
  *   A string containing the column header to transform.
- *
  * @return
  *   A string containing the R compatible column header.
  */
@@ -174,6 +174,7 @@ function rawpheno_function_make_r_compatible($column_header) {
   return ucfirst(implode('.', $rfriendly));
 }
 
+
 /**
  * Function that lists types of column headers. This list will be available
  * as an option when adding traits. Plant Property is used to indicate
@@ -186,6 +187,7 @@ function rawpheno_function_trait_types() {
                'type4' => 'plantproperty');
 }
 
+
 /**
  * Function that lists trait reps or number of trials or R value/number
  * that precedes the unit of a measurement type.
@@ -194,18 +196,20 @@ function rawpheno_function_trait_reps() {
   return array('1st', '2nd', '3rd', 'R1', 'R3', 'R5', 'R7');
 }
 
+
 /**
  * Function to test if the module has a project set up for user.
  *
  * @return FALSE when there is no project to work on.
  */
 function rawpheno_function_project() {
-  $sql = "SELECT FROM pheno_project_cvterms";
+  $sql = "SELECT FROM pheno_project_cvterm";
   $project_count = db_query($sql)
     ->rowCount();
     
   return ($project_count <= 0) ? 0 : 1;
 }
+
 
 /**
  * Function to test if the module has a project set up for user and
@@ -214,7 +218,7 @@ function rawpheno_function_project() {
  * @return FALSE when there is no data.
  */
 function rawpheno_function_data() {
-  $sql = "SELECT FROM pheno_project_stock";
+  $sql = "SELECT FROM pheno_plant_project";
   $stock_count = db_query($sql)
     ->rowCount();
     

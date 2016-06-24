@@ -8,14 +8,18 @@
 /**
  * Load the Spreadsheet into the database. This should be executed as a Tripal Job.
  *
- * @param $xls_file
- *   The spreadsheet containing phenotypics data to be loaded.
+ * @param $project_id
+ *   An integer containing the project id the spreadsheet, headers and data are specific to.
+ * @param $arr_newheaders
+ *   An array of columns detected in the spreadsheet that are user defined and not in the project header set.
+ * @param $fid
+ *   An integer containing the file id number assigned to a spreadsheet file during upload process. 
  * @param $plantprop_headers
- *   An array of columns that should be saved as plant properties rather than measurements.
+ *   An array of column headers of type plant property (Name, Plot, Entry, Rep and Location in this module).
  * @param $job_id
  *   The tripal job id.
  */
-function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plantprop_headers, $job_id) {
+function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantprop_headers, $job_id) {
   // Unserialize and remove formating for the headers that should be saved as 
   // plant properties rather than measurements.
   $plantprop_headers = unserialize($plantprop_headers);
@@ -32,8 +36,7 @@ function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plan
       array('!id' => $fid),
       array('print' => TRUE)
     );
-    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', 
-                         array('!id' => $job_id), array('print' => TRUE));    
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));    
     exit(1);
   }
   
@@ -55,8 +58,7 @@ function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plan
       array('@file' => print_r($file, TRUE)),
       array('print' => TRUE)
     );
-    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', 
-                         array('!id' => $job_id), array('print' => TRUE));
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     exit(2);
   }
 
@@ -143,8 +145,8 @@ function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plan
           ->execute();
       
         // Map this record/stock to a project.
-        db_insert('pheno_project_stock')
-          ->fields(array('project_id' => $active_project,
+        db_insert('pheno_plant_project')
+          ->fields(array('project_id' => $project_id,
                          'plant_id' => $pheno_plantid))
           ->execute();               
       } 
@@ -321,12 +323,12 @@ function rawpheno_load_spreadsheet($active_project, $arr_newheaders, $fid, $plan
                   TRIPAL_ERROR,
                   'Uploading Phenoypic Data: Unable to insert measurement. Values=@values.',
                   array('@values' => print_r(array('plant_id'  => $pheno_plantid, 
-                             'type_id' => $type_id, 
-                             'unit_id' => $unit_id, 
-                             'cvalue_id' => $cvalue_id,
-                             'value' => $cell_entry,
-                             'modified' => date("D M d, Y h:i:s a", time())),TRUE)),
-                  array('print' => TRUE)
+                        'type_id' => $type_id, 
+                        'unit_id' => $unit_id, 
+                        'cvalue_id' => $cvalue_id,
+                        'value' => $cell_entry,
+                        'modified' => date("D M d, Y h:i:s a", time())),TRUE)),
+                        array('print' => TRUE)
                 );
                 $TRANSACTION->rollback();
                 tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
@@ -443,7 +445,7 @@ function rawpheno_validate_excel_file($file, $project_id) {
         // Foreach validator with a scope of header, execute the validation callback & save the results.
         foreach($validators['header'] as $validator_name => $validator) {
           if (isset($validator['validation callback']) AND function_exists($validator['validation callback'])) {
-            $result = call_user_func($validator['validation callback'], $header);
+            $result = call_user_func($validator['validation callback'], $header, $project_id);
             
             // The status needs to keep track of which rows failed for a given header.
             if ($result === FALSE) {
@@ -543,7 +545,6 @@ function rawpheno_validate_excel_file($file, $project_id) {
  *   An object representing the Excel file.
  */
 function rawpheno_open_file($file) {
-
   // Grab the path and extension from the file.
   $xls_file = drupal_realpath($file->uri);
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
@@ -578,8 +579,10 @@ function rawpheno_open_file($file) {
  *   TRUE if it found the tab and FALSE otherwise.
  */
 function rawpheno_change_sheet(&$xls_obj, $tab_name) {
-
+  // Get all the sheets in the workbook.
   $xls_sheets = $xls_obj->Sheets();
+  
+  // Locate the measurements sheet.
   foreach($xls_sheets as $sheet_key => $sheet_value) {
     $xls_obj->ChangeSheet($sheet_key);
 
@@ -588,16 +591,16 @@ function rawpheno_change_sheet(&$xls_obj, $tab_name) {
       return TRUE;
     }
   }
-  return FALSE;
   
+  return FALSE;
 }
+
 
 /**
  * Function to remove all formatting from a cell value.
  *
  * @param $xls_cell_value
  *   Contains a value of a cell.
- *
  * @return 
  *   Contains a cell value with all formatting removed.
  */
@@ -607,12 +610,12 @@ function rawpheno_function_delformat($xls_cell_value) {
   return trim(strtolower(preg_replace('!\s+!', ' ', $xls_cell_value)));
 }
 
+
 /**
  * Function to extract the unit from the column header.
  *
  * @param $xls_header_cell
  *   A string containing a column header.
- *
  * @return
  *   A string containing the unit found from the column header.
  */
@@ -635,31 +638,30 @@ function rawpheno_function_unit($xls_header_cell) {
   return (isset($match[1])) ? trim($match[1]) : 'text';
 }
 
-/**
- * Determines which headers indicate new traits as compared to those expected for AGILE.
- *
- * @param $xls_file
- *    The full path to the excel file containing data.
- * @param $handle?
- *    A reference to the openened file?
- *
- * @return
- *    An array of headers for new traits.
- */
-function rawpheno_indicate_new_headers($file) {
-  $active_project = $_SESSION['rawpheno']['active_project'];
 
+/**
+ * Function to determine additional column headers in the spreadsheet. Additional column headers are
+ * headers that are no part of the predefined headers set of the project.
+ *
+ * @param $file
+ *   The full path to the excel file containing data.
+ * @param $project_id
+ *   Project id number the spreadsheet is specific to.
+ * @return
+ *    An array containing all additional column headers detected.
+ */
+function rawpheno_indicate_new_headers($file, $project_id) {
   // Retrieve the header for the indicated file.
   rawpheno_add_parsing_libraries();
   $xls_obj = rawpheno_open_file($file);
   rawpheno_change_sheet($xls_obj, 'measurements');
+  
   // Note: we use the foreach here 
   // because the library documentation doesn't have a single fetch function.
   foreach ($xls_obj as $xls_headers) { break; }
   
-  // Array to hold epected column headers.
-  //$expected_headers = rawpheno_function_headers('expected');
-  $expected_headers = rawpheno_project_traits($active_project);
+  // Array to hold epected column headers specific to a given project.
+  $expected_headers = rawpheno_project_traits($project_id);
   
   // Remove any formatting in each column headers.
   $expected_headers = array_map('rawpheno_function_delformat', $expected_headers);
@@ -669,7 +671,6 @@ function rawpheno_indicate_new_headers($file) {
 
   // Assuming the file actually has a non-empty header row...
   if (count($xls_headers) > 0) {
-  
     // Read each column header and compare against expected column headers.
     foreach($xls_headers as $value) {
       $temp_value = rawpheno_function_delformat($value);
@@ -685,12 +686,12 @@ function rawpheno_indicate_new_headers($file) {
   return $new_headers;
 }
 
+
 /**
  * Get all column headers.
  *
  * @param $file
  *    The full path to the excel file containing data.
- *
  * @return
  *    An array of headers.
  */
@@ -715,12 +716,12 @@ function rawpheno_all_headers($file) {
   return $arr_headers;
 }
 
+
 /**
- * Count all rows in a spreadsheet
+ * Count all rows in a spreadsheet.
  *
  * @param $data_sheet
  *    The tab/sheet containing all data.
- *
  * @return
  *    An integer value of the total rows.
  */
@@ -736,11 +737,11 @@ function rawpheno_count_rows($data_sheet) {
   return $count_rows - 1;
 }
 
+
 /**
  * Adds the necessary files for EXCEL parsing.
  */
 function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
-
   // Function call libraries_load() base on the implementation
   // of hook_libraries_info() in rawpheno.module.
   $xls_lib = libraries_load('spreadsheet_reader');
@@ -763,6 +764,7 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
   }
 }
 
+
 /**
  * Retrieve the cvterm_id for a given header.
  *
@@ -772,7 +774,6 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
  *   The cvterm_id for the trait.
  */
 function rawpheno_get_trait_id($header) {
-  
   $header = str_replace(array("\n", "\r", "  "), ' ', $header);
   
   $type = tripal_get_cvterm(array('name' => $header, 'cv_id' => array('name' => 'phenotype_measurement_types')));
@@ -783,6 +784,7 @@ function rawpheno_get_trait_id($header) {
   
   return FALSE;
 }
+
 
 /**
  * Retrieve the unit for the trait.
@@ -795,7 +797,6 @@ function rawpheno_get_trait_id($header) {
  *   Returns an array with the cvterm_id and name of the unit.
  */
 function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
-
   // Get the trait id if that is not provided to us.
   if (!$trait_id) {
     $type_id = rawpheno_get_trait_id($trait_name);
@@ -803,11 +804,13 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
-  $unit = db_query("SELECT rel.object_id as id, cvt.name as name 
-    FROM chado.cvterm_relationship rel
-    LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id=rel.object_id
-    WHERE rel.subject_id = :trait LIMIT 1",
-    array(':trait' => $trait_id))->fetchAll();
+  $sql = "SELECT rel.object_id as id, cvt.name as name 
+          FROM chado.cvterm_relationship rel LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id = rel.object_id
+          WHERE rel.subject_id = :trait LIMIT 1";
+  
+  $args = array(':trait' => $trait_id); 
+  $unit = db_query($sql, $args)
+    ->fetchAll();
   
   if (sizeof($unit) == 1) {
     return $unit[0];
@@ -816,6 +819,7 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   // If that doesn't work then we try to extract it from the name.
   // Note: if the following function is unable to extract the unit then it will default to text.
   $unit_name = rawpheno_function_unit($trait_name);
+  
   // Column header does not contain unit, use text as default
   $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
 
@@ -825,6 +829,7 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   
   return FALSE;
 }
+
 
 /**
  * Remove the unit part from a trait.
@@ -843,8 +848,9 @@ function rawpheno_get_trait_name($trait_name) {
   return (count($t) > 1) ? trim(preg_replace('/\(.*/', ' ', $trait_name)) : $trait_name;
 } 
 
+
 /**
- * Get all the essential traits in a project selected.
+ * Get all the essential traits in a project.
  *
  * @param $project_id
  *   An integer containing the project ID number.
@@ -852,32 +858,34 @@ function rawpheno_get_trait_name($trait_name) {
  *   An array containing all essential traits in a project.
  */ 
 function rawpheno_project_essential_traits($project_id) {
-  // Get array of trait types
-  $trait_type = rawpheno_function_trait_types();
+  if (isset($project_id) AND $project_id > 0) {
+    // Get array of trait types
+    $trait_type = rawpheno_function_trait_types();
    
-  // Array to hold trait names.
-  $arr_essential_traits = array();
+    // Array to hold trait names.
+    $arr_essential_traits = array();
   
-  // Query essential traits in a project.
-  $sql = "SELECT t2.name AS cvterm
-    FROM pheno_project_cvterms AS t1 
-      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
-    WHERE t1.project_id = :project_id AND t1.type = :essential
-    ORDER BY t2.name ASC";
+    // Query essential traits in a project.
+    $sql = "SELECT TRIM(t1.name) AS cvterm
+            FROM {cvterm} AS t1 RIGHT JOIN pheno_project_cvterm AS t2 USING (cvterm_id) 
+            WHERE t2.project_id = :project_id AND t2.type = :essential
+            ORDER BY t1.name ASC";
    
-  $args = array(':project_id' => $project_id, ':essential' => $trait_type['type1']);  
-  $trait = chado_query($sql, $args);
+    $args = array(':project_id' => $project_id, ':essential' => $trait_type['type1']);  
+    $trait = chado_query($sql, $args);
   
-  foreach($trait as $t) {
-    $m = rawpheno_get_trait_name($t->cvterm);
-    array_push($arr_essential_traits, $m);
+    foreach($trait as $t) {
+      $m = rawpheno_get_trait_name($t->cvterm);
+      array_push($arr_essential_traits, $m);
+    }
+  
+    // Add Name column header to the traits returned.
+    array_push($arr_essential_traits, 'Name');
+  
+    return $arr_essential_traits;
   }
-  
-  // Add Name column header to the traits returned.
-  array_push($arr_essential_traits, 'Name');
-  
-  return $arr_essential_traits;
 }
+
 
 /**
  * Get all the plant property traits in a project selected.
@@ -888,32 +896,33 @@ function rawpheno_project_essential_traits($project_id) {
  *   An array containing all essential traits in a project.
  */ 
 function rawpheno_project_plantproperty_traits($project_id) {
-  // Get array of trait types
-  $trait_type = rawpheno_function_trait_types();
+  if (isset($project_id) AND $project_id > 0) { 
+    // Get array of trait types
+    $trait_type = rawpheno_function_trait_types();
    
-  // Array to hold trait names.
-  $arr_plantproperty_traits = array();
+    // Array to hold trait names.
+    $arr_plantproperty_traits = array();
   
-  // Query plant property traits in a project.
-  $sql = "
-    SELECT t2.name AS cvterm
-    FROM pheno_project_cvterms AS t1 
-      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
-    WHERE t1.project_id = :project_id AND t1.type = :plantproperty
-    ORDER BY t2.name ASC";
+    // Query plant property traits in a project.
+    $sql = "SELECT TRIM(t1.name) AS cvterm
+            FROM {cvterm} AS t1 RIGHT JOIN pheno_project_cvterm AS t2 USING (cvterm_id) 
+            WHERE t2.project_id = :project_id AND t2.type = :plantproperty
+            ORDER BY t1.name ASC";
   
-  // traits of type plantproperty. 
-  $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);  
-  $trait = chado_query($sql, $args);
+    // traits of type plantproperty. 
+    $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);  
+    $trait = chado_query($sql, $args);
   
-  foreach($trait as $t) {
-    // Remove the trait rep and unit from the trait.
-    $m = rawpheno_get_trait_name($t->cvterm);
-    array_push($arr_plantproperty_traits, $m);
+    foreach($trait as $t) {
+      // Remove the trait rep and unit from the trait.
+      $m = rawpheno_get_trait_name($t->cvterm);
+      array_push($arr_plantproperty_traits, $m);
+    }
+  
+    return $arr_plantproperty_traits;
   }
-  
-  return $arr_plantproperty_traits;
 }
+
 
 /**
  * Get all traits available in a project whether essential or not.
@@ -924,25 +933,25 @@ function rawpheno_project_plantproperty_traits($project_id) {
  *   An array containing all traits available in a project.
  */
 function rawpheno_project_traits($project_id) {
-  $arr_trait = array();
+  if (isset($project_id) AND $project_id > 0) {    
+    $arr_trait = array();
   
-  // Query essential traits in a project.
-  $sql = "
-    SELECT trim(t2.name) AS cvterm
-    FROM pheno_project_cvterms AS t1 
-      INNER JOIN chado.cvterm AS t2 USING (cvterm_id) 
-    WHERE t1.project_id = :project_id
-    ORDER BY t2.name ASC";
+    // Query column headers in a project.
+    $sql = "SELECT TRIM(t1.name) AS cvterm
+            FROM {cvterm} AS t1 RIGHT JOIN pheno_project_cvterm AS t2 USING (cvterm_id) 
+            WHERE t2.project_id = :project_id
+            ORDER BY t1.name ASC";
    
-  $args = array(':project_id' => $project_id);  
-  $trait = chado_query($sql, $args);
+    $args = array(':project_id' => $project_id);  
+    $trait = chado_query($sql, $args);
   
-  foreach($trait as $t) {
-    array_push($arr_trait, $t->cvterm);
+    foreach($trait as $t) {
+      array_push($arr_trait, $t->cvterm);
+    }
+  
+    // Add Name column header to the traits returned.
+    array_push($arr_trait, 'Name');
+  
+    return $arr_trait;
   }
-  
-  // Add Name column header to the traits returned.
-  array_push($arr_trait, 'Name');
-  
-  return $arr_trait;
 }

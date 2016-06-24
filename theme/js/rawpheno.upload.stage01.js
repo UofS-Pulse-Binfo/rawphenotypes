@@ -54,6 +54,14 @@
         if ($('div.messages').length > 1) {
           $('div.messages').remove();
         }
+      })
+      .ajaxComplete(function() { 
+        // Stage 01 only.
+        // Disable the select project when next stem button is present in the DOM.
+        // This will prevent user changing project once upload process has started.
+        if ($('#edit-next-step').attr('disabled') == '') {  
+          $('#rawpheno-select-project-field').attr('disabled', 'disabled');
+        }
       });
       
       //Collapse validation result.

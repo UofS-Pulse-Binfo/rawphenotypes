@@ -1,6 +1,6 @@
 /**
  * @file 
- * Style phenotypes/download page.
+ * Style download page.
  */
 
 /* Import global css */
@@ -14,14 +14,13 @@
 
 .form-wrapper {
   display: inline-block;
+  position: relative;
   margin: 0 30px;
   text-align: left;
   width: 80%;
 }
 
 #container-download select {
-  background-image: none;
-  background-color: #FFFFFF;
   min-width: 480px;
   width: 100%;
 }
@@ -63,50 +62,13 @@ label.option {
 #download-window-error {
   display: none;
   margin: 0 0 20px 0 !important;
-  width: 100 !important;
 }
 
-/*
-
-select {
-  min-width: 350px;
-}
-
-select:disabled {
-  background-color: #F7F7F7;
-}
-
-#div-measurements .form-select:disabled {
-  background: url('../img/throbber-active.gif') no-repeat center;
-}
-
-
-#div-location, #div-measurements {
-  margin: 0 15px;
-  text-align: left;
-}
-
-#div-location {
-  float: left;
-}
-
-#div-measurements {
-  float: left;
-}
-
-
-
-
-*/
 
 /* R Friendly checkbox */
 div.form-item-chk-rfriendly {
   display: inline-block;
   margin-right: 20px;
-}
-
-select {
-  background-color: #FFFFFF;
 }
 
 label img {

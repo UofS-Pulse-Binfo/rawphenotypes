@@ -5,25 +5,9 @@
 (function($) {
   Drupal.behaviors.rawphenoBackupBehaviours = {
     attach: function (context, settings) {
+      $('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
+      
       $('.droppable-browse-button').text('choose your file');
-      
-      var window = $('#container-add-project');
-      $('#link-add-prj').click(function(event) {
-        event.preventDefault();
-        
-        if (window.is(':visible')) {
-          window.slideUp(300);
-          $(this).text('Add Project');
-        }
-        else {
-          window.slideDown(300);
-          $(this).text('Close Add Project');
-        } 
-        
-        $(this).blur();
-      });
-      
-      
       
       // Drop area element.
 	    var dropZone = document.getElementById('droppable-bdnd');
@@ -63,9 +47,59 @@
 		    });
 	    }
       
+      // Remove validation result and error messages as soon
+      // as DND receives a file. This is for both drag and drop and
+      // using the choose a file link (file browser).
+      $(document)
+      .ajaxStart(function() {
+        // AJAX start.
+        if ($('div.messages').length > 1) {
+          $('div.messages').remove();
+        }
+      });
+      
+      // Reveal validation result text.
+      $('div.container-file-validation-result').click(function() { 
+        // Examine the height. When height is 50px, user wants to disclose the entire cell contents
+        // else, restore it to initial state.
+        var id = $(this).attr('id');
+        var h = $(this).css('height');
+        if (h == '50px') {
+          $(this).css('height', '100%');
+        }
+        else {
+          $(this).css('height', '50px');
+        }
+      });
       
       
+      // Confirm action.
+      $('table a.link-archive, table a.link-delete').click(function(i) { 
+        var title = i.target.title;
+        
+        var r = confirm('Are you sure want to ' + title + '?');
+        if (!r) return false;
+      });
       
+      // Show/hide archive table.
+      $('#container-archive-files a.link-archive').click(function(event) {
+        event.preventDefault();
+        var archiveTable = $('#tbl_project_archive_file');
+        if (archiveTable.is(':hidden')) {
+          archiveTable.show();
+        }
+        else {
+          archiveTable.hide();
+        }
+      })
+      
+      // Reload the page when file has no error.
+      $(document).ajaxComplete(function() {
+        //ajax end
+        if ($('.rawpheno-validate-progress').length <= 0) {
+          location.reload(true);
+        }
+      });
     }
   };
 }(jQuery));

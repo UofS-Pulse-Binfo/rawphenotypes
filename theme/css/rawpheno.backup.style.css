@@ -24,25 +24,28 @@
   padding: 0;
 }
 
-/*
-select {
-  background: #FFFFFF url('../../theme/img/icon-folder.gif') no-repeat top left;
-  background-position: 5px 4px;
-  width: 100%;
-  padding-left: 27px !important;
-  margin-bottom: 10px;
-}
-*/
 
-div.description {
-  margin-bottom: 25px;
+/* Upper left text */
+div.subtitle-left {
+  font-size: 2.2em;
+  line-height: 35px;
 }
 
-#droppable-bdnd {
+
+/* Add File */
+#container-add-file {
+  background-color: #FCFDFD;
+  margin-bottom: 20px;
+  padding: 25px 45px 55px 45px;
+  text-align: left;
+}
+
+
+/* (DnD) File dropzone */
+#droppable-bdnd, #backup_dropzone-upload {
   background: url('../../theme/img/icon-excel.gif') no-repeat top center;
   background-position: 50% 100px;
   background-color: #FCFDFD;
-  border: 2px solid #AAAAAA;
 
   -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
   -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
@@ -54,8 +57,16 @@ div.description {
   width: 99.7%;
 }
 
+#backup_dropzone-upload  {
+  border: 2px solid #AAAAAA;
+}
 
-/* Drag file here message and link container */
+#droppable-bdnd {
+  border: none;
+}
+
+
+/* (DnD) Drag file here message and link container */
 .droppable-message {
   border: medium none;
   height: 85%;
@@ -80,7 +91,7 @@ div.description {
 }
 
 
-/* Choose file link */
+/* (DnD) Choose file link */
 div.droppable-standard-upload {
   color: #666666;
   font-family: inherit;
@@ -109,8 +120,7 @@ div.droppable-standard-upload {
 }
 
 
-/* File preview */
-/* Preview the file to be uploaded. */
+/* (DnD) Preview the file to be uploaded. */
 div.droppable-preview-file {
   background-color: #FFFFFF;
   padding: 5px 15px;
@@ -121,45 +131,146 @@ div.preview-remove {
   display: block;
 }
 
+div.droppable-controls{
+  margin-top: 440px;
+  position: absolute;
+  right: 100px;
+} 
 
-/* Text stage indicator */
-div.subtitle-left {
-  font-size: 2.2em;
-  line-height: 35px;
+.droppable-controls input,
+.form-managed-file .droppable-controls input.progress-disabled {
+  display: block !important;
+  margin: 0 !important;
+}
+
+/* Remove file button */
+#edit-bdnd-remove-button {
+  display: none;
+}
+
+span.file {
+  background-color: #FFFFFF;
+  border: 1px solid #ccc;
+  height: 20px;
+  line-height: 20px;
+  margin: 1px;
+  padding: 5px 15px;
+  position: absolute;
+}
+
+span.file img {
+  display: none;
+}
+
+span.file a:link {
+  color: #000000;
+}
+
+/* Preview Remove */
+div.preview-remove {
+  margin: 0 10px;
+}
+
+span.preview-filesize {
+  visibility: hidden;
+}
+
+/* 
+Add/Backup file form 
+Add file select project 
+*/
+#backup_sel_project {
+  width: 100%;
 }
 
 /* Upload button */
 #edit-bdnd-upload-button {
-  margin-top: 20px;
   float: right;
+  margin-top: 20px;
+}
+
+/* Description field */
+div.description {
+  margin-bottom: 25px;
 }
 
 
-/* Project file table */
-table {
-  margin: 5px 0 0 0 !important;
+/* Project and file table */
+table tr:last-child td{
+  border-bottom: 1px solid #d0d0d0 !important;
 }
 
 table td, table th {
-  border: 1px solid #314355 !important;
   padding: 10px !important;
 }
 
-table tr td:first-child {
-  background: url('../../theme/img/icon-folder.gif') no-repeat top left;
-  background-position: 10px 10px;
-  padding: 0 0 0 40px !important;
-  
+table td {
+  vertical-align: top;
 }
 
-table tr td:last-child {
-  width: 20px;
+table tr:hover {
+  background-color: #F7F7F7 !important;
+}
+
+/* User project table */
+#tbl-user-project tr td:first-child {
+  background: url('../../theme/img/icon-folder.gif') no-repeat top left;
+  background-position: 10px 10px;
+  line-height: 35px;
+  padding: 0 0 0 40px !important;
+  width: 90%;
+}
+
+/* User project file table */
+#tbl_project_archive_file tr td:first-child, 
+#tbl-user-project-file tr td:first-child {
+  background: url('../../theme/img/icon-excel-file.gif') no-repeat top left;
+  background-position: 15px 15px;
+  padding-left: 40px !important;
+}
+
+#tbl_project_archive_file th:first-child,
+#tbl-user-project-file th:first-child {
+  width: 40%;
+}
+
+#tbl_project_archive_file th:nth-child(2),
+#tbl-user-project-file th:nth-child(2) {
+  width: 5%;
+}
+
+#tbl_project_archive_file tr td:nth-child(2),
+#tbl-user-project-file tr td:nth-child(2) {
+  font-size: 1.2em;
+}
+
+#tbl_project_archive_file th:nth-child(3),
+#tbl-user-project-file th:nth-child(3) {
+  width: 25%;
+}
+
+#tbl_project_archive_file th:nth-child(4),
+#tbl-user-project-file th:nth-child(4) {
+  width: 25%;
+}
+
+#tbl_project_archive_file td:nth-child(4),
+#tbl-user-project-file td:nth-child(4) {
+  -moz-box-shadow: inset 0 -20px 10px -20px #CCCCCC;
+  -webkit-box-shadow: inset 0 -20px 10px -20px #CCCCCC;
+  box-shadow: inset 0 -20px 10px -20px #CCCCCC;
+}
+
+#tbl_project_archive_file th:nth-child(5),
+#tbl-user-project-file th:nth-child(5) {
   text-align: center;
 }
 
-table tr th:nth-child(1) {
-  width: 90%;
+#tbl_project_archive_file th:last-child,
+#tbl-user-project-file th:last-child {
+  text-align: center;
 }
+
 
 /* Empty table */
 td.empty, td.message {
@@ -167,28 +278,6 @@ td.empty, td.message {
   height: 40px;
 }
 
-
-/* Add project */
-#container-add-project {
-  background-color: #EAEAEA;
-  margin: 0;
-  padding: 20px;
-  text-align: center;
-  display: none;
-}
-
-#add_project_select {
-  width: 100%;
-}
-
-#add_project_submit {
-  float: right;
-  margin: 0;
-}
-
-#container-add-project label {
-  text-align: left;
-}
 
 /* Title add project */
 #container-backup h2 {
@@ -206,43 +295,138 @@ td.empty, td.message {
 }
 
 
-/* Add File */
-#container-add-file {
-  background-color: #FCFDFD;
-  margin-bottom: 20px;
-  padding: 25px 40px 45px 40px;
+/* Add project */
+#container-add-project {
+  display: none;
+  background-color: #EAEAEA;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+
+#add_project_select {
+  width: 100%;
+}
+
+#add_project_submit {
+  float: right;
+  margin: 0;
+}
+
+#container-add-project label {
   text-align: left;
 }
 
 
-/* Upload button
-#edit-dnd-upload-button {
-  display: block;
-  visibility: visible;
-  margin: 0;
-}
-*/
-div.droppable-controls{
-  position: absolute;
-  margin-top: 440px;
-  right: 100px;
-} 
-
-
-.droppable-controls input,
-.form-managed-file .droppable-controls input.progress-disabled {
-  display: block !important;
-  margin: 0 !important;
-  margin: 0;
-}
-
-
-/* Add file select project */
-#backup_sel_project {
-  width: 100%;
-}
-
 /* Textarea backup file */
 #edit-backup-txt-description {
   resize: none;
+}
+
+/* Validation result */
+div.rawpheno-validate-progress {
+  padding: 0;
+  margin: 0 !important;
+  border: none !important;
+}
+
+div.messages {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Failed and success */
+.success {
+  background: url('../img/icon-success.jpg') no-repeat;
+  background-position: 5px 0;
+}
+
+.failed {
+  background: url('../img/icon-failed.jpg') no-repeat;
+  background-position: 5px 0;
+}
+
+.error-main {
+ list-style-type: none;
+ margin: 0 !important;
+ padding: 0 !important;
+}
+
+ul.error-main > li {
+  padding: 0 0 10px 15px;
+}
+
+ul.error-main > li em {
+  margin-left: 18px;
+}
+
+ul.error-main {
+  padding: 15px;
+  margin: 0 15px 0 0;
+}
+
+.error-detail {
+  background-color: #F7F7F7;
+  margin: 0 20px 0 0 !important;
+  padding: 10px !important;
+}
+
+li.error-item {
+  margin-left: 20px;
+}
+
+li em {
+  font-weight: bold;
+}
+
+/* File validation result cell */
+div.container-file-validation-result {
+  cursor: pointer;
+  height: 50px;
+  overflow: hidden;
+}
+
+div.fade-out {
+  background-color: #EAEAEA;
+}
+
+/* Link to archive file */
+a.link-archive {
+  background: url('../img/icon-trash.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-delete {
+  background: url('../img/icon-delete-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-download {
+  background: url('../img/icon-download-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-restore {
+  background: url('../img/icon-restore-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+#container-archive-files {
+  text-align: right;
+}
+
+#container-archive-files a {
+  width: 70px;
+}
+
+#tbl_project_archive_file {
+  display: none;
 }

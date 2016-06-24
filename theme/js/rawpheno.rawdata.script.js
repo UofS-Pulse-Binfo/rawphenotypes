@@ -15,12 +15,13 @@
         // Determine which select box was changed.
         var selectID = i.target.id;
         
+        // When user select a project. 
         if (selectID == 'rawdata-sel-project') {
           // Reset the select trait default to the word
           // Select a trait to highlight in the chart.
           $('select[name=rawdata-sel-trait] option:first-child').attr('selected', 'selected');
   
-          // Clear the chart before any visualizing a dataset.
+          // Clear the chart before visualizing a dataset.
           $('g').remove();
 
           // Start the heat map chart.
@@ -411,13 +412,13 @@
         bsvg.append('g')
           .attr('id', 'barchart-x-axis')
           .attr('class', 'barchart-axis')
-          .attr('transform', 'translate(' + margin.left + ',' + (height - margin.bottom) + ')')
+          .attr('transform', 'translate(' + (margin.left + 7) + ',' + (height - margin.bottom) + ')')
           .call(bxAxis);
 
         // Y axis.
         bsvg.append('g')
           .attr('class', 'barchart-axis')
-          .attr('transform', 'translate(' + margin.left + ', ' + margin.top +')')
+          .attr('transform', 'translate(' + (margin.left + 7) + ', ' + margin.top +')')
           .call(byAxis);	
         
         // Add chart title
@@ -462,8 +463,9 @@
         infoWindow('off');
         // Remove the bar chart.
         d3.selectAll('#container-barchart').remove();
+        
         // Reset selectbox
-        $('#edit-select-trait').val('');
+        $('select[name=rawdata-sel-trait]').val('');
       }
           
       // Render heat map chart elements.
@@ -723,19 +725,9 @@
             infoWindow();
             // Tell user how many reps a trait was measured.
             $('#text-rep').text(countRep + ' Rep');
-            // Remove trait not found message, if present.
-            if ($('#text-not-found').length > 0) {
-              $('#text-not-found').remove();
-            }
               
             return traitSelectedName;
           });
-        }
-        else {
-          infoWindow('off');
-          if (traitSelectedId != '0') {
-            $('.subtitle-left .form-item').append('<span id="text-not-found">&nbsp; Trait not found</span>');
-          }
         }
        
        // Test if barchart is part of the DOM already.
@@ -768,8 +760,8 @@
           }
 
           // Render bar chart.
-          var barchartFile = file + '/rawdata_trait' + '?p=' + project + '&t=' + traitSelectedId;
-          
+          var barchartFile = file + 'rawdata_trait' + '?p=' + project + '&t=' + traitSelectedId;
+
           d3.json(barchartFile, function(error, barchartData) {
             if (error) {
               // Error reading JSON.

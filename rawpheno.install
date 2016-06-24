@@ -160,10 +160,10 @@ function rawpheno_schema() {
   
   // PROJECT-CVTERM
   // Group a set of traits/cvterm to a project.
-  $schema['pheno_project_cvterms'] = array(
+  $schema['pheno_project_cvterm'] = array(
     'description' => t('Table for grouping set of traits to a project.'),
     'fields' => array(
-      'id' => array(
+      'project_cvterm_id' => array(
         'description' => t('Primary key: A unique ID number.)'),
         'type' => 'serial',
         'not null' => TRUE,
@@ -178,7 +178,7 @@ function rawpheno_schema() {
         'type' => 'int',
         'not null' => TRUE,
       ),
-      // This option will allow for grouping of traits. In for AGILE Project, types include:
+      // This option will allow for grouping of traits. In AGILE Project, types include:
       // Essential Traits, Optional Traits, Subset Trait and Plant Property.
       // Use this field to indicate as such.
       // A function in rawpheno.function.measurements lists possible types that can be made available
@@ -189,14 +189,14 @@ function rawpheno_schema() {
         'length' => 20,
       ),
     ),
-    'primary key' => array('id'),
+    'primary key' => array('project_cvterm_id'),
   );
   
   // PROJECT-PLANT/STOCK
-  $schema['pheno_project_stock'] = array(
+  $schema['pheno_plant_project'] = array(
     'description' => t('Table for mapping stock to a project'),
     'fields' => array(
-      'id' => array(
+      'plant_project_id' => array(
         'description' => t('Primary key: A nunique ID number.'),
         'type' => 'serial',
         'not null' => TRUE,
@@ -212,7 +212,7 @@ function rawpheno_schema() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('id'),
+    'primary key' => array('plant_project_id'),
   );
   
   // PROJECT-USER
@@ -261,9 +261,19 @@ function rawpheno_schema() {
         'description' => t('The sequence number of the file in relation to a project'),
         'type' => 'int',
       ),
+      'validation_result' => array(
+        'description' => t('Stores the result of file validation performed'),
+        'type' => 'text',
+      ),
       'notes' => array(
         'description' => t('Notes, description and comments made to a file'),
         'type' => 'text',
+      ),
+      'archive' => array(
+        'description' => t('Indicates whether a file is temporarily removed from a project.'),
+        'type' => 'varchar',
+        'length' => 2,
+        'default' => 'n',
       ),
     ),
     'primary key' => array('file_id'),
@@ -465,7 +475,7 @@ function rawpheno_install() {
           
           // Assign a project to this cvterm.
           // Name column header is part of the column headers or a project.
-          db_insert('pheno_project_cvterms')
+          db_insert('pheno_project_cvterm')
             ->fields(array(
               'project_id' => $project_ID,
               'cvterm_id' => $cvterm_obj->cvterm_id,
@@ -645,10 +655,10 @@ function rawpheno_update_7002() {
   // Table definition as per definition in hook_schema() above.
   // PROJECT-CVTERM
   // Group a set of traits/cvterm to a project.
-  $schema['pheno_project_cvterms'] = array(
+  $schema['pheno_project_cvterm'] = array(
     'description' => t('Table for grouping set of traits to a project.'),
     'fields' => array(
-      'id' => array(
+      'project_cvterm_id' => array(
         'description' => t('Primary key: A unique ID number.)'),
         'type' => 'serial',
         'not null' => TRUE,
@@ -674,16 +684,16 @@ function rawpheno_update_7002() {
         'length' => 20,
       ),
     ),
-    'primary key' => array('id'),
+    'primary key' => array('project_cvterm_id'),
   );
   
-  db_create_table('pheno_project_cvterms', $schema['pheno_project_cvterms']);
+  db_create_table('pheno_project_cvterm', $schema['pheno_project_cvterm']);
   
   // PROJECT-PLANT/STOCK
-  $schema['pheno_project_stock'] = array(
+  $schema['pheno_plant_project'] = array(
     'description' => t('Table for mapping stock to a project'),
     'fields' => array(
-      'id' => array(
+      'plant_project_id' => array(
         'description' => t('Primary key: A nunique ID number.'),
         'type' => 'serial',
         'not null' => TRUE,
@@ -699,10 +709,10 @@ function rawpheno_update_7002() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('id'),
+    'primary key' => array('plant_project_id'),
   );
   
-  db_create_table('pheno_project_stock', $schema['pheno_project_stock']);
+  db_create_table('pheno_plant_project', $schema['pheno_plant_project']);
 
   // PROJECT-USER
   $schema['pheno_project_user'] = array(
@@ -752,9 +762,19 @@ function rawpheno_update_7002() {
         'description' => t('The sequence number of the file in relation to a project'),
         'type' => 'int',
       ),
+      'validation_result' => array(
+        'description' => t('Stores the result of file validation performed'),
+        'type' => 'text',
+      ),
       'notes' => array(
         'description' => t('Notes, description and comments made to a file'),
         'type' => 'text',
+      ),
+      'archive' => array(
+        'description' => t('Indicates whether a file is temporarily removed from a project.'),
+        'type' => 'varchar',
+        'length' => 2,
+        'default' => 'n',
       ),
     ),
     'primary key' => array('file_id'),

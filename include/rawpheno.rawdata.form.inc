@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Functions required in rawdata page.
+ */
+ 
+/**
  * Page callback: Displays a heat map chart.
  */
 function rawpheno_rawdata($form, &$form_state) {
@@ -10,12 +15,11 @@ function rawpheno_rawdata($form, &$form_state) {
     '#markup' => t('Download Data &#10095;'),
   );
   
-  // Project.
-  $sql = "
-    SELECT DISTINCT t1.project_id, t1.name 
-    FROM chado.project AS t1 INNER JOIN pheno_project_stock AS t2 USING(project_id) 
-    WHERE plant_id IS NOT NULL 
-    ORDER BY t1.project_id DESC";
+  // Query project that has data saved to it.
+  $sql = "SELECT DISTINCT t1.project_id, t1.name 
+          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id) 
+          WHERE plant_id IS NOT NULL 
+          ORDER BY t1.project_id DESC";
  
   $project = chado_query($sql)
     ->fetchAllKeyed();
@@ -37,25 +41,28 @@ function rawpheno_rawdata($form, &$form_state) {
   // Get the cv_id of phenotype_measurement_types
   $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
   
-  $sql = "
-    SELECT cvterm_id, name 
-    FROM pheno_project_cvterms AS t0 
-      LEFT JOIN chado.cvterm AS t1 USING(cvterm_id) 
-      LEFT JOIN chado.cvterm_relationship AS t2 ON t1.cvterm_id = t2.object_id 
-    WHERE t2.cvterm_relationship_id IS NULL 
-      AND t0.project_id = :project_id
-      AND t1.cv_id = :cv_id 
-      AND t1.name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
-    ORDER BY cvterm_id ASC";
+  // Query traits in a project. Exclude names listed in where clause and additional headers detected in the spreadsheet,
+  // as they are unpredictable and may cause the visualization to break.
+  $sql = "SELECT t1.cvterm_id, t1.name 
+          FROM 
+            {cvterm} AS t1 
+            LEFT JOIN {cvterm_relationship} AS t2 ON t1.cvterm_id = t2.object_id
+            RIGHT JOIN pheno_project_cvterm as t3 using(cvterm_id)
+          WHERE 
+            t3.project_id = :project_id 
+            AND t1.cv_id = :cv_id 
+            AND t2.cvterm_relationship_id IS NULL
+            AND t1.name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)') 
+          ORDER BY t1.cvterm_id ASC";
   
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
   
   // Create the select field and populate it with traits specific to a project.  
   foreach(array_keys($project) as $p_id) {
     $q_string = array(':project_id' => $p_id, ':cv_id' => $cv_id->cv_id);
-    $traits = db_query($sql, $q_string)
+    $traits = chado_query($sql, $q_string)
       ->fetchAllKeyed();
-    
+
     $traits = $default_option + $traits;
     
     $form['sel_' . $p_id] = array(

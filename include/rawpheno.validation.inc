@@ -198,9 +198,7 @@ function validator_column_exists_generate_msg($error_info) {
  * @return
  *   TRUE if it passed validation; FALSE otherwise.
  */
-function validator_column_exists_validate_header($header) {
-  $active_project = $_SESSION['rawpheno']['active_project'];
-  
+function validator_column_exists_validate_header($header, $project_id) {
   $result = array();
 
   // First check that all the essential traits are there.
@@ -212,7 +210,7 @@ function validator_column_exists_validate_header($header) {
     $nospace_header[] = str_replace(' ','', $h['no format']);
   }
   
-  $essential_traits = rawpheno_project_essential_traits($active_project);
+  $essential_traits = rawpheno_project_essential_traits($project_id);
   $missing_traits = array_diff($essential_traits, $delformat_header);
   
   if (!empty($missing_traits)) {

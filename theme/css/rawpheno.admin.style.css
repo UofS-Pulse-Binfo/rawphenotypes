@@ -1,0 +1,143 @@
+/**
+ * @file 
+ * Style project and column header admin panel.
+ */
+
+/* Table container */
+div.container-table-data {
+  border: none;
+  clear: left;
+  min-height: 30px;
+  max-height: 440px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+}
+
+
+/* Table with tabs */
+div.tab-data {
+  border: 10px solid #bebfb9;
+  border-right: 1px solid #bebfb9;
+  border-bottom: 1px solid #bebfb9;
+  border-left: 1px solid #bebfb9;
+}
+
+/* Table without tabs */
+div.table-data {
+  border: 1px solid #bebfb9;
+}  
+
+/* Tables rows */
+div.container-table-data tr.even, 
+div.container-table-data tr.odd {
+  border-left-color: #FFFFFF !important;
+}
+
+tr:hover {
+  background-color: #EAEAEA !important;
+}
+
+/* TABLE: Project column headers and project users tables */
+/* FORM: Add existing column headers table */
+#tbl-existing-headers,
+#tbl-project-headers,
+#tbl-project-users {
+  border: none !important;
+  margin-bottom: 0;
+}
+
+#tbl-existing-headers tr td:last-child,
+#tbl-project-headers tr td:last-child,
+#tbl-project-users tr td:last-child {
+  border-right-color: #FFFFFF;
+}
+
+
+/* Make the first column  smaller in tables with tabs */
+table th:first-child {
+  text-align: center;
+  width: 5px;
+}
+
+
+/* Default the table project user to hidden */
+#container-prj-usr {
+  display: none;
+}
+
+
+/* Tab links */
+#nav-tabs {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+#nav-tabs ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#nav-tabs li {
+  background-color: #DDDDDD;
+  color: #FFFFFF;
+  cursor: pointer;
+  float: left;
+  font-size: 1.1em;
+  font-weight: bold;
+  height: 40px;
+  line-height: 40px;
+  margin: 0 3px 0 0;
+  text-align: center;
+  width: 200px;
+}
+
+#nav-tabs li.active-tab {
+  background-color: #bebfb9;
+}
+
+/* Add column header to a project */
+div.form-item-txt-trait-name, 
+div.form-item-sel-trait-rep, 
+div.form-item-sel-trait-unit {
+  display: inline;
+  float: left;
+  margin: 0 20px 0 0;
+}
+
+div.form-item-txt-trait-rfriendly {
+  clear: left;
+}
+
+div.form-item-txt-trait-def input[type=text],
+div.form-item-txt-trait-name input[type=text],
+div.form-item-txt-trait-rfriendly input[type=text] {
+  width: 370px;
+}
+
+/* All submit buttons */
+input[type=submit] {
+  margin-top: 20px;
+}
+
+
+/* Select a project in main project management control panel */
+#admin-sel-project {
+  width: 100%;
+}
+
+/* Add project button */
+#admin-add-project {
+  float: right;
+  margin: 0 0 20px 0;
+}
+
+/* Link to manage a project asset */
+a.link-view {
+  background: url('../img/icon-arrow-right.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
