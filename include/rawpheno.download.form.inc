@@ -31,6 +31,10 @@ function rawpheno_download($form, &$form_state) {
   $opt_project = chado_query($sql)
     ->fetchAllKeyed();
   
+  if (count($opt_project) <= 0) {
+    return $form;
+  }
+  
   // This is the error message used in lieu of Drupal form_set_error().
   // This error message will be in close proximity to the interface.
   $form['download_window_error'] = array(
