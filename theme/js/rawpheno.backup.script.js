@@ -5,8 +5,6 @@
 (function($) {
   Drupal.behaviors.rawphenoBackupBehaviours = {
     attach: function (context, settings) {
-      $('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
-      
       $('.droppable-browse-button').text('choose your file');
       
       // Drop area element.

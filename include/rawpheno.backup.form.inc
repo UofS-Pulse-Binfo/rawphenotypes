@@ -63,7 +63,9 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         
         // To delete a file in Drupal use file_delete function.
         // Get file object and load it to file delete funciton.
-        $file = file_load($f->fetchField()[0]);
+        $xlsfile = $f->fetchObject();
+        
+        $file = file_load($xlsfile->fid);
         file_delete($file, $force = TRUE);
       }
     }
