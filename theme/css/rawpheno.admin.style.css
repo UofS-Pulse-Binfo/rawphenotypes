@@ -141,3 +141,15 @@ a.link-view {
   width: 25px;
   height: 25px;
 }
+
+/* Colour code essential trait */
+.essential-trait {
+  color: green;
+  font-weight: bold;
+}
+
+/* Colour code select trait type */
+#edit-sel-trait-type option:first-child {
+  color: green;
+  font-weight: bold;
+}

@@ -732,7 +732,8 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
         $edit_cell = $del_cell = '-';
       }
       
-      array_push($arr_rows, array(($i+1), $header_asset['name'], $header_asset['r_version'], strtoupper($header_asset['type']), $edit_cell, $del_cell));
+      $class = ($header_asset['type'] == $trait_type['type1']) ? 'essential-trait' : 'non-essentialtrait';
+      array_push($arr_rows, array(($i+1), $header_asset['name'], $header_asset['r_version'], array('data' => strtoupper($header_asset['type']), 'class' => array($class)), $edit_cell, $del_cell));
 
       $i++;
     }
