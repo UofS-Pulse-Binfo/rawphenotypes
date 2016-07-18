@@ -177,13 +177,19 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           
           // Determine if user wants to save this trait.
           if (count($arr_newheaders) > 0 AND array_key_exists($cell_colheader, $arr_newheaders)) {
-            if ($arr_newheaders[$cell_colheader] == 0) {
+            if ($arr_newheaders[$cell_colheader]['flag'] == 0) {
               // Skip this cell if it is a new column header and user does not want to save
               // this new trait;
               continue;
             }
-          }
-          
+            elseif ($arr_newheaders[$cell_colheader]['flag'] == 1) {
+              // Get the cvterm name for this new header.
+              $alt_name = $arr_newheaders[$cell_colheader]['alt_header'];
+              $name = tripal_get_cvterm(array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+              $cell_colheader = $name->name;
+            }
+          } 
+
           // We always want to strip flanking white space.
           // FYI: This is done when the data is validated as well.
           $cell_entry = trim($cell_entry);
@@ -242,6 +248,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           elseif (!empty($cell_colheader)) {
             // Get the cvterm_id for the trait measurement.
             $type_id = rawpheno_get_trait_id($cell_colheader);
+            
             if (!$type_id) {
               tripal_report_error(
                 'rawpheno',
@@ -369,7 +376,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
  */
 function rawpheno_validate_excel_file($file, $project_id) {
   $status = array();
-  
+
   // Process the validators to make them easier to use.
   // Specifically, sort them by their scope.
   $validators = array();
@@ -433,7 +440,7 @@ function rawpheno_validate_excel_file($file, $project_id) {
         $new_header = array();
         foreach ($row as $r) {
           $without_format = rawpheno_function_delformat($r);
-          $no_units = preg_replace('/(\s+\(.*\))/','',$r);
+          $no_units = preg_replace('/(\s+\(.*\))/','', $r);
           $header[] = array(
             'no format' => $without_format,
             'original' => $r,
@@ -490,8 +497,9 @@ function rawpheno_validate_excel_file($file, $project_id) {
                     'row' => $row,
                     'header' => $header
                   );
-                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
 
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+                  
                   // Note: we use tmp storage b/c passing $storage[$validator_name] directly
                   // doesn't seem to work.
                   $storage[$validator_name] = $tmp_storage;
@@ -861,19 +869,21 @@ function rawpheno_project_essential_traits($project_id) {
   if (isset($project_id) AND $project_id > 0) {
     // Get array of trait types
     $trait_type = rawpheno_function_trait_types();
-   
+
     // Array to hold trait names.
     $arr_essential_traits = array();
   
     // Query essential traits in a project.
     $sql = "SELECT TRIM(t1.name) AS cvterm
             FROM {cvterm} AS t1 RIGHT JOIN pheno_project_cvterm AS t2 USING (cvterm_id) 
-            WHERE t2.project_id = :project_id AND t2.type = :essential
+            WHERE 
+              t2.project_id = :project_id 
+              AND t2.type IN (:essential)
             ORDER BY t1.name ASC";
    
-    $args = array(':project_id' => $project_id, ':essential' => $trait_type['type1']);  
+    $args = array(':project_id' => $project_id, ':essential' => array($trait_type['type1'], $trait_type['type4']));  
     $trait = chado_query($sql, $args);
-  
+
     foreach($trait as $t) {
       $m = rawpheno_get_trait_name($t->cvterm);
       array_push($arr_essential_traits, $m);
@@ -881,7 +891,7 @@ function rawpheno_project_essential_traits($project_id) {
   
     // Add Name column header to the traits returned.
     array_push($arr_essential_traits, 'Name');
-  
+
     return $arr_essential_traits;
   }
 }
@@ -953,5 +963,37 @@ function rawpheno_project_traits($project_id) {
     array_push($arr_trait, 'Name');
   
     return $arr_trait;
+  }
+}
+
+
+
+/**
+ * Function to fetch information about a unit (Describe method) when available.
+ */
+function rawpheno_function_cvterm_properties($cvterm_id) { 
+  // Narrow the search to cvterm of type measurement units.
+  $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  
+  // In form state 2, describe header, user has the opportunity to describe the unit (Describe method field).
+  // This information is stored in cvterm relationship together with the cvterm id of the unit as the subject_id
+  // and cvterm_id of the header as the object_id. Given a header cvterm id, get the subject id and use it to
+  // get the information required from cvtermprop table.
+  $sql = "SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :cvterm_id AND type_id = :cv_unit LIMIT 1";
+  $args = array(':cvterm_id' => $cvterm_id, ':cv_unit' => $cv_unit->cv_id);
+          
+  $d = chado_query($sql, $args)
+    ->fetchField();
+  
+  $sql = "SELECT value FROM {cvtermprop} WHERE type_id = :cv_unit AND cvterm_id = :cvterm_id LIMIT 1";
+  $args = array(':cv_unit' => $cv_unit->cv_id, ':cvterm_id' => $d);
+  
+  $d = chado_query($sql, $args);
+      
+  if ($d->rowCount() == 1) {
+    return $d->fetchField();
+  }
+  else {
+    return 'Describe the method used not available';  
   }
 }

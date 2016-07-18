@@ -38,6 +38,10 @@ tr:hover {
   background-color: #EAEAEA !important;
 }
 
+td {
+  vertical-align: top !important;
+}
+
 /* TABLE: Project column headers and project users tables */
 /* FORM: Add existing column headers table */
 #tbl-existing-headers,
@@ -152,4 +156,16 @@ a.link-view {
 #edit-sel-trait-type option:first-child {
   color: green;
   font-weight: bold;
+}
+
+/* R version icon */
+p.r-ver {
+  background: url('../img/r.gif') no-repeat;
+  background-size: 16px 14px;
+  font-size: 0.9em;
+  padding: 0 20px;
+}
+
+td p {
+  margin: 0 !important;
 }

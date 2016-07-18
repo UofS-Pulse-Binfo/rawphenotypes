@@ -70,3 +70,14 @@ div.container-trait div.form-item {
 select:disabled {
   color: #000000;
 }
+
+select.sel-header {
+  width: 465px;
+}
+
+/* Line when similar header is found in describe header */
+div.container-option {
+  border-bottom: 1px solid #CCCCCC !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+}

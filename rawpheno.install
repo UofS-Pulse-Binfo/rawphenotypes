@@ -301,7 +301,7 @@ function rawpheno_function_terms($type) {
     case 'defaults':
       // Default colour scheme and heading/title.
       return array('colour' => '#304356',
-                   'rawdata' => 'Phenotypic data available through KnowPulse',
+                   'rawdata' => 'Phenotypic data available',
                    'download' => 'Select locations and traits that you want to download',
                    'instructions' => 'Standard Phenotyping Procedure',
                    'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
@@ -313,15 +313,12 @@ function rawpheno_function_terms($type) {
       
     case 'scales':
       // Scale equivalent for scale units.
-      return array(
-        'Lodging (Scale: 1-5) upright - lodged' => array(
-          1 => 'Vertical/upright', 
-          2 => 'Leaning',
-          3 => 'Most plants at 45 degrees angle',
-          4 => 'All plants 10-45 degrees from ground',
-          5 => 'Most plants flat/prostrate',
-        )
-      );
+      return  array('Lodging (Scale: 1-5) upright - lodged' => array(
+                1 => 'Vertical/upright', 
+                2 => 'Leaning',
+                3 => 'Most plants at 45 degrees angle',
+                4 => 'All plants 10-45 degrees from ground',
+                5 => 'Most plants flat/prostrate',));
       break;
     
     case 'variables':
@@ -339,174 +336,210 @@ function rawpheno_function_terms($type) {
     
     case 'vocabularies':
       // Controlled vocabularies.
-      return array('phenotype_plant_property_types', 
-                   'phenotype_measurement_types', 
-                   'phenotype_measurement_units',);
+      return array('cv_prop' => 'phenotype_plant_property_types', 
+                   'cv_unit' => 'phenotype_measurement_units',
+                   'cv_type' => 'phenotype_measurement_types', 
+                   'cv_rver' => 'phenotype_r_compatible_version',
+                   'cv_desc' => 'phenotype_collection_method',);
       break;
     
     case 'units':
       // Units available in the spreadsheet.
-      return array('date' => 'Date',
-                   'count' => 'Count',
-                   'days' => 'Days',
-                   'cm' => 'Centimeters',
-                   'y/n/?' => 'Yes, No or ? - Not sure',
-                   'scale' => 'Scale: 1-5',
-                   'g' => 'Grams (g)',
-                   'text' => 'Alphanumeric',);
+      return rawpheno_function_default_unit('def');
+      
       break;
   }
 }
+
 
 /**
  * Implements hook_install().
  */
 function rawpheno_install() {
-  // Create a cv term for R Friendly version of a column header.
-  $cv_obj = tripal_insert_cv('r_compatible_column_header', 'R Compatible Column Headers');
+  // Get variable names and default values.
+  $vars = rawpheno_function_terms('variables');
+  $config = rawpheno_function_terms('defaults');
+  
+  // # 1. INSERT CV.
+  // Insert all cvs required.
+  $cv = rawpheno_function_terms('vocabularies');
+  
+  // Array to hold cv_id and cv_name.
+  // This will be used when creating cvterm relationships.
+  $arr_cvid_cvname = array();
+  
+  foreach($cv as $cv_i => $cv_name) {
+    $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
+  
+    $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+  }
 
-  // Set the project to AGILE (default).
-  $prj_id = db_query("SELECT project_id FROM chado.project WHERE name = :project_name LIMIT 1",
-  array(':project_name' => rawpheno_function_terms('project')));
+  // # 2. INSERT UNITS.
+  // Insert units and scale member used by scale.
+  // NOTE: Scale memeber is link to the column header Lodging (scale 1-5) and not to scale unit.
+  //       When the column header Lodging is inserted, only then we can insert the scale members.
+ 
+  // Array to hold scale members.
+  $arr_unit = rawpheno_function_terms('units');
+  // Array to hold cvterm_id of each inserted unit.
+  // This will be used when creating a cvterm relationship linking a cvterm to a unit.
+  $arr_cvtermid_unit = array();
+  
+  foreach($arr_unit as $unit => $def) {
+    $tmp = tripal_insert_cvterm(
+      array(
+        'id' => 'tripal:' . $unit,
+        'name' => $unit,
+        'definition' => $def,
+        'cv_name' => $cv['cv_unit']       
+      )
+    );
+  
+    $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+  }
+
+  // # 3. INSERT COLUMN HEADERS.
+  // Insert column headers. 
+  // When inserting column headers, generate the R Version, add collection method
+  // and map it to a AGILE (only when this project is available). 
+  
+  // Default Project.
+  // This is the default project, only when such project exists, otherwise, insert the column headers
+  // and make them available for use in admin control panel.
+  $default_project = rawpheno_function_terms('project');
+  $sql = "SELECT project_id FROM chado.project WHERE name = :default_project LIMIT 1";
+  $args = array(':default_project' => $default_project);
+  $prj_id = db_query($sql, $args);
         
   if ($prj_id->rowCount()) {  
     $project_ID = $prj_id->fetchField();
   }
   
-  // Get variable names.
-  $trait_type = rawpheno_function_trait_types();
-  $vars = rawpheno_function_terms('variables');
-  $config = rawpheno_function_terms('defaults');
-  
-  // Initialize default R transformation rules.
+  // Initialize R Transformation rules required in generating R version of header.
+  // The default rules are the rules required in generating R version of headers default to this module.
   variable_set($vars[6], $config['r-words']);  
   variable_set($vars[7], $config['r-chars']);  
   variable_set($vars[8], $config['r-replace']);  
-  
-  // Create cvterm entry for each traits.
-  // Array to hold array of cvterms.
-  $pp_terms = array();
-  $mt_terms = array();
-  
-  // Get essential traits.
-  $essential_header = rawpheno_function_headers('essential');  
-  
-  // Get the required trait set, in this case all column headers
-  // with the exception of Name.
-  $expected_header = rawpheno_function_headers('expected');  
-  
-  // Index number of Plot, Entry, Rep and Location in traits array.
-  // This id array is inserted into {chado.cvterm} as property types.
-  $pp_id = array(0, 1, 3, 4);
-  
-  // Read each header and create cvterm name and cvterm definition.
-  foreach($expected_header as $i => $term) {
-    // Skip column header if it is Name.
-    if ($term == 'Name') { 
+    
+  // Array to hold header types. 
+  $trait_type = rawpheno_function_trait_types();
+
+  // Array to hold all column headers, plant property headers and essential headers.
+  $arr_allheaders = rawpheno_function_headers('expected');  
+  $arr_subsetheader = rawpheno_function_headers('subset');  
+  $arr_plantpropheader = rawpheno_function_headers('plantprop');  
+  $arr_essentialheader = rawpheno_function_headers('essential');  
+
+  foreach($arr_allheaders as $header) {
+    // Skip when it is Name.
+    if ($header == 'Name') {
       continue;
     }
     
-    // Determine type of terms and create an array of
-    // cvterm name => cvterm definition values.
-    if (in_array($i, $pp_id)) {
-      // Term is Plot, Entry, Rep and Location.
-      // Term is property type.
-      $pp_terms[$term] = $term;      
-    }
-    else {
-      // The rest of the terms.
-      // Term is measurement type.
-      $mt_terms[$term] = $term;
-    }
-  }
-  
-  // Measurement unit terms array.
-  $mu_terms = rawpheno_function_terms('units');
-                    
-  // Vocabulary terms array.
-  $cv_vocabulary = rawpheno_function_terms('vocabularies');
-  
-  // Insert 0. plant property, 1. measurment type and 2. measurement unit.
-  $arr_terms = array($pp_terms, $mt_terms, $mu_terms);
-  // Insert all terms by cvterm vocabulary.
-  foreach($cv_vocabulary as $cv_i => $cv_name) {
-    // Insert Controlled Vocubalary
-    tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
+    // Get the definition and collection method.
+    $cvterm_info = rawpheno_function_get_definition($header);
+    // When no information is retured, default the definition to the term itself.
+    $cvterm_definition = (!empty($cvterm_info['define'])) ? $cvterm_info['define'] : $header;
+    // Set the type of header.    
+    $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
     
-    // Read each cvterm name and cvterm definition and insert to {chado.cvterm}.
-    foreach($arr_terms[$cv_i] as $term_name => $term_def) {
-      $arr_terms_param = array('id' => 'tripal:'.$term_name,
-                               'name' => $term_name,
-                               'definition' => $term_def,
-                               'cv_name' => $cv_name);
-                               
-      // Insert cv term.                         
-      $cvterm_obj = tripal_insert_cvterm($arr_terms_param);  
-      
-      // When inserting a cvterm of type phenotypes_measurement_types,
-      // insert an R Friendly version of the termm into cvtermprop and map
-      // the term to AGILE project only when AGILE is present in projects table.
-      // cvterm measurement types and cvterms plant property.
-      if ($cv_i == 0 OR $cv_i == 1) {
-        // Map cvterm to a project.
-        // R Compatible cvterm.
-        $r_compatible = rawpheno_function_make_r_compatible($term_name);
-        
-        // Insert the same trait (r compatible) to cvterm prop.
-        db_insert('chado.cvtermprop')
-          ->fields(array('cvterm_id' => $cvterm_obj->cvterm_id, 
-            'type_id' => $cv_obj->cv_id,
-            'value' => $r_compatible,
-            'rank' => 0))
-          ->execute();
-         
-        // Map traits to AGILE only when AGILE exists. 
-        // R Friendly version is generated even when AGILE project is not
-        // present since traits will be available in add column header panel.
-        if (isset($project_ID)) {        
-          // Determine if trait is essential, optional or plant property.
-          if($cv_i == 0) {
-            $type = $trait_type['type4']; // plantproperty
-          }
-          else {
-            // Trait is either essential or optional.
-            $type = (in_array($term_def, $essential_header)) ? $trait_type['type1'] : $trait_type['type2'];
-          }
-          
-          // Assign a project to this cvterm.
-          // Name column header is part of the column headers or a project.
-          db_insert('pheno_project_cvterm')
-            ->fields(array(
-              'project_id' => $project_ID,
-              'cvterm_id' => $cvterm_obj->cvterm_id,
-              'type' => $type)
-            )
-            ->execute();
-        }  
+    // Insert the cvterm.
+    $cvterm = tripal_insert_cvterm(
+      array(
+        'id' => 'tripal:' . $header,
+        'name' => $header,
+        'definition' => $cvterm_definition,
+        'cv_name' => $cvterm_type
+      )
+    );
+
+    // Insert the cvterm data collection method.
+    if (!empty($cvterm_info['method'])) {
+      // Data collection method.
+      chado_insert_record('cvtermprop', 
+        array(
+          'cvterm_id' => $cvterm->cvterm_id,
+          'type_id'   => $arr_cvid_cvname[ $cv['cv_desc'] ],
+          'value'     => $cvterm_info['method'],
+          'rank'      => 0
+        )
+      );
+    }
+
+    // Relate cvterm and unit.
+    // No relationship when header is Plant Property Type.
+    if (!in_array($header, $arr_plantpropheader)) {    
+      // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
+      $header_unit = rawpheno_function_header_unit($header);
+
+      chado_insert_record('cvterm_relationship', 
+        array(
+          'subject_id' => $arr_cvtermid_unit[$header_unit],
+          'type_id'    => $arr_cvid_cvname[ $cv['cv_unit'] ],
+          'object_id'  => $cvterm->cvterm_id
+        )
+      );
+    } 
+
+    // R version. To be implemented to all column headers.
+    $r_version = rawpheno_function_make_r_compatible($header);
+    chado_insert_record('cvtermprop', 
+      array(
+        'cvterm_id' => $cvterm->cvterm_id,
+        'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
+        'value'     => $r_version,
+        'rank'      => 0
+      )
+    );
+
+    // Finally, map this particular header to project, again, only when default project is present.
+    if (isset($project_ID) AND $project_ID > 0) {
+      // Indicate the type of header.
+      if (in_array($header, $arr_plantpropheader)) {
+        // Type is Plant Property.
+        $type = $trait_type['type4'];
       }
+      elseif (in_array($header, $arr_essentialheader)) {
+        // Trait is essential (must be in the spreadsheet).
+        $type = $trait_type['type1'];
+      }
+      elseif (in_array($header, $arr_subsetheader)) {
+        // Subset Trait
+        $type = $trait_type['type3'];
+      }
+      else {
+        // Trait is optional
+        $type = $trait_type['type2'];
+      }
+
+      db_insert('pheno_project_cvterm')
+        ->fields(array(
+            'project_id' => $project_ID,
+            'cvterm_id' => $cvterm->cvterm_id,
+            'type' => $type
+          )
+        )
+        ->execute();
     }
   }
-  
-  // From standard phenotype data collection, scale is 1 - 5.
-  $scales = rawpheno_function_terms('scales');
+ 
+  // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
+  $lodging = rawpheno_function_terms('scales');
+  $cvterm_lodging = tripal_get_cvterm(array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type'])));
   
   // Insert scale values 1 - 5       
-  foreach ($scales as $measurement_name => $scale) {
-    $measurement = tripal_get_cvterm(array('name' => $measurement_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
-    if ($measurement) {
-      $measurement_id = $measurement->cvterm_id;;
-      foreach($scale as $code => $value) {
-        $tmp = db_insert('pheno_scale_member')
-          ->fields(array(
-            'scale_id' => $measurement_id, 
-            'code' => $code, 
-            'value' => $value
-          ))
-          ->execute();
-      }
-    }
+  foreach (array_values($lodging)[0] as $code => $val) {
+    db_insert('pheno_scale_member')
+      ->fields(array(
+        'scale_id' => $cvterm_lodging->cvterm_id, 
+        'code' => $code, 
+        'value' => $val
+      ))
+      ->execute();
   }
+ 
   
+  // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
   // Using Tripal: tripal_add_mview().
   $mv_name = 'rawpheno_rawdata_summary';
@@ -558,6 +591,7 @@ function rawpheno_install() {
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
   
+  // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
   variable_set($vars[0], $config['colour']);
   variable_set($vars[1], $config['rawdata']);
@@ -565,7 +599,7 @@ function rawpheno_install() {
   variable_set($vars[3], $config['instructions']);
   variable_set($vars[4], $config['upload']);
   variable_set($vars[5], $config['backup']);
-    
+  
   // Add data collection spreadsheet to public:// directory, 
   // and link this file for download in instructions page.
   $destination = file_default_scheme() . '://';
@@ -577,20 +611,15 @@ function rawpheno_install() {
     // Copy file without creating an entry in drupal database.
     // If file is present, replace it with the same file.
     file_unmanaged_copy($source, $destination, FILE_EXISTS_REPLACE);
-  }   
+  }  
 }
+
 
 /**
  * Implements hook_uninstall().
  */
 function rawpheno_uninstall() { 
-  // When module is uninstalled, perform the following:
-  // 1. Delete persistent variables used by module configuration.
-  // 2. Remove materialized view.
-  // 3. Delete cvterms records.
-  
-  // 1.
-  // Delete persistent variables.
+  // # 1. UNREGISTER PERSISTENT VARIABLES.
   $vars = rawpheno_function_terms('variables');
   foreach($vars as $var) {
     if (variable_get($var)) {
@@ -598,48 +627,49 @@ function rawpheno_uninstall() {
     }
   }
   
-  // 2.
-  // Remove materialized view.
+  // # 2. DROP MATERIALIZED VIEW TABLE.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
   $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
     ->fetchField();
               
-  if (isset($mview_id) && $mview_id > 0) {
+  if (isset($mview_id) AND $mview_id > 0) {
     // Delete materialized view.
     tripal_delete_mview($mview_id);
   }
   
-  // 3.
-  // Remove cvterm records then controlled vocabulary.
-  $cv_vocabulary = rawpheno_function_terms('vocabularies');
+  // # 3. DELETE CV AND CVTERM.
+  $cv = rawpheno_function_terms('vocabularies');
   
-  foreach($cv_vocabulary as $vocabulary) {
-    // Delete all cvterm under a controlled vocabulary.
-    $cv_id = tripal_get_cv(array('name' => $vocabulary));
-    if (isset($cv_id->cv_id)) {
-      // Delete all the cvterm under this vocabulary.
-      $del = "DELETE FROM chado.cvterm WHERE cv_id = :cv_id";
-      db_query($del, array(':cv_id' => $cv_id->cv_id));
-      
-      // Then delete controlled vocabulary terms.
-      $del = "DELETE FROM chado.cv WHERE cv_id = :cv_id AND name = :cv";
-      db_query($del, array(':cv_id' => $cv_id->cv_id, ':cv' => $vocabulary));
+  foreach($cv as $cv_i => $cv_name) {
+    $cv = tripal_get_cv(array('name' => $cv_name));
+    $args = array(':cv_id' => $cv->cv_id);
+    
+    // Delete relationships.
+    if ($cv_i == 'cv_unit') {
+      $del = "DELETE FROM {cvterm_relationship} WHERE type_id = :cv_id";
+      chado_query($del, $args);  
     }
-  }
-  
-  // 4. Remove cvterm prop entries.
-  $sql = "SELECT cv_id FROM chado.cv WHERE name = :cv_name LIMIT 1";
-  $cv_id = db_query($sql, array(':cv_name' => 'r_compatible_column_headers'))
-    ->fetchField();
-  
-  if (isset($cv_id->cv_id)) {  
-    // Then delete cvterm properties.
-    $del = "DELETE FROM chado.cvtermprop WHERE type_id = :cv_id";
-    db_query($del, array(':cv_id' => $cv_id->cv_id));
+    
+    // Delete R version.
+    if ($cv_i == 'cv_rver') {
+      $del = "DELETE FROM {cvtermprop} WHERE type_id = :cv_id";
+      chado_query($del, $args);
+    }
+    
+    // Delete cvterms.
+    if ($cv_i == 'cv_type') {
+      $del = "DELETE FROM {cvterm} WHERE cv_id = :cv_id";
+      chado_query($del, $args);
+    }
+    
+    // Finally, delete the cv
+    $del = "DELETE FROM {cv} WHERE cv_id = :cv_id";
+    chado_query($del, $args);
   }
 }
+
 
 /**
  * Implements hook_update_N().
@@ -781,4 +811,60 @@ function rawpheno_update_7002() {
   );
   
   db_create_table('pheno_backup_file', $schema['pheno_backup_file']);  
+}
+
+
+/**
+ * Implements hook_requirements().
+ */
+function rawpheno_requirements($phase) {
+  // On install of this module, check the following libraries.
+  if ($phase == 'install' AND function_exists('libraries_get_path')) {
+    $t = get_t();
+    
+    $requirements = array();
+    $libraries = 'sites/all/libraries/';
+    
+    $arr_req_libraries = array( 
+      // Libraries.
+      'excel_writer' => 
+        array(
+          'is_in'  => libraries_get_path('PHP_XLSXWriter_plus-master'), 
+          'source' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+          'path'   => $libraries . 'PHP_XLSXWriter_plus-master'
+        ), 
+      
+      'excel_reader' => 
+        array(
+          'is_in'  => libraries_get_path('spreadsheet-reader'), 
+          'source' => 'https://github.com/nuovo/spreadsheet-reader',
+          'path'   => $libraries . 'spreadsheet-reader'
+        ), 
+      
+      'd3' => 
+        array(
+          'is_in'  => libraries_get_path('d3'), 
+          'source' => 'https://d3js.org/',
+          'path'   => $libraries . 'd3'
+        )
+    );
+    
+    foreach($arr_req_libraries as $i => $info) {
+      if (!$info['is_in']) {
+        $path = $info['path'];
+        $source = $info['source'];
+
+        $requirements[$i] = array(
+          'severity' => REQUIREMENT_ERROR,
+          'description' => 
+            $t('This module uses !library, which is missing. 
+            Please download and extract the entire contents of the archive into %path directory on your server.', 
+            array('!library' => l(strtoupper(str_replace('_',' ',$i)), $source, array('attributes' => array('target' => '_blank'))), '%path' => $path)
+          ),
+        );
+      }
+    }   
+  }
+  
+  return $requirements;
 }

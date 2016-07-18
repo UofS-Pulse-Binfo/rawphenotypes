@@ -18,6 +18,32 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     '#markup' => t('Standard Procedure &#10095;'),
   );
   
+  // When project is up, means a file has been upload, then show the validation result to user.
+  if ($project_id == 'up') {
+    $status = $_SESSION['rawpheno']['backup_file_validation_result'];
+    
+    $form['message_upload_result'] = array(
+      '#markup' => '<div class="messages status">You have successfully uploaded a file in your account. 
+                    Below is the result of the validation performed to the file.</div>',
+    );
+    
+    $m = theme('rawpheno_upload_validation_report', array('status' => $status));
+    $form['validation_result'] = array(
+      '#markup' => $m,
+    );
+    
+    $form['link_upload_file'] = array(
+      '#markup' => '<a id="link-success-upload-file" href="../backup">Backup Another File</a>', 
+    );
+  }
+  elseif ($project_id > 0) {
+    // A session variable is set in hook_insert_file() that contains the validation result of the
+    // previous file backup. When user wants to upload another file, reset this session variable.
+    $form['message_upload_result'] = array();
+    $form['validation_result'] = array();
+    unset($_SESSION['rawpheno']['backup_file_validation_result']);
+  }
+ 
   // Define valid commands.
   $arr_valid_commands = array('archive', 'restore', 'delete', 'desc', 'asc');
   
@@ -79,9 +105,9 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
   // Construct backup file form.
   // Query project assigned to user.
   $sql = "SELECT DISTINCT t1.project_id, t2.name 
-         FROM pheno_project_user AS t1 LEFT JOIN {project} AS t2 USING(project_id)
-         WHERE t1.uid = :uid
-         ORDER BY t1.project_id DESC";
+          FROM pheno_project_user AS t1 LEFT JOIN {project} AS t2 USING(project_id)
+          WHERE t1.uid = :uid
+          ORDER BY t1.project_id DESC";
 
   $args = array(':uid' => $user_id);
   $p = chado_query($sql, $args);
@@ -167,9 +193,11 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     // Upload is disabled. Display a summary,
     $go_back_link = l('Go back to projects table', 'phenotypes/raw/backup');
     
-    $form['summary'] = array(
-      '#markup' => $go_back_link . t('<h3>Project: @project</h3>', array('@project' => $arr_my_project[$project_id])),
-    );
+    if ($project_id > 0) {
+      $form['summary'] = array(
+        '#markup' => $go_back_link . t('<h3>Project: @project</h3>', array('@project' => $arr_my_project[$project_id])),
+      );
+    }  
   }
   
   // List Projects and backed up files.
@@ -200,13 +228,16 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     
     // Query files in the project.
     $sql = sprintf("
-      SELECT t2.file_id, t2.version, t2.validation_result, t2.notes, 
+      SELECT 
+        t2.file_id, t2.version, t2.validation_result, t2.notes, 
         t3.filename, t3.timestamp, t3.filesize, t3.uri, t2.archive 
-      FROM {pheno_project_user} AS t1
+      FROM 
+        {pheno_project_user} AS t1
         INNER JOIN {pheno_backup_file} AS t2 using(project_user_id) 
         INNER JOIN {file_managed} AS t3 using(fid)
       WHERE t1.project_id = :project_id AND t1.uid = :user_id
-      ORDER BY t3.timestamp %s", strtoupper($sort));
+      ORDER BY t3.timestamp %s", strtoupper($sort)
+    );
     
     $args = array(':project_id' => $project_id, ':user_id' => $user_id);
     $my_files = db_query($sql, $args);
@@ -221,8 +252,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         $row_file .= t('<br /><small>Uploaded: @timestamp</small>', array('@timestamp' => format_date($f->timestamp))); 
     
         // Validation result.
-        $row_validation_entries = str_replace('#item:', '<br />*', $f->validation_result);
-        $row_validation_entries = ltrim($row_validation_entries, '<br />');
+        $row_validation_entries = str_replace(array('#item: (passed)', '#item: (failed)'), array('<p class="pass"> (PASSED)', '<p class="fail"> * (FAILED)'), $f->validation_result) . '</p>';
         $row_validation = '<div class="container-file-validation-result" id="vr-file-' . $f->file_id . '" title="Click to Show or Hide Validation Result">'. $row_validation_entries .'</div>';
     
         if ($f->archive == 'n') {

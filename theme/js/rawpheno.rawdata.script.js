@@ -14,7 +14,7 @@
       $('select').change(function(i) { 
         // Determine which select box was changed.
         var selectID = i.target.id;
-        
+ 
         // When user select a project. 
         if (selectID == 'rawdata-sel-project') {
           // Reset the select trait default to the word
@@ -39,19 +39,41 @@
             }
             else {
               // Initialize heat map chart by adding all elements (rect, g, text, etc.) into the DOM,
-              // and then call render function and position these element in the right place.
+              // and then call render function and position these elements in the right place.
               initializeHeatmapChart(data);
             }
           });
         }
         else {
           var project_id = $('#rawdata-sel-project').val();
+          var traitId = i.target.value;
           var traitSelectedName = $('#' + i.target.id + ' option:selected').text();
-          markRep(project_id, i.target.value, traitSelectedName);
+          
+          // Mark rep where trait was measured.
+          markRep(project_id, traitId, traitSelectedName);
+
+          // Render bar chart.
+          barchartFile = file + 'rawdata_trait' + '?p=' + project_id + '&t=' + traitId;
+          
+          d3.json(barchartFile, function(error, barchartData) {
+            if (error) {
+              // Error reading JSON.
+              throw error;
+            }
+            else if(barchartData == 0) {
+              // No data.
+              noData('.bar-chart');
+            }
+            else {
+              // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
+              // and then call render function and position these elements in the right place.
+              initializeBarChart(barchartData);
+            }
+          });
         }
       });
 
-      // Leaf path/symbol used to mark a rep or when there is no data to chart.
+      // Leaf path/symbol used to mark a rep.
       var leaf = 'm2.46906,17.20495c-0.42208,-1.86678 -3.37632,-8.39646 3.06637,-10.19122c6.44269,-1.79476 9.1144,-2.35212 11.17243,-3.20865c2.05803,-0.85653 5.22901,-3.1601 5.15685,-3.77696c-0.07214,-0.61685 1.40663,9.13151 -0.30335,14.13307c-1.70998,5.00156 -5.52874,7.53668 -10.36077,7.28237c-4.83199,-0.25432 -5.67973,-1.27159 -6.61222,-1.10203c-0.9325,0.16953 -1.56016,2.17883 -2.03454,3.39088c-0.47435,1.21206 -0.59338,1.35635 -0.50862,1.35635c0.08476,0 -1.78022,-1.01725 -2.03454,-1.35635c-0.25431,-0.33909 3.98429,-6.86654 8.98585,-8.64676c5.00161,-1.78023 7.19302,-4.28732 7.88385,-5.51021c0.69078,-1.22288 1.52588,-3.13656 1.52588,-3.17895c0,0.04239 -1.15433,3.08336 -3.6452,4.36577c-2.49086,1.2824 -7.79905,2.96701 -9.91833,4.66247c-2.11929,1.69544 -1.95157,3.647 -2.37363,1.78021l-0.00001,0z';
       
       // Tooltip/information box.
@@ -731,13 +753,13 @@
         }
        
        // Test if barchart is part of the DOM already.
-        var containerBarchart = ($('#container-barchart').length > 0) ? 1 : 0;
-        if (containerBarchart > 0 && traitSelectedId === '0') {
-          // Remove barchart when it is present and 'select a trait' option is selected.
-          d3.select('#container-barchart')
-            .transition()
-            .style('opacity', 0)
-            .remove();  
+       var containerBarchart = ($('#container-barchart').length > 0) ? 1 : 0;
+       if (containerBarchart > 0 && traitSelectedId === '0') {
+         // Remove barchart when it is present and 'select a trait' option is selected.
+         d3.select('#container-barchart')
+           .transition()
+           .style('opacity', 0)
+           .remove();  
         }
         else if (traitSelectedId !== '0') {
           // If trait selected is not equals to 'select a trait'.
@@ -758,23 +780,6 @@
             // Leave the svg canvas and append a new set of chart elements below.
             d3.selectAll('.bar-chart g, #container-barchart h2').remove();
           }
-
-          // Render bar chart.
-          var barchartFile = file + 'rawdata_trait' + '?p=' + project + '&t=' + traitSelectedId;
-
-          d3.json(barchartFile, function(error, barchartData) {
-            if (error) {
-              // Error reading JSON.
-              throw error;
-            }
-            else if(barchartData == 0) {
-              // No data.
-              noData('.bar-chart');
-            }
-            else {
-              initializeBarChart(barchartData);
-            }
-          });
         }
       } 
       
@@ -784,6 +789,9 @@
   
         if (state == 'off') {
           window.slideUp(300);
+          
+          // Reset selectbox
+          $('select[name=rawdata-sel-trait]').val('');
         }
         else {
           window.slideDown(300);
@@ -792,15 +800,18 @@
   
       // Remove marker.
       function delMarker(id) {
+        var m;
         if (id == '') {
           id = '.marker-rep';
+          m = d3.selectAll(id);
         } 
         else {
           id = id + ' path';
+          m = d3.select(id);
         }
          
-        if (d3.select(id).size() > 0) {
-          d3.selectAll(id)
+        if (m.size() > 0) {
+          m
             .transition()
             .duration(function() { return randomNumber(); })
             .style('opacity', 0)
@@ -812,26 +823,29 @@
       function addMarker(id) {
         if (d3.select(id + ' path').size() <= 0) {
           var rect = d3.select(id + ' rect');
-          var x = parseInt(rect.attr('x'));
-          var y = parseInt(rect.attr('y'));
           
-          d3.select(id)
-            .append('path')
-              .attr('class', 'marker-rep')
-              .attr('d', leaf)
-              .attr('transform', function() {
-                // MARKER DIMENSION: 20X20 pixels
-                // Location of rect plus half the bar width less the 1/2 width of the marker
-                x = x + Math.round(rectDimension.width/2) - 10;
-                y = y + Math.round(rectDimension.height/2) - 15;
+          if (rect.size() > 0) {  
+            var x = parseInt(rect.attr('x'));
+            var y = parseInt(rect.attr('y'));
+          
+            d3.select(id)
+              .append('path')
+                .attr('class', 'marker-rep')
+                .attr('d', leaf)
+                .attr('transform', function() {
+                  // MARKER DIMENSION: 20X20 pixels
+                  // Location of rect plus half the bar width less the 1/2 width of the marker
+                  x = x + Math.round(rectDimension.width/2) - 10;
+                  y = y + Math.round(rectDimension.height/2) - 15;
                   
-                return 'translate(' + x + ',' + y + ')';
-              })
-              .style('opacity', 0)
-              .transition()
-              .duration(function() { return randomNumber(); })
-              .style('opacity', 1)
-              .attr('filter', 'url(#dropshadow)');
+                  return 'translate(' + x + ',' + y + ')';
+                })
+                .style('opacity', 0)
+                .transition()
+                .duration(function() { return randomNumber(); })
+                .style('opacity', 1)
+                .attr('filter', 'url(#dropshadow)');
+           }
         }
       }  
 
@@ -891,18 +905,14 @@
           .append('g')
           .attr('transform', 'translate('+ (Math.floor(width/2) - 40) +', 50)');
           
-        message
-          .append('path')
-          .attr('class', 'chart-no-data')
-          .attr('title', 'No Data')
-          .attr('d', leaf);
+
        
         message
           .append('text')
           .attr('class', 'chart-axes')
           .attr('y', 20)
           .attr('x', 50)
-          .text('No data');
+          .text('Could not visualize data.');
       }
       
       // Debugging function. Echo the contents of d.

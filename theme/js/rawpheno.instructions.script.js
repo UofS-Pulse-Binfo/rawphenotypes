@@ -244,6 +244,26 @@
         
         $('#edit-txt-search').focus();
       }
+      
+      // Select project panel.
+      var speed = 200;
+      var panel = $('#container-sel-project');
+      var linkProject = $('span a');
+      
+      linkProject.click(function(e) { 
+        e.preventDefault();
+
+        if (panel.is(':hidden')) {
+          panel.slideDown(speed, function() {
+            linkProject.text('Close Window');
+          });
+        }
+        else {
+          panel.slideUp(speed, function() {
+            linkProject.text('Change Project');
+          });
+        }
+      });
     }
   };
 }(jQuery));

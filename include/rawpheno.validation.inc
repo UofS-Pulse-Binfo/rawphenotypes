@@ -211,6 +211,7 @@ function validator_column_exists_validate_header($header, $project_id) {
   }
   
   $essential_traits = rawpheno_project_essential_traits($project_id);
+
   $missing_traits = array_diff($essential_traits, $delformat_header);
   
   if (!empty($missing_traits)) {
@@ -526,7 +527,6 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
  *   An array of human-readable messages to the user telling them exactly what failed validation.
  */
 function validator_germplasm_present_generate_msg($error_info) {
-  $contact_KP_Team = '<a href="http://knowpulse.usask.ca/portal/contact" target="_blank"><strong>contact</strong></a>';
   $nonexistant = array();
   $nonunique = array();
   
@@ -541,10 +541,10 @@ function validator_germplasm_present_generate_msg($error_info) {
   
   $messages = array();
   if (!empty($nonexistant)) {
-    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please '. $contact_KP_Team .' the website administrator.';
+    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please contact the website administrator.';
   }
   if (!empty($nonunique)) {
-    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please '. $contact_KP_Team .' the administrator of this duplication.';
+    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please contact the administrator of this duplication.';
   }
   
   return $messages;

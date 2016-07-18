@@ -469,8 +469,10 @@ function rawpheno_download_validate($form, &$form_state) {
  *  A string containing the R compatible version of the trait.
  */
 function rawpheno_download_r_compatible($cvterm_id) {
-  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cv_id LIMIT 1";
-  $args = array(':cv_id' => $cvterm_id);
+  $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+
+  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id LIMIT 1";
+  $args = array(':cvterm_id' => $cvterm_id, 'cv_id' => $cv_rver->cv_id);
   
   $r = chado_query($sql, $args)
     ->fetchField();

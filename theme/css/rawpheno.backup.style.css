@@ -76,7 +76,7 @@ div.subtitle-left {
 
 .droppable-message > span {
   color: #666666;
-  font-size: 1.1em;
+  font-size: 1.3em;
   display: block;
   line-height: normal;
   margin: 0 auto;
@@ -95,7 +95,7 @@ div.subtitle-left {
 div.droppable-standard-upload {
   color: #666666;
   font-family: inherit;
-  font-size: 1em;
+  font-size: 1.1em;
   line-height: normal;
   margin: 7px auto 0 auto;
   min-height: 20px;
@@ -184,10 +184,15 @@ Add file select project
 }
 
 /* Upload button */
-#edit-bdnd-upload-button {
+#edit-bdnd-upload-button{
   float: right;
   margin-top: 20px;
 }
+
+#link-success-upload-file  {
+  float: right;
+}
+
 
 /* Description field */
 div.description {
@@ -295,29 +300,6 @@ td.empty, td.message {
 }
 
 
-/* Add project */
-#container-add-project {
-  display: none;
-  background-color: #EAEAEA;
-  margin: 0;
-  padding: 20px;
-  text-align: center;
-}
-
-#add_project_select {
-  width: 100%;
-}
-
-#add_project_submit {
-  float: right;
-  margin: 0;
-}
-
-#container-add-project label {
-  text-align: left;
-}
-
-
 /* Textarea backup file */
 #edit-backup-txt-description {
   resize: none;
@@ -390,6 +372,17 @@ div.fade-out {
   background-color: #EAEAEA;
 }
 
+div.container-file-validation-result p {
+  border-bottom: 1px solid #CCCCCC;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+}
+
+div.container-file-validation-result p:last-child {
+  border-bottom: none;
+}
+
+
 /* Link to archive file */
 a.link-archive {
   background: url('../img/icon-trash.png') no-repeat;
@@ -429,4 +422,9 @@ a.link-restore {
 
 #tbl_project_archive_file {
   display: none;
+}
+
+/* Failed validation result */
+p.fail {
+  color: red;
 }

@@ -7,7 +7,7 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadPageElementBehaviors = {
     attach: function (context, settings) {
-      $('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
+      //$('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
       
       // Link to collapse help window.
       var collapseLink = $('#link-help');
@@ -61,23 +61,26 @@
         }
       }
       
+      
       // Count the number of traits checked by user 
       // and indicate in the status message box.
       if ($('.form-checkbox').length > 0) {
+        var spanTraits = $('#traits-checked');
+        var totalNewTraits = spanTraits.text();        
+        
+        totalNewTraits = $('.form-checkbox:checked').length;
         $('.form-checkbox').once(function() {
           $(this).click(function() {
-            var spanTraits = $('#traits-checked');
-            var totalNewTraits = spanTraits.text();
             if ($(this).is(':checked')) {
               totalNewTraits = parseInt(totalNewTraits) + 1;
             }
             else {
               totalNewTraits = parseInt(totalNewTraits) - 1;
             }
-          
-            spanTraits.text(totalNewTraits);
           });
         });
+        
+        spanTraits.text(totalNewTraits);
       }
       
       // Inform user of the next page before clicking the next step
@@ -99,7 +102,9 @@
         
         $('#container-upload').once(function() {
           $(this).append('<span class="text-next-step">&#x25B8; Next Step: ' + nextStage + '</span>');
-        });       
+        });
+        
+               
       }
     }
   };

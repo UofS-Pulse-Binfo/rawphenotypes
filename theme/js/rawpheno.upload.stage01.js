@@ -50,12 +50,15 @@
       // using the choose a file link (file browser).
       $(document)
       .ajaxStart(function() {
+        $('#rawpheno-select-project-field').attr('disabled', 'disabled');
+        
         // AJAX start.
         if ($('div.messages').length > 1) {
           $('div.messages').remove();
         }
       })
       .ajaxComplete(function() { 
+        $('#rawpheno-select-project-field').removeAttr('disabled');
         // Stage 01 only.
         // Disable the select project when next stem button is present in the DOM.
         // This will prevent user changing project once upload process has started.

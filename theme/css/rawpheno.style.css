@@ -109,6 +109,7 @@ select {
   -webkit-appearance:none 
 }
 
+
 /* Remove the button when screen is at minimum width */
 @media(max-width: 1300px) {
   div.subtitle-right {

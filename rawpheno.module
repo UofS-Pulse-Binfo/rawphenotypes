@@ -66,15 +66,32 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => 0,
   );
+    // Menu callback which generates a project specific data collection spreadsheet.
+    $items['phenotypes/raw/instructions/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('rawpheno_instructions', 3),
+      'access arguments' => array('access rawpheno'),
+      'file' => 'include/rawpheno.instructions.form.inc',
+      'type' => MENU_CALLBACK,
+    );
     // Menu callback which generates a list of headers in JSON,
     // used to autocomplete a search field and process search action
     // in instructions page.
-    $items['autocomplete'] = array(
+    $items['phenotypes/raw/instructions/autocomplete/%'] = array(
       'page callback' => 'rawpheno_instructions_autocomplete_search',
+      'page arguments' => array(4),
       'access arguments' => array('access rawpheno'),
       'type' => MENU_CALLBACK,
     );
-  
+    
+    $items['phenotypes/raw/instructions/spreadsheet/%'] = array(
+      'page callback' => 'rawpheno_instructions_create_spreadsheet',
+      'page arguments' => array(4),
+      'access arguments' => array('access rawpheno'),
+      'file' => 'include/rawpheno.instructions.form.inc',
+      'type' => MENU_CALLBACK,
+    );
+    
   // DOWNLOADS PAGE
   // A page providing export data options.
   $items['phenotypes/raw/download'] = array(
@@ -206,7 +223,7 @@ function rawpheno_preprocess(&$variables) {
   
   // Colour scheme selected by the user from the admin/configuration.
   $colour = variable_get('rawpheno_colour_scheme');
-  // Default to navy blue of knowpulse if no colour is provided.
+
   // This colour will fill background of header and top right button, and border of content area.
   $theme_colour = (empty($colour)) ? '#304356' : $colour;
   $variables['theme_colour'] = $theme_colour;
@@ -280,7 +297,7 @@ function rawpheno_theme($existing, $type, $theme, $path) {
     'path' => $path . '/theme',
   );
 
-  // Download page.
+  // Backup page.
   $items['rawpheno_backup'] = array(
     'render element' => 'form',
     'template' => 'rawpheno_pages',
@@ -325,6 +342,15 @@ function rawpheno_libraries_info() {
     'files' => array(),
   );
   
+  // Spreadsheet writer.
+  $libraries['spreadsheet_writer'] = array(
+    'name' => 'PHP_XLSXWriter_plus Spreadsheet Writer',
+    'vendor url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+    'download url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+    'path' => 'sites/all/libraries/PHP_XLSXWriter_plus-master/',
+    'files' => array('xlsxwriter.class.php'),
+  );
+  
   // D3 JavaScript.
   $libraries['d3'] = array(
     'name' => 'D3 Data-Driven Documents',
@@ -349,33 +375,41 @@ function rawpheno_libraries_info() {
  * 
  * @param $key
  *   A string containing the search keywords entered in the search field.
+ * @param $project_id
+ *   An integer containing the project id number.
  *
  * @return 
  *   A JSON where each trait is both the key and the value. The key is what is 
  *   sent to JavaScript processing the search, while the value is what is suggested
  *   to user while typing in the seach field.
  */
-function rawpheno_instructions_autocomplete_search($key = '') {
+function rawpheno_instructions_autocomplete_search($project_id, $key = '') {
+  $trait_type = rawpheno_function_trait_types();
+  
+  $sql = "SELECT name 
+          FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id) 
+          WHERE project_id = :project_id AND type <> :plantprop";
+          
+  $args = array(':project_id' => $project_id, ':plantprop' => $trait_type['type4']);
+  $m = chado_query($sql, $args);
+  
   // Array to hold list of traits.
   $arr_headers = array();
-  // Array of column headers available in standard phenotyping instructions page.
-  $arr_phenotyping_headers = rawpheno_function_headers('phenotyping');
-
+  
   // Determine if keyword is provided.
   if (empty($key)) {
-    // No keywords - Return all headers for JavaScript processing the search.
-    $arr_headers = array_values($arr_phenotyping_headers);
+    foreach($m as $n) {
+      $arr_headers[] = $n->name;
+    }
   }
   else {
-    // With keywords - Select only the headers with keywords in it.
-    // These headers will then be suggested to the user as they type keywords.
-    foreach($arr_phenotyping_headers as $index => $header) {
-      if (stristr($header, $key)) {
-        $arr_headers[$header] = $header;
-      } 
-    } 
+    foreach($m as $n) {
+      if (stristr($n->name, $key)) {
+        $arr_headers[$n->name] = $n->name;
+      }
+    }
   }
- 
+  
   drupal_json_output($arr_headers);
 }
 
@@ -408,11 +442,10 @@ function rawpheno_rawdata_summary_json() {
     // Minimum rep per year per location.
     $min_set = 3;
     // Select all location present in the materialized view.
-    $sql_location = "
-      SELECT DISTINCT location 
-        FROM chado.rawpheno_rawdata_mview INNER JOIN {pheno_plant_project} USING(plant_id)
-        WHERE project_id = :project
-        ORDER BY location ASC";
+    $sql_location = "SELECT DISTINCT location 
+                     FROM chado.rawpheno_rawdata_mview INNER JOIN {pheno_plant_project} USING(plant_id)
+                     WHERE project_id = :project
+                     ORDER BY location ASC";
 
     $result_location = db_query($sql_location, array(':project' => $project_id));
     $count_location = $result_location->rowCount();
@@ -428,7 +461,8 @@ function rawpheno_rawdata_summary_json() {
       for($i = 0; $i < 2; $i++) {
         $range = ($i == 0) ? 'year' : 'rep';
         // Query materialized view.
-        $sql_range = sprintf("SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
+        $sql_range = sprintf("
+          SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
           WHERE plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
           ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
         
@@ -471,16 +505,15 @@ function rawpheno_rawdata_summary_json() {
     
       // Construct data set.
       // Read each location available and construct data set.
-      $sql = "
-        SELECT total_count, all_traits
-        FROM chado.rawpheno_rawdata_mview
-        WHERE location = :location 
-          AND SUBSTRING(planting_date, 1, 4) = :year 
-          AND rep = :rep
-          AND plant_id IN 
-            (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        ORDER BY total_count DESC 
-        LIMIT 1";
+      $sql = "SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT all_traits), ',') AS all_traits
+              FROM chado.rawpheno_rawdata_mview
+              WHERE 
+                location = :location 
+                AND SUBSTRING(planting_date, 1, 4) = :year 
+                AND rep = :rep
+                AND plant_id IN 
+                  (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
+              LIMIT 1";
           
       while($data = $result_location->fetchAssoc()) {
         // In each location, read each planting year.
@@ -495,26 +528,29 @@ function rawpheno_rawdata_summary_json() {
             $traits = db_query($sql, $args)
               ->fetchObject();
             
-            // List of traits measured.
-            $trait_list = (isset($traits->all_traits) AND !empty($traits->all_traits)) 
-              ? $traits->all_traits : 0; 
-          
-            // NOTE:
-            // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
-            // Before doing that, test if these two traits were part of the traits the count is based on.
-            if ($trait_list != 0) {
+            if (!empty($traits->all_traits)) {
+              $trait_list = explode(',', $traits->all_traits);
+              $trait_list = array_unique($trait_list);
+               
+              // NOTE:
+              // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
+              // Before doing that, test if these two traits were part of the traits the count is based on.
               $less = 0;
-              if (strstr($trait_list, $planting_date)) {
+              if (in_array($planting_date, $trait_list)) {
                 $less++;
               }
-            
-              if (strstr($trait_list, $seeds_planted)) {
-                $less++;
-              }
-            }
           
-            $trait_count = (isset($traits->total_count) && !empty($traits->total_count)) 
-              ? ($traits->total_count - $less) : 0;
+              if (in_array($seeds_planted, $trait_list)) {
+                $less++;
+              }
+              
+              $trait_count = ((count($trait_list) - $less) < 0) ? 0 : (count($trait_list) - $less);
+              $trait_list = implode(',', $trait_list);
+            }
+            else {
+              $trait_list = 0;
+              $trait_count = 0;
+            }
             
             // Create a json entry with the following keys:
             // location, year, rep and trait.
@@ -546,8 +582,24 @@ function rawpheno_rawdata_summary_json() {
  *   A JSON containing the bins and data.
  *   bins is a list of computed bins and each data
  *   has location and bin objects.
+ *
+ * NOTE: The following column headers are excluded from the traits that can be visualized. 
+ *   Planting Date (date), 
+ *   Disease-specific Comments, 
+ *   Comments
+ *   # of Seeds Planted (count) 
  */
 function rawpheno_rawdata_trait_json() {  
+  // When the type of data is txt, we need to ensure that it not sooo long that it will break the chart.
+  // To ensure that, we use this variable to check if the length is less or more and respond accordingly.
+  $max_data_length = 10;
+  
+  // Types of data.
+  $txt_type = 'txt';
+  $int_type = 'int';
+  $scale_type = 'scale';
+  $ynunsure_type = 'y/n/?';
+  
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
   if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
@@ -557,157 +609,67 @@ function rawpheno_rawdata_trait_json() {
   }
   else {
     $project_id = (int)trim(strip_tags($_GET['p']));
-    $trait_id = (int)trim(strip_tags($_GET['t']));
-   
-    // Array to hold the computed Bin.
-    $arr_bin_json = array();
+    $trait_id   = (int)trim(strip_tags($_GET['t']));
+    
+    // Get cvterm.
+    $cvterm = tripal_get_cvterm(array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+    if (!$cvterm) {
+      return 0;
+    }
+    
+    // Query unique values in in the column, get data type and char length of each unique entry
+    $sql = "SELECT 
+              value AS data, 
+              CASE WHEN value ~ '^[0-9]+$' THEN 'int' ELSE 'txt' END AS data_type, 
+              CHAR_LENGTH(value) AS data_length
+            FROM {pheno_measurements} 
+            WHERE type_id = 
+              (SELECT cvterm_id FROM {pheno_project_cvterm} WHERE project_id = :project_id AND cvterm_id = :cvterm_id LIMIT 1)
+              AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+            GROUP BY value ORDER BY value ASC";
+    
+    $args = array(':project_id' => $project_id, ':cvterm_id' => $trait_id);
+    $d = db_query($sql, $args);
+    
+    // Array to hold the data_type.
+    $arr_data_type = array();
+    // Array to hold the length of data.
+    $arr_data_length = array();
     // Array to hold the data.
-    $arr_data_json = array();
-    // Traits that have non numeric value or is scale.
-    $arr_trait_names = array('Diseases Present (y/n/?)', 'Lodging (Scale: 1-5) upright - lodged');
+    $arr_data = array();
+    
+    foreach($d as $m) {
+      array_push($arr_data_type, $m->data_type);    
+      array_push($arr_data_length, $m->data_length);
+      array_push($arr_data, $m->data);
+    }
+    
+    // Get the overall data type.
+    $data_type = array_unique($arr_data_type);
 
-    // Test if the trait is a comment, scale or other.
-    $t = db_query("SELECT name FROM chado.cvterm WHERE cvterm_id = :trait_id LIMIT 1", 
-      array(':trait_id' => $trait_id));
-    
-    $trait_name = $t->fetchField();
-    
-    if (in_array($trait_name, $arr_trait_names)) {
-      // Trait is yes, no and ? or scale 1,2,3,4,5.
-      // Query the locations trait were measured along with the trait value/data.
-      // Limit the dataset specific to only the project requested. 
-      $sql = "
-        SELECT t3.value AS location, t2.value AS v
-        FROM {pheno_plant} AS t1 
-          INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-          INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-        WHERE t2.type_id = :trait_id AND
-          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-          t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        ORDER BY t3.value ASC";
-      
-      $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-      // Result set for data/values.
-      $d = db_query($sql, $args);
-      // Result set for locations.
-      $l = db_query($sql, $args);
-      $all_locations = array_unique($l->fetchCol(0));
-      
-      if ($trait_name == $arr_trait_names[0]) {
-        // Trait is Diseases Present (y/n/?)
-        // Bins.
-        $arr_bin_json = array('Yes', 'No', '?');
-        
-        // Data.
-        // Trait is yes, no and ?.
-        if ($d->rowCount() > 0) {
-          foreach($d as $e) {
-            if (in_array(strtolower($e->v), array('y', 'yes')))
-              $bin = 'Yes';
-            else if (in_array(strtolower($e->v), array('n', 'no')))
-              $bin = 'No';
-            else if ($e->v == '?') 
-              $bin = '?';
-          
-            $arr_data_json[] = ['location' => $e->location, 'bin' => $bin];
-          } 
-        }
-        else {
-          return 0;
-        }
-      }
-      else {
-        // Lodging (Scale: 1-5) upright - lodged
-        // Bin.
-        $s = db_query("SELECT code FROM {pheno_scale_member} ORDER BY code ASC");
-        if ($s->rowCount() > 0) {
-          foreach($s as $b) {
-            $arr_bin_json[] = $b->code;
-          }
-        }
-        
-        // Data.
-        // Trait is scale.
-        if ($d->rowCount() > 0) {
-          foreach($d as $e) {
-            $arr_data_json[] = ['location' => $e->location, 'bin' => $e->v];
-          }
-        }
-        else {
-          return 0;
-        }
-      }
+    if (count($data_type) > 1 OR $d->rowCount() <= 0) {
+      // When there are too many data types or no data at all, do not visualize it.
+      return $data_type;
     }
     else {
-      // Other triats that have numeric value.
-      $sql = "
-        SELECT t1.stock_id AS stock, t3.value AS location, 
-          ROUND(AVG(t2.value::integer)) AS average
-        FROM {pheno_plant} AS t1 
-          INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-          INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-        WHERE t2.type_id = :trait_id AND
-          t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-          t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        GROUP BY t3.value, t1.stock_id, t2.value
-        ORDER BY t3.value, average ASC";      
-      
-      $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-      // Result set for data/values.
-      $d = db_query($sql, $args);
-      // Result set for locations.
-      $l = db_query($sql, $args);
-      $all_locations = array_unique($l->fetchCol(0));
-      
-      if ($d->rowCount() > 0) {
-        // Bins.
-        // Get the min and max values from the averages.
-        $all_average = $d->fetchCol(2);
-        $max = max($all_average);
-        $min = min($all_average);
-      
-        $total_bins = 4; 
-        $interval = round($max/$total_bins);     
-      
-        $i = 0;
-        $to = 0;
-        $from = $min;
-      
-        while($to < $max) {
-          $from = ($i ==0) ? $min : ($to + 1);
-          $to = $from + $interval;
-        
-          $arr_bin_json[$i] = $from . '-' . $to;
-          $i++; 
-        }
-      
-        // Assign each row with a bin.
-        $m = db_query($sql, $args)
-          ->fetchAll();
-        
-        foreach($m as $stock) {
-          $stock_avg = (int)$stock->average;
-        
-          // Find the bin for this row.
-          foreach($arr_bin_json as $b) {
-            list($from, $to) = explode('-', $b);
-            if ($stock_avg >= $from AND $stock_avg <= $to) {
-              $stock_bin = $b;
-              break;
-            }  
-          }
-        
-          // Add entry to json
-          $arr_data_json[] = array('location' => $stock->location,
-                                   'bin' => $stock_bin);
-        }
+      // Else, chart it, but before doing so, determine if text or integer type.
+      if ($data_type[0] == $int_type) {
+        // Interger data type.
+        $type = (rawpheno_function_unit($cvterm->name) == $scale_type) ? $scale_type : $int_type;
+        return rawpheno_function_create_json($project_id, $trait_id, $type);
       }
-      else {
-        return 0;
+      elseif ($data_type[0] == $txt_type) {
+        // Text data type, but, if the length of data is sooo long, don't chart it.
+        if (max($arr_data_length) > $max_data_length) {
+          // Too long.
+          return 0;
+        }
+        else {
+          // Yes, chart it!
+          $type = (rawpheno_function_unit($cvterm->name) == $ynunsure_type) ? $ynunsure_type : $txt_type;
+          return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_data);
+        }
       }
     }
-    
-    // Return bin and data.
-    return ['bin' => $arr_bin_json, 'data' => $arr_data_json];       
-  }  
+  }
 }

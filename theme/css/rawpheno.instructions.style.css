@@ -130,8 +130,12 @@ em {
 
 
 @media(max-width: 1300px) {
+  #container-project-panel {
+    font-size: 1.2em !important;
+  }
+  
   #tabs .ui-tabs-nav li {
-    font-size: 0.78em;
+    font-size: 0.70em;
   }
   
   div.gallery-img img, div.gallery-img {
@@ -185,13 +189,11 @@ em {
 }
 
 #tabs .data-cells, #lists .data-cells {
-  background-color: #FFFFFF;
-  border: 1px solid #969696;
-  font-weight: normal;
+  font-weight: bold;
+  font-size: 1.1em;
   margin: 0 auto;
   padding: 2px 7px;
-  text-align: center;
-  width: 130px;
+  text-align: left;
 }
 
 /* Tab 1 */
@@ -286,4 +288,50 @@ a.button:hover {
 /* Error message box */
 .messages {
   margin: 0 0 15px 0 !important;
+}
+
+
+/* Table */
+th {
+  width: 30%;
+}
+
+
+/* Change project panels */
+#container-project-panel {
+  font-size: 1.7em;
+  margin: 0 0 20px 0;
+}
+
+#container-project-panel span {
+  font-size: 0.6em;
+  float: right;
+  line-height: 25px;
+}
+
+#container-sel-project {
+  border-bottom: 1px solid #CCCCCC;
+  display: none;
+  margin: 20px 0;
+  padding: 0 0 15px 0;
+  
+  -moz-box-shadow:    0 5px 7px -9px #333333;
+  -webkit-box-shadow: 0 5px 7px -9px #333333;
+  box-shadow:         0 5px 7px -9px #333333;
+  
+  cursor: pointer;
+}
+
+#container-sel-project select {
+  width: 100%;
+}
+
+/* Reference Tab */
+#reference {
+  background-color: #EAEAEA !important;
+}
+
+#container-download-xls a {
+  font-size: 1.2em;
+  color: #13b72d;
 }

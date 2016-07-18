@@ -234,8 +234,13 @@ li em {
   font-weight: bold;
 }
 
+.info {
+  background: url('../img/icon-info.jpg') no-repeat;
+  background-position: 5px 0;
+}
 
-/* Success and Failed rule */
+
+/* Validation Result - Success and Failed rule */
 .success {
   background: url('../img/icon-success.jpg') no-repeat;
   background-position: 5px 0;
@@ -246,10 +251,6 @@ li em {
   background-position: 5px 0;
 }
 
-.info {
-  background: url('../img/icon-info.jpg') no-repeat;
-  background-position: 5px 0;
-}
 
 /* Next stage indicator preceding next step button */
 span.text-next-step {

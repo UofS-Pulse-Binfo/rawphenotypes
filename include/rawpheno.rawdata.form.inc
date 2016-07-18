@@ -7,6 +7,12 @@
  
 /**
  * Page callback: Displays a heat map chart.
+ *
+ * NOTE: The following column headers are excluded from the traits that can be visualized. 
+ *   Planting Date (date), 
+ *   Disease-specific Comments, 
+ *   Comments
+ *   # of Seeds Planted (count)  
  */
 function rawpheno_rawdata($form, &$form_state) {
   // Navigation button. Related page of rawdata/summary page is download page.
@@ -43,18 +49,15 @@ function rawpheno_rawdata($form, &$form_state) {
   
   // Query traits in a project. Exclude names listed in where clause and additional headers detected in the spreadsheet,
   // as they are unpredictable and may cause the visualization to break.
-  $sql = "SELECT t1.cvterm_id, t1.name 
-          FROM 
-            {cvterm} AS t1 
-            LEFT JOIN {cvterm_relationship} AS t2 ON t1.cvterm_id = t2.object_id
-            RIGHT JOIN pheno_project_cvterm as t3 using(cvterm_id)
+  $sql = "SELECT cvterm_id, name 
+          FROM {cvterm} INNER JOIN pheno_measurements ON cvterm_id = type_id
           WHERE 
-            t3.project_id = :project_id 
-            AND t1.cv_id = :cv_id 
-            AND t2.cvterm_relationship_id IS NULL
-            AND t1.name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)') 
-          ORDER BY t1.cvterm_id ASC";
-  
+            cvterm_id IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
+            AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+            AND cv_id = :cv_id
+            AND name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)') 
+          ORDER BY cvterm_id ASC";
+ 
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
   
   // Create the select field and populate it with traits specific to a project.  
