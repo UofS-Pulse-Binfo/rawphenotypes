@@ -337,8 +337,8 @@ function rawpheno_libraries_info() {
   $libraries['spreadsheet_reader'] = array(
     'name' => 'NUOVO Spreadsheet',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
-    'download url' => 'https://github.com/nuovo/spreadsheet-reader',
-    'path' => 'sites/all/libraries/spreadsheet-reader/',
+    'download url' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
+    'path' => 'sites/all/libraries/spreadsheet-reader-master/',
     'files' => array(),
   );
   
@@ -346,7 +346,7 @@ function rawpheno_libraries_info() {
   $libraries['spreadsheet_writer'] = array(
     'name' => 'PHP_XLSXWriter_plus Spreadsheet Writer',
     'vendor url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
-    'download url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+    'download url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
     'path' => 'sites/all/libraries/PHP_XLSXWriter_plus-master/',
     'files' => array('xlsxwriter.class.php'),
   );

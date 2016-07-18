@@ -830,21 +830,21 @@ function rawpheno_requirements($phase) {
       'excel_writer' => 
         array(
           'is_in'  => libraries_get_path('PHP_XLSXWriter_plus-master'), 
-          'source' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+          'source' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
           'path'   => $libraries . 'PHP_XLSXWriter_plus-master'
         ), 
       
       'excel_reader' => 
         array(
-          'is_in'  => libraries_get_path('spreadsheet-reader'), 
-          'source' => 'https://github.com/nuovo/spreadsheet-reader',
-          'path'   => $libraries . 'spreadsheet-reader'
+          'is_in'  => libraries_get_path('spreadsheet-reader-master'), 
+          'source' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
+          'path'   => $libraries . 'spreadsheet-reader-master'
         ), 
       
       'd3' => 
         array(
           'is_in'  => libraries_get_path('d3'), 
-          'source' => 'https://d3js.org/',
+          'source' => 'https://github.com/mbostock/d3/releases/download/v3.5.14/d3.zip',
           'path'   => $libraries . 'd3'
         )
     );
