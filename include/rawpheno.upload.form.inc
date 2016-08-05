@@ -29,7 +29,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     $form_state['stage'] = 'check';
   } 
   
-  // If a job_id was provide in the URL then the user wants information
+  // If a job_id was provided in the URL then the user wants information
   // on a prvious bulk loading job. Thus we should show them the last step.
   if (isset($form_state['build_info']['args'][0])) {
     $form_state['stage'] = 'save';
@@ -37,7 +37,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
   
   // Add the stage tracker/header.
   $form = rawpheno_get_header($form, $form_state);
-  
+  // Holds the current stage.
   $form_stage = $form_state['stage'];
   
   // Stage indicator for theme function.
@@ -56,37 +56,34 @@ function rawpheno_upload_form_master($form, &$form_state) {
   }
   
   // Create a select box containing projects available - these are projects
-  // that have associated column header set. The projects are filtered to show only projects assigned to user.
-  if ($form_stage != 'save') {  
-    $sql = "SELECT DISTINCT t1.project_id, t1.name 
-            FROM {project} AS t1 RIGHT JOIN pheno_project_user AS t2 USING(project_id)
-            WHERE t2.uid = :user_id
-            ORDER BY t1.project_id DESC";
-
-    $args = array(':user_id' => $GLOBALS['user']->uid);
-    $p = chado_query($sql, $args);
-
-    if ($p->rowCount() > 0) {
-      $my_project = $p->fetchAllKeyed();
-      
+  // that have associated column header set and must have at least 1 essential column header. 
+  // The projects are filtered to show only projects assigned to user.
+  if ($form_stage != 'save') { 
+    $my_project = rawpheno_function_user_project($GLOBALS['user']->uid);
+    
+    if (count($my_project) > 0) {
       // When there is more than 1 project assigned to user, tell user to select a project
       // otherwise default to the only project available.
-      if ($p->rowCount() > 1) {
+      if (count($my_project) > 1) {
         $my_project = array(0 => 'Please select a project') + $my_project;
       } 
       
+      // Default Project in project selector field. 
       if (isset($_POST['sel_project']) AND $_POST['sel_project'] > 0) {
+        // HTTP method post has the project id.
         $default_value = $_POST['sel_project'];
       }
       elseif (isset($form_state['values']['sel_project'])) {
+        // Form state has the project id.
         $default_value = $form_state['values']['sel_project'];
       }
       else {
+        // Neither has the project id number default to the first project in the project list.
         $default_value = 0;
       }
 
-      // Determine if the select box should be enabled.
-      // Enabled in all stages but stage 01.  
+      // Determine if the project select box should be enabled.
+      // Disabled in all stages but stage 01.  
       $disabled = ($form_stage == 'check') ? FALSE : TRUE;
       
       $form['sel_project'] = array(
@@ -98,8 +95,8 @@ function rawpheno_upload_form_master($form, &$form_state) {
       );
   
       // This block is to ensure select project select box is always default to 
-      // "please select a project" or to the first project option in the beginning ot the upload process. 
-      // It will also default to this option when user refreshes the page. 
+      // "please select a project" or to the first project option in the beginning of the upload process. 
+      // It will also default to this option when user refreshes the page.
       if ($form_stage == 'check') {
         drupal_add_js('jQuery(document).ready(function() {
           jQuery("#rawpheno-select-project-field").val(0);
@@ -120,12 +117,9 @@ function rawpheno_upload_form_master($form, &$form_state) {
   // Get the directory path of rawpheno module.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   
-  // Load corresponding form together with JavaScript and CSS.
+  // Load corresponding function callback together with JavaScript and CSS.
   switch($form_stage) {
     case 'check':
-      // Attach JS Collapse library.
-      $form['#attached']['library'][] = array('system', 'drupal.collapse');
-
       // Stage 01 - upload and check spreadsheet.
       $form['#attached']['css'] = array($path . 'css/rawpheno.upload.stage01.css');
       $form['#attached']['js']  = array($path . 'js/rawpheno.upload.stage01.js',
@@ -164,16 +158,16 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
   // Create an instance of DragNDrop Upload.
   // SETTINGS:
   //  #file_upload_max_size: max file size allowed
-  //  #upload_location: destination of file
-  //  #upload_event: manual - show an upload button or auto - uploads after drag drop
-  //  #upload_validators: allowed file extensions
-  //  #upload_button_text: label of upload button
-  //  #droppable_area_text: text in drop area
-  //  #progress_indicator: none, throbber or bar
-  //  #progress_message: message to display while processing
-  //  #allow_replace: allow user to replace file by drag and drop another file
-  //  #standard_upload: show browse button or not
-  //  #upload_button_text: submit button text (not required when auto submit is auto)
+  //  #upload_location:      destination of file
+  //  #upload_event:         manual - show an upload button or auto - uploads after drag drop
+  //  #upload_validators:    allowed file extensions
+  //  #upload_button_text:   label of upload button
+  //  #droppable_area_text:  text in drop area
+  //  #progress_indicator:   none, throbber or bar
+  //  #progress_message:     message to display while processing
+  //  #allow_replace:        allow user to replace file by drag and drop another file
+  //  #standard_upload:      show browse button or not
+  //  #upload_button_text:   submit button text (not required when auto submit is auto)
 
   $form['dnd'] = array(
     '#type' => 'dragndrop_upload',
@@ -211,7 +205,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
  * ensure that all traits have been described. If there are any that haven't then
  * we need to ask the the user to define them now.
  *
- * NOTE: User has the option to skip this stage.
+ * NOTE: User has the option to skip this stage by not checking any of the new traits found and clicking next step.
  */
 function rawpheno_upload_form_stage_review(&$form, &$form_state) {
   // Array to hold new headers.
@@ -228,7 +222,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     
     // Ensure that the file exits and project id is selected. 
     // The form will unset the project id upon page refresh, this will catch the condition
-    // when no project id is selected user will be stopped and is requested to retry the process.
+    // when no project id is selected, user will be stopped and is requested to retry the process.
     if ($file AND !empty($project_id)) {
       $new_header = rawpheno_indicate_new_headers($file, $project_id);
       $form_state['multistep_values']['new_headers'] = $new_header;
@@ -329,7 +323,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
         unset($cvterm_info);
       }
       
-      // CHECKBOX to let user select a trait to describe and save.
+      // CHECKBOX to let user select a trait to describe and save. If left unchecked, system will not save it.
       $form['xls_review_fldset']['chk_' . $i] = array(
         '#type' => 'checkbox',
         '#title' => t(ucwords($k)),
@@ -365,10 +359,12 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
         
         // Test if the header has a unit component and set the variable accordingly.
         $has_unit = (strpbrk($name, '()')) ? 'yes' : 'no';
+        
         // Format the name to be used in the following SQL. When the name has a unit component,
         // we just feed the name to the SQL using equal operator, otherwise, we use like operator
-        // to find all similar headers.
+        // to find all similar headers and suggest it.
         $cvterm = ($has_unit == 'yes') ? $name : '%' . $name . '%';
+        
         // Construct the query statement.
         $sql = sprintf($sel, $where[$has_unit]);     
         $args = array(':project_id' => $project_id, ':cv_id' => $cv_id, ':cvterm' => $cvterm);
@@ -383,7 +379,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             $form['xls_review_fldset']['fldset_' . $i]['notice_' . $i] = array(
               '#markup' => '<div class="form-item">The system has detected this column header in the database.
                             All form fields are disabled to prevent alteration to the original version.
-                            To save this header and data associated to it, please keep the checkbox check.</div>',
+                            To save this header and data associated to it, please keep the checkbox checked.</div>',
             );
 
             $show_form = 'yes';
@@ -395,6 +391,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             $header_options = array();
             foreach($h as $m) {
               $this_header = trim(strtolower($m->name));
+              
               if (!in_array($this_header, $headers_no_format)) {  
                 $header_options[$m->cvterm_id] = $m->name;
               }
@@ -501,7 +498,6 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     }
   } 
 
-
   // Hidden field containing all the checked new headers
   if (isset($arr_checked_header) AND count($arr_checked_header) > 0) {
     $form['all_header_checked'] = array(
@@ -509,7 +505,6 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
       '#value' => implode(',', $arr_checked_header),
     );
   }
-
 
   // Indicator to user of how many of the new traits found has been described.
   $form['traits_checked'] = array(
@@ -558,7 +553,7 @@ function rawpheno_newheader_unit_validate($element, &$form_state) {
         $header_validation = explode(',', $h);
       
         if (in_array($name_value, $header_validation)) {
-          form_set_error($element['#name'], 'Cannot save multiple version of the same column header and unit combination.');
+          form_set_error($element['#name'], 'Cannot save multiple entries of the same column header and unit combination.');
         }
       }
     }    
@@ -607,67 +602,93 @@ function ajax_rawpheno_upload_form_step2_expand_trait_callback($form, $form_stat
  */
 function rawpheno_upload_form_stage_save($form, &$form_state) {
   $job_id = NULL;
-  $percent_complete = 0;
-  $message = 'Waiting for job system';
+  global $user;
 
   if (isset($form_state['build_info']['args'][0])) {
     $job_id = $form_state['build_info']['args'][0];
     
+    // We only want to run jobs that has phenotypic data in it. Otherwise we tell user
+    // job is not valid (in case user will hack the url containing the job id).
     // Retrieve the tripal job and determine the percent complete.
     $job = tripal_get_job($job_id);
-
+    
+    // If job is valid.
     if ($job) {
-      // Set the progress bar based on the job.
-      if ($job->status == 'Running') {
-        $tmp = file_directory_temp();
-        $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
-        if (file_exists($filename) && file_get_contents($filename) !== FALSE) {
-          $percent_complete = file_get_contents($filename);
-        }
+      if ($job->uid == $user->uid) {
+        // Job id belongs to the user. Authorized.
+        $job_status = trim(strtolower($job->status));
         
-        $message = 'Loading Spreadsheet...';
-      }
-      elseif($job->status == 'Completed') {
-        $message = 'Complete!';
-        $percent_complete = 100;
-      }
-      elseif($job->status == 'Waiting') {
-        // Default no need to set.
+        // Check if it is a valid job and not a BLAST or other job type.
+        if ($job->callback == 'rawpheno_load_spreadsheet') {
+          if ($job_status == 'completed') {
+            // Is completed some time ago.
+            $form['notice'] = array(
+              '#markup' => '<div class="messages error">It appears that you are attempting to submit a spreadsheet that has been processed already</div>'
+            );
+          }
+          elseif ($job_status == 'error') {
+            // Has error.
+            $form['notice'] = array(
+              '#markup' => '<div class="messages error">It appears that you are attempting to submit a spreadsheet that has errors.</div>'
+            ); 
+          }
+          elseif ($job_status == 'cancelled') {
+            // Is cancelled.
+            $form['notice'] = array(
+              '#markup' => '<div class="messages error">It appears that you are attempting to submit a spreadsheet that has been cancelled.</div>'
+            );           
+          }
+          else {
+            // Not processed yet - show the progress bar.
+            // A valid job - work on it.
+            $form['notice'] = array(
+              '#type' => 'markup',
+              '#markup' =>
+                  '<div class="messages status">Your spreadsheet has been successfully submitted and <em>will not be interupted</em> if you choose to leave this page.</div>'
+                . '<div class="messages warning">The progress bar below indicates our progress updating ' . strtoupper($_SERVER['SERVER_NAME']) . '. <em>Your data will not be available until the progress bar below completes</em>.</div>'
+            );
+         
+            // Add Progress JS Library.
+            drupal_add_js('misc/progress.js');
+
+            // This is the link passed to the JavaScript Progress.js as the parameter to a function
+            // that monitors a link. The link is a function callback that generates a JSON object
+            // containing the number of rows save in percent. See file: rawpheno.module.
+            $form['tripal_job_id'] = array(
+              '#type' => 'hidden',
+              '#value' => base_path() . '/phenotypes/raw/upload/job_summary/' . $job->job_id,
+              '#attributes' => array('id' => 'tripal-job-id'),
+            );
+         
+            // We make a DIV which the progress bar can occupy. You can see this in use
+            // in ajax_example_progressbar_callback().
+            $form['status'] = array(
+              '#type' => 'markup',
+              '#markup' => '<div class="progress-pane"></div>'
+            );
+          }
+        }
+        else {
+          // Job not supported by this module.
+          $form['notice'] = array(
+            '#markup' => '<div class="messages error">It appears that you are attempting to request a process that is not supported by this module.</div>'
+          );
+        }
       }
       else {
-        $message = $job->status;
-        $percent_complete = $job->progress;
-        drupal_set_message(t('It appears something has gone wrong loading your spreadsheet. Please contact the administrator.'), 'error');
-      }
-
-      if ($job->status == 'Running' OR $job->status == 'Waiting') {
-        $form['#attached']['js'][] = array(
-          'type' => 'inline',
-          'data' => '
-            setTimeout(function(){
-              window.location.reload(1);
-            }, 5000);'
+        // Not authorized.
+        $form['notice'] = array(
+          '#markup' => '<div class="messages error">It appears that you are attempting to submit a spreadsheet that is not in your account.</div>'
         );
       }
     }
     else {
-      drupal_set_message(t('We are unable to find the job tasked with loading your spreadsheet. Please contact the administrator.'), 'error');
-    }
+      // Job is not valid or does not exists.
+      $form['notice'] = array(
+        '#markup' => '<div class="messages status">The job request to save spreadsheet file does not exist.</div>'
+      );
+    }   
   }
-  
-  $form['notice'] = array(
-    '#type' => 'markup',
-    '#markup' => '<div class="messages status">Your spreadsheet has been successfully submitted and <em>will not be interupted</em> if you choose to leave this page.</div>'
-      . '<div class="messages warning">The progress bar below indicates our progress updating ' . strtoupper($_SERVER['SERVER_NAME']) . '. <em>Your data will not be available until the progress bar below completes</em>.</div>'
-      
-  );
-  
-  // We make a DIV which the progress bar can occupy. You can see this in use
-  // in ajax_example_progressbar_callback().
-  $form['status'] = array(
-    '#type' => 'markup',
-    '#markup' => theme('progress_bar', array('percent' => $percent_complete, 'message' => $message)),
-  );
   
   return $form;
 }
@@ -773,7 +794,7 @@ function rawpheno_file_validate($file) {
     // Validate the file.
     // The following function will return an array specifying which of the validation
     // steps passed and providing infomration for those that failed.
-    $status = rawpheno_validate_excel_file($file, $project_id);
+    $status = rawpheno_validate_excel_file($file, $project_id, 'upload');
 
     // We want to show the user which steps passed/failed even if all of them passed,
     // so lets do that now. We use drupal_set_message() because returning from this function
@@ -804,7 +825,7 @@ function rawpheno_file_validate($file) {
       return FALSE;
     }
   }
-  elseif($file->source == 'bdnd') {
+  elseif ($file->source == 'bdnd') {
     // Backup file page.
     
     // Array to hold the validation result.
@@ -821,7 +842,7 @@ function rawpheno_file_validate($file) {
     $flag_index = array('project_selected', 'is_excel', 'tab_exists', 'column_exists');
     
     // Validate file.
-    $flags = rawpheno_validate_excel_file($file, $project_id);   
+    $flags = rawpheno_validate_excel_file($file, $project_id, 'backup');   
     
     // Read only the status from test listed above.
     foreach($flags as $i => $v) {
@@ -1030,7 +1051,9 @@ function rawpheno_submit_review($form, &$form_state) {
           'cv_name'    => 'phenotype_measurement_types'
         );
            
-        $m_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), array('name' => $m_cvterm['name'], 'cv_id' => array('name' => $m_cvterm['cv_name'])));
+        $m_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), 
+                                           array('name' => $m_cvterm['name'], 
+                                           'cv_id' => array('name' => $m_cvterm['cv_name'])));
         if (!$m_cvterm_id) {
           $m_cvterm_id = tripal_insert_cvterm($m_cvterm);
         }
@@ -1074,7 +1097,9 @@ function rawpheno_submit_review($form, &$form_state) {
           'cv_name'    => 'phenotype_measurement_units'
         );
         
-        $u_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), array('name' => $u_cvterm['name'], 'cv_id' => array('name' => $u_cvterm['cv_name'])));
+        $u_cvterm_id = chado_select_record('cvterm',array('cvterm_id'), 
+                                           array('name' => $u_cvterm['name'], 
+                                           'cv_id' => array('name' => $u_cvterm['cv_name'])));
         if (!$u_cvterm_id) {
           $u_cvterm_id = tripal_insert_cvterm($u_cvterm);
         }
@@ -1088,8 +1113,6 @@ function rawpheno_submit_review($form, &$form_state) {
         }
         
         // Don't forget the method description.
-        // @todo this shouldn't be using this type.
-        // @todo should this even be attached to the unit? I had assumed the trait.
         $prop = array(
           'cvterm_id' => $u_cvterm_id,
           'type_id'   => $cv_measurements_unit,
@@ -1103,7 +1126,6 @@ function rawpheno_submit_review($form, &$form_state) {
         }
         
         // Finally relate the measurement and unit.
-        // @todo: this shouldn't be using this type.
         $rel = array(
           'subject_id' => $u_cvterm_id,
           'type_id'    => $cv_measurements_unit,

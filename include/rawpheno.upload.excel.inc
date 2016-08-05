@@ -65,12 +65,12 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   // Change to the correct spreadsheet.
   rawpheno_change_sheet($xls_obj, 'measurements');
 
+  // Compute the total number of rows parsed.
+  $row_count = rawpheno_count_rows($xls_obj);
+  
   // File to write progress status.         
   $tmp = file_directory_temp();
   $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
-  // Count all the rows in the spreadsheet and use this count to compute
-  // the percentage of the currently saved rows.
-  $row_count = rawpheno_count_rows($xls_obj);
     
   // Start Transaction.
   $TRANSACTION = db_transaction();
@@ -82,24 +82,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
     // Each row in the spreadsheet.
     foreach ($xls_obj as $row) {
-      // print update every 25 lines.
-      if (($i % 25) == 0 AND $i !== 0) {
-        print $i . " of " . $row_count . ' - ' . $percent . '%'."\n";
+      // Create progress update by computing the number of rows saved in percent.
+      // Write to file and progress bar API reads the content and pass it JSON generator
+      // in file rawpheno.module function: rawpheno_upload_job_progress_json().
+      // Echo to terminal.
+      print $i . " of " . $row_count . ' - ' . $percent . '%'."\n";
         
-        $percent = round(($i/$row_count) * 100);
-        file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
-      }
-      
-      // Update job status every 5%
-      // There is no point doing this because the transaction ensures 
-      // we don't see any results until the job is done...
-      // $percent_complete = round(($i / $num_rows) * 100);
-      //if (($percent_complete % 5) == 0) {
-      //  tripal_set_job_progress($job_id, $percent_complete);
-      //}
+      // To file.
+      $percent = round(($i / $row_count) * 100);
+      file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
       
       // HEADER!
-      //print_r($row);
       // This is the header.
       if ($i == 0) {
         $header = $row;
@@ -125,7 +118,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
       // NEXT ROW IF EMPTY!
       // Don't continue processing if this row is empty.
-      if (strlen(trim(implode('', $row))) <= 1) {
+      if (strlen(trim(implode('', $row))) <= 5) {
         break;
       }
       
@@ -373,8 +366,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
  * @param $project_id
  *   An integer containing project id selected in the project select box.
  *   This will map the data submitted to a project.
+ * @param $source
+ *   A string containing the source of the file upload - Upload Data or Backup File.
+ *
+ * @return
+ *   An array containing the validation result from each validator.
  */
-function rawpheno_validate_excel_file($file, $project_id) {
+function rawpheno_validate_excel_file($file, $project_id, $source) {
   $status = array();
 
   // Process the validators to make them easier to use.
@@ -431,7 +429,7 @@ function rawpheno_validate_excel_file($file, $project_id) {
   
     // Convert row into a string and check the length.
     // This will exclude empty rows.        
-    if (strlen(trim(implode('', $row))) >= 1) {
+    if (strlen(trim(implode('', $row))) >= 5) {
     
       // VALIDATE THE HEADER.
       if ($i == 1) {
@@ -521,19 +519,22 @@ function rawpheno_validate_excel_file($file, $project_id) {
         
         if ($row_has_error) $num_errored_rows++;
       }
-      
+     
       // Only check until you have 10 rows with errors.
       if ($num_errored_rows >= 10) {
-      
         // We only want to present the warning if this is not the end of the file ;-)
         $has_next = $xls_obj->next();
         if ($has_next AND strlen(trim(implode('', $has_next))) >= 1) {
-          drupal_set_message("We have only checked the first $i lines of your file. Please fix the errors reported below and then upload the fixed file.", 'error');
-          return $status;
+          if ($source == 'upload') { 
+            // Only when the source of the file is the upload where this message is required. In backup
+            // the validation errors are added to the file uploaded.
+            drupal_set_message("We have only checked the first $i lines of your file. Please fix the errors reported below and then upload the fixed file.", 'error');
+            return $status;
+          }
         }
       }
     }
-  }
+  } 
       
   // Make sure all validators are represented in status. 
   // If they are not already then a failure wasn't recorded -thus they passed :-).
@@ -601,6 +602,36 @@ function rawpheno_change_sheet(&$xls_obj, $tab_name) {
   }
   
   return FALSE;
+}
+
+
+/**
+ * Adds the necessary files for EXCEL parsing.
+ */
+function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
+  // Function call libraries_load() base on the implementation
+  // of hook_libraries_info() in rawpheno.module.
+  $xls_lib = libraries_load('spreadsheet_reader');
+  // Library path information returned will be used
+  // to include individual library files required.
+  $lib_path = $xls_lib['path'];
+
+  // Include parser library. PLS DO NOT ALTER ORDER!!!
+  // To stop parser from auto formatting date to MM/DD/YY,
+  // suggest a new date format YYYY-mm-dd in:
+  //   line 678 in excel_reader2.php
+  //     0xe => "m/d/Y", to 0xe => "Y-m-d", 
+  //   line 834 in SpreadsheetReader_XLSX.php
+  //     $Value = $Value -> format($Format['Code']); to $Value = $Value -> format('Y-m-d');
+  // 
+  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
+  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
+  include_once $lib_path . 'SpreadsheetReader.php';  
+
+  if ($file_type == 'XLS') {
+    // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
+    include_once $lib_path . 'SpreadsheetReader_XLS.php';
+  }
 }
 
 
@@ -728,48 +759,22 @@ function rawpheno_all_headers($file) {
 /**
  * Count all rows in a spreadsheet.
  *
- * @param $data_sheet
- *    The tab/sheet containing all data.
+ * @param $file
+ *   The full path to the excel file containing data.
  * @return
- *    An integer value of the total rows.
+ *   An integer value of the total rows.
  */
-function rawpheno_count_rows($data_sheet) {
+function rawpheno_count_rows($xls_obj) {
+  // Row of 5 chars or more long is a row.
   $count_rows = 0;
-  foreach ($data_sheet as $row) {
-    if (strlen(implode('', $row)) > 2) {
+  foreach ($xls_obj as $row) {
+    if (strlen(implode('', $row)) > 5) {
       $count_rows++;
     }
   }
   
   // Less header row.
   return $count_rows - 1;
-}
-
-
-/**
- * Adds the necessary files for EXCEL parsing.
- */
-function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
-  // Function call libraries_load() base on the implementation
-  // of hook_libraries_info() in rawpheno.module.
-  $xls_lib = libraries_load('spreadsheet_reader');
-  // Library path information returned will be used
-  // to include individual library files required.
-  $lib_path = $xls_lib['path'];
-
-  // Include parser library. PLS DO NOT ALTER ORDER!!!
-  // To stop parser from auto formatting date to MM/DD/YY,
-  // suggest a new date format YYYY-mm-dd in:
-  //   line 678 in excel_reader2.php
-  //   line 834 in SpreadsheetReader_XLSX.php
-  include_once $lib_path . 'php-excel-reader/excel_reader2.php';
-  include_once $lib_path . 'SpreadsheetReader_XLSX.php';
-  include_once $lib_path . 'SpreadsheetReader.php';  
-
-  if ($file_type == 'XLS') {
-    // PLS INCLUDE THIS FILE ONLY FOR XLS TYPE.
-    include_once $lib_path . 'SpreadsheetReader_XLS.php';
-  }
 }
 
 
@@ -967,9 +972,11 @@ function rawpheno_project_traits($project_id) {
 }
 
 
-
 /**
  * Function to fetch information about a unit (Describe method) when available.
+ *
+ * @param $cvterm_id
+ *   An integer containing the cvterm id of a trait.
  */
 function rawpheno_function_cvterm_properties($cvterm_id) { 
   // Narrow the search to cvterm of type measurement units.
@@ -994,6 +1001,6 @@ function rawpheno_function_cvterm_properties($cvterm_id) {
     return $d->fetchField();
   }
   else {
-    return 'Describe the method used not available';  
+    return 'Describe the method used not available';
   }
 }

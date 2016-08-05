@@ -10,29 +10,6 @@
  * - $theme_colour: Colour setting selected by user in administration panel. Default to navyblue/#304356.
  * - $page_title: Page title from admin configuration.
  * - $page_url: An array containing url of pages.
- * - $traits: Is an array containing column headers that requires phenotyping instructions.
- *     Index number - Trait equivalent
- *     see include/rawpheno.function.measurements.inc
- *     5  - Planting Date (date)
- *     7  - Days to Emergence (days)
- *     8  - # of Emerged Plants (count)
- *     9  - Days till 10% of Plants have Elongated Tendrils (days)
- *     10 - Days till 10% of Plants have One Open Flower (R1; days)
- *     11 - # Nodes on Primary Stem at R1 (1st; count)
- *     14 - Days till 10% of Plants have fully Swollen Pods (R5; days)
- *     15 - Days till 10% of Plants have 1/2 Pods Mature (R7; days)
- *     16 - R7 Traits: Lowest Pod Height (1st; cm)
- *     18 - R7 Traits: Canopy Height (1st; cm)
- *     20 - Days till Harvest (days)
- *     21 - Diseases Present (y/n/?)
- *     23 - Lodging (Scale: 1-5) upright - lodged
- *     24 - Subset Traits: # Peduncles (count)
- *     25 - Subset Traits: # Pods (count)
- *     26 - Subset Traits: # Seeds (count)
- *     27 - Straw Biomass (g)
- *     28 - Total Seed Mass (g)
- *     29 - Total # of Seeds (count)
- *     30 - 100 Seed Mass (g)
  */
  
  
@@ -100,7 +77,7 @@
     <?php
     // TEST IF MODULE HAS A PROJECT FOR USER TO WORK ON OR
     // PROJECT HAS DATA.
-    if(!rawpheno_function_project()) { 
+    if (!rawpheno_function_project()) { 
       // No project available.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -108,13 +85,20 @@
       </div>
     <?php
     }
-    elseif(!rawpheno_function_data() AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
+    elseif (!rawpheno_function_data() AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
       // Has project but project has no data associated to it.
       // Excempt pages upload, backup and instructions.
     ?>
       <div id="container-no-info" class="messages warning">
         <?php print 'There is no project with data available in this module.'; ?>
       </div>
+    <?php
+    }
+    elseif (count(rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
+    ?>
+      <div id="container-no-info" class="messages warning">
+        <?php print 'You have no projects assigned to your account. Please contact the administrator of this website'; ?>
+      </div>    
     <?php
     }
     else {

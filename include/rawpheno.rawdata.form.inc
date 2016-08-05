@@ -89,7 +89,7 @@ function rawpheno_rawdata($form, &$form_state) {
     '#markup' => '<svg class="data-chart">
     
       <defs>
-        <filter id="dropshadow" x="0" y="0" width="300%" height="150%">
+        <filter id="dropshadow" x="0" y="0">
           <feOffset result="offOut" in="SourceAlpha" dx="0" dy="2" />
           <feGaussianBlur result="blurOut" in="offOut" stdDeviation="3" />
           <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />

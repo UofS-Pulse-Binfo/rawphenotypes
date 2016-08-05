@@ -12,12 +12,6 @@
   background-position: 0 5px;
 }
 
-.form-wrapper {
-  display: inline-block;
-  margin: 0 30px;
-  text-align: left;
-  width: 80%;
-}
 
 .container-contents {
   background-color: #FFFFFF;
@@ -36,7 +30,7 @@ div.subtitle-left {
 #container-add-file {
   background-color: #FCFDFD;
   margin-bottom: 20px;
-  padding: 25px 45px 55px 45px;
+  padding: 25px 65px 55px 65px;
   text-align: left;
 }
 
@@ -134,13 +128,21 @@ div.preview-remove {
 div.droppable-controls{
   margin-top: 440px;
   position: absolute;
-  right: 100px;
+  right: 120px;
 } 
 
 .droppable-controls input,
 .form-managed-file .droppable-controls input.progress-disabled {
   display: block !important;
   margin: 0 !important;
+}
+
+
+/* AJAX wait animation */
+.droppable-controls div {
+  display: inline;
+  margin: 0 auto;
+  padding: 0 12px 0 0 !important;
 }
 
 /* Remove file button */

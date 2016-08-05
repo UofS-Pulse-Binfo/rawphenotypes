@@ -360,9 +360,11 @@
         // Y axis scale.
         // From the stock count, get the maximum.
         var maxCount = d3.max(allCount);
+       
         var by0 = d3.scale.linear()
           .domain([0, maxCount])
-          .range([chartDimension.height, 0]);
+          .range([chartDimension.height, 0])
+          .nice();
 
         var byAxis = d3.svg.axis().orient('left')
           .scale(by0);
@@ -450,7 +452,6 @@
         
         // Position all bar chart elements into the right place.
         renderBarChart();
-         
       }     
       // End initialize bar chart.
 
@@ -650,7 +651,9 @@
             .attr('class', 'legend-text')
             .attr('x', (30 * j) + 20)
             .attr('y', 17)
-            .text((m * 5));  
+            .text(function() { 
+              return (m * 5 == 30) ? '30+' : (m * 5); 
+            });  
          
           j++;  
         }

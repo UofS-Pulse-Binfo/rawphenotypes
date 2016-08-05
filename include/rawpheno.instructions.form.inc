@@ -14,11 +14,16 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.instructions.style.css');
   
-  // Get all active project.
-  $sql = "SELECT project_id, name FROM {project} RIGHT JOIN pheno_project_cvterm USING(project_id) ORDER BY project_id DESC";
-  $all_project = chado_query($sql)
-    ->fetchAllKeyed();
-    
+  // Create a select box containing projects available - these are projects
+  // that have associated column header set and must have at least 1 essential column header. 
+  // The projects are filtered to show only projects assigned to user.
+  $all_project = rawpheno_function_user_project($GLOBALS['user']->uid);
+  
+  // No projects assined to the user.
+  if (count($all_project) < 1) {
+    return $form;
+  }
+   
   // Ensure that project is valid.
   if ($project_id) {
     if (!in_array($project_id, array_keys($all_project))) {
@@ -66,7 +71,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
   }
 
   // Construct table.
-  $arr_tbl_args['empty'] = 'Not found';
+  $arr_tbl_args['empty'] = '0 Column Header';
   $arr_tbl_args['header'] = array(t('Column Header/Trait'), t('Collection Method'), t('Definition'));
   unset($trait_set['type4']);
   foreach($trait_set as $type) {
@@ -179,14 +184,15 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
         'Location' => 'string'
       );
       
-      // Start at F column taking into account plant properties (A-E is 5 cols).
+      // Start at F column taking into account plant properties.
+      // A for Plot, B for Entry and so on (A-E is 5 cols).
       $l = 'F';
       $cell_i = array();
 
       // Assign the data type for each header based on the unit it contains.
       foreach($cvterm as $trait) {
         // Get the unit.
-        $u = rawpheno_function_header_unit($trait->name) ;
+        $u = rawpheno_function_header_unit($trait->name);
         $unit = isset($data_type[$u]) ? $data_type[$u] : 'string';
   
         $col_headers[$trait->name] = $unit; 
@@ -215,54 +221,54 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           array(
             'font' => 
               array(
-                'name'   => 'Arial',
-                'size'   => '11',
-                'color'  => '000000', 
-                'bold'   => false,
-                'italic' => false,
-                'underline' => false
+                'name'        => 'Arial',
+                'size'        => '11',
+                'color'       => '000000', 
+                'bold'        => false,
+                'italic'      => false,
+                'underline'   => false
             ),
-            'wrapText' => true, 
-            'verticalAlign' => 'top',
+            'wrapText'        => true, 
+            'verticalAlign'   => 'top',
             'horizontalAlign' => 'center',
-            'fill' => array('color' => 'F7F7F7'),
-            'border' => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'rows' => array('0')
+            'fill'            => array('color' => 'F7F7F7'),
+            'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
+            'rows'            => array('0')
           ),
           // Once the styles above have been applied, style the plant property headers.
           array(
             'font' => 
               array(
-                'name'   => 'Arial',
-                'size'   => '11',
-                'color'  => '000000', 
-                'bold'   => true,
-                'italic' => false,
-                'underline' => false
+                'name'        => 'Arial',
+                'size'        => '11',
+                'color'       => '000000', 
+                'bold'        => true,
+                'italic'      => false,
+                'underline'   => false
             ),
-            'verticalAlign' => 'bottom',
+            'verticalAlign'   => 'bottom',
             'horizontalAlign' => 'center',
-            'fill' => array('color' => 'EAEAEA'),
-            'border' => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'cells' => array('A1', 'B1', 'C1', 'D1', 'E1')
+            'fill'            => array('color' => 'EAEAEA'),
+            'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
+            'cells'           => array('A1', 'B1', 'C1', 'D1', 'E1')
           ),
           // Make sure to style the essential trait/header.
           array(
             'font' => 
               array(
-                'name'   => 'Arial',
-                'size'   => '11',
-                'color'  => '008000', 
-                'bold'   => true,
-                'italic' => false,
-                'underline' => false
+                'name'        => 'Arial',
+                'size'        => '11',
+                'color'       => '008000', 
+                'bold'        => true,
+                'italic'      => false,
+                'underline'   => false
             ),
-            'wrapText' => true,
-            'verticalAlign' => 'top',
+            'wrapText'        => true,
+            'verticalAlign'   => 'top',
             'horizontalAlign' => 'center', 
-            'fill' => array('color' => 'F5FFDF'),
-            'border' => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'cells' => $cell_i
+            'fill'            => array('color' => 'F5FFDF'),
+            'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
+            'cells'           => $cell_i
           )
         )
       );
@@ -279,18 +285,18 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           array(
             'font' => 
               array(
-                'name'   => 'Arial',
-                'size'   => '12',
-                'color'  => '000000', 
-                'bold'   => true,
-                'italic' => false,
-                'underline' => false
+                'name'        => 'Arial',
+                'size'        => '12',
+                'color'       => '000000', 
+                'bold'        => true,
+                'italic'      => false,
+                'underline'   => false
               ),
-            'wrapText' => true,
+            'wrapText'        => true,
             'horizontalAlign' => 'center', 
-            'fill' => array('color' => 'EAEAEA'),
-            'border' => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'rows' => array('0') 
+            'fill'            => array('color' => 'EAEAEA'),
+            'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
+            'rows'            => array('0') 
           )
         )
       );
@@ -309,15 +315,15 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           array(
             'font' => 
               array(
-                'name'   => 'Arial',
-                'size'   => '15',
-                'color'  => '000000', 
-                'bold'   => true,
-                'italic' => false,
+                'name'      => 'Arial',
+                'size'      => '15',
+                'color'     => '000000', 
+                'bold'      => true,
+                'italic'    => false,
                 'underline' => false
               ),
-              'wrapText' => false,
-              'rows' => array('0', '1', '2', '3'),
+              'wrapText'    => false,
+              'rows'        => array('0', '1', '2', '3'),
           )
         )
       );
@@ -347,10 +353,12 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
       print '<a href="' . $file->uri . '">Download Data Collection Spreadsheet</a>';
     }
     else {
+      // Here project not found.
       print 'Project not found.';
     }
   }
   else {
+    // Project id is not valid.
     print 'Project ID number is invalid.';
   }  
 }

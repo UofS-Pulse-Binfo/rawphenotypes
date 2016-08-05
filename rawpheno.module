@@ -6,7 +6,9 @@
  * Credits to: 
  *   http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
  *   https://github.com/nuovo/spreadsheet-reader
+ *   https://github.com/SystemDevil/PHP_XLSXWriter_plus
  *   http://www.d3js.org
+ *   https://laceysanderson.github.io/2016/07/23/Drupal-progress-bar.html
  */
 
 // Include function to manage column headers.
@@ -103,7 +105,7 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => 6,
   );
-    
+
   // DRAG AND DROP UPLOAD PAGE
   // A page for uploading and validating data collection spreadsheet.
   $items['phenotypes/raw/upload'] = array(
@@ -115,6 +117,14 @@ function rawpheno_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => 3,
   );
+    // This callback will generate a job progress and status information
+    // in JSON format to be used by the progress bar in the last stage of the upload process.
+    $items['phenotypes/raw/upload/job_summary/%'] = array(
+      'page callback' => 'rawpheno_upload_job_progress_json',
+      'page arguments' => array(4),
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+    );
   
   // BACKUP
   // A page for uploading spreadsheet.
@@ -192,7 +202,8 @@ function rawpheno_menu() {
       'file' => 'include/rawpheno.admin.form.inc',
       'type' => MENU_CALLBACK,
     );
-
+  
+  
   return $items;
 }
 
@@ -218,8 +229,6 @@ function rawpheno_permission() {
 function rawpheno_preprocess(&$variables) {
   // Path to module.
   $variables['path'] = drupal_get_path('module', 'rawpheno');
-  // Phenotyping traits present in standard phenotyping procedure.
-  $variables['traits'] = rawpheno_function_headers('phenotyping'); 
   
   // Colour scheme selected by the user from the admin/configuration.
   $colour = variable_get('rawpheno_colour_scheme');
@@ -366,6 +375,70 @@ function rawpheno_libraries_info() {
   
   return $libraries;
 }
+
+
+/**
+ * Function callback: Generate Tripal Job progress JSON.
+ * 
+ * @param $job_id
+ *   An integer containing the job id number of the job process to monitor.
+ * 
+ * @retun
+ *   A JSON and containing progress and status of job object.
+ */
+function rawpheno_upload_job_progress_json($job_id) {
+  // This is important as field requires the job id to be numeric value.
+  $job_id = (int)$job_id;
+  // Get the Tripal Job Object.
+  $job = tripal_get_job($job_id);
+  
+  // Test if the Tripal Job exists and is that the status is not completed.  
+  if ($job) { 
+    if(trim(strtolower($job->status)) != 'completed') {
+      // Read the file containing the upload file progress of the Tripal Job.
+      // Please see rawpheno.upload.excel.inc - line: 69.
+      $tmp = file_directory_temp();
+      $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
+      $percent = file_get_contents($filename);
+        
+      // In the event of file collision or file writing process and file read returns nothing
+      // show ... instead. This will correct itself the next file read.
+      $percent_completed = empty($percent) ? '...' : $percent;
+      $message = ($percent == 100) ? 'Completed' : $job->status;
+            
+      // This is the exact format expected by the progress bar so do not alter it.
+      $progress = array(
+        'percentage' => $percent_completed, 
+        'message' => $message,
+      );
+    }
+    else {
+      $progress = array(
+        'percentage' => 100, 
+        'message' => $job->status,
+      );
+
+      if ($job->progress != 100) {
+       // Update Drupal Jobs Table when 100 percent only. This is to ensure that
+       // the progress wont get non numeric value when file read returns nothing
+       // usually happens when read and write not in sync.
+       db_update('tripal_jobs')
+         ->fields(array('progress' => (int)$progress['percentage']))
+         ->condition('job_id', $job_id, '=')
+         ->execute();
+       }
+    }
+        
+    // Print the array as JSON to the screen.
+    print drupal_json_output($progress);
+
+    // Do not show the Drupal headers and formatting.
+    // This is critical as if anything else is printed to the screen you will see
+    // an AJAX error instead of your progress bar ;-).
+    exit();    
+  }
+}
+
 
 
 /**

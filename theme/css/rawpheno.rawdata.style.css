@@ -103,7 +103,7 @@ rect {
   /* fill: #007F00; */
   fill: #FFFFFF;
   stroke-width: 0;
-  stroke: #000000;
+  stroke: #FFFFFF;
 }
 
 
@@ -126,17 +126,6 @@ rect {
   width: 160px;
 }
 
-
-/* Select trait select box */
-/*
-#edit-select-trait {
-  font-family: sans-serif;
-  font-size: 0.96em;
-  margin: -15px 0 0 0;
-  padding: 14px;
-  width: 355px;
-}
-*/
 
 /* Tooltop */
 div.tool-tip {   

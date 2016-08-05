@@ -207,7 +207,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   $form['fieldset_sel_project'] = array(
     '#type' => 'fieldset',
     '#title' => t('Create a New Project:'),
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
     '#collapsible' => TRUE,
   );
   
@@ -233,7 +233,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   }
   else {
     $form['fieldset_sel_project']['no_project'] = array(
-      '#markup' => '<div class="messages warning">No project available.</div>',
+      '#markup' => '<div class="messages warning">No projects available.</div>',
     );
   }
   
@@ -277,12 +277,19 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // Table rows.
   if ($projects->rowCount() > 0) {
     $i = 0;
+    
     foreach($projects as $p) {
       $view_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $p->project_id . '/project/manage';
       $view_cell = l('View', $view_link);
       
+      // Warn user that the project has no essential trait. Project must have at least 1 essential trait
+      // list of column headers before it can process and store phenotypic data. 
+      $warn = ($p->essential_count > 0)
+        ? ''
+        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
+      
       // + 1 to account for Name column header.
-      array_push($arr_rows, array(($i+1), $p->name, ($p->header_count + 1), $p->essential_count, $p->user_count, $view_cell));
+      array_push($arr_rows, array(($i+1), $p->name, ($p->header_count + 1), $p->essential_count . $warn, $p->user_count, $view_cell));
       $i++;
     }
   }
@@ -328,10 +335,25 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
   // When a new project is created, Plant property column headers are
   // added to a project by default. The following are the plant property headers:
   // Location, Plot Rep and Entry.
-  $project_id = $form_state['values']['sel_project'];
   
+  // Plus and Planting Date and make it essential trait. Planting date is important
+  // as it is used when generating the heatmap.
+  $project_id = $form_state['values']['sel_project'];
+
   // Get trait types array.
   $trait_type = rawpheno_function_trait_types();
+    
+  // Get Planting Date cvterm id.
+  $planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)', 
+                                     'cv_id' => array('name' => 'phenotype_measurement_types')));
+
+  db_insert('pheno_project_cvterm')
+    ->fields(array(
+      'project_id' => $project_id,
+      'cvterm_id' => $planting_date->cvterm_id,
+      'type' => $trait_type['type1'])
+    )
+  ->execute();
   
   // Query all plant property types column headers in chado.cvterm table.
   $sql = "SELECT cvterm_id 
@@ -340,7 +362,7 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
           ORDER BY cvterm_id ASC";
 
   $pp = chado_query($sql);
-
+  
   // Test each plant property if it is present in the project.
   foreach($pp as $t) {
     db_insert('pheno_project_cvterm')
@@ -675,7 +697,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   // format (all headers use the format: name (trait rep; unit), thus a flag indicating 
   // if header is such is required to disable edit option and prevent edit functionality
   // from processing unfamiliar format. 
-  $sql = "SELECT project_cvterm_id 
+  $sql = "SELECT project_cvterm_id, pheno_project_cvterm.type 
           FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id) 
           WHERE project_id = :project_id ORDER BY type, name ASC";
   
@@ -687,17 +709,6 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
           ORDER BY name DESC";
   
   $users = db_query($sql, $args);
-  
-  // Tabs to show either the project column headers table or project active users table.
-  // Add 1 to account for Name column header.
-  $form['nav_tabs'] = array(
-    '#markup' => '<div id="nav-tabs">
-                    <ul>
-                      <li class="active-tab">' . ($headers->rowCount() + 1) . ' Column Headers</li>
-                      <li>' . $users->rowCount() . ' Active Users</li>
-                    </ul>
-                  </div>'
-  );
   
   // Array to hold table headers.
   $arr_headers = array();
@@ -722,9 +733,16 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   //       When a header is deleted, it is removed from the project only.
   
   // Table rows.
+  $has_name = 0;
+  $count_essential = 0;
+  
   if ($headers->rowCount() > 0) {  
     $i = 0;
     foreach($headers as $h) {
+      if ($h->type == $trait_type['type1']) {
+        $count_essential++;
+      }
+      
       // Get header information.
       $header_asset = rawpheno_function_header_properties($h->project_cvterm_id);
       
@@ -740,7 +758,13 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       $del_cell = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
       
       // No edit and delete when column header is of type plantproperty.
-      if ($header_asset['type'] == $trait_type['type4']) {
+      if ($header_asset['type'] == $trait_type['type4'] OR $header_asset['name'] == 'Planting Date (date)') {
+        // Add Name column header to the row array.
+        if ($has_name == 0 AND $header_asset['name'] != 'Planting Date (date)') {
+          array_push($arr_rows, array((count($arr_rows) + 1), 'Name', 'Name', 'PLANTPROPERTY', '-', '-'));
+          $has_name += 1;
+        }
+        
         $edit_cell = $del_cell = '-';
       }
       
@@ -751,7 +775,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
         $definition_cell = $header_asset['name'];
       }
       else {
-        $header_cell = $header_asset['name'] . '<p class="r-ver">' . rawpheno_admin_mark_empty($header_asset['r_version']) . '</p>';
+        $header_cell = '<h4>' . $header_asset['name'] . '</h4><p class="r-ver">' . rawpheno_admin_mark_empty($header_asset['r_version']) . '</p>';
         $definition_cell = '<p><strong>DEFINITION:</strong><br /> ' . @rawpheno_admin_mark_empty($header_asset['definition']) .  '</p>' .
                            '<p><strong>COLLECTION METHOD:</strong><br />' . @rawpheno_admin_mark_empty($header_asset['method']) . '</p>';
       }
@@ -767,11 +791,28 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     $arr_tbl_args['empty'] = t('No column headers in this project');
   }
   
+  // Warn admin that project has no essential trait
+  if ($count_essential < 1) {
+    $form['message_no_essential'] = array(
+     '#markup' => '<div class="messages warning">Project has no Essential Column Header.</div>'
+    );
+  }
+
+
+  // Tabs to show either the project column headers table or project active users table.
+  // Add 1 to account for Name column header.
+  $form['nav_tabs'] = array(
+    '#markup' => '<div id="nav-tabs">
+                    <ul>
+                      <li class="active-tab">' . ($headers->rowCount() + 1) . ' Column Headers</li>
+                      <li>' . $users->rowCount() . ' Active Users</li>
+                    </ul>
+                  </div>'
+  );
+ 
+
   // Table headers.
   array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Delete'));
-  
-  // Add Name column header to the row array.
-  array_push($arr_rows, array((count($arr_rows) + 1), 'Name', 'Name', 'PLANTPROPERTY', '-', '-'));
   
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;

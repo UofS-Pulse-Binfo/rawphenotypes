@@ -61,7 +61,7 @@ function rawpheno_rawpheno_validators() {
   $validators['required_info'] = array(
     'label' => 'Required Information is present and numbers are not negative.',
     'scope' => 'subset',
-    'headers' => array('Plot','Entry','Name','Rep','Location'),
+    'headers' => rawpheno_function_headers('plantprop'),
     'message callback' => 'validator_required_info_generate_msg',
     'validation callback' => 'validator_required_info_validate_cell',
   );
@@ -100,7 +100,7 @@ function rawpheno_rawpheno_validators() {
  * @param $file
  *   A drupal managed_file object describing the uploaded spreadsheet.
  * @return
- * TRUE if the file is either xls or xlsx; FALSE otherwise.
+ *   TRUE if the file is either xls or xlsx; FALSE otherwise.
  */
 function validator_is_excel_validate_file($file) {
 
@@ -121,12 +121,12 @@ function validator_is_excel_validate_file($file) {
       return TRUE;
     }
   }
+  
   return FALSE;
 }
 
 /**
  * Check that there is a measurements tab.
- * @todo: check that tab has data?
  *
  * @param $file
  *   A drupal managed_file object describing the uploaded spreadsheet.
@@ -153,7 +153,7 @@ function validator_tab_exists_validate_file($file) {
         if ($i > 2) break;
         
         // Check the row isn't empty.
-        if (strlen(trim(implode('', $row))) >= 1) {
+        if (strlen(trim(implode('', $row))) >= 5) {
           $have_data++;
         }
         $i++;
@@ -190,10 +190,12 @@ function validator_column_exists_generate_msg($error_info) {
 }
 
 /**
- * @TODO
+ * Function to check that expected column headers (essential headers) are present in the spreadsheet.
  *
  * @param $header
  *   An array containing the header.
+ * @param $project_id
+ *   An integer containing the project ID the spreadsheet file is uploaded to.
  *
  * @return
  *   TRUE if it passed validation; FALSE otherwise.
@@ -338,6 +340,7 @@ function validator_required_info_validate_cell($value, $context, &$storage) {
       return array('code' => 2, 'value' => $value, 'rows' => $rows_used_in);
     }
   }
+  
   return TRUE;
 }
 
@@ -457,7 +460,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
       // First check that it's a number.
       if (is_numeric($value)) {
         // Then check it's a positive whole number.
-        if ( (int)$value == $value AND $value > 0) {
+        if ((int)$value == $value AND $value > 0) {
           return TRUE;
         }
       }
@@ -469,7 +472,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
       
     case 'cm':
     case 'g':
-      // Measurements - if it is numeric, then it must be greater than or equals to 0.
+      // Measurements - if it is numeric, then it must be greater than 0.
       if (is_numeric($value) && $value > 0) {
         return TRUE;
       }
@@ -497,6 +500,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value', 
           array(':trait_id' => $trait_id, ':value' => $value))->fetchField();
         if ($present) return TRUE;
+        
         // If not, make sure there are members.
         $has_scale = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:trait_id',
           array(':trait_id' => $trait_id))->fetchField();
@@ -507,9 +511,11 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         return TRUE;
       }
       break;
+    
     case 'text':
       return TRUE;
       break;
+    
     default:
       return TRUE;
   }

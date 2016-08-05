@@ -1,5 +1,5 @@
 name = Raw Phenotypes
-description = Provides generic upload, storage and export of raw phenotypic data.
+description = Provides generic upload, storage, backup and export of raw phenotypic data.
 core = 7.x
 package = Tripal Extensions
 dependencies[] = dragndrop_upload_element

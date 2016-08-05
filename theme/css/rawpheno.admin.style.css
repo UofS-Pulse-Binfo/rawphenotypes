@@ -169,3 +169,13 @@ p.r-ver {
 td p {
   margin: 0 !important;
 }
+
+/* Fieldset wrapper */
+div.fieldset-wrapper {
+  padding: 0 50px !important;
+}
+
+h4 {
+  padding: 0 !important;
+  margin: 0 !important;
+}

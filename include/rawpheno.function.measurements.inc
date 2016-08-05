@@ -256,6 +256,47 @@ function rawpheno_function_data() {
 
 
 /**
+ * Function to load projects appointed to user. In addition this function will
+ * filter projects that don't have at least 1 essential trait.
+ *
+ * @param $user
+ *   An integer containing the user id of the currently logged user.
+ *
+ * @return 
+ *   An array containing available projects.
+ */
+function rawpheno_function_user_project($user_id) {
+  $trait_type = rawpheno_function_trait_types();
+  $my_project = array();
+    
+  $sql = "SELECT
+            t1.name, 
+            t1.project_id,
+            COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count
+          FROM 
+            {project} AS t1 
+            INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
+            LEFT JOIN pheno_project_user AS t3 USING (project_id)
+          WHERE t3.uid = :user_id
+          GROUP BY t1.project_id
+          ORDER BY t1.project_id DESC";
+
+  $args = array(':essential_trait' => $trait_type['type1'], ':user_id' => $user_id);
+  $p = chado_query($sql, $args);
+  
+  if ($p->rowCount() > 0) {  
+    foreach($p as $a) {
+      if ($a->essential_count > 0) {
+        $my_project[$a->project_id] = $a->name;
+      }
+    }
+  }
+   
+  return $my_project;
+}
+
+
+/**
  * Function create JSON summary data required in rawdata page.
  *
  * @param $project_id
@@ -435,7 +476,7 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
 
 
 /**
- * Function get cvterm defintions.
+ * Function get cvterm definitions.
  *
  * @param $cvterm
  *   A string containing the cvterm name.
@@ -663,6 +704,8 @@ function rawpheno_function_header_unit($header) {
  *
  * @param $asset_id
  *   An integer containing record id number of a given column header.
+ * @param $dataset
+ *   An string indicating whether to include data count.
  *
  * @return
  *   An array containing all properties (project, name, data, etc.) of a column header.

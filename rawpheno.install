@@ -70,8 +70,8 @@ function rawpheno_schema() {
   );
   
   // PHENO SCALE MEMBER
-  // Modified is the timestamp that it was last modified. 
-  // This allows us to determine when values were updated.
+  // The scale code is what is written in the spreadsheet, 
+  // whereas the value is what it actually represents.
   $schema['pheno_scale_member'] = array(
     'description' => t('Table for pheno scale member.'),
     'fields' => array(
@@ -102,8 +102,8 @@ function rawpheno_schema() {
   );
     
   // PHENO MEASUREMENTS
-  // The scale code is what is written in the spreadsheet, 
-  // whereas the value is what it actually represents.
+  // Modified is the timestamp that it was last modified. 
+  // This allows us to determine when values were updated.
   $schema['pheno_measurements'] = array(
     'description' => t('Table for phenotype measurements'),
     'fields' => array(
@@ -407,9 +407,9 @@ function rawpheno_install() {
   // This is the default project, only when such project exists, otherwise, insert the column headers
   // and make them available for use in admin control panel.
   $default_project = rawpheno_function_terms('project');
-  $sql = "SELECT project_id FROM chado.project WHERE name = :default_project LIMIT 1";
+  $sql = "SELECT project_id FROM {project} WHERE name = :default_project LIMIT 1";
   $args = array(':default_project' => $default_project);
-  $prj_id = db_query($sql, $args);
+  $prj_id = chado_query($sql, $args);
         
   if ($prj_id->rowCount()) {  
     $project_ID = $prj_id->fetchField();
@@ -611,7 +611,25 @@ function rawpheno_install() {
     // Copy file without creating an entry in drupal database.
     // If file is present, replace it with the same file.
     file_unmanaged_copy($source, $destination, FILE_EXISTS_REPLACE);
-  }  
+  } 
+}
+
+/**
+ * Function find and relace line.
+ *
+ * @param $line
+ *   A line of string to search.
+ * 
+ * @return
+ *   A string to replace the matching line found.
+ */
+function rawpheno_function_replace_line($line) {
+  $find = '$Value = $Value -> format($Format[\'Code\']);';
+  if (stristr($line, $find)) {
+    return '$Value = $Value -> format("Y-m-d");';
+  }
+  
+  return $line;
 }
 
 
@@ -859,7 +877,9 @@ function rawpheno_requirements($phase) {
           'description' => 
             $t('This module uses !library, which is missing. 
             Please download and extract the entire contents of the archive into %path directory on your server.', 
-            array('!library' => l(strtoupper(str_replace('_',' ',$i)), $source, array('attributes' => array('target' => '_blank'))), '%path' => $path)
+            array('!library' => l(strtoupper(str_replace('_',' ',$i)), 
+                                  $source, 
+                                  array('attributes' => array('target' => '_blank'))), '%path' => $path)
           ),
         );
       }
