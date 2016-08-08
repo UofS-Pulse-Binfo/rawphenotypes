@@ -292,7 +292,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       
       $warn_user = ($p->user_count > 0)
         ? ''
-        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no user assigned" />';
+        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
       
       
       // + 1 to account for Name column header.
@@ -585,13 +585,34 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   $arr_tblchkbox_rows = array();
   
   if ($headers->rowCount() > 0) {
+    // Add a select box to each column header to let
+    // admin define the type when selecting from the list.
+    // Remove plant property type
+    $tmp_type = $trait_type;
+    unset($tmp_type['type4']);
+    $t = array_values($tmp_type);
+    $types = array_combine($t, array_map('strtoupper', $t)); 
+    
     foreach($headers as $h) {
-      $arr_tblchkbox_rows[$h->cvterm_id] = array('name' => $h->name);
+      $arr_tblchkbox_rows[$h->cvterm_id] = 
+        array(
+          'name' => $h->name,
+          // Add select box.
+          'traittype' => 
+            array('data' => 
+              array(
+                '#type' => 'select',
+                '#options' => $types,
+                '#default_value' => 0,
+                '#name' => 'traittype-' . $h->cvterm_id
+              )
+            )
+        );
     }
   }
   
   // Table headers.
-  $arr_tblchkbox_headers = array('name' => t('Name'));
+  $arr_tblchkbox_headers = array('traittype' => t('Type'), 'name' => t('Name'));
   
   // Checkboxes and table.
   $form['fieldset_existing_trait']['tbl_existing_headers'] = array(
@@ -1427,15 +1448,18 @@ function rawpheno_admin_construct_trait_name($trait) {
 function rawpheno_admin_submit_add_existing($form, &$form_state) {
   // Uses project id
   $project_id = $form_state['values']['txt_id'];
-  $trait_type = rawpheno_function_trait_types();
 
   // The type of header is set to OPTIONAL trait.
   foreach(array_filter($form_state['values']['tbl_existing_headers']) as $m) {
+    $trait_type = $form_state['input']['traittype-' . $m];
+    
     db_insert('pheno_project_cvterm')
-      ->fields(array(
-        'project_id' => $project_id,
-        'cvterm_id' => $m,
-        'type' => $trait_type['type2']))
+      ->fields(
+        array(
+          'project_id' => $project_id,
+          'cvterm_id' => $m,
+          'type' => $trait_type)
+      )
       ->execute();
   }
 

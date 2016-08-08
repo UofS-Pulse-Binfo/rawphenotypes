@@ -729,9 +729,14 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties['type'] = $h->type;
   
   // cvterm properties.
-  $h = tripal_get_cvterm(array('cvterm_id' => $arr_properties['cvterm_id']));
+  $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id LIMIT 1";
+  $args = array(':cvterm_id' => $arr_properties['cvterm_id']);
+  
+  $h = chado_query($sql, $args)
+    ->fetchObject();
+      
   $arr_properties['name'] = $h->name;
-  $arr_properties['definition'] = isset($h->definition) ? $h->definition : '';  
+  $arr_properties['definition'] = empty($h->definition) ? '' : $h->definition;  
   
   // cvterm R Version and Collection Method.
   $arr_properties['method'] = '';

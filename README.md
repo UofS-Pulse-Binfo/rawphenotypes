@@ -6,6 +6,7 @@ __This module is currently not ready for use outside of KnowPulse. If you are in
 ## Dependencies
 1. [Drag & Drop Upload](https://www.drupal.org/project/dragndrop_upload)
 2. [Spreadsheet Reader](https://github.com/nuovo/spreadsheet-reader)
+3. [Spreadsheet Writer](https://github.com/SystemDevil/PHP_XLSXWriter_plus)
 
 __Note: there are some modifications needed to the spreadsheet reader to get it to handle dates the way we expect. There will be a patch available in the future.__
 
