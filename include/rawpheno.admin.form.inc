@@ -257,7 +257,8 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   $sql = "SELECT 
             t1.name, COUNT(t2.cvterm_id) AS header_count,
             COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count,
-            COUNT(DISTINCT uid) AS user_count, t1.project_id
+            COUNT(DISTINCT uid) AS user_count, 
+            t1.project_id
           FROM 
             {project} AS t1 
             INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
@@ -281,15 +282,21 @@ function rawpheno_admin_all_projects($form, &$form_state) {
     foreach($projects as $p) {
       $view_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $p->project_id . '/project/manage';
       $view_cell = l('View', $view_link);
+      $name_cell = l($p->name, $view_link);
       
       // Warn user that the project has no essential trait. Project must have at least 1 essential trait
-      // list of column headers before it can process and store phenotypic data. 
-      $warn = ($p->essential_count > 0)
+      // list of column headers before it can process and store phenotypic data. The same for user.
+      $warn_header = ($p->essential_count > 0)
         ? ''
         : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
       
+      $warn_user = ($p->user_count > 0)
+        ? ''
+        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no user assigned" />';
+      
+      
       // + 1 to account for Name column header.
-      array_push($arr_rows, array(($i+1), $p->name, ($p->header_count + 1), $p->essential_count . $warn, $p->user_count, $view_cell));
+      array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell));
       $i++;
     }
   }
@@ -798,6 +805,12 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     );
   }
 
+  // Warn admin that project has no assigned user.
+  if ($users->rowCount() < 1) {
+    $form['message_no_essential'] = array(
+     '#markup' => '<div class="messages warning">Project has no active users.</div>'
+    );
+  }
 
   // Tabs to show either the project column headers table or project active users table.
   // Add 1 to account for Name column header.

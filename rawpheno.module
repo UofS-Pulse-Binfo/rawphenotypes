@@ -402,32 +402,32 @@ function rawpheno_upload_job_progress_json($job_id) {
       $percent = file_get_contents($filename);
         
       // In the event of file collision or file writing process and file read returns nothing
-      // show ... instead. This will correct itself the next file read.
+      // show ... (indicate calculating) instead. This will correct itself the next file read.
       $percent_completed = empty($percent) ? '...' : $percent;
-      $message = ($percent == 100) ? 'Completed' : $job->status;
-            
-      // This is the exact format expected by the progress bar so do not alter it.
-      $progress = array(
-        'percentage' => $percent_completed, 
-        'message' => $message,
-      );
+      $message = ($percent == 100 OR trim(strtolower($job->status)) == 'completed') 
+        ? 'Completed' 
+        : $job->status;
     }
     else {
-      $progress = array(
-        'percentage' => 100, 
-        'message' => $job->status,
-      );
+      $percent_completed = 100;
+      $message = $job->status;
 
       if ($job->progress != 100) {
-       // Update Drupal Jobs Table when 100 percent only. This is to ensure that
-       // the progress wont get non numeric value when file read returns nothing
-       // usually happens when read and write not in sync.
-       db_update('tripal_jobs')
-         ->fields(array('progress' => (int)$progress['percentage']))
-         ->condition('job_id', $job_id, '=')
-         ->execute();
-       }
+        // Update Drupal Jobs Table when 100 percent only. This is to ensure that
+        // the progress wont get non numeric value when file read returns nothing
+        // usually happens when read and write not in sync.
+        db_update('tripal_jobs')
+          ->fields(array('progress' => (int)$progress['percentage']))
+          ->condition('job_id', $job_id, '=')
+          ->execute();
+      }
     }
+
+    // This is the exact format expected by the progress bar so do not alter it.
+    $progress = array(
+      'percentage' => $percent_completed, 
+      'message' => $message,
+    );
         
     // Print the array as JSON to the screen.
     print drupal_json_output($progress);
@@ -657,10 +657,10 @@ function rawpheno_rawdata_summary_json() {
  *   has location and bin objects.
  *
  * NOTE: The following column headers are excluded from the traits that can be visualized. 
- *   Planting Date (date), 
- *   Disease-specific Comments, 
- *   Comments
- *   # of Seeds Planted (count) 
+ *   Planting Date (date) 
+ *   Disease-specific Comments (text)
+ *   Comments (text)
+ *   # of Seeds Planted (count)
  */
 function rawpheno_rawdata_trait_json() {  
   // When the type of data is txt, we need to ensure that it not sooo long that it will break the chart.
@@ -675,6 +675,7 @@ function rawpheno_rawdata_trait_json() {
   
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
+  // 10 Digits more will throw a PSQL ERROR.
   if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
        (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10)) {
     // No data.
@@ -690,7 +691,9 @@ function rawpheno_rawdata_trait_json() {
       return 0;
     }
     
-    // Query unique values in in the column, get data type and char length of each unique entry
+    // Query unique values in in the column, get data type and char length of each unique entry.
+    // CASE 1 - predict the data type of the value.
+    // CASE 2 - determine the lenght of the value.
     $sql = "SELECT 
               value AS data, 
               CASE WHEN value ~ '^[0-9]+$' THEN 'int' ELSE 'txt' END AS data_type, 

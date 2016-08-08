@@ -52,7 +52,6 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
                       array('attributes'=> array('id' => 'link-success-upload-file')))
     );
     
-    //'<a id="link-success-upload-file" href="../backup">Backup Another File</a>',
     // A session variable is set in hook_insert_file() that contains the validation result of the
     // previous file backup. When user wants to upload another file, reset this session variable.
     unset($_SESSION['rawpheno']['backup_file_validation_result']);
