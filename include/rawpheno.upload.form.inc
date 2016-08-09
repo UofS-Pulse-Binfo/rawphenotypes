@@ -438,10 +438,9 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
         if ($show_form == 'yes') {
           // TERM DEFINITION
           $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i] = array(
-            '#type' => 'textfield',
+            '#type' => 'textarea',
             '#title' => t('Definition'),
             '#required' => TRUE,
-            '#maxlength' => 200,
             '#description' => t('A human-readable text definition'),
           );
 

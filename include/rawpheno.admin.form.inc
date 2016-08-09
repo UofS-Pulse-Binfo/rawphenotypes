@@ -177,7 +177,7 @@ function rawpheno_admin_rheaders_validate($form, &$form_state) {
   foreach($match_replace as $r) {
     @list($match, $replace) = explode('=', $r);
     if (empty(trim($match)) OR empty(trim($replace))) {
-      form_set_error('rawpheno_rtransform_replace', t('An entry not in the required format (Match value = Replace Value) was found.'));
+      form_set_error('rawpheno_rtransform_replace', t('An entry not in the required format (Match value = Replace value) was found.'));
     }
   }
 }
@@ -624,7 +624,9 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       t('The table below lists all column headers available in this module. 
       Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
       <div class="container-table-data table-data">',
-    '#suffix' => '</div>',
+    '#suffix' => '</div><p>' . 
+      t('Set the type to <span class="essential-trait">ESSENTIAL</span> to ensure the header must exists in the spreadsheet file')
+      . '</p>',
     '#empty' => t('No column headers available'),
     '#attributes' => array(
       'id' => 'tbl-existing-headers',
@@ -696,7 +698,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#suffix' => '</div>',
     '#empty' => t('No users available'),
     '#attributes' => array(
-      'id' => 'tbl-project-users',
+      'id' => 'tbl-project-user-accounts',
       'class' => array(
         'tableheader-processed'
       ),
@@ -789,8 +791,9 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       if ($header_asset['type'] == $trait_type['type4'] OR $header_asset['name'] == 'Planting Date (date)') {
         // Add Name column header to the row array.
         if ($has_name == 0 AND $header_asset['name'] != 'Planting Date (date)') {
-          array_push($arr_rows, array((count($arr_rows) + 1), 'Name', 'Name', 'PLANTPROPERTY', '-', '-'));
+          array_push($arr_rows, array((count($arr_rows) + 1), '<h4>Name</h4>', 'Name', 'PLANTPROPERTY', '-', '-'));
           $has_name += 1;
+          $i++;
         }
         
         $edit_cell = $del_cell = '-';
@@ -799,7 +802,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       $class = ($header_asset['type'] == $trait_type['type1']) ? 'essential-trait' : 'non-essentialtrait';
       
       if ($header_asset['type'] == $trait_type['type4']) {
-        $header_cell = $header_asset['name'];
+        $header_cell = '<h4>' . $header_asset['name'] . '</h4>';
         $definition_cell = $header_asset['name'];
       }
       else {

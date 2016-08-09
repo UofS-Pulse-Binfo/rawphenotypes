@@ -182,6 +182,8 @@ Add/Backup file form
 Add file select project 
 */
 #backup_sel_project {
+  padding: 7px; 
+  font-size: 0.9em;
   width: 100%;
 }
 

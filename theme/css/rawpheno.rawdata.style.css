@@ -202,6 +202,8 @@ line {
 /* ////////////////////////////////////// */
 select {
   background-color: #FFFFFF;
+  padding: 7px; 
+  font-size: 0.9em;
   width: 100%;
 }
 

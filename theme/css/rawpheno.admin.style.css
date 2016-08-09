@@ -21,6 +21,7 @@ div.tab-data {
   border-right: 1px solid #bebfb9;
   border-bottom: 1px solid #bebfb9;
   border-left: 1px solid #bebfb9;
+  min-height: 440px;
 }
 
 /* Table without tabs */
@@ -57,6 +58,16 @@ td {
   border-right-color: #FFFFFF;
 }
 
+
+/* Style table of existing column header */
+#tbl-existing-headers th:nth-child(2),
+#tbl-project-user-accounts th:nth-child(2) {
+  width: 100px !important;
+}
+
+#tbl-project-headers th:nth-child(2) {
+  width: 20% !important;
+}
 
 /* Make the first column  smaller in tables with tabs */
 table th:first-child {
@@ -153,7 +164,8 @@ a.link-view {
 }
 
 /* Colour code select trait type */
-#edit-sel-trait-type option:first-child {
+#edit-sel-trait-type option:first-child,
+.form-select option:first-child {
   color: green;
   font-weight: bold;
 }

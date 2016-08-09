@@ -22,6 +22,8 @@
 
 #container-download select {
   min-width: 480px;
+  padding: 7px; 
+  font-size: 0.9em;
   width: 100%;
 }
 
