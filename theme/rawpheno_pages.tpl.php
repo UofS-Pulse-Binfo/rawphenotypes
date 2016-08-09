@@ -293,13 +293,27 @@
                     <li><p>Essential Traits have green headers; all other traits are optional.</p></li>
                     <li><p>You should hide optional traits you are not taking data for by long pressing a column header then selecting “hide”.</p></li>
                     <li><p>We’ve included an easy calculator to determine “Days from Planting” in a separate tab.</p></li>
-                    <li><p>Special Interest Traits: Add a column ot the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
+                    <li><p>Special Interest Traits: <br />Add a column ot the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
                   </ul>
                   
-                  <h3>Data Collection Spreadsheet</h3>
-                  <div id="container-download-xls">
-                    <ul><li><?php print drupal_render($form['download_data_collection']); ?></li></ul>
+                  <div id="container-resource-links">
+                    <div>
+                      <h3>&raquo; To Collect Data:</h3> 
+                      <p><?php print drupal_render($form['download_data_collection']); ?></p>
+                    </div>
+                    
+                    <div>
+                      <h3>&raquo; To Backup File:</h3>
+                      <p><?php print l('Backup Data Collection Spreadsheet', './phenotypes/raw/backup') ?></p>
+                    </div>
+                  
+                    <div>
+                      <h3>&raquo; To Submit Data:</h3>
+                      <p><?php print l('Upload Phenotypic Data Page', './phenotypes/raw/upload') ?></p>
+                    </div>
                   </div>
+                  
+                  <div class="clear-float">&nbsp;</div>
                 </div>
                 
                 <?php

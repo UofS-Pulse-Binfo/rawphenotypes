@@ -188,8 +188,17 @@ em {
 }
 
 /* Tab 1 */
+div.ui-tabs-panel {
+  padding-left: 40px !important;
+  padding-right: 40px !important;
+}
+
 #fragment-1 {
   /* min-width: 780px;*/
+}
+
+#fragment-1 ul li {
+  margin: 2px 0;
 }
 
 #fragment-1 p {
@@ -198,15 +207,6 @@ em {
 
 #fragment-1 p a {
   color: #13b72d;
-}
-
-.container-link {
-  background: #EAEAEA url('../img/bg-download-spreadsheet.gif') repeat-x;
-  border: 1px solid #CCCCCC;
-  clear: left;
-  font-size: 1.2em;
-  margin: 10px 0 0 0;
-  padding: 25px;
 }
 
 /* All Tabs */
@@ -333,7 +333,30 @@ th {
   background-color: #EAEAEA !important;
 }
 
-#container-download-xls a {
-  font-size: 1.2em;
-  color: #13b72d;
+/* Resource Links */
+#container-resource-links {
+  padding: 0 30px;
+}
+
+#container-resource-links a {
+  font-size: 0.99em;
+  color: #118324 !important;
+}
+
+#container-resource-links a:hover {
+  color: #13b72d !important;
+  font-size: 0.99em;
+}
+
+#container-resource-links div {
+  float: left;
+  height: auto;
+  margin: 15px 20px 0 0;
+  width: 25%;
+}
+
+#container-resource-links div:nth-child(2) {
+  border-left: 1px solid #EAEAEA;
+  border-right: 1px solid #EAEAEA;
+  padding: 0 25px;
 }

@@ -52,7 +52,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
  
   $sql = "SELECT project_cvterm_id AS id FROM {pheno_project_cvterm}
           WHERE project_id = :project_id AND type <> :plantprop
-          ORDER BY type ASC";
+          ORDER BY type, cvterm_id ASC";
           
   $args = array(':project_id' => $project_id, ':plantprop' => $trait_set['type4']);
   $cvterm_id = db_query($sql, $args);
@@ -113,7 +113,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
   $form['download_data_collection'] = array(
     '#markup' => t('<a href="@link" target="_blank">Download Data Collection Spreadsheet</a>', array('@link' => $link_to_xls))
   );
-
+    
   // Search field with autocomplete feature.
   $form['txt_search'] = array(
     '#title' => '',
@@ -307,7 +307,12 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
         array(
           array('Planting Date', '2015-10-06'),
           array('Current Date', date('Y-m-d')),
-          array('Current "Days till"', '=B3 - B2')
+          array('Current "Days till"', '=B3 - B2'),
+          array('',''),
+          array('Instructions', ''),
+          array('', ''),
+          array('Fill out the planting date indicated in the measurements tab, as well as, the current date.', ''),
+          array('The "Days till" date will then be calculated for you.', '')
         );
       
       @$writer->writeSheet($calc_data, 'Calculate Days to', $calc_header, 
@@ -316,7 +321,7 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
             'font' => 
               array(
                 'name'      => 'Arial',
-                'size'      => '15',
+                'size'      => '20',
                 'color'     => '000000', 
                 'bold'      => true,
                 'italic'    => false,
