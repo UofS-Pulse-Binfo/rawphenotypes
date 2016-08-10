@@ -10,7 +10,6 @@
       // Drop area element.
 	    var dropZone = document.getElementById('droppable-bdnd');
 	    // Initial/default meassage of the drop area.
-	    var dropMessageHTML = $('.droppable-message').html();
 	    var dropMessage = $('.droppable-message');
 	    
 	    // Add corresponding message on mouse event.
@@ -19,21 +18,24 @@
 		    dropZone.addEventListener('dragover', function() {
 		      dropMessage.css('border','3px dashed #AAAAAA');
           // Create a new instruction to user.
-          dropMessage.html('<span class="text-drag">Drop to backup your spreadsheet</span>'); 										
+          dropMessage.children().hide();
+          $('.droppable-message span').eq(0).show().text('Drop to backup your spreadsheet');
 	  	  });
 	    
 		    // User cancels file drop.
 		    dropZone.addEventListener('dragleave', function() {
 		      dropMessage.css('border','none');
           // Create a new instruction to user.
-          dropMessage.html(dropMessageHTML); 										
+          $('.droppable-message span').eq(0).text('Drag your Microsoft Excel Spreadsheet file here');
+          dropMessage.children().show(); 				
 		    });
 		
 		    // User drops file.
 		    dropZone.addEventListener('drop', function() {
 		      dropMessage.css('border','none');
           // Create a new instruction to user.
-          dropMessage.html(dropMessageHTML); 		
+          $('.droppable-message span').eq(0).text('Drag your Microsoft Excel Spreadsheet file here');
+          dropMessage.children().show(); 
           
           if ($('div.file-upload-js-error').length > 0) {
             // AJAX dies or is frozen after an error.
@@ -44,7 +46,8 @@
           }
 		    });
 	    }
-      
+
+
       // Remove validation result and error messages as soon
       // as DND receives a file. This is for both drag and drop and
       // using the choose a file link (file browser).
