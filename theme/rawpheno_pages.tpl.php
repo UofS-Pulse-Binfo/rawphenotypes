@@ -6,7 +6,7 @@
  * Available variables:
  * - $path: The directory path to rawpheno module.
  * - $page_id: String ID of the page/form.
- * - $rel_url: An array of urls. Each page has a link to a related page.
+ * - $rel_url: Each page has a link to a related page.
  * - $theme_colour: Colour setting selected by user in administration panel. Default to navyblue/#304356.
  * - $page_title: Page title from admin configuration.
  * - $page_url: An array containing url of pages.
@@ -62,13 +62,13 @@
  //  - Rawdata page and Download data page.
  //  - Download page and Rawdata page.     
  //  - Backup page and Instructions page.
- $form['page_button']['#prefix'] = '<a href="' . $rel_url[$page_id] . '" style="background-color: '.$theme_colour.'">';
+ $form['page_button']['#prefix'] = '<a href="' . $rel_url . '" style="background-color: '.$theme_colour.'">';
  $form['page_button']['#suffix'] = '</a>';
 ?>
 
 
 <div class="container-header" style="<?php print "background-color: $theme_colour;"; ?>">
-  <?php print $page_title[$page_id]; ?>
+  <?php print $page_title; ?>
 </div>
 
 

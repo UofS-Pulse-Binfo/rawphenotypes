@@ -226,56 +226,66 @@ function rawpheno_permission() {
 /**
  * Implements hook_preprocess().
  */
-function rawpheno_preprocess(&$variables) {
-  // Path to module.
-  $variables['path'] = drupal_get_path('module', 'rawpheno');
-  
+function rawpheno_preprocess(&$variables, $hook) {
   // Colour scheme selected by the user from the admin/configuration.
   $colour = variable_get('rawpheno_colour_scheme');
 
   // This colour will fill background of header and top right button, and border of content area.
-  $theme_colour = (empty($colour)) ? '#304356' : $colour;
-  $variables['theme_colour'] = $theme_colour;
-  
-  // URL to each page.
-  $arr_url = array(
-    'rawpheno_rawdata' => url('phenotypes/raw'),
-    'rawpheno_download' => url('phenotypes/raw/download'),  
-    'rawpheno_instructions' => url('phenotypes/raw/instructions'),
-    'rawpheno_upload' => url('phenotypes/raw/upload'),
-    'rawpheno_backup' => url('phenotypes/raw/backup')
-  );
-  
-  $variables['page_url'] = $arr_url; 
-  
-  // Cross-link page.
-  // Rawdata and download page.
-  // Instructions and upload page.
-  // Backup and Instructions.
-  $arr_assign_url = array(
-    'rawpheno_rawdata' => $arr_url['rawpheno_download'],
-    'rawpheno_download' => $arr_url['rawpheno_rawdata'],  
-    'rawpheno_instructions' => $arr_url['rawpheno_upload'],
-    'rawpheno_upload' => $arr_url['rawpheno_instructions'],
-    'rawpheno_backup' => $arr_url['rawpheno_instructions'],
-  );
-  
-  $variables['rel_url'] = $arr_assign_url;
-  
-  // Page titles from admin configuration panel.
-  $arr_headers = array();
-  $arr_headers['rawpheno_rawdata'] = variable_get('rawpheno_rawdata_title');
-  $arr_headers['rawpheno_download'] = variable_get('rawpheno_download_title');
-  $arr_headers['rawpheno_instructions'] = variable_get('rawpheno_instructions_title');
-  $arr_headers['rawpheno_upload'] = variable_get('rawpheno_upload_title');
-  $arr_headers['rawpheno_backup'] = variable_get('rawpheno_backup_title');
-  
-  $variables['page_title'] = $arr_headers;
-  
-  // Stages in upload page.
-  $variables['upload_stages'] = array('check' => 'Validate Spreadsheet', 
-                                      'review' => 'Describe New Trait', 
-                                      'save' => 'Save Spreadsheet');
+  $variables['theme_colour'] = (empty($colour)) ? '#304356' : $colour;
+
+  if ($hook == 'rawpheno_rawdata') {
+    // RAWDATA PAGE.
+    // Cross-link rawdata page to download page.
+    $variables['rel_url'] = url('phenotypes/raw/download');
+    // Page Title
+    $variables['page_title'] = variable_get('rawpheno_rawdata_title');
+  }
+  elseif ($hook == 'rawpheno_instructions') {
+    // INSTRUCTIONS PAGE.
+    // Cross-link instructions page to upload page.
+    $variables['rel_url'] = url('phenotypes/raw/upload');
+    // Page Title
+    $variables['page_title'] = variable_get('rawpheno_instructions_title');
+    
+    // Path to module used to embed image in appendix tab.
+    $variables['path'] = drupal_get_path('module', 'rawpheno');
+  }
+  elseif ($hook == 'rawpheno_upload_form_master') {
+    // UPLOAD PAGE.
+    // Cross-link upload page to instructions page.
+    $variables['rel_url'] = url('phenotypes/raw/instructions');
+    // Page Title
+    $variables['page_title'] = variable_get('rawpheno_upload_title');
+    
+    // Needs url in help window and links in stage 3.
+    $variables['page_url'] = 
+      array(
+        'rawpheno_rawdata'      => url('phenotypes/raw'),
+        'rawpheno_download'     => url('phenotypes/raw/download'),  
+        'rawpheno_instructions' => url('phenotypes/raw/instructions'),
+        'rawpheno_upload'       => url('phenotypes/raw/upload'),
+        'rawpheno_backup'       => url('phenotypes/raw/backup')
+      ); 
+
+    // Stages in upload page.
+    $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet', 
+                                        'review' => 'Describe New Trait', 
+                                        'save'   => 'Save Spreadsheet');
+  }
+  elseif ($hook == 'rawpheno_download') {
+    // DOWNLOAD PAGE.
+    // Cross-link download page to download page.
+    $variables['rel_url'] = url('phenotypes/raw');
+    // Page Title
+    $variables['page_title'] = variable_get('rawpheno_download_title');
+  }
+  elseif ($hook == 'rawpheno_backup') {
+    // BACKUP PAGE.
+    // Cross-link backup page to instructions page.
+    $variables['rel_url'] = url('phenotypes/raw/instructions');
+    // Page Title
+    $variables['page_title'] = variable_get('rawpheno_backup_title');
+  }
 }
 
 
