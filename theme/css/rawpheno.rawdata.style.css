@@ -20,14 +20,14 @@
 /* SVG container. Height and width will be used by render function */
 #container-rawdata {
   background-color: #FCFDFD;
-  height: 500px; 
+  height: 500px;
   padding: 30px 0;
   width: 100%;
 }
 
 /* SVG container for Bar Chart */
 #container-barchart {
-  background-color: #F2F3F3; 
+  background-color: #F2F3F3;
   display: inline-block;
   margin-bottom: 0 !important;
   opacity: 0;
@@ -47,7 +47,7 @@
   background-color: #000000;
   display: inline-block;
 }
- 
+
 /* Main title */
 .chart-title {
   font-family: sans-serif;
@@ -128,16 +128,16 @@ rect {
 
 
 /* Tooltop */
-div.tool-tip {   
-  background: lightgreen;   
-  border: 1px solid #000000;      
-  border-radius: 2px;           
-  font: 12px sans-serif;        
-  padding: 10px;             
-  position: absolute;           
-  pointer-events: none;     
+div.tool-tip {
+  background: lightgreen;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  font: 12px sans-serif;
+  padding: 10px;
+  position: absolute;
+  pointer-events: none;
   text-align: center;
-  opacity: 0;                       
+  opacity: 0;
 }
 
 
@@ -148,11 +148,11 @@ div.tool-tip {
   display: none;
   padding: 0 0 10px 0;
   margin: 0 0 20px 0;
-  
+
   -moz-box-shadow:    0 5px 7px -9px #333333;
   -webkit-box-shadow: 0 5px 7px -9px #333333;
   box-shadow:         0 5px 7px -9px #333333;
-  
+
   text-align: left;
 }
 
@@ -202,7 +202,7 @@ line {
 /* ////////////////////////////////////// */
 select {
   background-color: #FFFFFF;
-  padding: 7px; 
+  padding: 7px;
   font-size: 0.9em;
   width: 100%;
 }

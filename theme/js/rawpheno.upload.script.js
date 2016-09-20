@@ -8,7 +8,7 @@
   Drupal.behaviors.rawphenoUploadPageElementBehaviors = {
     attach: function (context, settings) {
       //$('html, body').animate({scrollTop: $(".container-header").offset().top - 50}, 300);
-      
+
       // Link to collapse help window.
       var collapseLink = $('#link-help');
       // Container for help text information.
@@ -16,7 +16,7 @@
       var speed = 200;
 
       collapseLink.once(function() {
-        $(this).click(function(event) { 
+        $(this).click(function(event) {
           event.preventDefault();
           if (helpWindow.is(':hidden')) {
             helpWindow.slideDown(speed, function() {
@@ -30,15 +30,15 @@
           }
         });
       });
-      
+
       // Make progress indicator and help window active links.
       $('#container-help-information, div.progress-stage').once(function() {
         $(this).click(function() {
           collapseLink.click();
         });
       });
-    
-    
+
+
       // If after 10 seconds and no response from user,
       // button will start to change color and blink.
       var nextButton = $('#edit-next-step');
@@ -48,8 +48,8 @@
 
       if (nextButton.length > 0 && nextButton.is(':visible')) {
         nextStage();
-        
-        if (fieldSet == 0) {  
+
+        if (fieldSet == 0) {
           var i = 0;
           var timer = setInterval(function() {
             if (i > 10) {
@@ -60,14 +60,14 @@
           }, 1000);
         }
       }
-      
-      
-      // Count the number of traits checked by user 
+
+
+      // Count the number of traits checked by user
       // and indicate in the status message box.
       if ($('.form-checkbox').length > 0) {
         var spanTraits = $('#traits-checked');
-        var totalNewTraits = spanTraits.text();        
-        
+        var totalNewTraits = spanTraits.text();
+
         totalNewTraits = $('.form-checkbox:checked').length;
         $('.form-checkbox').once(function() {
           $(this).click(function() {
@@ -79,10 +79,10 @@
             }
           });
         });
-        
+
         spanTraits.text(totalNewTraits);
       }
-      
+
       // Inform user of the next page before clicking the next step
       // button in every stage.
       function nextStage() {
@@ -90,16 +90,16 @@
         // Fron the progress indicator, count the remaining stages
         var countStagesLeft = $('div.progress-stage-todo').length;
         var nextStage = '';
-        
+
         if (countStagesLeft == 1) {
           // Completed stages 1 and 2.
           nextStage = 'Stage 3 - Save Spreadsheet';
-        } 
+        }
         else if(countStagesLeft == 2) {
           // Completed stage 1 only.
           nextStage = 'Stage 2 - Describe New Trait';
         }
-        
+
         $('#container-upload').once(function() {
           $(this).append('<span class="text-next-step">&#x25B8; Next Step: ' + nextStage + '</span>');
         });
@@ -109,35 +109,37 @@
 }(jQuery));
 
 
-/** 
+
+/**
+ * Stage 03 - Save Spreadsheet.
  * Create progress bar showing number of records save in percent.
  */
 (function ($) {
   Drupal.behaviors.addProgressBar = {
     attach: function (context, settings) {
-      // Link to monitor. The link contains the job id and is 
+      // Link to monitor. The link contains the job id and is
       // accessing a page callback that generates a JSON object of
       // the percent completed.
       var job_id = $('#tripal-job-id').val();
-        
+
       // Initializes the progress bar.
       // This will terminate by itself when progress is null.
       pb = new Drupal.progressBar('trpdownloadProgressBar', function(percentage, message) {
         // Also ensure that we stop when the progress bar is complete ;-).
-        if (percentage == '100') {           
+        if (percentage == '100') {
           pb.stopMonitoring();
-          
+
           // Remove the target = _blank  from the list of links below the progress bar.
           $('.nav-buttons').attr('target', '');
         }
       });
-      
+
       // Adds the progress bar to the div we created above.
       // Start the progress bar at 0 - Waiting instead of 1%.
-      pb.setProgress(0, ''); 
+      pb.setProgress(0, '');
       $('.progress-pane').append(pb.element);
 
-      pb.startMonitoring(job_id, 500);      
+      pb.startMonitoring(job_id, 500);
     }
   };
 }(jQuery));

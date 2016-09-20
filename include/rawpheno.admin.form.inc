@@ -14,14 +14,14 @@ function rawpheno_admin_main_page($form, &$form_state) {
 
   $links .= '<p>&bull; ' . l('Define R Transformation Rules', 'admin/tripal/extension/rawphenotypes/rawpheno_rheaders')
     . '<br />&nbsp; Define R Transfomation Rules to be applied when generating R Friendly alternative of column header.</p><hr />';
-  
+
   $links .= '<p>&bull; ' . l('Manage Projects', 'admin/tripal/extension/rawphenotypes/all_projects')
     . '<br />&nbsp; Create project, define column headers and appoint users to project.</p>';
-  
+
   $form['rawphenotypes'] = array(
     '#markup' => '<h2>Rawphenotypes Module</h2>' . $links
   );
-  
+
   return $form;
 }
 
@@ -29,6 +29,10 @@ function rawpheno_admin_main_page($form, &$form_state) {
  * Function callback: Construct administrative interface to modify page title and colour scheme.
  */
 function rawpheno_admin_page($form, &$form_state) {
+  $form['page_title'] = array(
+    '#markup' => '<h1 class="admin-page-title">Page Configurations</h1>'
+  );
+
   // Colour scheme.
   $form['fieldset_colour_scheme'] = array(
     '#type' => 'fieldset',
@@ -43,11 +47,11 @@ function rawpheno_admin_page($form, &$form_state) {
       '#default_value' => variable_get('rawpheno_colour_scheme'),
       '#size' => 40,
       '#maxlength' => 20,
-      '#description' => t('eg. HEX: #304356, blue | <a href="@adobe-kuler" target="_blank">get more colours here</a>', 
+      '#description' => t('eg. HEX: #304356, blue | <a href="@adobe-kuler" target="_blank">get more colours here</a>',
                           array('@adobe-kuler' => url('https://color.adobe.com/'))),
       '#required' => TRUE,
     );
-  
+
   // Headers and title.
   $form['fieldset_page_title'] = array(
     '#type' => 'fieldset',
@@ -55,7 +59,7 @@ function rawpheno_admin_page($form, &$form_state) {
     '#collapsed' => FALSE,
     '#collapsible' => TRUE,
   );
-    
+
     // Rawdata page.
     $form['fieldset_page_title']['rawpheno_rawdata_title'] = array(
       '#type' => 'textfield',
@@ -65,7 +69,7 @@ function rawpheno_admin_page($form, &$form_state) {
       '#maxlength' => 220,
       '#required' => TRUE,
     );
-    
+
     // Download Page.
     $form['fieldset_page_title']['rawpheno_download_title'] = array(
       '#type' => 'textfield',
@@ -74,8 +78,8 @@ function rawpheno_admin_page($form, &$form_state) {
       '#size' => 120,
       '#maxlength' => 220,
       '#required' => TRUE,
-    );  
-    
+    );
+
     // Instructions page.
     $form['fieldset_page_title']['rawpheno_instructions_title'] = array(
       '#type' => 'textfield',
@@ -84,8 +88,8 @@ function rawpheno_admin_page($form, &$form_state) {
       '#size' => 120,
       '#maxlength' => 220,
       '#required' => TRUE,
-    );  
-  
+    );
+
     // Upload page.
     $form['fieldset_page_title']['rawpheno_upload_title'] = array(
       '#type' => 'textfield',
@@ -94,7 +98,7 @@ function rawpheno_admin_page($form, &$form_state) {
       '#size' => 120,
       '#maxlength' => 220,
       '#required' => TRUE,
-    );  
+    );
 
     // Backup page.
     $form['fieldset_page_title']['rawpheno_backup_title'] = array(
@@ -105,10 +109,13 @@ function rawpheno_admin_page($form, &$form_state) {
       '#maxlength' => 220,
       '#required' => TRUE,
     );
-  
-  $form['req']['#suffix'] = t('<span>&nbsp;* means field is required</span>');  
-  
-  // This will add a save button to this form, thus 
+
+  $form['req']['#suffix'] = t('<span>&nbsp;* means field is required</span>');
+
+  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
+
+  // This will add a save button to this form, thus
   // no hook_submit nor hook_validate is required.
   return system_settings_form($form);
 }
@@ -122,14 +129,18 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements')
  * Function callback: Construct administrative interface to manage R Friendly transformation of column headers.
  */
 function rawpheno_admin_rheaders($form, &$form_state) {
+  $form['page_title'] = array(
+    '#markup' => '<h1 class="admin-page-title">Define R Transformation Rules</h1>'
+  );
+
   // Fieldset to contain R-Friendly transformation rules form.
   $form['fieldset_rules'] = array(
     '#type' => 'fieldset',
     '#title' => t('R-Friendly Transformation Rules'),
     '#collapsed' => FALSE,
     '#collapsible' => FALSE,
-  ); 
-  
+  );
+
     $form['fieldset_rules']['rawpheno_rtransform_words'] = array(
       '#type' => 'textarea',
       '#title' => t('List of words to remove:'),
@@ -144,8 +155,8 @@ function rawpheno_admin_rheaders($form, &$form_state) {
       '#default_value' => variable_get('rawpheno_rtransform_characters'),
       '#description' => t('Separate characters with commas'),
       '#required' => TRUE,
-    );  
-  
+    );
+
     $form['fieldset_rules']['rawpheno_rtransform_replace'] = array(
       '#type' => 'textarea',
       '#title' => t('Match and replace (Match Character = Replacement):'),
@@ -153,11 +164,15 @@ function rawpheno_admin_rheaders($form, &$form_state) {
       '#description' => t('Separate match and replace pairs with commas'),
       '#required' => TRUE,
     );
-    
-  $form['req']['#suffix'] = t('<span>&nbsp;* means field is required</span>');  
-  
-  // This will add a save button to this form, thus 
-  // no hook_submit nor hook_validate is required.  
+
+  $form['req']['#suffix'] = t('<span>&nbsp;* means field is required</span>');
+
+  $path = drupal_get_path('module', 'rawpheno') . '/theme/';
+  $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
+
+
+  // This will add a save button to this form, thus
+  // no hook_submit nor hook_validate is required.
   return system_settings_form($form);
 }
 
@@ -172,7 +187,7 @@ function rawpheno_admin_rheaders_validate($form, &$form_state) {
   // by examining the value before and after the = sign. When a pair is missing either values, send an
   // error message to admin that an entry is not in the prescribed format.
   $mr = trim($form_state['values']['rawpheno_rtransform_replace']);
-  
+
   $match_replace = explode(',', $mr);
   foreach($match_replace as $r) {
     @list($match, $replace) = explode('=', $r);
@@ -188,34 +203,37 @@ function rawpheno_admin_rheaders_validate($form, &$form_state) {
  * and allow admin to create a new project.
  */
 function rawpheno_admin_all_projects($form, &$form_state) {
+  $form['page_title'] = array(
+    '#markup' => '<h1 class="admin-page-title">Manage Projects</h1>'
+  );
   // CONSTRUCT FORMS REQUIRED BY THIS INTERFACE.
-  
+
   // FORM
   // Construct create project form.
   // This form will allow admin to select a project and define column headers,
   // as well as, assign active users.
-  
+
   // Query projects that dont have column headers.
-  $sql = "SELECT t1.project_id, t1.name 
+  $sql = "SELECT t1.project_id, t1.name
           FROM {project} AS t1 LEFT JOIN pheno_project_cvterm AS t2 USING(project_id)
-          WHERE t2.project_id IS NULL  
+          WHERE t2.project_id IS NULL
           ORDER BY t1.project_id DESC";
-  
+
   $p = chado_query($sql);
-  
-  // Add form elements.  
+
+  // Add form elements.
   $form['fieldset_sel_project'] = array(
     '#type' => 'fieldset',
     '#title' => t('Create a New Project:'),
     '#collapsed' => FALSE,
     '#collapsible' => TRUE,
   );
-  
+
   if ($p->rowCount() > 0) {
     // Make sure that the site has set up a project.
     $projects = $p->fetchAllKeyed();
     $options = array('0' => '---') + $projects;
-    
+
     $form['fieldset_sel_project']['sel_project'] = array(
       '#type' => 'select',
       '#title' => t('Please select a project:'),
@@ -236,65 +254,65 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       '#markup' => '<div class="messages warning">No projects available.</div>',
     );
   }
-  
+
   // TABLE
   // Construct table that lists all active projects in this module.
   // The table data consists of project name and summary of column headers and active users.
-  
+
   // Get trait types array.
-  $trait_type = rawpheno_function_trait_types();  
-    
-  // Array to hold table headers.  
+  $trait_type = rawpheno_function_trait_types();
+
+  // Array to hold table headers.
   $arr_headers = array();
-  
+
   // Array to hold table rows.
   $arr_rows = array();
-  
+
   $empty_table_title = "";
- 
-  // On the bottom of the select field, list (summary of) the active projects, or projects with 
+
+  // On the bottom of the select field, list (summary of) the active projects, or projects with
   // column headers and users assigned to it.
-  $sql = "SELECT 
+  $sql = "SELECT
             t1.name, COUNT(t2.cvterm_id) AS header_count,
             COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count,
-            COUNT(DISTINCT uid) AS user_count, 
+            COUNT(DISTINCT uid) AS user_count,
             t1.project_id
-          FROM 
-            {project} AS t1 
+          FROM
+            {project} AS t1
             INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
             LEFT JOIN pheno_project_user AS t3 USING (project_id)
           GROUP BY t1.project_id
           ORDER BY t1.project_id DESC";
-  
+
   $args = array(':essential_trait' => $trait_type['type1']);
   $projects = chado_query($sql, $args);
-      
+
   // Page title.
   $form['all_project_info'] = array(
     '#type' => 'markup',
     '#markup' => '<h2>' . $projects->rowCount() . ' Project(s)</h2>'
   );
-  
+
   // Table rows.
   if ($projects->rowCount() > 0) {
     $i = 0;
-    
+
     foreach($projects as $p) {
       $view_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $p->project_id . '/project/manage';
       $view_cell = l('View', $view_link);
       $name_cell = l($p->name, $view_link);
-      
+
       // Warn user that the project has no essential trait. Project must have at least 1 essential trait
       // list of column headers before it can process and store phenotypic data. The same for user.
       $warn_header = ($p->essential_count > 0)
         ? ''
         : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
-      
+
       $warn_user = ($p->user_count > 0)
         ? ''
         : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
-      
-      
+
+
       // + 1 to account for Name column header.
       array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell));
       $i++;
@@ -303,20 +321,20 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   else {
     $empty_table_title = t('No project available');
   }
-  
+
   // Table headers.
   array_push($arr_headers, '-', t('Project Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
-  
+
   $table = theme('table', array('header' => $arr_headers, 'rows' => $arr_rows, 'empty' => $empty_table_title));
-  
+
   // Render table.
   $form['tbl_projects'] = array(
     '#markup' => $table,
   );
 
-  // Attach css.  
+  // Attach css.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
-  $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css'); 
+  $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
 
   return $form;
 }
@@ -342,16 +360,16 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
   // When a new project is created, Plant property column headers are
   // added to a project by default. The following are the plant property headers:
   // Location, Plot Rep and Entry.
-  
+
   // Plus and Planting Date and make it essential trait. Planting date is important
   // as it is used when generating the heatmap.
   $project_id = $form_state['values']['sel_project'];
 
   // Get trait types array.
   $trait_type = rawpheno_function_trait_types();
-    
+
   // Get Planting Date cvterm id.
-  $planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)', 
+  $planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)',
                                      'cv_id' => array('name' => 'phenotype_measurement_types')));
 
   db_insert('pheno_project_cvterm')
@@ -361,15 +379,15 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
       'type' => $trait_type['type1'])
     )
   ->execute();
-  
+
   // Query all plant property types column headers in chado.cvterm table.
-  $sql = "SELECT cvterm_id 
-          FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id) 
+  $sql = "SELECT cvterm_id
+          FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
           WHERE t1.name = 'phenotype_plant_property_types'
           ORDER BY cvterm_id ASC";
 
   $pp = chado_query($sql);
-  
+
   // Test each plant property if it is present in the project.
   foreach($pp as $t) {
     db_insert('pheno_project_cvterm')
@@ -380,7 +398,26 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
       )
     ->execute();
   }
-    
+
+  // Make who created the project as the default user.
+  db_insert('pheno_project_user')
+    ->fields(array(
+      'project_id' => $project_id,
+      'uid' => $GLOBALS['user']->uid)
+    )
+  ->execute();
+
+  if ($GLOBALS['user']->uid != 1) {
+    // If the user is not the superadmin, add as well.
+    db_insert('pheno_project_user')
+      ->fields(array(
+        'project_id' => $project_id,
+        'uid' => 1)
+      )
+    ->execute();
+  }
+
+
   // Redirect user to project asset management page.
   $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');
   drupal_goto($path);
@@ -391,7 +428,7 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
  * Function callback: Construct form to manage project assets.
  *
  * @param $asset_id
- *   An integer containing the record id.  
+ *   An integer containing the record id.
  * @param $asset_type
  *   A string indicating what asset type the id is, a project, a user or a column header.
  * @param $action
@@ -400,17 +437,17 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
 function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL, $asset_type = NULL, $action = NULL) {
   // Link to go back.
   $goback = '&nbsp;<a href="javascript:history.back();">Go back</a>';
-  
+
   // Define valid action/command/operation per asset type.
   $arr_valid = array();
   $arr_valid['project']['command'] = array('manage');
   $arr_valid['project']['table'] = 'pheno_project_cvterm';
   $arr_valid['project']['id'] = 'project_id';
-    
+
   $arr_valid['header']['command'] = array('edit', 'delete');
   $arr_valid['header']['table'] = 'pheno_project_cvterm';
   $arr_valid['header']['id'] = 'project_cvterm_id';
-  
+
   $arr_valid['user']['command'] = array('delete');
   $arr_valid['user']['table'] = 'pheno_project_user';
   $arr_valid['user']['id'] = 'project_user_id';
@@ -421,24 +458,24 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
     // When project asset id is invalid.
     drupal_set_message(t('Not a valid project asset id number.') . $goback, 'error');
   }
-  else { 
+  else {
     // Id is valid, test if asset type is valid.
     if (array_key_exists($asset_type, $arr_valid)) {
       // Valid asset type request. Check if the given asset id and asset type
       // exists in the database before peforming any command.
-      $sql = sprintf("SELECT FROM {%s} WHERE %s = :asset_id LIMIT 1", 
-        $arr_valid[$asset_type]['table'], $arr_valid[$asset_type]['id']); 
-      
-      $args = array(':asset_id' => (int)$asset_id);     
+      $sql = sprintf("SELECT FROM {%s} WHERE %s = :asset_id LIMIT 1",
+        $arr_valid[$asset_type]['table'], $arr_valid[$asset_type]['id']);
+
+      $args = array(':asset_id' => (int)$asset_id);
       $prj_asset = db_query($sql, $args);
-      
+
       if ($prj_asset->rowCount() == 1) {
         // Project asset exists in the database. Procede to command requested.
         // Determine what to do with the project asset.
         if (in_array($action, $arr_valid[$asset_type]['command'])) {
           // Command is valid. Call function that will execute the command.
           if ($asset_type == 'project') {
-            // Call project function. 
+            // Call project function.
             $form = rawpheno_admin_project($form, $form_state, $asset_id);
           }
           elseif ($asset_type == 'header') {
@@ -448,13 +485,13 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
             // In addition, Loding (scale 1-5) header is not editable.
             $trait_type = rawpheno_function_trait_types();
             $plant_property = $trait_type['type4'];
-            
+
             // Get header properties.
             $header_asset = rawpheno_function_header_properties($asset_id, 'full');
-            
+
             if ($header_asset['count_data'] > 0 AND $action == 'delete') {
               // Header has data.
-              drupal_set_message(t('Cannot @action this entry. Column header has data associated to it.', 
+              drupal_set_message(t('Cannot @action this entry. Column header has data associated to it.',
                 array('@action' => $action)) . $goback, 'error');
             }
             else {
@@ -467,21 +504,21 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
             ///////////
             // Ensure that user is not deleted when there is data and backup files associated.
             $user_project_asset = rawpheno_admin_user_assets($asset_id);
-              
+
             if ($user_project_asset['project_file_count'] > 0) {
               // User is assigned to a project has backup files.
-              drupal_set_message(t('Cannot @action this user. User has backup files.', 
+              drupal_set_message(t('Cannot @action this user. User has backup files.',
                 array('@action' => $action)) . $goback, 'error');
             }
             elseif ($user_project_asset['project_data_count'] > 0) {
               // User is assigned to a project has has data.
-              drupal_set_message(t('Cannot @action this user. User is assigned to a project that has data.', 
+              drupal_set_message(t('Cannot @action this user. User is assigned to a project that has data.',
                 array('@action' => $action)) . $goback, 'error');
             }
             else {
               // Call user function.
               $form = rawpheno_admin_project_users($form, $form_state, $user_project_asset, $action);
-            }  
+            }
             ////////////
           }
         }
@@ -492,7 +529,7 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
       }
       else {
         // Asset record not found.
-        drupal_set_message(t('Project asset id number does not exist.' . $goback), 'error'); 
+        drupal_set_message(t('Project asset id number does not exist.' . $goback), 'error');
       }
     }
     else {
@@ -501,11 +538,11 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
     }
   }
 
-  // Attach css and javascript.  
+  // Attach css and javascript.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
   $form['#attached']['js'] = array($path . 'js/rawpheno.admin.script.js');
-  
+
   return $form;
 }
 
@@ -514,26 +551,26 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
  * Function callback: Construct interface to manage project asset.
  *
  * @param $project_id
- *   An integer containing the project id number.  
+ *   An integer containing the project id number.
  */
 function rawpheno_admin_project($form, &$form_state, $project_id) {
   // Construct page title and link back to projects form.
-  $markup = l('Manage Projects', 'admin/tripal/extension/rawphenotypes/all_projects');
-  
+  $markup = l('Go Back to Projects Table', 'admin/tripal/extension/rawphenotypes/all_projects');
+
   $project = chado_generate_var('project', array('project_id' => $project_id));
-  $markup .= '<br /><br /><h2>PROJECT: ' . $project->name . '</h2>';
-  
+  $markup .= '<h1 class="admin-page-title">Manage Project</h1><br /><h2>PROJECT: ' . $project->name . '</h2>';
+
   $form['project_info'] = array(
     '#type' => 'markup',
     '#markup' => $markup,
   );
-  
+
   // Arguments to all SQL queries below.
   $args = array(':project_id' => $project_id);
-  
+
   // CONSTRUCT FORMS REQUIRED BY THIS INTERFACE.
-  
-  // FORM   
+
+  // FORM
   // Construct add column header form.
   // This form will allow admin to add new column header to a project.
 
@@ -547,20 +584,20 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
   );
-  
+
   // Add form elements.
-  $default_values = array('count_project'    => 0, 
-                          'count_data'       => 0, 
-                          'txt_id'           => $project_id, 
+  $default_values = array('count_project'    => 0,
+                          'count_data'       => 0,
+                          'txt_id'           => $project_id,
                           'btn_trait_submit' => 'Add column header');
-                          
+
   $form = rawpheno_admin_render_form_trait($form, $form_state, $default_values);
-  
-  
+
+
   // FORM
   // Construct add/user existing column headers form.
   // This form will allow admin to add multiple column headers that are predefined in this module.
-  
+
   // Fieldset suggest existing column headers.
   $form['fieldset_existing_trait'] = array(
     '#type' => 'fieldset',
@@ -568,22 +605,22 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
   );
-  
+
   // Add form elements.
   // Query all traits in cvterm that is not listed as among the traits in a project,
   // and suggest it to admin in table form with checboxes.
   $sql = "SELECT t2.cvterm_id, t2.name, t2.definition
           FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
-          WHERE 
+          WHERE
             t1.name = 'phenotype_measurement_types'
             AND t2.cvterm_id NOT IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
           ORDER BY t2.cvterm_id ASC";
-  
+
   $headers = chado_query($sql, $args);
-  
+
   // Table rows.
   $arr_tblchkbox_rows = array();
-  
+
   if ($headers->rowCount() > 0) {
     // Add a select box to each column header to let
     // admin define the type when selecting from the list.
@@ -591,18 +628,19 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     $tmp_type = $trait_type;
     unset($tmp_type['type4']);
     $t = array_values($tmp_type);
-    $types = array_combine($t, array_map('strtoupper', $t)); 
-    
+    $types = array_combine($t, array_map('strtoupper', $t));
+
     foreach($headers as $h) {
-      $arr_tblchkbox_rows[$h->cvterm_id] = 
+      $arr_tblchkbox_rows[$h->cvterm_id] =
         array(
           'name' => $h->name,
           // Add select box.
-          'traittype' => 
-            array('data' => 
+          'traittype' =>
+            array('data' =>
               array(
-                '#type' => 'select',
-                '#options' => $types,
+                '#type' => 'checkbox',
+                '#title' => 'Yes',
+                '#options' => array(0, 1),
                 '#default_value' => 0,
                 '#name' => 'traittype-' . $h->cvterm_id
               )
@@ -610,22 +648,22 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
         );
     }
   }
-  
+
   // Table headers.
-  $arr_tblchkbox_headers = array('traittype' => t('Type'), 'name' => t('Name'));
-  
+  $arr_tblchkbox_headers = array('traittype' => t('Is Essential?'), 'name' => t('Name'));
+
   // Checkboxes and table.
   $form['fieldset_existing_trait']['tbl_existing_headers'] = array(
     '#type' => 'tableselect',
     '#header' => $arr_tblchkbox_headers,
     '#options' => $arr_tblchkbox_rows,
     '#js_select' => FALSE,
-    '#prefix' => '<p>' . 
-      t('The table below lists all column headers available in this module. 
+    '#prefix' => '<p>' .
+      t('The table below lists all column headers available in this module.
       Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
       <div class="container-table-data table-data">',
-    '#suffix' => '</div><p>' . 
-      t('Set the type to <span class="essential-trait">ESSENTIAL</span> to ensure the header must exists in the spreadsheet file')
+    '#suffix' => '</div><p>' .
+      t('Check <span class="essential-trait">IS ESSENTIAL?</span> to ensure the header must exists in the spreadsheet file')
       . '</p>',
     '#empty' => t('No column headers available'),
     '#attributes' => array(
@@ -635,7 +673,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       ),
     ),
   );
-  
+
   // Add submit button only there is any options available.
   if (count($arr_tblchkbox_rows) > 0) {
     $form['fieldset_existing_trait']['add_selected_trait'] = array(
@@ -644,17 +682,17 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       '#validate' => array('rawpheno_admin_validate_add_existing'),
       '#submit' => array('rawpheno_admin_submit_add_existing'),
       '#limit_validation_errors' => array(
-        array('tbl_existing_headers'), 
+        array('tbl_existing_headers'),
         array('txt_id')
       ),
     );
   }
-  
+
   //FORM
   // Construct assign user to a project form.
   // This form will allow admin to assign an active user to a project. User will then be restricted
-  // to upload data to project(s) he is assigned to. 
-  
+  // to upload data to project(s) he is assigned to.
+
   // Fieldset to suggest user to a project.
   $form['fieldset_users'] = array(
     '#type' => 'fieldset',
@@ -662,90 +700,56 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
   );
-  
-  // Query all active users only, that is status field is set to 1.
-  $sql = "SELECT uid, name, mail FROM {users}
-          WHERE uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id) AND status = 1
-          ORDER BY name DESC";
-  
-  $users = db_query($sql, $args);
-  
-  // Table rows.
-  unset($arr_tblchkbox_headers, $arr_tblchkbox_rows);
-  $arr_tblchkbox_rows = array();
- 
-  // Table rows.
-  if ($users->rowCount() > 0) {
-    foreach($users as $u) {
-      $arr_tblchkbox_rows[$u->uid] = array('name' => $u->name, 'email' => $u->mail);
-    }  
-  }
-  
-  // Table headers.
-  $arr_tblchkbox_headers = array('name' => t('Name'), 'email' => t('Email Address'));
 
-  // Checkboxes and table.
-  $form['fieldset_users']['tbl_users'] = array(
-    '#type' => 'tableselect',
-    '#header' => $arr_tblchkbox_headers,
-    '#options' => $arr_tblchkbox_rows,
-    '#js_select' => FALSE,
-    '#attributes' => array('id' => 'tbl-add-users'),
-    '#prefix' => '<p>' . 
-      t('The table below lists all active users in this module. 
-      To assign a user to this project, check the name(s) and click Add Selected Users button.') . '</p>
-      <div class="container-table-data table-data">',
-    '#suffix' => '</div>',
-    '#empty' => t('No users available'),
-    '#attributes' => array(
-      'id' => 'tbl-project-user-accounts',
-      'class' => array(
-        'tableheader-processed'
-      ),
-    ),
+
+  // Add seach field to filter the list of name.
+  $form['fieldset_users']['txt_autocomplete_user'] = array(
+    '#title' => 'Name :',
+    '#type' => 'textfield',
+    '#maxlength' => 50,
+    '#size' => 130,
+    '#autocomplete_path' => 'admin/tripal/extension/rawphenotypes/username/' . $project_id,
+    '#description' => t('Type the name or username of the user')
   );
-  
-  // Add submit button only there is any options available.
-  if (count($arr_tblchkbox_rows) > 0) {
-    $form['fieldset_users']['add_selected_user'] = array(
-      '#type' => 'submit',
-      '#value' => t('Add selected users'),
-      '#validate' => array('rawpheno_admin_validate_add_user'),
-      '#submit' => array('rawpheno_admin_submit_add_user'),
-      '#limit_validation_errors' => array(
-        array('tbl_users'), 
-        array('txt_id')
-      ),
-    );
-  }
-  
+
+  $form['fieldset_users']['add_selected_user'] = array(
+     '#type' => 'submit',
+     '#value' => t('Add user'),
+     '#validate' => array('rawpheno_admin_validate_add_user'),
+     '#submit' => array('rawpheno_admin_submit_add_user'),
+     '#limit_validation_errors' => array(
+       array('txt_autocomplete_user'),
+       array('txt_id')
+     ),
+   );
+
   // DISPLAY SUMMARY OF DATA REQUIRED BY THIS INTERFACE.
 
   // List column headers in a project.
   // Given a project id, select all column headers belonging to that project.
   // Note the loding (scale 1-5) upright-lodged header is the only header using this
-  // format (all headers use the format: name (trait rep; unit), thus a flag indicating 
+  // format (all headers use the format: name (trait rep; unit), thus a flag indicating
   // if header is such is required to disable edit option and prevent edit functionality
-  // from processing unfamiliar format. 
-  $sql = "SELECT project_cvterm_id, pheno_project_cvterm.type 
-          FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id) 
+  // from processing unfamiliar format.
+  $sql = "SELECT project_cvterm_id, pheno_project_cvterm.type
+          FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
           WHERE project_id = :project_id ORDER BY type, name ASC";
-  
+
   $headers = chado_query($sql, $args);
-  
+
   // List active users in a project.
   $sql = "SELECT project_user_id, uid, name, mail FROM {users} RIGHT JOIN {pheno_project_user} USING(uid)
           WHERE project_id = :project_id
           ORDER BY name DESC";
-  
+
   $users = db_query($sql, $args);
-  
+
   // Array to hold table headers.
   $arr_headers = array();
-  
+
   // Array to hold table rows.
   $arr_rows = array();
-  
+
   // Array to hold table properties.
   $arr_tbl_args = array(
     'header' => '',
@@ -754,39 +758,39 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     'empty' => '',
     'attributes' => array('id' => ''),
   );
-  
-  
+
+
   // TABLE
   // Construct table that lists all column headers specific to a project.
   // Options to edit and delete items give admin record management functionality.
   // NOTE: Delete option will not physically delete a record in cvterm table.
   //       When a header is deleted, it is removed from the project only.
-  
+
   // Table rows.
   $has_name = 0;
   $count_essential = 0;
-  
-  if ($headers->rowCount() > 0) {  
+
+  if ($headers->rowCount() > 0) {
     $i = 0;
     foreach($headers as $h) {
       if ($h->type == $trait_type['type1']) {
         $count_essential++;
       }
-      
+
       // Get header information.
       $header_asset = rawpheno_function_header_properties($h->project_cvterm_id);
-      
+
       // Edit link.
       $edit_cell = '-';
       if ($header_asset['name'] != 'Lodging (Scale: 1-5) upright - lodged') {
         $edit_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $h->project_cvterm_id . '/header/edit';
         $edit_cell = l('Edit', $edit_link);
       }
-      
-      // Delete link. 
+
+      // Delete link.
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $h->project_cvterm_id . '/header/delete';
       $del_cell = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
-      
+
       // No edit and delete when column header is of type plantproperty.
       if ($header_asset['type'] == $trait_type['type4'] OR $header_asset['name'] == 'Planting Date (date)') {
         // Add Name column header to the row array.
@@ -795,12 +799,12 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
           $has_name += 1;
           $i++;
         }
-        
+
         $edit_cell = $del_cell = '-';
       }
-      
+
       $class = ($header_asset['type'] == $trait_type['type1']) ? 'essential-trait' : 'non-essentialtrait';
-      
+
       if ($header_asset['type'] == $trait_type['type4']) {
         $header_cell = '<h4>' . $header_asset['name'] . '</h4>';
         $definition_cell = $header_asset['name'];
@@ -811,7 +815,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
                            '<p><strong>COLLECTION METHOD:</strong><br />' . @rawpheno_admin_mark_empty($header_asset['method']) . '</p>';
       }
 
-      array_push($arr_rows, array(($i+1), $header_cell, $definition_cell, 
+      array_push($arr_rows, array(($i+1), $header_cell, $definition_cell,
         array('data' => strtoupper($header_asset['type']), 'class' => array($class)), $edit_cell, $del_cell));
 
       $i++;
@@ -821,7 +825,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     // When no records found, update the empty table property.
     $arr_tbl_args['empty'] = t('No column headers in this project');
   }
-  
+
   // Warn admin that project has no essential trait
   if ($count_essential < 1) {
     $form['message_no_essential'] = array(
@@ -846,32 +850,32 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
                     </ul>
                   </div>'
   );
- 
+
 
   // Table headers.
   array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Delete'));
-  
+
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;
   $arr_tbl_args['rows'] = $arr_rows;
   $arr_tbl_args['attributes']['id'] = 'tbl-project-headers';
-  
+
   // Render the table element.
   $form['tbl_project_headers'] = array(
     '#markup' => theme('table', $arr_tbl_args),
     '#prefix' => '<div id="container-prj-hdr" class="container-table-data tab-data">',
     '#suffix' => '</div>',
   );
-  
-  
+
+
   // TABLE
   // Construct table that lists all active users to a project.
   // Options to delete items give admin record management functionality.
   // NOTE: Delete option will not physically delete a record in users table.
-  //       When a user is deleted, it is removed from the project only.  
-  
+  //       When a user is deleted, it is removed from the project only.
+
   $arr_rows = $arr_headers = array();
-  
+
   // Table rows
   if ($users->rowCount() > 0) {
     $i = 0;
@@ -879,9 +883,9 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       // Delete link.
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $u->project_user_id . '/user/delete';
       $del_cell = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
-      
+
       array_push($arr_rows, array(($i+1), $u->name, $u->mail, $del_cell));
-      
+
       $i++;
     }
   }
@@ -889,24 +893,30 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     // When no records found, update the empty table property.
     $arr_tbl_args['empty'] = t('No active user in this project');
   }
-  
+
   // Table headers.
   array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Delete'));
-  
+
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;
   $arr_tbl_args['rows'] = $arr_rows;
   $arr_tbl_args['attributes']['id'] = 'tbl-project-users';
-  
+
   // Render the table element.
   $form['tbl_project_users'] = array(
     '#markup' => theme('table', $arr_tbl_args),
     '#prefix' => '<div id="container-prj-usr" class="container-table-data tab-data">',
     '#suffix' => '</div>',
   );
-  
+
   return $form;
 }
+
+
+function ajax_rawpheno_filter_users() {
+    return $form['fieldset_users']['tbl_users'];
+}
+
 
 
 /**
@@ -919,7 +929,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
  */
 function rawpheno_admin_project_headers($form, $form_state, $header_asset, $action) {
   if ($action == 'edit') {
-    if ($header_asset['name'] == 'Lodging (Scale: 1-5) upright - lodged') {
+    if ($header_asset['name'] == 'Lodging (Scale: 1-5) upright - lodged' OR $header_asset['name'] == 'Comments') {
       // Is lodging header.
       $goback = '&nbsp;<a href="javascript:history.back();">Go back</a>';
       drupal_set_message(t('Cannot edit @name.', array('@name' => $header_asset['name'])) . $goback, 'error');
@@ -927,21 +937,21 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
     else {
       // Other headers.
       // CONSTRUCT EDIT FORM.
-      
-      // FORM 
+
+      // FORM
       // Add a link to allow administrator to go back to the list of traits in a project.
       $form['back_link'] = array(
         '#type' => 'markup',
-        '#markup' => l('Manage Projects', 'admin/tripal/extension/rawphenotypes/all_projects') . ' | ' . l(t('Return to project column headers table') ,'admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage') . '<br /><br />',
+        '#markup' => l('Go back to projects table', 'admin/tripal/extension/rawphenotypes/all_projects') . ' | ' . l(t('Go back to project column headers table') ,'admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage') . '<br />' . '<h1 class="admin-page-title">Manage Project - Update Header</h1><br />',
       );
-      
+
       $form['fieldset_trait'] = array(
         '#type' => 'fieldset',
         '#title' => t('Eidt Column Header:'),
         '#collapsed' => FALSE,
         '#collapsible' => TRUE,
       );
-      
+
       // Trait name field.
       // Extract the trait rep value, trait unit and the trait name.
       // NOTE: this can only process header following the format: trait name (trait rep; unit)
@@ -949,11 +959,11 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       // Extract the text value inside the parenthesis (unit part).
       $t = preg_match("/.*\(([^)]*)\)/", $header_asset['name'], $match);
       $u = (isset($match[1])) ? $match[1] : '';
-    
+
       // Extract information in a unit only when there is a unit in the first place.
       // Get the Trait rep (eg R1, R7, 1st) and measurement unit (eg cm, days) values.
       $reps = rawpheno_function_trait_reps();
-      
+
       if ($t) {
         // Split the information and see if either trait rep or unit is present.
         $p = explode(' ', $u);
@@ -974,8 +984,8 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
           }
         }
       }
-      
-      // When niether is present, use the default value of the trait rep and unit (null). 
+
+      // When niether is present, use the default value of the trait rep and unit (null).
       // Trait name without the unit part.
       $trait_name = preg_replace('/\(.*/', ' ', $header_asset['name']);
 
@@ -990,13 +1000,13 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
                               'txt_trait_method'     => $header_asset['method'],
                               'txt_trait_rfriendly'  => $header_asset['r_version'],
                               'sel_trait_type'       => $header_asset['type'],
-                              'btn_trait_submit'     => 'Save');      
-      
+                              'btn_trait_submit'     => 'Save');
+
       $form = rawpheno_admin_render_form_trait($form, $form_state, $default_values);
-      
+
       // TABLE
       // Construct a table, as a summary, showing information about the header.
-      
+
       $markup = '<h2>SUMMARY: ' . $header_asset['name'] . '</h2> PROJECT: ' . $header_asset['in_project_name'];
 
       $header_cell = $header_asset['name'] . '<p class="r-ver">' . rawpheno_admin_mark_empty($header_asset['r_version']) . '</p>';
@@ -1008,10 +1018,10 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       $arr_tbl_args = array(
         'header' => array('-', t('Column Header <small>(unit)</small>'), t('Collection Method'), t('Definition'), t('Type')),
         'rows' => array(
-          array(1, 
-                $header_cell, 
-                $header_asset['method'], 
-                $header_asset['definition'], 
+          array(1,
+                $header_cell,
+                $header_asset['method'],
+                $header_asset['definition'],
                 strtoupper($header_asset['type'])
           )
         ),
@@ -1023,7 +1033,7 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       $form['tbl_project_headers'] = array(
         '#markup' => $markup . theme('table', $arr_tbl_args),
       );
-        
+
       return $form;
     }
   }
@@ -1051,27 +1061,27 @@ function rawpheno_admin_project_management_validate($form, &$form_state) {
   // When the submit action is determined, perform basic check of ensuring that user is not using cvterm name
   // that is in the database already.
   $btn_submit = $form_state['triggering_element']['#value'];
-   
+
   if ($btn_submit == 'Add column header' OR $btn_submit == 'Save') {
-    
+
     if (strpbrk($form_state['values']['txt_trait_name'], '()')) {
       // Test if user added parenthesis in the name.
       form_set_error('txt_trait_name', t('Characters "(" and/or ")" found in column header name. Please remove these characters and try again.'));
     }
     else {
-      $asset_id = $form_state['values']['txt_id'];  
-    
+      $asset_id = $form_state['values']['txt_id'];
+
       // Construct the trait name based on given name, rep and unit.
       $trait_name = rawpheno_admin_construct_trait_name(
         array('name' => $form_state['values']['txt_trait_name'],
               'rep'  => $form_state['values']['sel_trait_rep'],
               'unit' => $form_state['values']['sel_trait_unit'])
       );
-    
+
       if ($btn_submit == 'Add column header') {
         // Before adding the cvterm, ensure it is not present in cvterm table.
         $found_cvterm = tripal_get_cvterm(array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
-      
+
         if (isset($found_cvterm->cvterm_id) AND $found_cvterm->cvterm_id > 0) {
           form_set_error('txt_trait_name', t('The column header name exists in the database. Please use a different name.'));
           form_set_error('sel_trait_rep');
@@ -1082,7 +1092,7 @@ function rawpheno_admin_project_management_validate($form, &$form_state) {
         // When renaming a field in edit header, ensure that the new or modified name does not exist in cvterm table.
         $sql = "SELECT cvterm_id FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
                 WHERE t1.name = 'phenotype_measurement_types' AND t2.name = :name AND t2.cvterm_id <> :this_cvterm_id";
-      
+
         $args = array(':name' => $trait_name, ':this_cvterm_id' => $asset_id);
         $found = chado_query($sql, $args);
         if ($found->rowCount() > 0) {
@@ -1104,9 +1114,9 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
   // Get the submit button that triggered the submit action. Since this is a general hook_submit()
   // of the entire form, limit the proces only to submit button in from add column header and save column header.
   $btn_submit = $form_state['triggering_element']['#value'];
-    
+
   if ($btn_submit == 'Add column header' OR $btn_submit == 'Save') {
-    // Holds the record id number. 
+    // Holds the record id number.
     $asset_id = $form_state['values']['txt_id'];
 
     // Get field values.
@@ -1137,8 +1147,8 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
     // Get the cvterm id of the unit selected.
     $cvterm_unit = tripal_get_cvterm(array('name' => $unit, 'cv_id' => $cv_unit->cv_id));
 
-    
-    // ADD. 
+
+    // ADD.
     if ($btn_submit == 'Add column header') {
       // Uses project id.
       // Insert cvterm.
@@ -1152,7 +1162,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
       );
 
       // Add a cvterm prop to store the R friendly version.
-      chado_insert_record('cvtermprop', 
+      chado_insert_record('cvtermprop',
         array(
           'cvterm_id' => $cvterm->cvterm_id,
           'type_id' => $cv_rver->cv_id,
@@ -1162,7 +1172,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
       );
 
       // Add a cvter prop to store the collection method.
-      chado_insert_record('cvtermprop', 
+      chado_insert_record('cvtermprop',
         array(
           'cvterm_id' => $cvterm->cvterm_id,
           'type_id' => $cv_desc->cv_id,
@@ -1170,9 +1180,9 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
           'rank' => 0
         )
       );
-      
-      // Relate the cvterm to unit. 
-      chado_insert_record('cvterm_relationship', 
+
+      // Relate the cvterm to unit.
+      chado_insert_record('cvterm_relationship',
         array(
           'type_id' => $cv_unit->cv_id,
           'object_id' => $cvterm->cvterm_id,
@@ -1190,56 +1200,79 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
           )
         )
         ->execute();
-        
-      drupal_set_message(t('You have successfully added trait to this project.'), 'status'); 
+
+      drupal_set_message(t('You have successfully added trait to this project.'), 'status');
     }
     // UPDATE.
     else {
       // Uses cvterm id number.
       // Update cvterm record (name and definition).
-      chado_update_record('cvterm', 
+      chado_update_record('cvterm',
         array(
           'cvterm_id' => $asset_id,
           'cv_id' => $cv_type->cv_id
-        ), 
+        ),
         array(
           'name' => $trait_name,
           'definition' => $trait_def
-        )  
-      );      
+        )
+      );
 
       // Update cvtermprop (rfriendly version).
-      chado_update_record('cvtermprop', 
+      chado_update_record('cvtermprop',
         array(
-          'cvterm_id' => $asset_id, 
-          'type_id' => $cv_rver->cv_id  
+          'cvterm_id' => $asset_id,
+          'type_id' => $cv_rver->cv_id
         ),
         array(
           'value' => $rver
         )
-      );      
+      );
 
       // Update method of collection.
-      chado_update_record('cvtermprop', 
-        array(
-          'cvterm_id' => $asset_id, 
-          'type_id' => $cv_desc->cv_id  
-        ), 
-        array(
-          'value' => $col_method
-        )
-      );
-      
+      // When updating, make sure term has a collection method entry in cvtermprop.
+      // If none, add an entry.
+      $sql = "SELECT cvterm_id FROM {cvtermprop}
+              WHERE
+                cvterm_id = :cvterm_id
+                AND type_id = :cv_method
+              LIMIT 1";
+
+      $args = array(':cvterm_id' => $asset_id, ':cv_method' => $cv_desc->cv_id);
+      $result = chado_query($sql, $args);
+
+      if ($result->rowCount() == 1) {
+        chado_update_record('cvtermprop',
+          array(
+            'cvterm_id' => $asset_id,
+            'type_id' => $cv_desc->cv_id
+          ),
+          array(
+            'value' => $col_method
+          )
+        );
+      }
+      else {
+        chado_insert_record('cvtermprop',
+          array(
+            'cvterm_id' => $asset_id,
+            'type_id' => $cv_desc->cv_id,
+            'value' => $col_method,
+            'rank' => 0
+          )
+        );
+      }
+
       // Update cvterm relationship (cvterm - unit).
-      chado_update_record('cvterm_relationship', 
+      chado_update_record('cvterm_relationship',
         array(
           'object_id' => $asset_id
-        ), 
+        ),
         array(
           'subject_id' => $cvterm_unit->cvterm_id
         )
       );
-      
+
       // Update trait type.
       db_update('pheno_project_cvterm')
         ->fields(array('type' => $trait_type))
@@ -1286,29 +1319,29 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   // In this trait types array, remove the plant property option.
   // Allow only to add essential, optional or subset column header types.
   unset($a['type4']);
-  
+
   // Get the values and use it as both key and value.
   $t = array_values($a);
-  $trait_type = array_combine($t, array_map('strtoupper', $t)); 
+  $trait_type = array_combine($t, array_map('strtoupper', $t));
 
   // Determine if the header has data or is used in another project.
   if ($default['count_data'] > 0 OR $default['count_project'] > 0) {
     $form['fieldset_trait']['warning'] = array(
       '#markup' => '<div class="messages warning">This column header has data associated to it or is used in another project.</div>',
     );
-    
+
     $disabled = TRUE;
   }
   else {
     $disabled = FALSE;
   }
-  
+
   // Project id the trait is in.
   $form['fieldset_trait']['txt_id'] = array(
     '#type' => 'hidden',
     '#value' => $default['txt_id'],
   );
-  
+
   // Trait name field.
   $form['fieldset_trait']['txt_trait_name'] = array(
     '#type' => 'textfield',
@@ -1317,7 +1350,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#default_value' => isset($default['txt_trait_name']) ? $default['txt_trait_name'] : '',
     '#disabled' => $disabled,
     '#required' => TRUE,
-  );  
+  );
 
   // Trait rep field. Default to none.
   // Note: Trait Rep to call 1st, 2nd in unit is not final.
@@ -1335,48 +1368,48 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#options' => $trait_rep,
     '#default_value' => isset($default['sel_trait_rep']) ? $default['sel_trait_rep'] : reset($trait_rep),
     '#disabled' => $disabled,
-  );  
-  
+  );
+
   // Trait unit field. Default to none.
   // Query available units in chado cvterm of type phenotype_measurement_unit.
   $sql = "
     SELECT t2.name, t2.name || ' : ' || t2.definition
-    FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING (cv_id) 
-    WHERE t1.name = 'phenotype_measurement_units' 
+    FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING (cv_id)
+    WHERE t1.name = 'phenotype_measurement_units'
     ORDER BY t2.name ASC";
-    
+
   $unit = chado_query($sql)
     ->fetchAllKeyed();
-  
+
   $form['fieldset_trait']['sel_trait_unit'] = array(
     '#type' => 'select',
     '#title' => t('Unit:'),
     '#options' => $unit,
     '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : reset($unit),
     '#disabled' => $disabled,
-  ); 
-  
+  );
+
   // R Friendly field.
   $r_version = isset($default['txt_trait_rfriendly']) ? ' (' . $default['txt_trait_rfriendly'] . ')' : '';
-  
+
   $form['fieldset_trait']['txt_trait_rfriendly'] = array(
     '#type' => 'textfield',
     '#title' => t('R Friendly:@r_version', array('@r_version' => $r_version)),
     '#description' => t('Leave this field blank to let system generate R Friendly version'),
     '#default_value' => '',
     '#disabled' => FALSE,
-  );   
-  
-  if (isset($default['txt_trait_rfriendly']) AND !empty($default['txt_trait_rfriendly'])) {   
+  );
+
+  if (isset($default['txt_trait_rfriendly']) AND !empty($default['txt_trait_rfriendly'])) {
     // When editing header, add this hidden field containing the original R version value prior to saving.
     // When user decides to provide an alternative r version then save it, otherwise save the value of this
-    // hidden field. 
+    // hidden field.
     $form['fieldset_trait']['txt_trait_rfriendly_val'] = array(
       '#type' => 'hidden',
       '#default_value' => $default['txt_trait_rfriendly'],
-    );   
+    );
   }
-  
+
   // Trait definition field.
   $form['fieldset_trait']['txt_trait_def'] = array(
     '#type' => 'textarea',
@@ -1385,8 +1418,8 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#required' => TRUE,
     '#default_value' => isset($default['txt_trait_definition']) ? $default['txt_trait_definition'] : '',
     '#disabled' => $disabled,
-  );  
-  
+  );
+
   // Describe method of collection field.
   $form['fieldset_trait']['txt_trait_method'] = array(
     '#type' => 'textarea',
@@ -1396,7 +1429,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#default_value' => isset($default['txt_trait_method']) ? $default['txt_trait_method'] : '',
     '#disabled' => $disabled,
   );
-  
+
   // Trait is essential field. Default to unchecked.
   $form['fieldset_trait']['sel_trait_type'] = array(
     '#type' => 'select',
@@ -1405,7 +1438,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#options' => $trait_type,
     '#default_value' => isset($default['sel_trait_type']) ? $default['sel_trait_type'] : reset($trait_type),
     '#disabled' => FALSE,
-  );  
+  );
 
   // Save trait button.
   $form['fieldset_trait']['btn_trait_subtmit'] = array(
@@ -1413,8 +1446,8 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#value' => t('@save_or_add', array('@save_or_add' => $default['btn_trait_submit'])),
     '#suffix' => '<span>&nbsp;* means field is required</span>',
   );
-  
-  return $form;      
+
+  return $form;
 }
 
 
@@ -1422,25 +1455,25 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
  * Function to construct a trait given a name, trait rep and unit.
  *
  * @param $trait
- *   An array containing name, trait and unit. 
- * 
- * @return 
+ *   An array containing name, trait and unit.
+ *
+ * @return
  *   A string containing containing the column header in name (trait rep; unit) format.
  */
 function rawpheno_admin_construct_trait_name($trait) {
   $unit = '';
-  
+
   if (!empty($trait['unit']) OR !empty($trait['rep'])) {
     $u = (empty($trait['rep'])) ? '' : $trait['rep'] . ' ';
     if (empty($trait['unit'])) {
       $u = trim($u);
     }
-    
-    $unit = '(' . $u . $trait['unit'] . ')';
-  }  
 
-  $name = ucfirst($trait['name'] . ' ' . rtrim($unit));  
-  
+    $unit = '(' . $u . $trait['unit'] . ')';
+  }
+
+  $name = ucfirst($trait['name'] . ' ' . rtrim($unit));
+
   return trim($name);
 }
 
@@ -1449,13 +1482,16 @@ function rawpheno_admin_construct_trait_name($trait) {
  * Function callback: Save values in add existing column headers form.
  */
 function rawpheno_admin_submit_add_existing($form, &$form_state) {
-  // Uses project id
+  // Uses project id.
   $project_id = $form_state['values']['txt_id'];
+  // All Types.
+  $types = rawpheno_function_trait_types();
 
   // The type of header is set to OPTIONAL trait.
   foreach(array_filter($form_state['values']['tbl_existing_headers']) as $m) {
     $trait_type = $form_state['input']['traittype-' . $m];
-    
+    $trait_type = ($trait_type == 1) ? $types['type1'] : $types['type2'];
+
     db_insert('pheno_project_cvterm')
       ->fields(
         array(
@@ -1466,7 +1502,7 @@ function rawpheno_admin_submit_add_existing($form, &$form_state) {
       ->execute();
   }
 
-  drupal_set_message(t('You have successfully added column headers to this project.'), 'status');  
+  drupal_set_message(t('You have successfully added column headers to this project.'), 'status');
 }
 
 
@@ -1478,25 +1514,34 @@ function rawpheno_admin_validate_add_existing($form, &$form_state) {
     form_set_error('tbl_existing_headers', t('No column headers selected.'));
   }
 }
-  
-  
+
+
 /**
  * Function callback: Save values in add user form.
  */
 function rawpheno_admin_submit_add_user($form, $form_state) {
   // Uses project id
   $project_id = $form_state['values']['txt_id'];
+  $user = $form_state['values']['txt_autocomplete_user'];
 
-  // Assign users to project, who will be authorized to submit project specific data.   
-  foreach(array_filter($form_state['values']['tbl_users']) as $u) {
-    db_insert('pheno_project_user')
-      ->fields(array(
-        'project_id' => $project_id,
-        'uid' => $u))
-      ->execute();
-  }
+  // Search user
+  $sql = "SELECT uid FROM {users}
+          WHERE
+            name = :name
+            AND uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id AND status = 1)
+          LIMIT 1";
 
-  drupal_set_message(t('You have successfully added users to this project.'), 'status');  
+  $args = array(':name' => $user, ':project_id' => $project_id);
+  $u = db_query($sql, $args)
+    ->fetchField();
+
+  db_insert('pheno_project_user')
+    ->fields(array(
+      'project_id' => $project_id,
+      'uid' => $u))
+    ->execute();
+
+  drupal_set_message(t('You have successfully added users to this project.'), 'status');
 }
 
 
@@ -1504,8 +1549,26 @@ function rawpheno_admin_submit_add_user($form, $form_state) {
  * Function callback: Validate add user.
  */
 function rawpheno_admin_validate_add_user($form, &$form_state) {
-  if (count(array_filter($form_state['values']['tbl_users'])) <= 0) {
-    form_set_error('tbl_users', t('No user selected.'));
+  $project_id = $form_state['values']['txt_id'];
+  $user = $form_state['values']['txt_autocomplete_user'];
+
+  if (empty($user)) {
+    form_set_error('txt_autocomplete_user', t('No user name supplied in the field.'));
+  }
+  else {
+    // Search user
+    $sql = "SELECT uid FROM {users}
+            WHERE
+              name = :name
+              AND uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id AND status = 1)
+            LIMIT 1";
+
+    $args = array(':name' => $user, ':project_id' => $project_id);
+    $u = db_query($sql, $args);
+
+    if ($u->rowCount() < 1) {
+      form_set_error('txt_autocomplete_user', t('User does not exist.'));
+    }
   }
 }
 
@@ -1523,9 +1586,9 @@ function rawpheno_admin_user_assets($asset_id) {
   // Array to hold user assets.
   $arr_project_assets = array();
 
-  $sql = "SELECT project_id, uid, project_user_id 
+  $sql = "SELECT project_id, uid, project_user_id
           FROM {pheno_project_user} WHERE project_user_id = :project_user_id LIMIT 1";
-            
+
   $args = array(':project_user_id' => $asset_id);
   $user = db_query($sql, $args)
     ->fetchObject();
@@ -1533,7 +1596,7 @@ function rawpheno_admin_user_assets($asset_id) {
   $arr_project_assets['user_id'] = $user->uid;
   $arr_project_assets['project_id'] = $user->project_id;
   $arr_project_assets['project_user_id'] = $user->project_user_id;
-  
+
   // Given the project id this user is assigned, test if it has any backup files.
   $sql = "SELECT COUNT(file_id) FROM {pheno_backup_file} WHERE project_user_id = :project_user_id";
   $file_count = db_query($sql, $args)
@@ -1544,12 +1607,12 @@ function rawpheno_admin_user_assets($asset_id) {
   // Given the project id this user is assigned, test if it has data.
   $sql = "SELECT COUNT(plant_id) FROM {pheno_plant_project}
           WHERE project_id = (SELECT project_id FROM {pheno_project_user} WHERE project_id = :project_id AND uid = :user_id)";
-  
+
   $args = array(':project_id' => $user->project_id, ':user_id' => $user->uid);
   $data_count = db_query($sql, $args)
     ->fetchField();
 
-  $arr_project_assets['project_data_count'] = $data_count;  
+  $arr_project_assets['project_data_count'] = $data_count;
 
   return $arr_project_assets;
 }

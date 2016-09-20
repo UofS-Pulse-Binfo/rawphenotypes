@@ -18,11 +18,11 @@
   border-style: solid;
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
-  
+
   -moz-box-shadow:    1px 1px 5px 1px #EAEAEA;
   -webkit-box-shadow: 1px 1px 5px 1px #EAEAEA;
   box-shadow:         inset 1px 1px 5px 1px #EAEAEA;
-  
+
   background-color: #FFFFFF;
   min-height: 200px;
   padding: 20px 40px 40px 40px;
@@ -68,12 +68,12 @@
 }
 
 /* Navigation */
-.subtitle-right a, 
-.subtitle-right a:link, 
-.subtitle-right a:active, 
+.subtitle-right a,
+.subtitle-right a:link,
+.subtitle-right a:active,
 .subtitle-right a:visited {
   border: 1px solid #EAEAEA;
-  font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;  
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
   color: #FFFFFF;
   font-size: 0.9em;
   padding: 15px 25px 15px 25px;
@@ -84,7 +84,7 @@
   border: 1px solid #666666;
   color: #FFFFFF;
   text-decoration: none;
-  
+
   -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
   -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
   box-shadow:         1px 1px 5px 1px #CCCCCC;
@@ -99,14 +99,14 @@
 
 /* No project */
 #container-no-info {
-  margin: 0 !important; 
+  margin: 0 !important;
   text-align: left;
 }
 
-select {
+select:not([multiple]) {
   background: #FFFFFF url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
   background-position: 99.5% 50%;
-  -webkit-appearance:none 
+  -webkit-appearance:none
 }
 
 

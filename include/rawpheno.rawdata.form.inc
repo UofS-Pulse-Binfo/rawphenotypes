@@ -4,15 +4,15 @@
  * @file
  * Functions required in rawdata page.
  */
- 
+
 /**
  * Page callback: Displays a heat map chart.
  *
- * NOTE: The following column headers are excluded from the traits that can be visualized. 
- *   Planting Date (date), 
- *   Disease-specific Comments, 
+ * NOTE: The following column headers are excluded from the traits that can be visualized.
+ *   Planting Date (date),
+ *   Disease-specific Comments,
  *   Comments
- *   # of Seeds Planted (count)  
+ *   # of Seeds Planted (count)
  */
 function rawpheno_rawdata($form, &$form_state) {
   // Navigation button. Related page of rawdata/summary page is download page.
@@ -20,21 +20,21 @@ function rawpheno_rawdata($form, &$form_state) {
     '#type' => 'markup',
     '#markup' => t('Download Data &#10095;'),
   );
-  
+
   // Query project that has data saved to it.
-  $sql = "SELECT DISTINCT t1.project_id, t1.name 
-          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id) 
-          WHERE plant_id IS NOT NULL 
+  $sql = "SELECT DISTINCT t1.project_id, t1.name
+          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id)
+          WHERE plant_id IS NOT NULL
           ORDER BY t1.project_id DESC";
- 
+
   $project = chado_query($sql)
     ->fetchAllKeyed();
-  
+
   $form['rawdata_txt_project'] = array(
     '#type' => 'hidden',
     '#value' => implode(',', array_keys($project))
   );
-  
+
   // Select project select box.
   $form['rawdata_sel_project'] = array(
     '#type' => 'select',
@@ -46,28 +46,28 @@ function rawpheno_rawdata($form, &$form_state) {
   // Select trait select box.
   // Get the cv_id of phenotype_measurement_types
   $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
-  
+
   // Query traits in a project. Exclude names listed in where clause and additional headers detected in the spreadsheet,
   // as they are unpredictable and may cause the visualization to break.
-  $sql = "SELECT cvterm_id, name 
+  $sql = "SELECT cvterm_id, name
           FROM {cvterm} INNER JOIN pheno_measurements ON cvterm_id = type_id
-          WHERE 
+          WHERE
             cvterm_id IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
             AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
             AND cv_id = :cv_id
-            AND name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)') 
+            AND name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
           ORDER BY cvterm_id ASC";
- 
+
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
-  
-  // Create the select field and populate it with traits specific to a project.  
+
+  // Create the select field and populate it with traits specific to a project.
   foreach(array_keys($project) as $p_id) {
     $q_string = array(':project_id' => $p_id, ':cv_id' => $cv_id->cv_id);
     $traits = chado_query($sql, $q_string)
       ->fetchAllKeyed();
 
     $traits = $default_option + $traits;
-    
+
     $form['sel_' . $p_id] = array(
       '#type' => 'select',
       '#title' => '&nbsp;',
@@ -81,13 +81,13 @@ function rawpheno_rawdata($form, &$form_state) {
       ),
     );
   }
-  
+
   // SVG elements.
   // SVG canvas.
   $form['page_content'] = array(
     '#type' => 'markup',
     '#markup' => '<svg class="data-chart">
-    
+
       <defs>
         <filter id="dropshadow" x="0" y="0">
           <feOffset result="offOut" in="SourceAlpha" dx="0" dy="2" />
@@ -95,7 +95,7 @@ function rawpheno_rawdata($form, &$form_state) {
           <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
         </filter>
       </defs>
-    
+
     </svg>',
   );
 
@@ -116,6 +116,6 @@ function rawpheno_rawdata($form, &$form_state) {
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.rawdata.style.css');
   $form['#attached']['js'] = array($path . 'js/rawpheno.rawdata.script.js');
-  
+
   return $form;
 }

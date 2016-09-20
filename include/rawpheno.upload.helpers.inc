@@ -7,23 +7,23 @@
 
 /**
  * Function to generate a header indicating current stage.
- * 
+ *
  * @param $form
  * @param $form_state
  */
 function rawpheno_get_header($form, &$form_state) {
   // On first load, initialize stage to stage 01 - check spreadsheet (uploader).
   $form_state['stage'] = isset($form_state['stage']) ? $form_state['stage'] : 1;
-  
-  // Array of stages. 
+
+  // Array of stages.
   $form_stages = array('check' => 1, 'review' => 2, 'save' => 3);
   $current_step = (isset($form_stages[$form_state['stage']])) ? $form_stages[$form_state['stage']] : 1;
-  
+
   // Array of stage indicators.
   $stages = array(1 => '1. Validate Spreadsheet',
                   2 => '2. Describe New Trait',
 				          3 => '3. Save Spreadsheet');
-	
+
 	$markup = '';
   foreach($stages as $k => $v) {
     $class = ($k <= $current_step) ? '' : ' progress-stage-todo';
@@ -37,20 +37,20 @@ function rawpheno_get_header($form, &$form_state) {
   $form['header_upload'] = array(
     '#type' => 'markup',
     '#markup' => $markup,
-  ); 
-  
+  );
+
   return $form;
 }
 
 
 /**
  * Function to calculate the next stage.
- * 
+ *
  * @param $form
  * @param $form_state
  *
  * @return
- *   A string containing the stage name. 
+ *   A string containing the stage name.
  */
 function rawpheno_next_page($form, &$form_state) {
   // Get the address/name of the next page based on the current stage.
@@ -64,6 +64,6 @@ function rawpheno_next_page($form, &$form_state) {
     case 'review':
       // In stage review, next is stage 03.
       return 'save';
-      break; 
+      break;
   }
 }

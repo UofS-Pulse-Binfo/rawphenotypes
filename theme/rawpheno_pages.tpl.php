@@ -11,25 +11,25 @@
  * - $page_title: Page title from admin configuration.
  * - $page_url: An array containing url of pages.
  */
- 
- 
+
+
  // Template structure:
  // <div>title</div>       - Window title
  // <div>                  - Main div
  //   <div>                - div sub title
  //     <div>left</div>    - Left column div  - page subtitle, form fields, state indicator
  //     </div>right</div>  - Right column div - navigation button to related page
- //   </div>          
- //                   
+ //   </div>
+ //
  //   <div>content</div>   - Content div
- // </div>            
- 
- 
+ // </div>
+
+
  // Only the upload page has this page id. Other pages, for instance,
  // Rawdata page has page id rawpheno_rawdata and Download page has page id
  // rawpheno_download and so on. For consistency, when page id is rawpheno_upload_form_master
  // which is the upload data page, replace it with rawpheno_upload.
- $page_id = ($form['#form_id'] == 'rawpheno_upload_form_master') 
+ $page_id = ($form['#form_id'] == 'rawpheno_upload_form_master')
    ? 'rawpheno_upload' : $form['#form_id'];
 
  // Content of the secondary page title.
@@ -54,13 +54,13 @@
    // Default to space to prevent the container from collapsing.
    $subtitle .= '&nbsp;';
  }
- 
-  
+
+
  // Markup the button that links to related page.
  //  - Upload page and Instructions page.
  //  - Instructions page and Upload data page.
  //  - Rawdata page and Download data page.
- //  - Download page and Rawdata page.     
+ //  - Download page and Rawdata page.
  //  - Backup page and Instructions page.
  $form['page_button']['#prefix'] = '<a href="' . $rel_url . '" style="background-color: '.$theme_colour.'">';
  $form['page_button']['#suffix'] = '</a>';
@@ -77,11 +77,11 @@
     <?php
     // TEST IF MODULE HAS A PROJECT FOR USER TO WORK ON OR
     // PROJECT HAS DATA.
-    if (!rawpheno_function_project()) { 
+    if (!rawpheno_function_project()) {
       // No project available.
     ?>
       <div id="container-no-info" class="messages warning">
-        <?php print 'There is no project available in this module. Please contact the administrator of this website.'; ?>
+        There is no project available in this module. Please contact the administrator of this website.
       </div>
     <?php
     }
@@ -90,15 +90,22 @@
       // Excempt pages upload, backup and instructions.
     ?>
       <div id="container-no-info" class="messages warning">
-        <?php print 'There is no project with data available in this module.'; ?>
+        There is no project with data available in this module.
       </div>
     <?php
     }
     elseif (count(rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
     ?>
       <div id="container-no-info" class="messages warning">
-        <?php print 'You have no projects assigned to your account. Please contact the administrator of this website'; ?>
-      </div>    
+        You have no projects assigned to your account. Please contact the administrator of this website
+      </div>
+    <?php
+    }
+    elseif (file_prepare_directory($pub_dir = 'public://') == FALSE) {
+    ?>
+      <div id="container-no-info" class="messages warning">
+        The file destination directory is not writable. Please contact the administrator of this website.
+      </div>
     <?php
     }
     else {
@@ -108,51 +115,51 @@
         <div class="subtitle-left"><?php print $subtitle; ?></div>
         <div class="subtitle-right"><?php print drupal_render($form['page_button']); ?></div>
       </div>
-    
+
       <div class="container-contents">
-      <?php 
-      if ($page_id == 'rawpheno_rawdata') { 
-      // BEGIN rawdata page.        
+      <?php
+      if ($page_id == 'rawpheno_rawdata') {
+      // BEGIN rawdata page.
       ?>
         <div id="container-marker-information" title="Click to clear chart">
           <h2 id="title-pheno">&nbsp;</h2>
           &nbsp;: are measured in <em id="text-rep">&nbsp;</em> with a leaf symbol (<span>&nbsp;</span>) <a href="#">Clear chart</a>
         </div>
-      
+
         <div id="container-form-select">
           <div class="sel-projects"><?php print drupal_render($form['rawdata_sel_project']); ?></div>
-        
+
           <div class="sel-traits">
-          <?php 
+          <?php
             $project_ids = explode(',', $form['rawdata_txt_project']['#value']);
             foreach($project_ids as $p) {
               print drupal_render($form['sel_' . $p]);
-            } 
+            }
           ?>
           </div>
         </div>
-      
+
         <div id="container-rawdata" class="form-wrapper clear-float"><?php print drupal_render_children($form); ?></div>
-      <?php 
+      <?php
       // END rawdata page.
       }
-    
-    
-      elseif ($page_id == 'rawpheno_download') {  
+
+
+      elseif ($page_id == 'rawpheno_download') {
       // BEGIN download page.
       ?>
-        <div id="container-download" class="form-wrapper"><?php print drupal_render_children($form); ?></div>  
-      <?php 
+        <div id="container-download" class="form-wrapper"><?php print drupal_render_children($form); ?></div>
+      <?php
       } // END download page.
 
-    
-      elseif ($page_id == 'rawpheno_upload') { 
+
+      elseif ($page_id == 'rawpheno_upload') {
       // BEGIN upload page.
       ?>
         <div id="container-upload">
           <div id="container-progress">
             <a href="#" id="link-help">Need help?</a>
-          
+
             <div id="container-help-information" title="Click to collapse Help Window">
               <ul>
                 <li>
@@ -161,12 +168,12 @@
                   <em>Microsoft Excel Workbook (XLSX) following the format described on the
                   <a href="<?php print $page_url['rawpheno_instructions'] ?>" target="_blank">Instructions Page</a></em>.
                 </li>
-            
+
                 <li>
                   <h2>Stage 2 - Describe New Trait</h2>
                   In the second step we ask that you <em>describe any additional phenotypes</em>.
                 </li>
-            
+
                 <li>
                   <h2>Stage 3 - Save Spreadsheet</h2>
                   Finally, the spreadsheet is saved to <?php print strtoupper($_SERVER['SERVER_NAME']); ?>, at which point the
@@ -176,26 +183,28 @@
                 </li>
               </ul>
             </div>
-          
+
             <div>
-              <?php print drupal_render($form['header_upload']); ?>
+              <?php
+                print drupal_render($form['header_upload']);
+              ?>
               <div class="clear-float"></div>
             </div>
           </div>
-        
-          <?php 
+
+          <?php
           // In Stage #3 Save Spreadsheet, show progress bar and links to other pages
-          if ($form['current_stage']['#value'] == 'save') { 
+          if ($form['current_stage']['#value'] == 'save') {
             print drupal_render($form['sel_project']);
-          ?>       
+          ?>
             <fieldset>
               <legend><span class="fieldset-legend">Spreadsheet submitted</span></legend>
-              <div class="fieldset-wrapper"> 
+              <div class="fieldset-wrapper">
                 <?php  print drupal_render($form['notice']); ?>
                 <div class="container-status"><?php print drupal_render($form['status']); ?></div>
               </div>
             </fieldset>
-        
+
             <div class="container-buttons">
               <div class="buttons-wrapper">
                 <a href="<?php print $page_url['rawpheno_upload']; ?>" target="_blank" class="nav-buttons"><span>Upload New Data</span></a>
@@ -205,60 +214,60 @@
                 <div class="clear-float"></div>
               </div>
             </div>
-        
-          <?php 
+
+          <?php
             }
-          
-            print drupal_render_children($form);  
+
+            print drupal_render_children($form);
           ?>
           </div>
-      
-        <?php 
+
+        <?php
         } // End rawdata page.
-      
-      
-        elseif ($page_id == 'rawpheno_backup') {  
+
+
+        elseif ($page_id == 'rawpheno_backup') {
         // BEGIN backup page.
         ?>
           <div id="container-backup">
-            <?php 
+            <?php
               // No project is associated to the user account.
               if (isset($form['no_data'])) {
                 print drupal_render($form['no_data']);
               }
             ?>
-            
+
             <div id="container-add-file">
               <?php
                 // When a file is uploaded.
-                print drupal_render($form['message_upload_result']); 
-                print drupal_render($form['validation_result']); 
-                print drupal_render($form['link_upload_file']); 
-                
+                print drupal_render($form['message_upload_result']);
+                print drupal_render($form['validation_result']);
+                print drupal_render($form['link_upload_file']);
+
                 // Upload file interface.
-                print drupal_render($form['backup_sel_project']); 
+                print drupal_render($form['backup_sel_project']);
                 print drupal_render($form['bdnd']);
                 print drupal_render($form['backup_txt_description']);
                 print drupal_render($form['backup_file_submit']);
-                
+
                 print drupal_render($form['summary']);
               ?>
             </div>
-            
+
             <div>
               <h2>Manage My Files:</h2>
             </div>
-            
-            <?php 
-              print drupal_render($form['tbl_root_dir']); 
+
+            <?php
+              print drupal_render($form['tbl_root_dir']);
               print drupal_render_children($form);
             ?>
           </div>
-        <?php 
+        <?php
         } // END upload page.
-      
-      
-        elseif ($page_id == 'rawpheno_instructions') { 
+
+
+        elseif ($page_id == 'rawpheno_instructions') {
         // BEGIN instructions page.
           // Display error message when project id is not valid.
           print drupal_render($form['message_invalid_project']);
@@ -267,15 +276,15 @@
             <?php print drupal_render($form['project_panel']); ?>
             <span><a href="#">Change Project</a></span>
           </div>
-          
+
           <div id="container-sel-project">
              <?php print drupal_render($form['sel_project']); ?>
           </div>
-        
+
           <div id="container-instructions">
             <div id="phenotype-page">
               <div id="container-search-result"></div>
-          
+
               <div id="tabs">
                 <ul>
                   <li><a href="#fragment-1">Standard Procedure</a></li>
@@ -285,7 +294,7 @@
                   <li id="photo-appendix"><a href="#fragment-5">Photo Appendix</a></li>
                   <li id="reference"><a href="#fragment-6">Reference</a></li>
                 </ul>
-                
+
                 <div id="fragment-1">
                   <h3>Spreadsheet Tips</h3>
                   <ul>
@@ -295,34 +304,34 @@
                     <li><p>We’ve included an easy calculator to determine “Days from Planting” in a separate tab.</p></li>
                     <li><p>Special Interest Traits: <br />Add a column ot the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
                   </ul>
-                  
+
                   <div id="container-resource-links">
                     <div>
-                      <h3>&raquo; To Collect Data:</h3> 
+                      <h3>&raquo; To Collect Data:</h3>
                       <p><?php print drupal_render($form['download_data_collection']); ?></p>
                     </div>
-                    
+
                     <div>
                       <h3>&raquo; To Backup File:</h3>
                       <p><?php print l('Backup Data Collection Spreadsheet', './phenotypes/raw/backup') ?></p>
                     </div>
-                  
+
                     <div>
                       <h3>&raquo; To Submit Data:</h3>
                       <p><?php print l('Upload Phenotypic Data Page', './phenotypes/raw/upload') ?></p>
                     </div>
                   </div>
-                  
+
                   <div class="clear-float">&nbsp;</div>
                 </div>
-                
+
                 <?php
                 $arr_type_note = array(
                   2 => 'These traits are essential to this project and data should be collected for all genotypes sent to you.',
                   3 => 'These traits are optional. We will be taking them in our location and have thus provided our procedure in case you interested in taking these data in your location as well. Feel free to record ANY data you are interested in (including traits not listed below –just add a column to the accompanying data spreadsheet for traits not listed below).',
                   4 => 'The following traits require a fair amount of work and, as such, are completely optional. We will collect them in SK, if you are interested in these traits, please contact us to make sure we are collecting the same thing. Note: These columns are hidden by default. If you would like to record this data, select columns “X” and "AB" and either right-click (computer) or long-press (tablet) the column header then select “Unhide”. For the following “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. If 20 peduncles cannot be obtained, sample from a 3rd plant.'
                 );
-                 
+
                 $i = 2;
                 $trait_type = rawpheno_function_trait_types();
                 unset($trait_type['type4']);
@@ -331,9 +340,9 @@
                   print '<h3>' . $arr_type_note[$i] . '</h3>';
                   print drupal_render($form['tbl_project_headers_' . $type]);
                   print '</div>';
-                
+
                   $i++;
-                } 
+                }
                 ?>
 
                 <div id="fragment-5">
@@ -341,9 +350,9 @@
                     <option value="0">Tendrils</option>
                     <option value="1">Pods</option>
                   </select></h3>
-     
+
                   <div id="photo-container">
-                    <div id="gallery-container">   
+                    <div id="gallery-container">
                       <div class="side-nav"><a href="javascript:void();"><</a></div>
                       <div class="gallery-img">
                         <input type="hidden" id="path" value="<?php print base_path() . $path; ?>/theme/img/appendix/">
@@ -356,7 +365,7 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div id="fragment-6">
                   <h3>Further reference for Reproductive stages:</h3>
                   <em>Erskine et al. (1990) Stages of Development in Lentil. Experimental Agriculture. 26(3): 297-302.</em>
@@ -369,11 +378,11 @@
                 </div>
               </div>
             </div>
-          </div>  
+          </div>
         <?php
           print drupal_render_children($form);
         } // END instructions page.
-        ?>      
+        ?>
 
       </div>
 

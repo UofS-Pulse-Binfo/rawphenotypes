@@ -4,19 +4,19 @@
  * Master function to managed column headers.
  *
  * @params $type
- *   A string containing a description of column header set required. 
+ *   A string containing a description of column header set required.
  *
  * @return
  *   An array of column headers based on the type of set requested.
  */
-function rawpheno_function_headers($type) {  
+function rawpheno_function_headers($type) {
   // List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
   // in AGILE project.
   // TRAIT/MEASUREMENT ---------------------------------------- INDEX
-  // Order is the same order as in the spreadsheet file. 
+  // Order is the same order as in the spreadsheet file.
   // Note: Subset traits: 24, 25 and 26 are Hidden Column.
   //       Traits with Second trial eg. 1st; cm, 2nd; cm
-  $arr_headers = 
+  $arr_headers =
   array(
   'Plot',                                                       //0
   'Entry',                                                      //1
@@ -51,7 +51,7 @@ function rawpheno_function_headers($type) {
   '100 Seed Mass (g)',                                          //30
   'Comments'                                                    //31
   );
-  
+
   // Determine the type of request.
   switch($type) {
     case 'phenotyping':
@@ -59,13 +59,13 @@ function rawpheno_function_headers($type) {
       // Used in: Instructions page.
       $type_id = array(5,7,8,9,10,11,14,15,16,18,20,21,23,24,25,26,27,28,29,30);
       break;
-    
+
     case 'required':
       // List of required column headers - must have a value.
       // Used in: Upload Data - validate spreadsheet.
       $type_id = array(0,1,2,3,4);
       break;
-      
+
     case 'expected':
       // List of column headers ids expected to be present in spreadsheet.
       // Used in: Upload Data - validate spreadsheet.
@@ -73,30 +73,30 @@ function rawpheno_function_headers($type) {
       $type_id = array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
                        24,25,26,27,28,29,30,31);
       break;
-    
+
     case 'plantprop':
       // List of required column headers excluding name - Plant Prop Traits.
       // Used in: Upload Data - Save spreadsheet.
       $type_id = array(0,1,3,4);
-      break;  
-      
+      break;
+
     case 'multi-trial':
       // List of column headers with first and secondary try.
       // Used in: .install file and Upload Data - save spreadsheet.
       $type_id = array(11,12,16,17,18,19);
       break;
-  
+
     case 'essential':
       // List of essential column headers.
       // Used in: .install file.
       $type_id = array(0,1,2,3,4,5,6,7,8,9,10,15,20,21);
       break;
-    
+
     case 'subset':
-      $type_id = array(24,25,26); 
+      $type_id = array(24,25,26);
       break;
-  } 
-  
+  }
+
   $arr_requested_trait = array();
   // Create the array of traits based on requested trait ids.
   foreach($type_id as $id) {
@@ -104,7 +104,7 @@ function rawpheno_function_headers($type) {
     if ($type == 'phenotyping') {
       // Store the actual index number associated to a trait.
       // This is important since order is relevant in the instructions page.
-      $arr_requested_trait[$id] = $arr_headers[$id]; 
+      $arr_requested_trait[$id] = $arr_headers[$id];
     }
     else {
       // Order is irrelevant, just need the array of traits.
@@ -117,7 +117,7 @@ function rawpheno_function_headers($type) {
 
 
 /**
- * Function to transform a column header to R compatible version. 
+ * Function to transform a column header to R compatible version.
  *
  * @params $column_header
  *   A string containing the column header to transform.
@@ -128,12 +128,12 @@ function rawpheno_function_make_r_compatible($column_header) {
   // Get R transformation rules set in the admin control panel.
   $word_rules = variable_get('rawpheno_rtransform_words');
   $char_rules = variable_get('rawpheno_rtransform_characters');
-  $replace_rules = variable_get('rawpheno_rtransform_replace');    
+  $replace_rules = variable_get('rawpheno_rtransform_replace');
 
   $arr_match = array();
   $arr_replace = array();
   $r = explode(',', $replace_rules);
-  
+
   // Convert the rule to key and value pair. The key is the matching character/word and
   // the values is the replacement value when key is found in a string.
   foreach($r as $g) {
@@ -141,13 +141,13 @@ function rawpheno_function_make_r_compatible($column_header) {
     $arr_match[] = trim($match);
     $arr_replace[] = trim($replace);
   }
-  
+
   // Convert special characters transformation rules in string to array.
   $char_rules = explode(',', $char_rules);
 
   // Convert words transformation rules in string to array.
   $word_rules = explode(',', $word_rules);
-  
+
   // Remove leading and trailing spaces from the selected trait.
   // Convert string to lowercase.
   $selected_trait = trim(strtolower($column_header));
@@ -156,17 +156,17 @@ function rawpheno_function_make_r_compatible($column_header) {
   $w = explode(' ', $selected_trait);
   foreach($w as $c) {
     $c = trim($c);
-    
-    // Skip the words in the traits that are present in the 
+
+    // Skip the words in the traits that are present in the
     // words transformation rules.
     if (!in_array($c, $word_rules)) {
       // Do match and replace, as well as, removal of special characters
       // only when the current word is not in the words transformation rules.
       // 2. Match and replace based on match and replace rule.
-      $c = str_replace($arr_match, $arr_replace, $c);    
+      $c = str_replace($arr_match, $arr_replace, $c);
       // 3. Remove all special characters listed in remove chars rule.
       $c = str_replace($char_rules, '', $c);
-      
+
       // All transformation rules applied, make sure that
       // the result is not a blank space.
       if (!empty($c)) {
@@ -187,8 +187,8 @@ function rawpheno_function_make_r_compatible($column_header) {
  */
 function rawpheno_function_trait_types() {
   return array('type1' => 'essential',
-               'type2' => 'optional',   
-               'type3' => 'subset', 
+               'type2' => 'optional',
+               'type3' => 'subset',
                'type4' => 'plantproperty');
 }
 
@@ -202,10 +202,10 @@ function rawpheno_function_trait_reps() {
 }
 
 
-/** 
+/**
  * Function that list default/initial units available to this module.
  *
- * @param $set 
+ * @param $set
  *   A string indicating the type of set to return.
  *   def - unit and definition.
  *   type - unit and data type.
@@ -223,7 +223,7 @@ function rawpheno_function_default_unit($set) {
     'text'  => ($set == 'def') ? 'Alphanumeric' : 'string',
     'y/n/?' => ($set == 'def') ? 'Yes, No or ? - Not sure' : 'string'
   );
-} 
+}
 
 
 /**
@@ -235,7 +235,7 @@ function rawpheno_function_project() {
   $sql = "SELECT FROM pheno_project_cvterm";
   $project_count = db_query($sql)
     ->rowCount();
-    
+
   return ($project_count <= 0) ? 0 : 1;
 }
 
@@ -250,7 +250,7 @@ function rawpheno_function_data() {
   $sql = "SELECT plant_project_id FROM pheno_plant_project";
   $stock_count = db_query($sql)
     ->rowCount();
-    
+
   return ($stock_count <= 0) ? 0 : 1;
 }
 
@@ -262,19 +262,19 @@ function rawpheno_function_data() {
  * @param $user
  *   An integer containing the user id of the currently logged user.
  *
- * @return 
+ * @return
  *   An array containing available projects.
  */
 function rawpheno_function_user_project($user_id) {
   $trait_type = rawpheno_function_trait_types();
   $my_project = array();
-    
+
   $sql = "SELECT
-            t1.name, 
+            t1.name,
             t1.project_id,
             COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count
-          FROM 
-            {project} AS t1 
+          FROM
+            {project} AS t1
             INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
             LEFT JOIN pheno_project_user AS t3 USING (project_id)
           WHERE t3.uid = :user_id
@@ -283,15 +283,15 @@ function rawpheno_function_user_project($user_id) {
 
   $args = array(':essential_trait' => $trait_type['type1'], ':user_id' => $user_id);
   $p = chado_query($sql, $args);
-  
-  if ($p->rowCount() > 0) {  
+
+  if ($p->rowCount() > 0) {
     foreach($p as $a) {
       if ($a->essential_count > 0) {
         $my_project[$a->project_id] = $a->name;
       }
     }
   }
-   
+
   return $my_project;
 }
 
@@ -304,18 +304,18 @@ function rawpheno_function_user_project($user_id) {
  * @param $trait_id
  *   An integer containing the id number of a trait in a project.
  * @param $type
- *   A string indicating the type of data a given trait holds. It could be integer or text data type.  
+ *   A string indicating the type of data a given trait holds. It could be integer or text data type.
  * @param $data
  *   An array containing unique values in a given trait.
  *
- * @return 
+ * @return
  *   A JSON summary data.
  *
- * NOTE: The following column headers are excluded from the traits that can be visualized. 
- *   Planting Date (date), 
- *   Disease-specific Comments, 
+ * NOTE: The following column headers are excluded from the traits that can be visualized.
+ *   Planting Date (date),
+ *   Disease-specific Comments,
  *   Comments
- *   # of Seeds Planted (count) 
+ *   # of Seeds Planted (count)
  */
 function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NULL) {
   // Array to hold the computed Bin.
@@ -326,29 +326,25 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
   // NUMERIC DATA TYPE.
   if ($type == 'int') {
     // Get the average of each value and in a stock, in a location.
-    $sql = "SELECT 
-              t1.stock_id AS stock, 
+    $sql = "SELECT
+              t1.stock_id AS stock,
               t3.value AS location,
-              ROUND(AVG(t2.value::integer)) AS average
-            FROM 
+              ROUND(AVG(t2.value::numeric)) AS average
+            FROM
               {pheno_plant} AS t1
               INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
               INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE 
+            WHERE
               t2.type_id = :trait_id
-              AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) 
+              AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
               AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
             GROUP BY t3.value, t1.stock_id, t2.value
-            ORDER BY t3.value, average ASC"; 
-            
+            ORDER BY t3.value, average ASC";
+
     $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-    
+
     // Result set for averages.
     $d = db_query($sql, $args);
-    
-    // Result set for locations.
-    $l = db_query($sql, $args);
-    $all_locations = array_unique($l->fetchCol(0));
 
     // Get the min and max values from the averages.
     $all_average = $d->fetchCol(2);
@@ -357,36 +353,36 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
     // Total number of bins.
     $total_bins = 4;
     // Size of each bin.
-    $interval = round($max/$total_bins);     
-  
+    $interval = round($max/$total_bins);
+
     $i = 0;
     $to = 0;
     $from = $min;
-  
+
     while($to < $max) {
-      $from = ($i ==0) ? $min : ($to + 1);
+      $from = ($i == 0) ? $min : ($to + 1);
       $to = $from + $interval;
-    
+
       $arr_bin_json[$i] = $from . '-' . $to;
       $i++;
     }
-  
+
     // Assign each row with a bin.
     $m = db_query($sql, $args)
       ->fetchAll();
-    
+
     foreach($m as $stock) {
       $stock_avg = (int)$stock->average;
-    
+
       // Find the bin for this row.
       foreach($arr_bin_json as $b) {
         list($from, $to) = explode('-', $b);
         if ($stock_avg >= (int)$from AND $stock_avg <= (int)$to) {
           $stock_bin = $b;
           break;
-        }  
+        }
       }
-    
+
       // Add entry to json
       $arr_data_json[] = array('location' => $stock->location,
                                'bin' => $stock_bin);
@@ -397,37 +393,33 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
     // Text, list, enumeration of values.
     $arr_bin_json = ($type == 'txt') ? $data : array('y', 'n', '?');
 
-    $sql = "SELECT 
-              t3.value AS location, 
+    $sql = "SELECT
+              t3.value AS location,
               t2.value AS v
-            FROM 
-              {pheno_plant} AS t1 
+            FROM
+              {pheno_plant} AS t1
               INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
               INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE 
+            WHERE
               t2.type_id = :trait_id
               AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
               AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
             ORDER BY t3.value ASC";
-    
+
     $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-    
+
     // Result set for data/values.
     $d = db_query($sql, $args);
-    
-    // Result set for locations.
-    $l = db_query($sql, $args);
-    $all_locations = array_unique($l->fetchCol(0));
-    
+
     foreach($d as $e) {
       // Find the bin for this data.
       foreach($arr_bin_json as $b) {
         if ($b == $e->v)
           $bin = $b;
       }
-  
+
       $arr_data_json[] = ['location' => $e->location, 'bin' => $bin];
-    } 
+    }
   }
   // SCALE DATA TYPE
   elseif ($type == 'scale') {
@@ -444,32 +436,32 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
       return 0;
     }
 
-    $sql = "SELECT 
-              t3.value AS location, 
+    $sql = "SELECT
+              t3.value AS location,
               t2.value AS v
-            FROM 
-              {pheno_plant} AS t1 
+            FROM
+              {pheno_plant} AS t1
               INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
               INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE 
+            WHERE
               t2.type_id = :trait_id
               AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
               AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
             ORDER BY t3.value ASC";
-            
+
     $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-    
+
     // Result set for data/values.
     $d = db_query($sql, $args);
-    
+
     if ($d->rowCount() > 0) {
       foreach($d as $e) {
         $arr_data_json[] = ['location' => $e->location, 'bin' => $e->v];
       }
     }
   }
-  
-  
+
+
   // Return bin and data.
   return ['bin' => $arr_bin_json, 'data' => $arr_data_json];
 }
@@ -481,35 +473,35 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
  * @param $cvterm
  *   A string containing the cvterm name.
  *
- * @return 
+ * @return
  *   A string containing the cvterm name definition.
  */
 function rawpheno_function_get_definition($cvterm) {
-  // Array to hold definitions. 
+  // Array to hold definitions.
   $definition = array();
-  
+
   $method = 'method';
   $define = 'define';
- 
+
 $definition['Planting Date (date)'] = array(
-$method => 
-'Record the date the seeds were sown.', 
-$define => 
+$method =>
+'Record the date the seeds were sown.',
+$define =>
 'The date should be the same for all plots, but could be different if circumstances such as bad weather prevent the seeding of all plots on the same day. If such a situation does occur, highlight rows with a different planting date so it is obvious to the data recorder, since they will have different days after planting values to record for that particular date.'
 );
 
 $definition['Days to Emergence (days)'] = array(
 $method =>
 'Record the number of days after planting for which 10% of seeds have emerged.',
-$define => 
+$define =>
 'Emergence = seedling stem/leaves have become visible.'
 );
 
 $definition['# of Emerged Plants (count)'] = array(
-$method => 
+$method =>
 'Record the number of plants which emerged.
 When: Record values once plants begin to flower or have elongated tendrils.',
-$define => 
+$define =>
 'Emergence = seedling stem/leaves have become visible.'
 );
 
@@ -517,7 +509,7 @@ $definition['Days till 10% of Plants have Elongated Tendrils (days)'] = array(
 $method =>
 'Record the number of days after planting for which 10% of plants have an elongated tendril.
 Some plants may not produce elongated tendrils but develop a rudimentary tendril only 2-3 mm long. If this applies to more than 90% of plants in the plot, the "Days till 10% have Elongated Tendril" should be left blank.',
-$define => 
+$define =>
 'Elongated tendril = 5 mm and longer.'
 );
 
@@ -532,7 +524,7 @@ R1 = One open flower at any node.'
 $definition['Days till 10% of Plants have fully Swollen Pods (R5; days)'] = array(
 $method =>
 'Record the number of days after planting for which 10% of plants have pods with fully swollen seeds (that fill more than half of the pod area).',
-$define => 
+$define =>
 'Plant with pods = pods are visible without having to remove flower petals.
 Swollen Pod = seeds have swollen to their max size and fill more than half the pod area.
 R5 = Seed in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity.
@@ -543,7 +535,7 @@ This corresponds to physiological maturity at which point the seeds have swollen
 $definition['Days till 10% of Plants have 1/2 Pods Mature (R7; days)'] = array(
 $method =>
 'Record the number of days after planting for which 10% of plants have 1/2 of their pods mature.',
-$define => 
+$define =>
 'Mature pod = dry pod ready to be harvested
 Before the pods dry out they lose their green pigmentation, often looking pale, but will still contain moisture, which you can feel when you touch the pod. Pods that are considered mature will have changed colour and be dry to the touch.
 R7 = The leaves start yellowing and 50% of the pods have turned yellow.
@@ -551,9 +543,9 @@ Pod maturity is not always accompanied by a yellowing of the pod – some pods t
 );
 
 $definition['Days till Harvest (days)'] = array(
-$method => 
+$method =>
 'Record the number of days from planting to harvest.',
-$define => '' 
+$define => ''
 );
 
 $definition['Diseases Present (y/n/?)'] = array(
@@ -593,7 +585,7 @@ $define => ''
 );
 
 $definition['R7 Traits: Canopy Width (cm)'] = array(
-$method => 
+$method =>
 'Record the max canopy width (cm).
 Record values from 2 plants, taken from the middle of the plot.
 When: Record values when 10% of plants have 1/2 pods mature (R7).
@@ -614,7 +606,7 @@ $define => ''
 );
 
 $definition['Lodging (Scale: 1-5) upright - lodged'] = array(
-$method => 
+$method =>
 'Record the degree of plant lodging.
 Scale:
 1 = vertical/upright
@@ -623,7 +615,7 @@ Scale:
 4 = all plants 10-45° from ground
 5 = most plants flat/prostrate
 When: Record value when harvesting the plot.',
-$define => 
+$define =>
 'lodged = plant canopy is no longer vertical to the ground.'
 );
 
@@ -654,7 +646,7 @@ $define => ''
 );
 
 $definition['Subset Traits: # Peduncles (count)'] = array(
-$method => 
+$method =>
 'Leave this column as is, DO NOT make any changes (unless you were unable to obtain 20 peduncles).
 This has been preset to 20, because that is how many should be collected.',
 $define =>
@@ -669,7 +661,7 @@ $method => ''
 
 $definition['Subset Traits: # Seeds (count)'] = array(
 $method =>
-'Record the total number of seeds from pods counted for the previous trait ("Subset Traits: # Pods").', 
+'Record the total number of seeds from pods counted for the previous trait ("Subset Traits: # Pods").',
 $define => ''
 );
 
@@ -684,16 +676,16 @@ $define => ''
  *   A string containing the header.
  *
  * @return
- *   A string containing the unit of the header. 
+ *   A string containing the unit of the header.
  */
 function rawpheno_function_header_unit($header) {
-  preg_match("/.*\(([^)]*)\)/", $header, $match); 
-  $u = (isset($match[1])) ? $match[1] : 'text';    
-   
+  preg_match("/.*\(([^)]*)\)/", $header, $match);
+  $u = (isset($match[1])) ? $match[1] : 'text';
+
   $chars = rawpheno_function_trait_reps();
   array_push($chars, ';', ': 1-5');
-  
-  $unit = str_ireplace($chars, '', $u); 
+
+  $unit = str_ireplace($chars, '', $u);
 
   return trim(strtolower($unit));
 }
@@ -715,32 +707,32 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties = array();
 
   // Get project information and header type.
-  $sql = "SELECT t1.project_id, t1.name, t2.cvterm_id, t2.type 
+  $sql = "SELECT t1.project_id, t1.name, t2.cvterm_id, t2.type
           FROM {project} AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(project_id)
           WHERE t2.project_cvterm_id = :record_id LIMIT 1";
-  
+
   $args = array(':record_id' => $asset_id);
   $h = chado_query($sql, $args)
     ->fetchObject();
-  
+
   $arr_properties['in_project_id'] = $h->project_id;
   $arr_properties['in_project_name'] = $h->name;
   $arr_properties['cvterm_id'] = $h->cvterm_id;
   $arr_properties['type'] = $h->type;
-  
+
   // cvterm properties.
   $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id LIMIT 1";
   $args = array(':cvterm_id' => $arr_properties['cvterm_id']);
-  
+
   $h = chado_query($sql, $args)
     ->fetchObject();
-      
+
   $arr_properties['name'] = $h->name;
-  $arr_properties['definition'] = empty($h->definition) ? '' : $h->definition;  
-  
+  $arr_properties['definition'] = empty($h->definition) ? '' : $h->definition;
+
   // cvterm R Version and Collection Method.
   $arr_properties['method'] = '';
-  
+
   $h = chado_select_record('cvtermprop', array('value', 'type_id'), array('cvterm_id' => $arr_properties['cvterm_id']));
   $r_version = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
   foreach($h as $c) {
@@ -753,29 +745,29 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
       $arr_properties['method'] = $val;
     }
   }
-  
-  $args = array(':project_id' => $arr_properties['in_project_id'], ':cvterm_id' => $arr_properties['cvterm_id']);         
+
+  $args = array(':project_id' => $arr_properties['in_project_id'], ':cvterm_id' => $arr_properties['cvterm_id']);
 
   // Request full dataset including basic stats about the header.
-  if ($dataset == 'full') {  
+  if ($dataset == 'full') {
     // Count data associated to column header.
-    $sql = "SELECT COUNT(type_id) AS data_count FROM {pheno_measurements} 
-            WHERE type_id = :cvterm_id AND plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)";         
-  
+    $sql = "SELECT COUNT(type_id) AS data_count FROM {pheno_measurements}
+            WHERE type_id = :cvterm_id AND plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)";
+
     $h = db_query($sql, $args)
       ->fetchObject();
-  
+
     $arr_properties['count_data'] = $h->data_count;
 
     // Count the projects this same column header is being used.
-    $sql = "SELECT COUNT(project_id) AS project_count 
-            FROM {pheno_project_cvterm} WHERE project_id <> :project_id AND cvterm_id = :cvterm_id"; 
-  
+    $sql = "SELECT COUNT(project_id) AS project_count
+            FROM {pheno_project_cvterm} WHERE project_id <> :project_id AND cvterm_id = :cvterm_id";
+
     $h = db_query($sql, $args)
       ->fetchObject();
-  
+
     $arr_properties['count_project'] = $h->project_count;
   }
-  
+
   return $arr_properties;
 }

@@ -3,7 +3,7 @@
 /**
  * @file
  * The main functionality for this module.
- * Credits to: 
+ * Credits to:
  *   http://jamesdavidson.io/blog/how-create-multi-step-form-drupal-7
  *   https://github.com/nuovo/spreadsheet-reader
  *   https://github.com/SystemDevil/PHP_XLSXWriter_plus
@@ -28,7 +28,7 @@ function rawpheno_menu() {
   //  - DOWNLOAD DATA
   //  - INSTRUCTIONS
   //  - UPLOAD DATA
-  
+
   // RAW DATA PAGE
   // A summary page of the raw data currently available.
   $items['phenotypes/raw'] = array(
@@ -42,20 +42,20 @@ function rawpheno_menu() {
     // Menu callback which generates the summary data in JSON,
     // required by the heat map in rawdata page.
     $items['rawdata'] = array(
-      'page callback' => 'rawpheno_rawdata_summary_json', 
-      'access callback' => true, 
+      'page callback' => 'rawpheno_rawdata_summary_json',
+      'access callback' => true,
       'delivery callback' => 'drupal_json_output',
       'type' => MENU_CALLBACK,
     );
-  
+
     // Menu callback which returns all data.
     $items['rawdata_trait'] = array(
-      'page callback' => 'rawpheno_rawdata_trait_json', 
-      'access callback' => true, 
+      'page callback' => 'rawpheno_rawdata_trait_json',
+      'access callback' => true,
       'delivery callback' => 'drupal_json_output',
       'type' => MENU_CALLBACK,
     );
-  
+
   // INSTRUCTIONS PAGE
   // A page containing standard phenotyping procedure and
   // providing data collection spreadsheet.
@@ -85,7 +85,7 @@ function rawpheno_menu() {
       'access arguments' => array('access rawpheno'),
       'type' => MENU_CALLBACK,
     );
-    
+
     $items['phenotypes/raw/instructions/spreadsheet/%'] = array(
       'page callback' => 'rawpheno_instructions_create_spreadsheet',
       'page arguments' => array(4),
@@ -93,7 +93,7 @@ function rawpheno_menu() {
       'file' => 'include/rawpheno.instructions.form.inc',
       'type' => MENU_CALLBACK,
     );
-    
+
   // DOWNLOADS PAGE
   // A page providing export data options.
   $items['phenotypes/raw/download'] = array(
@@ -112,7 +112,7 @@ function rawpheno_menu() {
     'title' => 'Upload Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_upload_form_master'),
-    'access arguments' => array('upload rawpheno'),
+    'access arguments' => array('access rawpheno'),
 	  'file' => 'include/rawpheno.upload.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 3,
@@ -125,14 +125,14 @@ function rawpheno_menu() {
       'access arguments' => array('access content'),
       'type' => MENU_CALLBACK,
     );
-  
+
   // BACKUP
   // A page for uploading spreadsheet.
   $items['phenotypes/raw/backup'] = array(
     'title' => 'Backup',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_backup'),
-    'access arguments' => array('upload rawpheno'),
+    'access arguments' => array('access rawpheno'),
 	  'file' => 'include/rawpheno.backup.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 7,
@@ -142,11 +142,11 @@ function rawpheno_menu() {
       'title' => 'Backup',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('rawpheno_backup', 3, 4, 5),
-      'access arguments' => array('upload rawpheno'),
+      'access arguments' => array('access rawpheno'),
       'file' => 'include/rawpheno.backup.form.inc',
       'type' => MENU_CALLBACK,
     );
-    
+
   // ADMININSTRATIVE PAGE OF THIS MODULE
   // A page for changing page colour and page title.
   $items['admin/tripal/extension/rawphenotypes'] = array(
@@ -158,7 +158,7 @@ function rawpheno_menu() {
     'file' => 'include/rawpheno.admin.form.inc',
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
   $items['admin/tripal/extension/rawphenotypes/rawpheno_config'] = array(
     'title' => 'Page Configurations',
     'description' => 'Apply a colour scheme and set page title.',
@@ -202,8 +202,15 @@ function rawpheno_menu() {
       'file' => 'include/rawpheno.admin.form.inc',
       'type' => MENU_CALLBACK,
     );
-  
-  
+
+  // Menu callback used to search user when appointing the user to a project.
+  $items['admin/tripal/extension/rawphenotypes/username/%'] = array(
+    'page callback' => 'rawpheno_manageproject_autocomplete_search',
+    'page arguments' => array(5),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -214,10 +221,7 @@ function rawpheno_menu() {
 function rawpheno_permission() {
   return array(
     'access rawpheno' => array(
-      'title' => t('Access raw phenotypic data and summaries'),
-    ),
-    'upload rawpheno' => array(
-      'title' => t('Upload raw phenotypic data'),
+      'title' => t('Access Raw Phenotypic pages (Instructions, Download, Upload, Backup and Summary Page'),
     ),
   );
 }
@@ -246,7 +250,7 @@ function rawpheno_preprocess(&$variables, $hook) {
     $variables['rel_url'] = url('phenotypes/raw/upload');
     // Page Title
     $variables['page_title'] = variable_get('rawpheno_instructions_title');
-    
+
     // Path to module used to embed image in appendix tab.
     $variables['path'] = drupal_get_path('module', 'rawpheno');
   }
@@ -256,20 +260,20 @@ function rawpheno_preprocess(&$variables, $hook) {
     $variables['rel_url'] = url('phenotypes/raw/instructions');
     // Page Title
     $variables['page_title'] = variable_get('rawpheno_upload_title');
-    
+
     // Needs url in help window and links in stage 3.
-    $variables['page_url'] = 
+    $variables['page_url'] =
       array(
         'rawpheno_rawdata'      => url('phenotypes/raw'),
-        'rawpheno_download'     => url('phenotypes/raw/download'),  
+        'rawpheno_download'     => url('phenotypes/raw/download'),
         'rawpheno_instructions' => url('phenotypes/raw/instructions'),
         'rawpheno_upload'       => url('phenotypes/raw/upload'),
         'rawpheno_backup'       => url('phenotypes/raw/backup')
-      ); 
+      );
 
     // Stages in upload page.
-    $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet', 
-                                        'review' => 'Describe New Trait', 
+    $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
+                                        'review' => 'Describe New Trait',
                                         'save'   => 'Save Spreadsheet');
   }
   elseif ($hook == 'rawpheno_download') {
@@ -301,14 +305,14 @@ function rawpheno_theme($existing, $type, $theme, $path) {
     'template' => 'rawpheno_pages',
     'path' => $path . '/theme',
   );
-  
+
   // Instructions page.
   $items['rawpheno_instructions'] = array(
     'render element' => 'form',
     'template' => 'rawpheno_pages',
     'path' => $path . '/theme',
   );
-  
+
   // Download page.
   $items['rawpheno_download'] = array(
     'render element' => 'form',
@@ -322,7 +326,7 @@ function rawpheno_theme($existing, $type, $theme, $path) {
     'template' => 'rawpheno_pages',
     'path' => $path . '/theme',
   );
-  
+
   // Upload page.
   $items['rawpheno_upload_form_master'] = array(
     'render element' => 'form',
@@ -334,7 +338,7 @@ function rawpheno_theme($existing, $type, $theme, $path) {
       'template' => 'rawpheno_upload_validation_report',
       'path' => $path . '/theme',
     );
-    
+
   return $items;
 }
 
@@ -353,23 +357,31 @@ function rawpheno_libraries_info() {
   //   - SpreadsheetReaderXLSX.php
   //   - SpreadsheetReaderXLS.php
   //   - php-excel-reader/excel_reader2.php
+
+  // NOTE: To prevent library form auto formatting data to MM/DD/YYYY,
+  //       suggest a new data format YYYY-mm-dd in the source code in line:
+  //       * line 678 in excel_reader2.php
+  //           0xe = "m/d/Y to 0xe => "Y-m-d"
+  //       * line 834 in SpreadsheetReader_XLSX.php
+  //           $Value = $Value -> format($Format['Code']); to $Value = $Value -> format('Y-m-d');
+
   $libraries['spreadsheet_reader'] = array(
     'name' => 'NUOVO Spreadsheet',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
     'download url' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
-    'path' => 'sites/all/libraries/spreadsheet-reader-master/',
+    'path' => 'sites/all/libraries/spreadsheet-reader/',
     'files' => array(),
   );
-  
+
   // Spreadsheet writer.
   $libraries['spreadsheet_writer'] = array(
     'name' => 'PHP_XLSXWriter_plus Spreadsheet Writer',
     'vendor url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
     'download url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
-    'path' => 'sites/all/libraries/PHP_XLSXWriter_plus-master/',
+    'path' => 'sites/all/libraries/PHP_XLSXWriter_plus/',
     'files' => array('xlsxwriter.class.php'),
   );
-  
+
   // D3 JavaScript.
   $libraries['d3'] = array(
     'name' => 'D3 Data-Driven Documents',
@@ -382,17 +394,41 @@ function rawpheno_libraries_info() {
       'js' => array('d3.js')
     )
   );
-  
+
   return $libraries;
 }
 
 
 /**
+ * Function callback: used by autcomplete search functionality
+ * used in manage project page - appoint a user to the project.
+ */
+function rawpheno_manageproject_autocomplete_search($project_id, $key = '') {
+  // Array to hold all user.
+  $arr_user = array();
+
+  $sql = "SELECT name, mail FROM {users}
+          WHERE
+            uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id) AND status = 1
+            AND LOWER(name) LIKE :name
+          ORDER BY name DESC LIMIT 10";
+
+  $args = array(':project_id' => $project_id, ':name' => '%' . strtolower($key) . '%');
+  $user = db_query($sql, $args);
+
+  foreach($user as $u) {
+     $arr_user[$u->name] = $u->name . ' - ' . $u->mail;
+  }
+
+   drupal_json_output($arr_user);
+ }
+
+/**
  * Function callback: Generate Tripal Job progress JSON.
- * 
+ *
  * @param $job_id
  *   An integer containing the job id number of the job process to monitor.
- * 
+ *
  * @retun
  *   A JSON and containing progress and status of job object.
  */
@@ -401,21 +437,21 @@ function rawpheno_upload_job_progress_json($job_id) {
   $job_id = (int)$job_id;
   // Get the Tripal Job Object.
   $job = tripal_get_job($job_id);
-  
-  // Test if the Tripal Job exists and is that the status is not completed.  
-  if ($job) { 
+
+  // Test if the Tripal Job exists and is that the status is not completed.
+  if ($job) {
     if(trim(strtolower($job->status)) != 'completed') {
       // Read the file containing the upload file progress of the Tripal Job.
       // Please see rawpheno.upload.excel.inc - line: 69.
       $tmp = file_directory_temp();
       $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
       $percent = file_get_contents($filename);
-        
+
       // In the event of file collision or file writing process and file read returns nothing
       // show ... (indicate calculating) instead. This will correct itself the next file read.
       $percent_completed = empty($percent) ? '...' : $percent;
-      $message = ($percent == 100 OR trim(strtolower($job->status)) == 'completed') 
-        ? 'Completed' 
+      $message = ($percent == 100 OR trim(strtolower($job->status)) == 'completed')
+        ? 'Completed'
         : $job->status;
     }
     else {
@@ -435,17 +471,17 @@ function rawpheno_upload_job_progress_json($job_id) {
 
     // This is the exact format expected by the progress bar so do not alter it.
     $progress = array(
-      'percentage' => $percent_completed, 
+      'percentage' => $percent_completed,
       'message' => $message,
     );
-        
+
     // Print the array as JSON to the screen.
     print drupal_json_output($progress);
 
     // Do not show the Drupal headers and formatting.
     // This is critical as if anything else is printed to the screen you will see
     // an AJAX error instead of your progress bar ;-).
-    exit();    
+    exit();
   }
 }
 
@@ -455,30 +491,30 @@ function rawpheno_upload_job_progress_json($job_id) {
  * Function callback: Autocomplete search field.
  *
  * @see hook_menu()
- * 
+ *
  * @param $key
  *   A string containing the search keywords entered in the search field.
  * @param $project_id
  *   An integer containing the project id number.
  *
- * @return 
- *   A JSON where each trait is both the key and the value. The key is what is 
+ * @return
+ *   A JSON where each trait is both the key and the value. The key is what is
  *   sent to JavaScript processing the search, while the value is what is suggested
  *   to user while typing in the seach field.
  */
 function rawpheno_instructions_autocomplete_search($project_id, $key = '') {
   $trait_type = rawpheno_function_trait_types();
-  
-  $sql = "SELECT name 
-          FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id) 
+
+  $sql = "SELECT name
+          FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
           WHERE project_id = :project_id AND type <> :plantprop";
-          
+
   $args = array(':project_id' => $project_id, ':plantprop' => $trait_type['type4']);
   $m = chado_query($sql, $args);
-  
+
   // Array to hold list of traits.
   $arr_headers = array();
-  
+
   // Determine if keyword is provided.
   if (empty($key)) {
     foreach($m as $n) {
@@ -492,7 +528,7 @@ function rawpheno_instructions_autocomplete_search($project_id, $key = '') {
       }
     }
   }
-  
+
   drupal_json_output($arr_headers);
 }
 
@@ -516,7 +552,7 @@ function rawpheno_rawdata_summary_json() {
   else {
     // Get data for this project.
     $project_id = (int)trim(strip_tags($_GET['p']));
-     
+
     // Get trait id of planting data.
     $planting_date = rawpheno_get_trait_id('Planting Date (date)');
     // get trait id of # of seeds planted
@@ -525,21 +561,21 @@ function rawpheno_rawdata_summary_json() {
     // Minimum rep per year per location.
     $min_set = 3;
     // Select all location present in the materialized view.
-    $sql_location = "SELECT DISTINCT location 
+    $sql_location = "SELECT DISTINCT location
                      FROM chado.rawpheno_rawdata_mview INNER JOIN {pheno_plant_project} USING(plant_id)
                      WHERE project_id = :project
                      ORDER BY location ASC";
 
-    $result_location = db_query($sql_location, array(':project' => $project_id));
+    $result_location = db_query($sql_location, array(':project' => (int)$project_id));
     $count_location = $result_location->rowCount();
-  
+
     if ($count_location > 0) {
       // Array to hold data.
       $data_json = array();
       // Array to hold planting years and rep.
       $arr_range['year'] = array();
       $arr_range['rep'] = array();
-    
+
       // Define range of planting years and rep.
       for($i = 0; $i < 2; $i++) {
         $range = ($i == 0) ? 'year' : 'rep';
@@ -548,19 +584,19 @@ function rawpheno_rawdata_summary_json() {
           SELECT DISTINCT %s AS data_range FROM chado.rawpheno_rawdata_mview
           WHERE plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
           ORDER BY data_range ASC", ($range == 'year') ? 'SUBSTRING(planting_date, 1, 4)' : 'rep');
-        
+
         $r = db_query($sql_range, array(':project_id' => $project_id));
         $count_data = $r->rowCount();
 
-        // Determine if total number of years is less than minimum number. 
+        // Determine if total number of years is less than minimum number.
         if ($count_data < $min_set) {
           // Year/rep count is less than minimum, fill the gap to make the
           // number always to minimum.
-           
+
           // Initial/starting year/rep.
           $start_value = $r->fetchField();
           $arr_range[$range][] = $start_value;
-        
+
           // Fill the missing years/rep and push to array.
           for($c = 1; $c < $min_set; $c++) {
             // Next year in the SQL result.
@@ -585,19 +621,19 @@ function rawpheno_rawdata_summary_json() {
           }
         }
       }
-    
+
       // Construct data set.
       // Read each location available and construct data set.
       $sql = "SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT all_traits), ',') AS all_traits
               FROM chado.rawpheno_rawdata_mview
-              WHERE 
-                location = :location 
-                AND SUBSTRING(planting_date, 1, 4) = :year 
+              WHERE
+                location = :location
+                AND SUBSTRING(planting_date, 1, 4) = :year
                 AND rep = :rep
-                AND plant_id IN 
+                AND plant_id IN
                   (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
               LIMIT 1";
-          
+
       while($data = $result_location->fetchAssoc()) {
         // In each location, read each planting year.
         foreach($arr_range['year'] as $year) {
@@ -605,16 +641,16 @@ function rawpheno_rawdata_summary_json() {
           foreach($arr_range['rep'] as $rep) {
             // Each location in the materialized view
             $location = $data['location'];
-        
+
             $args = array(':year' => $year, ':rep' => $rep, ':location' => $location, ':project_id' => $project_id);
             // Get the entry with the most traits for this particular location, year and rep.
             $traits = db_query($sql, $args)
               ->fetchObject();
-            
+
             if (!empty($traits->all_traits)) {
               $trait_list = explode(',', $traits->all_traits);
               $trait_list = array_unique($trait_list);
-               
+
               // NOTE:
               // Less 2 to exclude trait Planting Data (date) and # of Seeds Planted (count).
               // Before doing that, test if these two traits were part of the traits the count is based on.
@@ -622,11 +658,11 @@ function rawpheno_rawdata_summary_json() {
               if (in_array($planting_date, $trait_list)) {
                 $less++;
               }
-          
+
               if (in_array($seeds_planted, $trait_list)) {
                 $less++;
               }
-              
+
               $trait_count = ((count($trait_list) - $less) < 0) ? 0 : (count($trait_list) - $less);
               $trait_list = implode(',', $trait_list);
             }
@@ -634,7 +670,7 @@ function rawpheno_rawdata_summary_json() {
               $trait_list = 0;
               $trait_count = 0;
             }
-            
+
             // Create a json entry with the following keys:
             // location, year, rep and trait.
             $arr_json[] = array('location' => $location,
@@ -647,7 +683,7 @@ function rawpheno_rawdata_summary_json() {
       }
 
       return $arr_json;
-    } 
+    }
     else {
       // No data.
       return 0;
@@ -666,23 +702,23 @@ function rawpheno_rawdata_summary_json() {
  *   bins is a list of computed bins and each data
  *   has location and bin objects.
  *
- * NOTE: The following column headers are excluded from the traits that can be visualized. 
- *   Planting Date (date) 
+ * NOTE: The following column headers are excluded from the traits that can be visualized.
+ *   Planting Date (date)
  *   Disease-specific Comments (text)
  *   Comments (text)
  *   # of Seeds Planted (count)
  */
-function rawpheno_rawdata_trait_json() {  
+function rawpheno_rawdata_trait_json() {
   // When the type of data is txt, we need to ensure that it not sooo long that it will break the chart.
   // To ensure that, we use this variable to check if the length is less or more and respond accordingly.
   $max_data_length = 10;
-  
+
   // Types of data.
   $txt_type = 'txt';
   $int_type = 'int';
   $scale_type = 'scale';
   $ynunsure_type = 'y/n/?';
-  
+
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
   // 10 Digits more will throw a PSQL ERROR.
@@ -694,48 +730,49 @@ function rawpheno_rawdata_trait_json() {
   else {
     $project_id = (int)trim(strip_tags($_GET['p']));
     $trait_id   = (int)trim(strip_tags($_GET['t']));
-    
+
     // Get cvterm.
     $cvterm = tripal_get_cvterm(array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types')));
     if (!$cvterm) {
       return 0;
     }
-    
+
     // Query unique values in in the column, get data type and char length of each unique entry.
     // CASE 1 - predict the data type of the value.
     // CASE 2 - determine the lenght of the value.
-    $sql = "SELECT 
-              value AS data, 
-              CASE WHEN value ~ '^[0-9]+$' THEN 'int' ELSE 'txt' END AS data_type, 
+    $sql = "SELECT
+              value AS data,
               CHAR_LENGTH(value) AS data_length
-            FROM {pheno_measurements} 
-            WHERE type_id = 
+            FROM {pheno_measurements}
+            WHERE type_id =
               (SELECT cvterm_id FROM {pheno_project_cvterm} WHERE project_id = :project_id AND cvterm_id = :cvterm_id LIMIT 1)
               AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
             GROUP BY value ORDER BY value ASC";
-    
+
     $args = array(':project_id' => $project_id, ':cvterm_id' => $trait_id);
     $d = db_query($sql, $args);
-    
+
     // Array to hold the data_type.
     $arr_data_type = array();
     // Array to hold the length of data.
     $arr_data_length = array();
     // Array to hold the data.
     $arr_data = array();
-    
+
     foreach($d as $m) {
-      array_push($arr_data_type, $m->data_type);    
+      $dtype = (is_numeric($m->data)) ? 'int' : 'txt';
+      array_push($arr_data_type, $dtype);
+
       array_push($arr_data_length, $m->data_length);
       array_push($arr_data, $m->data);
     }
-    
+
     // Get the overall data type.
     $data_type = array_unique($arr_data_type);
 
     if (count($data_type) > 1 OR $d->rowCount() <= 0) {
       // When there are too many data types or no data at all, do not visualize it.
-      return $data_type;
+      return 0;
     }
     else {
       // Else, chart it, but before doing so, determine if text or integer type.
