@@ -11,6 +11,7 @@
 	    var dropZone = document.getElementById('droppable-dnd');
 	    // Initial/default meassage of the drop area.
 	    var dropMessage = $('.droppable-message');
+      var dropMessageHTML = dropMessage.html();
 
 	    // Add corresponding message on mouse event.
 	    if (dropZone) {
@@ -70,9 +71,24 @@
       });
 
       //Collapse validation result.
-      $('fieldset').click(function() {
-        $('a.fieldset-title').click();
-      });
+      if ($('fieldset').length) {
+        $('.fieldset-title').click(function(event) {
+          event.preventDefault();
+        });
+
+        var m = $('fieldset');
+        m.once(function() {
+          $(this).click(function(event) {
+            if ($('.fieldset-wrapper').is(':visible')) {
+              $('.fieldset-wrapper').hide();
+            }
+            else {
+              $('.fieldset-wrapper').show();
+            }
+          });
+
+        });
+      }
 
       // For security, suppress any alert message showing snippet of code or
 	    // module settings to the user.
