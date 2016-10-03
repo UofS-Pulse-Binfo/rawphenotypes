@@ -571,21 +571,25 @@ function rawpheno_install() {
   $mv_schema = array (
     'table' => 'rawpheno_rawdata_mview',
     'fields' => array (
-    'plant_id' => array (
-      'type' => 'int'),
-    'location' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'rep' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'planting_date' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'total_count' => array (
-      'type' => 'int'),
-    'all_traits' => array(
-      'type' => 'text'),
+      'plant_id' => array (
+        'type' => 'int'),
+      'location' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'rep' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'planting_date' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'total_count' => array (
+        'type' => 'int'),
+      'all_traits' => array(
+        'type' => 'text'),
+    ),
+    'indexes' => array(
+      'plant_id' => array('plant_id'),
+      'location' => array('location'),
     )
   );
 
@@ -1053,21 +1057,25 @@ function rawpheno_update_7002() {
   $mv_schema = array (
     'table' => 'rawpheno_rawdata_mview',
     'fields' => array (
-    'plant_id' => array (
-      'type' => 'int'),
-    'location' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'rep' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'planting_date' => array (
-      'type' => 'varchar',
-      'length' => 255),
-    'total_count' => array (
-      'type' => 'int'),
-    'all_traits' => array(
-      'type' => 'text'),
+      'plant_id' => array (
+        'type' => 'int'),
+      'location' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'rep' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'planting_date' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'total_count' => array (
+        'type' => 'int'),
+      'all_traits' => array(
+        'type' => 'text'),
+    ),
+    'indexes' => array(
+      'plant_id' => array('plant_id'),
+      'location' => array('location'),
     )
   );
 

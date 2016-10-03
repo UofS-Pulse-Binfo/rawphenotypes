@@ -17,6 +17,9 @@
 
         // When user select a project.
         if (selectID == 'rawdata-sel-project') {
+          // Start loading animation when user changes project.
+          loading('heatmap');
+
           // Reset the select trait default to the word
           // Select a trait to highlight in the chart.
           $('select[name=rawdata-sel-trait] option:first-child').attr('selected', 'selected');
@@ -51,6 +54,8 @@
 
           // Mark rep where trait was measured.
           markRep(project_id, traitId, traitSelectedName);
+          // Start loading animation when user select a trait of interest.
+          loading('barchart');
 
           // Render bar chart.
           barchartFile = file + 'rawdata_trait' + '?p=' + project_id + '&t=' + traitId;
@@ -137,6 +142,9 @@
       // URL to knowpulse.
       var file = $('#rawdata-json').val();
 
+      // Start loading animation upon initial load of the page.
+      loading('heatmap');
+
       // Start the heat map chart default to the first project in the select a
       // project select box.
       // Read JSON data for heat map.
@@ -164,6 +172,9 @@
       // The height attribute or property of the elements remains constant whereas the
       // width is to be determined by the render function.
       function initializeHeatmapChart(data) {
+        // Remove loading animation.
+        $('.win-loading').remove();
+
         // Main svg canvas.
         svg = d3.select('.data-chart');
         svg.attr('height', height);
@@ -311,6 +322,9 @@
       // The height attribute or property of the elements remains constant whereas the
       // width is to be determined by the render function.
       function initializeBarChart(data) {
+        // Remove loading animation.
+        $('.win-loading').remove();
+
         // Add all barchart elements.
         bsvg = d3.select('.bar-chart')
           .attr('height', height - 30);
@@ -366,8 +380,22 @@
           .range([chartDimension.height, 0])
           .nice();
 
+
+        // Compute the number of tick marks.
+        var noTickMark;
+        if (maxCount >= 1 && maxCount <= 10) {
+          // Use the max number when maxCount is in range 1 to 10
+          noTickMark = maxCount;
+        }
+        else {
+          // Let d3 use scale to generate all tick values.
+          noTickMark = null;
+        }
+
         var byAxis = d3.svg.axis().orient('left')
-          .scale(by0);
+          .scale(by0)
+          .ticks(noTickMark)
+          .tickFormat(d3.format('d'));
         //
 
        // Add grid.
@@ -486,9 +514,6 @@
         infoWindow('off');
         // Remove the bar chart.
         d3.selectAll('#container-barchart').remove();
-
-        // Reset selectbox
-        $('select[name=rawdata-sel-trait]').val('');
       }
 
       // Render heat map chart elements.
@@ -900,6 +925,9 @@
 
       // Text and icon shown when there is no data.
       function noData(canvas) {
+        // Remove loading animation.
+        $('.win-loading').remove();
+
         d3.select('svg:last-child')
           .attr('width', width)
           .attr('height', 150);
@@ -907,8 +935,6 @@
         var message = d3.select(canvas)
           .append('g')
           .attr('transform', 'translate('+ (Math.floor(width/2) - 40) +', 50)');
-
-
 
         message
           .append('text')
@@ -923,7 +949,18 @@
         //console.log(JSON.stringify(d));
         console.log(d);
       }
-     ////
+      ////
+
+      function loading(chart) {
+         var container = (chart == 'heatmap')
+           ? '#container-rawdata'
+           : '#container-barchart';
+
+         d3.select(container)
+           .append('div')
+           .attr('class', 'win-loading')
+           .html('Please wait...');
+      }
     }
   };
 }(jQuery));

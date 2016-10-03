@@ -1126,7 +1126,7 @@ function rawpheno_submit_review($form, &$form_state) {
 
         // Don't forget the method description.
         $prop = array(
-          'cvterm_id' => $u_cvterm_id,
+          'cvterm_id' => $m_cvterm_id,
           'type_id'   => $cv_measurements_unit,
           'value'     => $method,
           'rank'      => 0,

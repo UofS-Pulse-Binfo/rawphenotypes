@@ -438,7 +438,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
         $new_header = array();
         foreach ($row as $r) {
           $without_format = rawpheno_function_delformat($r);
-          $no_units = preg_replace('/(\s+\(.*\))/','', $r);
+          $no_units = rawpheno_get_trait_name($r);
           $header[] = array(
             'no format' => $without_format,
             'original' => $r,

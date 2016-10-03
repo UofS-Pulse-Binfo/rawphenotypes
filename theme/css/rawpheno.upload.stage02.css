@@ -34,7 +34,7 @@ input[type=text] {
   width: 465px;
 }
 
-.form-item {
+.form-type-checkbox {
   border: 1px solid #CCCCCC;
   border-bottom: none;
   background-color: #F7F7F7;

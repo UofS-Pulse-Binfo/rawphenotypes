@@ -272,19 +272,29 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
   // On the bottom of the select field, list (summary of) the active projects, or projects with
   // column headers and users assigned to it.
+
   $sql = "SELECT
-            t1.name, COUNT(t2.cvterm_id) AS header_count,
-            COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count,
-            COUNT(DISTINCT uid) AS user_count,
+            t1.name,
+            COUNT(DISTINCT t2.cvterm_id) AS header_count,
+            COUNT(DISTINCT t3.cvterm_id) AS essential_count,
+            COUNT(DISTINCT t4.uid) AS user_count,
             t1.project_id
           FROM
             {project} AS t1
             INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
-            LEFT JOIN pheno_project_user AS t3 USING (project_id)
+            INNER JOIN pheno_project_cvterm AS t3 USING (project_id)
+            INNER JOIN pheno_project_user AS t4 USING (project_id)
+          WHERE
+            t1.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
+            AND t2.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
+            AND t3.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
+            AND t3.type = 'essential'
+            AND t4.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
           GROUP BY t1.project_id
           ORDER BY t1.project_id DESC";
 
   $args = array(':essential_trait' => $trait_type['type1']);
+
   $projects = chado_query($sql, $args);
 
   // Page title.

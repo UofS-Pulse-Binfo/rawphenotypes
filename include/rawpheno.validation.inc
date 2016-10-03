@@ -23,25 +23,25 @@
  *   is a validator definition where the key is the unique, machine name of the validator.
  *   Each validator defition should have the following keys.
  *     - label: Human-readable label used on the upload validation page.
- *     - scope: Whether this validation should be done on all rows ('all'), a random subset ('subset'), 
+ *     - scope: Whether this validation should be done on all rows ('all'), a random subset ('subset'),
  *         or even just the header ('header').
  *     - headers: an array of specific columns to validate. If null then will validate all columns.
- *     - message callback: The name of a function used to generate additional error 
- *         messages to give the user more input on how to fix the error. If NULL then no 
+ *     - message callback: The name of a function used to generate additional error
+ *         messages to give the user more input on how to fix the error. If NULL then no
  *         additional message will be given.
- *     - validation callback: The name of the function that should be called to validate 
+ *     - validation callback: The name of the function that should be called to validate
  *         a single cell.
  */
 function rawpheno_rawpheno_validators() {
   $validators = array();
-  
+
   $validators['is_excel'] = array(
     'label' => 'Uploaded file is a Microsoft Excel Spreadsheet.',
     'scope' => 'file',
     'message callback' => NULL,
     'validation callback' => 'validator_is_excel_validate_file',
   );
-  
+
   $validators['tab_exists'] = array(
     'label' => 'The "Measurements" tab exists and has content.',
     'scope' => 'file',
@@ -56,16 +56,22 @@ function rawpheno_rawpheno_validators() {
     'message callback' => 'validator_column_exists_generate_msg',
     'validation callback' => 'validator_column_exists_validate_header',
   );
-  
+
   // Ensure that required information is present for all cells in those columns.
+  // Get plant prop traits entry, location, plot and rep.
+  $arr_plantprop_name = rawpheno_function_headers('plantprop');
+  // Add name and planting date to the list.
+  // Planting date must have a value since date in this cell is used in visualizations.
+  array_push($arr_plantprop_name, 'Name', 'Planting Date');
+
   $validators['required_info'] = array(
     'label' => 'Required Information is present and numbers are not negative.',
     'scope' => 'subset',
-    'headers' => rawpheno_function_headers('plantprop'),
+    'headers' => $arr_plantprop_name,
     'message callback' => 'validator_required_info_generate_msg',
     'validation callback' => 'validator_required_info_validate_cell',
   );
-  
+
   // Ensure that the type of data in a cell is consistent with the unit of measurement.
   $validators['units_match_type'] = array(
     'label' => 'Data was measured using expected units.',
@@ -82,7 +88,7 @@ function rawpheno_rawpheno_validators() {
     'message callback' => 'validator_germplasm_present_generate_msg',
     'validation callback' => 'validator_germplasm_present_validate_cell',
   );
-  
+
   // Ensure that a project is selected from the project select box
   $validators['project_selected'] = array(
     'label' => 'Project is selected.',
@@ -90,7 +96,7 @@ function rawpheno_rawpheno_validators() {
     'message callback' => NULL,
     'validation callback' => 'validator_is_project_selected',
   );
-  
+
   return $validators;
 }
 
@@ -107,7 +113,7 @@ function validator_is_excel_validate_file($file) {
   // First test extension.
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
   if ($xls_extension == 'xlsx' OR $xls_extension == 'xls') {
-  
+
     // Then test that the file can be opened.
     // This checks against PDFs masquerading as XLS ;-).
     try {
@@ -121,7 +127,7 @@ function validator_is_excel_validate_file($file) {
       return TRUE;
     }
   }
-  
+
   return FALSE;
 }
 
@@ -144,14 +150,14 @@ function validator_tab_exists_validate_file($file) {
 
     // check the measurements tab exists.
     if (rawpheno_function_delformat($sheet_value) == 'measurements') {
-    
+
       // Check there are contents.
       $i = 0;
       $have_data = 0;
       foreach ($xls_obj as $row) {
         // only check the first two lines.
         if ($i > 2) break;
-        
+
         // Check the row isn't empty.
         if (strlen(trim(implode('', $row))) >= 5) {
           $have_data++;
@@ -161,7 +167,7 @@ function validator_tab_exists_validate_file($file) {
       if ($have_data > 1) return TRUE;
     }
   }
-  
+
   return FALSE;
 }
 
@@ -176,16 +182,16 @@ function validator_tab_exists_validate_file($file) {
  */
 function validator_column_exists_generate_msg($error_info) {
   $messages = array();
-  
+
   if (isset($error_info['missing'])) {
     $text1 = 'The following columns must exist: "' . implode('", "',$error_info['missing']). '". Please add empty column in your spreadsheet for each of the missing trait mentioned.';
     $messages[] = $text1;
   }
-  
+
   if (isset($error_info['duplicates'])) {
     $messages[] = 'The following columns were duplicated: "' . implode('", "',$error_info['duplicates']). '". Please ensure each column is unique (only occurs once in the spreadsheet).';
   }
-  
+
   return $messages;
 }
 
@@ -206,16 +212,15 @@ function validator_column_exists_validate_header($header, $project_id) {
   // First check that all the essential traits are there.
   $delformat_header = array();
   $nospace_header = array();
-  
+
   foreach ($header as $h) {
     $delformat_header[] = $h['no units'];
     $nospace_header[] = str_replace(' ','', $h['no format']);
   }
-  
-  $essential_traits = rawpheno_project_essential_traits($project_id);
 
+  $essential_traits = rawpheno_project_essential_traits($project_id);
   $missing_traits = array_diff($essential_traits, $delformat_header);
-  
+
   if (!empty($missing_traits)) {
     $result['missing'] = $missing_traits;
   }
@@ -225,7 +230,7 @@ function validator_column_exists_validate_header($header, $project_id) {
   $counts = array_count_values($nospace_header);
   // If there are duplicates then go ahead and find them.
   if (sizeof($nospace_header) != sizeof($counts)) {
-    
+
     $duplicates = array();
     foreach($counts as $val => $c) {
       if($c > 1) {
@@ -234,7 +239,7 @@ function validator_column_exists_validate_header($header, $project_id) {
       }
     }
     $result['duplicates'] = $duplicates;
-  }  
+  }
 
   if (empty($result)) {
     return TRUE;
@@ -255,10 +260,10 @@ function validator_column_exists_validate_header($header, $project_id) {
  */
 function validator_required_info_generate_msg($error_info) {
   $messages = array();
-  
+
   // For each column with missing values.
   foreach ($error_info as $column => $rows) {
-  
+
     // Find the parts and separate the messages.
     $empty_parts = array();
     $dup_parts = array();
@@ -274,27 +279,27 @@ function validator_required_info_generate_msg($error_info) {
     // Generate the empty message.
     if (!empty($empty_parts)) {
       $msg = "You need to supply non-negative values for \"$column\" on row";
-      
+
       // pluralize rows if there are more than one with an empty value.
       if (sizeof($empty_parts) > 1) { $msg .= 's'; }
-    
+
       // Add the row numbers to the message.
       $msg .= ' ' . implode(', ',$empty_parts) . '.';
-    
+
       $messages[] = $msg;
-    
+
     }
-    
+
     // Generate the duplicate values message.
     if (!empty($dup_parts)) {
       $placeholder = (sizeof($dup_parts) > 1) ? 'values are' : 'value is';
-      $msg = "The \"$column\" should be unique. The following $placeholder duplicated: " 
+      $msg = "The \"$column\" should be unique. The following $placeholder duplicated: "
         . implode('; ', $dup_parts) . '.';
       $messages[] = $msg;
     }
 
   }
-  
+
   return $messages;
 }
 
@@ -309,7 +314,7 @@ function validator_required_info_generate_msg($error_info) {
  *    - 'row': an array containing all cells in the current row.
  *    - 'column index': the index of the column the cell is in.
  *    - 'header': an array containing the header for the file. Each column in the header
- *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *        will be pre-processed with the following self-explanitory keys: 'no format',
  *       'original', 'units', 'no units'.
  * @param $storage
  *   An empty variable that is specific to the current validation but persistent across
@@ -323,24 +328,24 @@ function validator_required_info_validate_cell($value, $context, &$storage) {
   // Validate if the cell is empty.
   if (empty($value)) return array('code' => 1, 'row' => $context['row index']);
   if ($value < 0) return array('code' => 1, 'row' => $context['row index']);
-  
+
   // Validate if the plot is unique.
   // If this is the plot column...
   if ($context['header'][ $context['column index'] ]['no format'] == 'plot') {
 
     // Has this value been used before?
     $rows_used_in = array_keys($storage, $value);
-    
+
     // save to storage.
     $storage[ $context['row index'] ] = $value;
-    
+
     // if it has then save for error.
     if ($rows_used_in) {
       $rows_used_in[] = $context['row index'];
       return array('code' => 2, 'value' => $value, 'rows' => $rows_used_in);
     }
   }
-  
+
   return TRUE;
 }
 
@@ -355,7 +360,7 @@ function validator_required_info_validate_cell($value, $context, &$storage) {
  */
 function validator_units_match_type_generate_msg($error_info) {
   $messages = array();
-  
+
   foreach($error_info as $column_name => $rows) {
 
     // Expand each row.
@@ -364,7 +369,7 @@ function validator_units_match_type_generate_msg($error_info) {
       $parts[] = '"' . $error['value'] .'" (line '.$row_index.')';
       $unit_name = $error['unit'];
     }
-    
+
     // We want our messages consistent but helpful thus we need to provide some
     // customization to the message based on the unit.
     $unit_msg = '';
@@ -395,11 +400,11 @@ function validator_units_match_type_generate_msg($error_info) {
         break;
       case 'text':
     }
-    
+
     // Combine all the parts into a full message.
     $messages[] = "The following values in \"$column_name\" are not $unit_name: " . implode(', ', $parts) . '. ' . $unit_msg;
   }
-  
+
   return $messages;
 }
 
@@ -414,7 +419,7 @@ function validator_units_match_type_generate_msg($error_info) {
  *    - 'row': an array containing all cells in the current row.
  *    - 'column index': the index of the column the cell is in.
  *    - 'header': an array containing the header for the file. Each column in the header
- *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *        will be pre-processed with the following self-explanitory keys: 'no format',
  *       'original', 'units', 'no units'.
  * @param $storage
  *   An empty variable that is specific to the current validation but persistent across
@@ -423,7 +428,7 @@ function validator_units_match_type_generate_msg($error_info) {
  * @return
  *   TRUE if it passed validation; FALSE otherwise.
  */
-function validator_units_match_type_validate_cell($value, $context, &$storage) { 
+function validator_units_match_type_validate_cell($value, $context, &$storage) {
 
   // Determine the units for this column.
   $unit = $context['header'][ $context['column index'] ]['units'];
@@ -432,7 +437,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
   if (empty($value) AND !(strval($value) === '0')) {
     return TRUE;
   }
-  
+
   // Then check if it matches based on the unit.
   switch($unit) {
     case 'date':
@@ -444,7 +449,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         $month = $matches[2];
         $day = $matches[3];
         if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31 AND $year > 1900) {
-        
+
           // Then check that it's not in the future.
           $today = new DateTime();
           $date = DateTime::createFromFormat('Y-m-d', $value);
@@ -454,7 +459,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         }
       }
       break;
-    
+
     case 'count':
     case 'days':
       // First check that it's a number.
@@ -469,7 +474,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         return TRUE;
       }
       break;
-      
+
     case 'cm':
     case 'g':
       // Measurements - if it is numeric, then it must be greater than 0.
@@ -481,14 +486,14 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         return TRUE;
       }
       break;
-    
+
     case 'y/n/?':
       // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
       if (in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
         return TRUE;
       }
       break;
-    
+
     case 'scale':
       // Scales are associated with the trait cvterm and each approved code is stored
       // in pheno_scale_member.
@@ -497,10 +502,10 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
       $trait_id = rawpheno_get_trait_id($trait);
       if ($trait_id) {
         // Then check that the value is in the scale members
-        $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value', 
+        $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value',
           array(':trait_id' => $trait_id, ':value' => $value))->fetchField();
         if ($present) return TRUE;
-        
+
         // If not, make sure there are members.
         $has_scale = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:trait_id',
           array(':trait_id' => $trait_id))->fetchField();
@@ -511,11 +516,11 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
         return TRUE;
       }
       break;
-    
+
     case 'text':
       return TRUE;
       break;
-    
+
     default:
       return TRUE;
   }
@@ -535,7 +540,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
 function validator_germplasm_present_generate_msg($error_info) {
   $nonexistant = array();
   $nonunique = array();
-  
+
   foreach ($error_info['Name'] as $v) {
     if ($v['code'] === 0) {
       $nonexistant[] = '"' . $v['name'] . '" (line ' . $v['row number'] . ')';
@@ -544,7 +549,7 @@ function validator_germplasm_present_generate_msg($error_info) {
       $nonunique[] = '"' . $v['name'] . '" (line ' . $v['row number'] . ')';
     }
   }
-  
+
   $messages = array();
   if (!empty($nonexistant)) {
     $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please contact the website administrator.';
@@ -552,7 +557,7 @@ function validator_germplasm_present_generate_msg($error_info) {
   if (!empty($nonunique)) {
     $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please contact the administrator of this duplication.';
   }
-  
+
   return $messages;
 }
 
@@ -567,7 +572,7 @@ function validator_germplasm_present_generate_msg($error_info) {
  *    - 'row': an array containing all cells in the current row.
  *    - 'column index': the index of the column the cell is in.
  *    - 'header': an array containing the header for the file. Each column in the header
- *        will be pre-processed with the following self-explanitory keys: 'no format', 
+ *        will be pre-processed with the following self-explanitory keys: 'no format',
  *       'original', 'units', 'no units'.
  * @param $storage
  *   An empty variable that is specific to the current validation but persistent across
@@ -582,17 +587,17 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   9 = too many matching stocks (not unique).
  */
 function validator_germplasm_present_validate_cell($value, $context, &$storage) {
-  
+
   // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
   if (empty($value)) {
     return TRUE;
   }
-  
+
   $stocks = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $value))->fetchAll();
-  
+
   if (sizeof($stocks) == 1) {
     return TRUE;
-  } 
+  }
   elseif (empty($stocks)) {
     return array('name' => $value, 'row number' => $context['row index'], 'code' => 0);
   }

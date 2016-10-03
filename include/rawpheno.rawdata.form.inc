@@ -47,16 +47,13 @@ function rawpheno_rawdata($form, &$form_state) {
   // Get the cv_id of phenotype_measurement_types
   $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
 
-  // Query traits in a project. Exclude names listed in where clause and additional headers detected in the spreadsheet,
-  // as they are unpredictable and may cause the visualization to break.
-  $sql = "SELECT cvterm_id, name
-          FROM {cvterm} INNER JOIN pheno_measurements ON cvterm_id = type_id
+  $sql = "SELECT t1.cvterm_id, t1.name
+          FROM {cvterm} AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
           WHERE
-            cvterm_id IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
-            AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-            AND cv_id = :cv_id
-            AND name NOT IN ('Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
-          ORDER BY cvterm_id ASC";
+            t2.project_id = :project_id
+            AND t1.cv_id = :cv_id
+            AND t1.name NOT IN ('Plot', 'Entry', 'Name', 'Rep', 'Location', 'Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
+          ORDER BY t1.cvterm_id ASC";
 
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
 
