@@ -525,6 +525,11 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
               drupal_set_message(t('Cannot @action this user. User is assigned to a project that has data.',
                 array('@action' => $action)) . $goback, 'error');
             }
+            elseif ($user_project_asset['user_id'] < 2) {
+              // User is administrator.
+              drupal_set_message(t('Cannot @action user. The user is administrator of this site.',
+                array('@action' => $action)) . $goback, 'error');
+            }
             else {
               // Call user function.
               $form = rawpheno_admin_project_users($form, $form_state, $user_project_asset, $action);

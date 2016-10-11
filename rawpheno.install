@@ -413,6 +413,20 @@ function rawpheno_install() {
 
   if ($prj_id->rowCount()) {
     $project_ID = $prj_id->fetchField();
+
+    // When AGILE is present in this site, add a user to this project.
+    db_insert('pheno_project_user')
+      ->fields(array('project_id' => $project_ID,
+                     'uid' => $GLOBALS['user']->uid))
+      ->execute();
+
+    // If the user is not the superadmin, add superadmin as well.
+    if ($GLOBALS['user']->uid != 1) {
+      db_insert('pheno_project_user')
+        ->fields(array('project_id' => $project_ID,
+                       'uid' => 1))
+        ->execute();
+      }
   }
 
   // Initialize R Transformation rules required in generating R version of header.
@@ -619,24 +633,6 @@ function rawpheno_install() {
   }
 }
 
-/**
- * Function find and relace line.
- *
- * @param $line
- *   A line of string to search.
- *
- * @return
- *   A string to replace the matching line found.
- */
-function rawpheno_function_replace_line($line) {
-  $find = '$Value = $Value -> format($Format[\'Code\']);';
-  if (stristr($line, $find)) {
-    return '$Value = $Value -> format("Y-m-d");';
-  }
-
-  return $line;
-}
-
 
 /**
  * Implements hook_uninstall().
@@ -837,11 +833,11 @@ function rawpheno_update_7002() {
 
 
   // UPDATE First Release to Project Based.
-  // When update the first release to project based, first update page configuration
+  // When updating the first release to project based, first update page configuration
   // to add page title to back up page at the same time initialize R transformation rules
   // with default rules (rules used to generate R compatible verstion of all AGILE-specific
-  // traits. Next, update cvterms definition, create a relationship entry relating a unit to cvterm,
-  // add method of collection method description and finally, transform a R compatible version
+  // traits). Next, update cvterms definition, create a relationship entry relating a unit to cvterm,
+  // add method of collection method description and transform a R compatible version
   // of the cvterm. Finally, tell if AGILE project is present in the host site and if not, create the project
   // and reference the project id number. When the module has data, map everything to this
   // project and appoint the user running the update and super admin.
@@ -1099,16 +1095,16 @@ function rawpheno_requirements($phase) {
       // Libraries.
       'excel_writer' =>
         array(
-          'is_in'  => libraries_get_path('PHP_XLSXWriter_plus-master'),
+          'is_in'  => libraries_get_path('PHP_XLSXWriter_plus'),
           'source' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
-          'path'   => $libraries . 'PHP_XLSXWriter_plus-master'
+          'path'   => $libraries . 'PHP_XLSXWriter_plus'
         ),
 
       'excel_reader' =>
         array(
-          'is_in'  => libraries_get_path('spreadsheet-reader-master'),
+          'is_in'  => libraries_get_path('spreadsheet-reader'),
           'source' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
-          'path'   => $libraries . 'spreadsheet-reader-master'
+          'path'   => $libraries . 'spreadsheet-reader'
         ),
 
       'd3' =>
