@@ -20,7 +20,7 @@
 		      dropMessage.css('border','3px dashed #AAAAAA');
           // Create a new instruction to user.
           dropMessage.children().hide();
-          $('.droppable-message span').eq(0).show().text('Drop to backup your spreadsheet');
+          $('.droppable-message span').eq(0).show().text('Drop to upload and validate your spreadsheet');
 	  	  });
 
 		    // User cancels file drop.

@@ -75,9 +75,15 @@
 <div class="container-page" style="<?php print "border-color: $theme_colour;" ?>">
   <div class="content-wrapper">
     <?php
-    // TEST IF MODULE HAS A PROJECT FOR USER TO WORK ON OR
-    // PROJECT HAS DATA.
-    if (!rawpheno_function_project()) {
+    if (preg_match('/(?i)msie [1-8]/', $_SERVER['HTTP_USER_AGENT'])) {
+      // Browser not supported.
+    ?>
+      <div id="container-no-info" class="messages warning">
+        Browser not supported. Please update your browser.
+      </div>
+    <?php
+    }
+    elseif (!rawpheno_function_project()) {
       // No project available.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -95,6 +101,7 @@
     <?php
     }
     elseif (count(rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
+      // User is not appointed to project.
     ?>
       <div id="container-no-info" class="messages warning">
         You have no projects assigned to your account. Please contact the administrator of this website
@@ -102,6 +109,7 @@
     <?php
     }
     elseif (file_prepare_directory($pub_dir = 'public://') == FALSE) {
+      // Upload destination directory is not writable.
     ?>
       <div id="container-no-info" class="messages warning">
         The file destination directory is not writable. Please contact the administrator of this website.
@@ -302,7 +310,7 @@
                     <li><p>Essential Traits have green headers; all other traits are optional.</p></li>
                     <li><p>You should hide optional traits you are not taking data for by long pressing a column header then selecting “hide”.</p></li>
                     <li><p>We’ve included an easy calculator to determine “Days from Planting” in a separate tab.</p></li>
-                    <li><p>Special Interest Traits: <br />Add a column ot the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
+                    <li><p>Special Interest Traits: <br />Add a column on the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
                   </ul>
 
                   <div id="container-resource-links">

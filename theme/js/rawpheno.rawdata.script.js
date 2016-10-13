@@ -184,6 +184,8 @@
         // year as secondary key and rep as tertiary.
         // data /location/year/rep - values.
         var n = 0;
+        traitsList = [];
+
         dataByLocation = d3.nest()
           .key(function(d) { return d.location; })
           .key(function(d) { return d.year; })
@@ -707,7 +709,11 @@
 	        .data(dataByLocations)
 	        .enter()
 	        .append('text')
-	        .text(function(d, i) { return d.key; })
+	        .text(function(d, i) {
+	          // Trim location when it is too long.
+	          var loc = d.key;
+	          return (loc.length >= 28) ? loc.substr(0, 25) + '...' : loc;
+	        })
           .attr('x', 19)
           .attr('class', 'legend-text')
 			    .attr('y', function(d, i) { return 17 * i; });

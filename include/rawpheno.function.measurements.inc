@@ -521,6 +521,30 @@ $define =>
 R1 = One open flower at any node.'
 );
 
+$definition['# Nodes on Primary Stem at R1 (1st; count)'] = array(
+$method =>
+'Record the number of nodes on the primary stem when the first flower opens.
+Record values from 2 plants, taken from the middle of the plot.',
+$define =>
+'Node = positions on stem where leaves and buds/branches grow from.
+The first few nodes can loose their leaves and may not be readily visible. First flower may NOT be on the primary stem but we want the # of nodes on the primary stem that day.'
+);
+
+$definition['# Nodes on Primary Stem at R1 (2nd; count)'] = array(
+$method =>
+'Record the number of nodes on the primary stem when the first flower opens.
+Record values from 2 plants, taken from the middle of the plot.',
+$define =>
+'Node = positions on stem where leaves and buds/branches grow from.
+The first few nodes can loose their leaves and may not be readily visible. First flower may NOT be on the primary stem but we want the # of nodes on the primary stem that day.'
+);
+
+$definition['Days till 10% of Plants have Pods (R3; days)'] = array(
+$method =>
+'Record the number of days after planting for which 10% of plants have pods. Note: Pods can be present but still covered with flower petals, for ease of data collection, only count the plant as having a pod if you can visually see the pod without having to remove flower petals.',
+$define => ''
+);
+
 $definition['Days till 10% of Plants have fully Swollen Pods (R5; days)'] = array(
 $method =>
 'Record the number of days after planting for which 10% of plants have pods with fully swollen seeds (that fill more than half of the pod area).',
@@ -542,30 +566,16 @@ R7 = The leaves start yellowing and 50% of the pods have turned yellow.
 Pod maturity is not always accompanied by a yellowing of the pod – some pods turn white, some are pigmented and may have patterns, CDC QG2 will remain green'
 );
 
-$definition['Days till Harvest (days)'] = array(
+$definition['R7 Traits: Lowest Pod Height (1st; cm)'] = array(
 $method =>
-'Record the number of days from planting to harvest.',
+'Record the distance (cm) from the soil to the bottom of the lower most pod.
+Record values from 2 plants, taken from the middle of the plot.
+When: Record values when 10% of plants have 1/2 pods mature (R7).
+Record values from 2 plants, taken from the middle of the plot.',
 $define => ''
 );
 
-$definition['Diseases Present (y/n/?)'] = array(
-$method =>
-'Record the presence of any disease, and if able, describe or make notes.',
-$define =>
-'Scale: y = disease present, n = no disease present ? = unsure
-There is a "Disease-specific Comments" column for making any notes related to disease including but not limited to the observation that many or specific diseases are present.'
-);
-
-$definition['# Nodes on Primary Stem at R1 (1st; count)'] = array(
-$method =>
-'Record the number of nodes on the primary stem when the first flower opens.
-Record values from 2 plants, taken from the middle of the plot.',
-$define =>
-'Node = positions on stem where leaves and buds/branches grow from.
-The first few nodes can loose their leaves and may not be readily visible. First flower may NOT be on the primary stem but we want the # of nodes on the primary stem that day.'
-);
-
-$definition['R7 Traits: Lowest Pod Height (1st; cm)'] = array(
+$definition['R7 Traits: Lowest Pod Height (2nd; cm)'] = array(
 $method =>
 'Record the distance (cm) from the soil to the bottom of the lower most pod.
 Record values from 2 plants, taken from the middle of the plot.
@@ -584,24 +594,33 @@ DO NOT stretch the plant. Leave as is.',
 $define => ''
 );
 
-$definition['R7 Traits: Canopy Width (cm)'] = array(
+$definition['R7 Traits: Canopy Height (2nd; cm)'] = array(
 $method =>
-'Record the max canopy width (cm).
+'Record the distance (cm) from the soil to the highest part of the plant canopy.
 Record values from 2 plants, taken from the middle of the plot.
 When: Record values when 10% of plants have 1/2 pods mature (R7).
 Record values from 2 plants, taken from the middle of the plot.
-Add a column with the header "R7 Traits: Canopy Width (cm)" if you would like to record this trait.',
+DO NOT stretch the plant. Leave as is.',
 $define => ''
 );
 
-$definition['R7 Traits: Plant Length (cm)'] = array(
+$definition['Days till Harvest (days)'] = array(
 $method =>
-'Record the distance (cm) from the soil to the end of the longest stem.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.
-DO stretch the plant.
-Add a column with the header "R7 Traits: Plant Length (cm)" if you would like to record this trait.',
+'Record the number of days from planting to harvest.',
+$define => ''
+);
+
+$definition['Diseases Present (y/n/?)'] = array(
+$method =>
+'Record the presence of any disease, and if able, describe or make notes.',
+$define =>
+'Scale: y = disease present, n = no disease present ? = unsure
+There is a "Disease-specific Comments" column for making any notes related to disease including but not limited to the observation that many or specific diseases are present.'
+);
+
+$definition['Disease-specific Comments'] = array(
+$method =>
+'Feel free to mention if multiple or specific diseases are present. Note: disease ratings for specific diseases should go in a separate column if you would like to measure them.',
 $define => ''
 );
 
@@ -617,6 +636,26 @@ Scale:
 When: Record value when harvesting the plot.',
 $define =>
 'lodged = plant canopy is no longer vertical to the ground.'
+);
+
+$definition['Subset Traits: # Peduncles (count)'] = array(
+$method =>
+'Leave this column as is, DO NOT make any changes (unless you were unable to obtain 20 peduncles).
+This has been preset to 20, because that is how many should be collected.',
+$define =>
+'peduncle = a stalk supporting an inflorescence (group/cluster of flowers).'
+);
+
+$definition['Subset Traits: # Pods (count)'] = array(
+$method =>
+'Record the total number of pods on the 20 peduncles collected for the subset traits.',
+$define => ''
+);
+
+$definition['Subset Traits: # Seeds (count)'] = array(
+$method =>
+'Record the total number of seeds from pods counted for the previous trait ("Subset Traits: # Pods").',
+$define => ''
 );
 
 $definition['Straw Biomass (g)'] = array(
@@ -645,25 +684,32 @@ Do not calculate this value from "Total Seed Mass" and "Total Number of Seeds".'
 $define => ''
 );
 
-$definition['Subset Traits: # Peduncles (count)'] = array(
-$method =>
-'Leave this column as is, DO NOT make any changes (unless you were unable to obtain 20 peduncles).
-This has been preset to 20, because that is how many should be collected.',
-$define =>
-'peduncle = a stalk supporting an inflorescence (group/cluster of flowers).'
-);
-
-$definition['Subset Traits: # Pods (count)'] = array(
-$method =>
-'Record the total number of pods on the 20 peduncles collected for the subset traits.',
-$method => ''
-);
-
-$definition['Subset Traits: # Seeds (count)'] = array(
-$method =>
-'Record the total number of seeds from pods counted for the previous trait ("Subset Traits: # Pods").',
+$definition['Comments'] = array(
+$method => '',
 $define => ''
 );
+
+$definition['R7 Traits: Canopy Width (cm)'] = array(
+$method =>
+'Record the max canopy width (cm).
+Record values from 2 plants, taken from the middle of the plot.
+When: Record values when 10% of plants have 1/2 pods mature (R7).
+Record values from 2 plants, taken from the middle of the plot.
+Add a column with the header "R7 Traits: Canopy Width (cm)" if you would like to record this trait.',
+$define => ''
+);
+
+$definition['R7 Traits: Plant Length (cm)'] = array(
+$method =>
+'Record the distance (cm) from the soil to the end of the longest stem.
+Record values from 2 plants, taken from the middle of the plot.
+When: Record values when 10% of plants have 1/2 pods mature (R7).
+Record values from 2 plants, taken from the middle of the plot.
+DO stretch the plant.
+Add a column with the header "R7 Traits: Plant Length (cm)" if you would like to record this trait.',
+$define => ''
+);
+
 
   return (isset($definition[$cvterm])) ? $definition[$cvterm] : null;
 }

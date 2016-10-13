@@ -4,26 +4,28 @@
  * Page callback: display standard phenotyping instructions page.
  */
 function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
+   $tmp_project = $project_id;
+
   // Navigation button. Related page of instructions page is upload page.
   $form['page_button'] = array(
     '#type' => 'markup',
     '#markup' => t('Upload Data &#10095;'),
   );
-  
+
   // Attach CSS.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.instructions.style.css');
-  
+
   // Create a select box containing projects available - these are projects
-  // that have associated column header set and must have at least 1 essential column header. 
+  // that have associated column header set and must have at least 1 essential column header.
   // The projects are filtered to show only projects assigned to user.
   $all_project = rawpheno_function_user_project($GLOBALS['user']->uid);
-  
+
   // No projects assined to the user.
   if (count($all_project) < 1) {
     return $form;
   }
-   
+
   // Ensure that project is valid.
   if ($project_id) {
     if (!in_array($project_id, array_keys($all_project))) {
@@ -42,24 +44,24 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
     // available from the projects defined by admin.
     $project_id = array_keys($all_project)[0];
   }
-  
+
   // Project Name.
   $project_name = $all_project[$project_id];
-  
+
   // Given a project id, construct the table required for each trait type set.
   // All trait types, need to remove type plantproperty.
   $trait_set = rawpheno_function_trait_types();
- 
+
   $sql = "SELECT project_cvterm_id AS id FROM {pheno_project_cvterm}
           WHERE project_id = :project_id AND type <> :plantprop
           ORDER BY type, cvterm_id ASC";
-          
+
   $args = array(':project_id' => $project_id, ':plantprop' => $trait_set['type4']);
   $cvterm_id = db_query($sql, $args);
-  
+
   // Array to hold trait row.
   $arr_cvterm = array();
-  
+
   foreach($cvterm_id as $id) {
     $cvterm = rawpheno_function_header_properties($id->id);
     // Create an array that will translate to a row in table.
@@ -67,7 +69,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
       '<div class="data-cells">' . $cvterm['name'] . '</div>',
       $cvterm['method'],
       $cvterm['definition']
-    );  
+    );
   }
 
   // Construct table.
@@ -81,39 +83,79 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
       '#markup' => theme('table', $arr_tbl_args),
     );
   }
-  
+
   // Project and project select box.
   $form['project_panel'] = array(
     '#markup' => $project_name
   );
-  
+
   $form['sel_project'] = array(
     '#type' => 'select',
     '#options' => array(0 => 'Please select a project') + $all_project,
     '#id' => 'rawpheno-ins-sel-project'
   );
-  
+
   $ins_path = base_path() . 'phenotypes/raw/instructions/';
   // Make the project select box into a jump menu and add the project id number to the url.
   drupal_add_js('jQuery(document).ready(function() {
     jQuery("#rawpheno-ins-sel-project").change(function(){
-      if (jQuery(this).val() > 0) {  
+      if (jQuery(this).val() > 0) {
         window.location.href = "'. $ins_path .'" + jQuery(this).val();
       }
     });
   })', 'inline');
 
 
+  // NOTE: When project is AGILE, download data collection spreadsheet link points to
+  //       pre-made AGILE spreadsheet, otherwise, instructions page will generate the spreadsheet file. To ensure that
+  //       the column headers matched for AGILE project, a check (when no new column header added tru admin then download
+  //       pre-made, else generate) is required before downloading the file.
+
   // Provide user with link to download project specific data collection spreadsheet file.
   // When the project is the default project (AGILE) then supply a ready made spreadsheet.
-  $link_to_xls = ($project_name == 'AGILE: Application of Genomic Innovation in the Lentil Economy') 
-    ? file_create_url('public://AGILE-PhenotypeDataCollection-v5.xlsx.zip')
-    : 'spreadsheet/' . $project_id;
-  
+
+  $file_path = ($tmp_project == null) ? 'instructions/spreadsheet/' : 'spreadsheet/';
+  $link_to_xls = $file_path . $project_id;
+
+  if ($project_name == 'AGILE: Application of Genomic Innovation in the Lentil Economy') {
+    // Compare the AGILE-specific column header to check if they match
+    $AGILE_column_headers = rawpheno_function_headers('expected');
+    $AGILE_essential_headers = rawpheno_function_headers('essential');
+    $AGILE_required_headers = rawpheno_function_headers('required');
+    $AGILE_essential_headers = array_diff($AGILE_essential_headers, $AGILE_required_headers);
+
+    // Query the AGILE project column headers.
+    $sql = "SELECT name, type FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id) WHERE project_id = :project_id";
+    $args = array(':project_id' => $project_id);
+    $h = chado_query($sql, $args)
+      ->fetchAllKeyed();
+
+    // Manually add Name, since Name is not added to project.
+    $h['Name'] = 'plantproperty';
+
+    $header_found_count = 0;
+    $essential_found_count = 0;
+
+    foreach($h as $header => $type) {
+      if (in_array($header, $AGILE_column_headers)) {
+        $header_found_count++;
+      }
+
+      if ($type == $trait_set['type1'] AND in_array($header, $AGILE_essential_headers)) {
+        $essential_found_count++;
+      }
+    }
+
+    if (count($h) == count($AGILE_column_headers) AND $header_found_count == count($AGILE_column_headers) AND $essential_found_count == count($AGILE_essential_headers)) {
+      // AGILE Project match the original trait set. Download ready-made data collection spreadsheet file.
+     $link_to_xls = file_create_url('public://AGILE-PhenotypeDataCollection-v5.xlsx.zip');
+    }
+  }
+
   $form['download_data_collection'] = array(
     '#markup' => t('<a href="@link" target="_blank">Download Data Collection Spreadsheet</a>', array('@link' => $link_to_xls))
   );
-    
+
   // Search field with autocomplete feature.
   $form['txt_search'] = array(
     '#title' => '',
@@ -123,7 +165,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
     '#default_value' => t('Search Trait'),
     '#autocomplete_path' => 'phenotypes/raw/instructions/autocomplete/' . $project_id,
   );
-  
+
   $form['btn_search'] = array(
     '#type' => 'markup',
     '#markup' => '<input type="button" id="btn_submit" name="btn_search" class="form-submit" value=" ">',
@@ -134,12 +176,12 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
     '#type' => 'hidden',
     '#value' => $GLOBALS['base_url'] . '/phenotypes/raw/instructions/autocomplete/' . $project_id,
     '#attributes' => array('id' => array('traits-json'))
-  );  
-  
+  );
+
   // Attach JQuery UI library and JavaScript.
   $form['#attached']['library'][] = array('system', 'ui.tabs');
   $form['#attached']['js']  = array($path . 'js/rawpheno.instructions.script.js');
- 
+
   return $form;
 }
 
@@ -153,17 +195,17 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
   if (isset($project_id) AND $project_id > 0) {
     // Array to hold all trait types.
     $trait_type = rawpheno_function_trait_types();
-    
+
     // Exclude the plant property from the set of headers. They are pre-inserted to the array
     // of column headers passed to the spreadsheet writer.
-    $sql = "SELECT project_cvterm_id, name, type 
+    $sql = "SELECT project_cvterm_id, name, type
             FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
             WHERE project_id = :project_id AND type <> :plantproperty
-            ORDER BY type ASC";  
-    
-    $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);  
+            ORDER BY type ASC";
+
+    $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);
     $cvterm = chado_query($sql, $args);
-    
+
     // Only when project has headers.
     if ($cvterm->rowCount() > 0) {
       // Array to hold the column headers passed to the excel writer.
@@ -171,19 +213,19 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
       // Array to hold standard procedure, which basically is
       // the traits definition and collection method.
       $instructions_data = array();
-   
+
       // Get the data type per unit. This type will be the cell type in the spreadsheet.
-      $data_type = rawpheno_function_default_unit('type');    
-      
+      $data_type = rawpheno_function_default_unit('type');
+
       // Prepend the array with plant property column headers.
       $col_headers = array(
-        'Plot'     => 'integer', 
-        'Entry'    => 'integer', 
-        'Name'     => 'string', 
-        'Rep'      => 'integer', 
+        'Plot'     => 'integer',
+        'Entry'    => 'integer',
+        'Name'     => 'string',
+        'Rep'      => 'integer',
         'Location' => 'string'
       );
-      
+
       // Start at F column taking into account plant properties.
       // A for Plot, B for Entry and so on (A-E is 5 cols).
       $l = 'F';
@@ -194,16 +236,16 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
         // Get the unit.
         $u = rawpheno_function_header_unit($trait->name);
         $unit = isset($data_type[$u]) ? $data_type[$u] : 'string';
-  
-        $col_headers[$trait->name] = $unit; 
-        
+
+        $col_headers[$trait->name] = $unit;
+
         // Highlight the cells when it is essential trait.
         if ($trait->type == $trait_type['type1']) {
           array_push($cell_i, $l . '1');
           // Increment F column.
           $l++;
         }
-        
+
         // Get header method and definition information.
         $t = rawpheno_function_header_properties($trait->project_cvterm_id);
         array_push($instructions_data, array($t['name'], $t['method'], $t['definition']));
@@ -212,23 +254,23 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
       // Load spreadsheet writer library.
       $xlsx_writer = libraries_load('spreadsheet_writer');
       include_once $xlsx_writer['path'] . $xlsx_writer['files'][0];
-    
+
       $writer = new XLSXWriter();
       // Measurement tab.
-      @$writer->writeSheet(array(), 'Measurements', $col_headers, 
+      @$writer->writeSheet(array(), 'Measurements', $col_headers,
         array(
           // The entire header row apply these styles.
           array(
-            'font' => 
+            'font' =>
               array(
                 'name'        => 'Arial',
                 'size'        => '11',
-                'color'       => '000000', 
+                'color'       => '000000',
                 'bold'        => false,
                 'italic'      => false,
                 'underline'   => false
             ),
-            'wrapText'        => true, 
+            'wrapText'        => true,
             'verticalAlign'   => 'top',
             'horizontalAlign' => 'center',
             'fill'            => array('color' => 'F7F7F7'),
@@ -237,11 +279,11 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           ),
           // Once the styles above have been applied, style the plant property headers.
           array(
-            'font' => 
+            'font' =>
               array(
                 'name'        => 'Arial',
                 'size'        => '11',
-                'color'       => '000000', 
+                'color'       => '000000',
                 'bold'        => true,
                 'italic'      => false,
                 'underline'   => false
@@ -254,56 +296,56 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           ),
           // Make sure to style the essential trait/header.
           array(
-            'font' => 
+            'font' =>
               array(
                 'name'        => 'Arial',
                 'size'        => '11',
-                'color'       => '008000', 
+                'color'       => '008000',
                 'bold'        => true,
                 'italic'      => false,
                 'underline'   => false
             ),
             'wrapText'        => true,
             'verticalAlign'   => 'top',
-            'horizontalAlign' => 'center', 
+            'horizontalAlign' => 'center',
             'fill'            => array('color' => 'F5FFDF'),
             'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
             'cells'           => $cell_i
           )
         )
       );
-      
+
       // Standard procedure tab.
       // Load trait definition and data collection method to this sheet.
       $instructions_header = array('Column Header/Trait' => 'string', 'Collection Method' => 'string', 'Definition' => 'string');
-      @$writer->writeSheet($instructions_data, 'Instructions', $instructions_header, 
+      @$writer->writeSheet($instructions_data, 'Instructions', $instructions_header,
         array(
           array(
             'wrapText' => false,
             'rows' => array('1')
           ),
           array(
-            'font' => 
+            'font' =>
               array(
                 'name'        => 'Arial',
                 'size'        => '12',
-                'color'       => '000000', 
+                'color'       => '000000',
                 'bold'        => true,
                 'italic'      => false,
                 'underline'   => false
               ),
             'wrapText'        => true,
-            'horizontalAlign' => 'center', 
+            'horizontalAlign' => 'center',
             'fill'            => array('color' => 'EAEAEA'),
             'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'rows'            => array('0') 
+            'rows'            => array('0')
           )
         )
       );
-      
+
       // Calculator tab.
       $calc_header = array('CALCULATE DAYS TO' => 'string');
-      $calc_data = 
+      $calc_data =
         array(
           array('Planting Date', '2015-10-06'),
           array('Current Date', date('Y-m-d')),
@@ -314,15 +356,15 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           array('Fill out the planting date indicated in the measurements tab, as well as, the current date.', ''),
           array('The "Days till" date will then be calculated for you.', '')
         );
-      
-      @$writer->writeSheet($calc_data, 'Calculate Days to', $calc_header, 
+
+      @$writer->writeSheet($calc_data, 'Calculate Days to', $calc_header,
         array(
           array(
-            'font' => 
+            'font' =>
               array(
                 'name'      => 'Arial',
                 'size'      => '20',
-                'color'     => '000000', 
+                'color'     => '000000',
                 'bold'      => true,
                 'italic'    => false,
                 'underline' => false
@@ -332,12 +374,12 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
           )
         )
       );
-      
+
       // Data collection spreadsheet name contains the following:
       // Project id, name of the user, date and time.
       $filename = 'datacollection_' . $project_id . '_' . str_replace(' ', '_', $GLOBALS['user']->name) .'_'. date('YMd') .'_'. time() . '.xlsx';
       $file = file_save_data($writer->writeToString(), 'public://' . $filename);
-      
+
       // Launch save file window and ask user to save file.
       $http_headers = array(
         'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -351,9 +393,9 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
       else {
         $http_headers['Pragma'] = 'no-cache';
       }
-      
+
       file_transfer($file->uri, $http_headers);
-      
+
       // Just in case the auto download fails, provide a link to manually download the file.
       print '<a href="' . $file->uri . '">Download Data Collection Spreadsheet</a>';
     }
@@ -365,5 +407,5 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
   else {
     // Project id is not valid.
     print 'Project ID number is invalid.';
-  }  
+  }
 }

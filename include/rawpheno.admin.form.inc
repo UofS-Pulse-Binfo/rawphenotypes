@@ -240,7 +240,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       '#options' => $options,
       '#default_value' => array_keys($options)[0],
       '#id' => 'admin-sel-project',
-      '#description' => t('Please note that plant property column headers Plot, Entry, Rep, Name and Location are added to project by default.'),
+      '#description' => t('Please note that column headers Plot, Entry, Rep, Name, Location and Planting Date (date) are added to project by default.'),
     );
 
     $form['fieldset_sel_project']['add_project'] = array(
