@@ -1,0 +1,28 @@
+diff --git a/SpreadsheetReader_XLSX.php b/SpreadsheetReader_XLSX.php
+index 9cf8d12..6162cf5 100644
+--- a/SpreadsheetReader_XLSX.php
++++ b/SpreadsheetReader_XLSX.php
+@@ -831,6 +831,8 @@
+ 
+ 					if (!$this -> Options['ReturnDateTimeObjects'])
+ 					{
++                                                // We've added this check to change mm-dd-yy format to yyyy-mm-dd.
++                                                if ($Format['Code'] == 'm-d-y') $Format['Code'] = 'Y-m-d';
+ 						$Value = $Value -> format($Format['Code']);
+ 					}
+ 					else
+diff --git a/php-excel-reader/excel_reader2.php b/php-excel-reader/excel_reader2.php
+index 75351b7..88c5ef4 100644
+--- a/php-excel-reader/excel_reader2.php
++++ b/php-excel-reader/excel_reader2.php
+@@ -675,7 +675,9 @@ class Spreadsheet_Excel_Reader {
+ 	 */
+ 	var $dateFormats = array (
+ 		0xe => "m/d/Y",
+-		0xf => "M-d-Y",
++                // We are replacing the M-d-Y format with our Y-m-d format.
++		// 0xf => "M-d-Y",
++                0xf => "Y-m-d",
+ 		0x10 => "d-M",
+ 		0x11 => "M-Y",
+ 		0x12 => "h:i a",
