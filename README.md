@@ -8,7 +8,7 @@ __This module is currently not ready for use outside of KnowPulse. If you are in
 2. [Spreadsheet Reader](https://github.com/nuovo/spreadsheet-reader)
 3. [Spreadsheet Writer](https://github.com/SystemDevil/PHP_XLSXWriter_plus)
 
-__Note: there are some modifications needed to the spreadsheet reader to get it to handle dates the way we expect. There will be a patch available in the future.__
+__Note: there are some modifications needed to the spreadsheet reader to get it to handle dates the way we expect. Make sure to apply the spreadsheet-reader.patch included with this module to the spreadsheet-reader library.__
 
 ## Features
 - A d3.js heatmap summarizes the raw data available by displaying the number of traits broken down by location (x-axis) and replicate (y-axis; grouped by year). This chart uses a materialized view for improved performance.
