@@ -237,12 +237,35 @@ function rawpheno_preprocess(&$variables, $hook) {
   // This colour will fill background of header and top right button, and border of content area.
   $variables['theme_colour'] = (empty($colour)) ? '#304356' : $colour;
 
+  // Directory permission used in upload and backup.
+  $pub_dir = 'public://';
+
+  // Projects assigned to user.
+  $log_user = $GLOBALS['user']->uid;
+  $my_projects = rawpheno_function_user_project($log_user);
+  $variables['my_projects'] = $my_projects;
+
+  // Does the module contain project?
+  $has_prj = rawpheno_function_project();
+  $variables['has_prj'] = $has_prj;
+
+  // If it has project, does it have data?
+  $has_data = rawpheno_function_data();
+  $variables['has_data'] = $has_data;
+
   if ($hook == 'rawpheno_rawdata') {
     // RAWDATA PAGE.
     // Cross-link rawdata page to download page.
     $variables['rel_url'] = url('phenotypes/raw/download');
     // Page Title
     $variables['page_title'] = variable_get('rawpheno_rawdata_title');
+    // D3 version
+    $ver = rawpheno_function_d3_version();
+    $ver = explode('.', $ver);
+    $variables['d3ver'] = trim($ver[0]);
+
+    // Does D3 exists
+    $variables['d3_in'] = libraries_load('d3js');
   }
   elseif ($hook == 'rawpheno_instructions') {
     // INSTRUCTIONS PAGE.
@@ -255,6 +278,13 @@ function rawpheno_preprocess(&$variables, $hook) {
     $variables['path'] = drupal_get_path('module', 'rawpheno');
   }
   elseif ($hook == 'rawpheno_upload_form_master') {
+    $perm = file_prepare_directory($pub_dir);
+    $variables['dir_permission'] = $perm;
+
+    // Does drag and drop module exist?
+    $is_in = module_exists('dragndrop_upload_element');
+    $variables['dnd_in'] = $is_in;
+
     // UPLOAD PAGE.
     // Cross-link upload page to instructions page.
     $variables['rel_url'] = url('phenotypes/raw/instructions');
@@ -284,6 +314,13 @@ function rawpheno_preprocess(&$variables, $hook) {
     $variables['page_title'] = variable_get('rawpheno_download_title');
   }
   elseif ($hook == 'rawpheno_backup') {
+    $perm = file_prepare_directory($pub_dir);
+    $variables['dir_permission'] = $perm;
+
+    // Does drag and drop module exist?
+    $is_in = module_exists('dragndrop_upload_element');
+    $variables['dnd_in'] = $is_in;
+
     // BACKUP PAGE.
     // Cross-link backup page to instructions page.
     $variables['rel_url'] = url('phenotypes/raw/instructions');

@@ -62,17 +62,8 @@
  //  - Rawdata page and Download data page.
  //  - Download page and Rawdata page.
  //  - Backup page and Instructions page.
- $form['page_button']['#prefix'] = '<a href="' . $rel_url . '" style="background-color: '.$theme_colour.'">';
+ $form['page_button']['#prefix'] = '<a href="' . $rel_url . '" style="background-color: ' . $theme_colour . '">';
  $form['page_button']['#suffix'] = '</a>';
-
- if ($page_id == 'rawpheno_rawdata') {
-   $ver = rawpheno_function_d3_version();
-   $ver = explode('.', $ver);
- }
- elseif (in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
-   $pub_dir = 'public://';
-   $perm = file_prepare_directory($pub_dir);
- }
 ?>
 
 
@@ -93,7 +84,7 @@
     <?php
       unset($form);
     }
-    elseif (!module_exists('dragndrop_upload_element') AND $page_id == 'rawpheno_upload') {
+    elseif (isset($dnd_in) AND !$dnd_in AND $page_id == 'rawpheno_upload') {
       // Test if page is upload page and Drag and Drop module is present and enabled.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -105,7 +96,7 @@
       print tripal_set_message('Administrators, check to ensure that Drag and Drop module is installed and enabled in this site. To review external module dependencies of this module click the link below: <br />' . $link_to_git_rawphenotypes, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
-    elseif (!rawpheno_function_project()) {
+    elseif (!$has_prj) {
       // No project available.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -117,7 +108,7 @@
       print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
-    elseif (!rawpheno_function_data() AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
+    elseif (!$has_data AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
       // Has project but project has no data associated to it.
       // Excempt pages upload, backup and instructions.
     ?>
@@ -130,7 +121,7 @@
       print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
-    elseif (count($my_prj = rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
+    elseif (count($my_projects) < 1) {
       // User is not appointed to project.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -142,7 +133,7 @@
       print tripal_set_message('Administrators, you can appoint users to upload data to Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
-    elseif (isset($perm) AND $perm === FALSE AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
+    elseif (isset($dir_permission) AND $dir_permission === FALSE AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
       // Upload destination directory is not writable.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -151,7 +142,8 @@
     <?php
       unset($form);
     }
-    elseif ($page_id == 'rawpheno_rawdata' AND ($ver[0] != '3' OR !libraries_load('d3js'))) {
+    elseif ($page_id == 'rawpheno_rawdata' AND ($d3ver != '3' OR !$d3_in)) {
+      // Ensure that d3 is version 3.x.x
     ?>
       <div id="container-no-info" class="messages warning">
         Failed to initiliaze visualization library. Please contact the administrator of this website.
