@@ -861,8 +861,8 @@ function rawpheno_function_library_patch() {
   $lib['xlsx']  = libraries_get_path('spreadsheet-reader') . '/SpreadsheetReader_XLSX.php';
   $lib['xls'] = libraries_get_path('spreadsheet-reader') . '/php-excel-reader/excel_reader2.php';
 
-  $patch['xlsx'] = '$Value = $Value -> format(\'Y-m-d\')';
-  $patch['xls'] = '0xe => "Y-m-d"';
+  $patch['xlsx'] = '$Format[\'Code\'] = \'Y-m-d\'';
+  $patch['xls'] = '0xf => "M-d-Y"';
 
   $pass = 0;
   foreach($lib as $ver => $file) {
