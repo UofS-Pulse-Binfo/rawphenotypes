@@ -1057,7 +1057,7 @@ function rawpheno_submit_review($form, &$form_state) {
 
         // First, save the measurement.
         $m_cvterm = array(
-          'id'         => 'tripal:' . $name,
+          'id'         => 'rawpheno_tripal:' . $name,
           'name'       => $name,
           'definition' => $def,
           'cv_name'    => 'phenotype_measurement_types'
@@ -1103,7 +1103,7 @@ function rawpheno_submit_review($form, &$form_state) {
 
         // Then save the Unit.
         $u_cvterm = array(
-          'id'         => 'tripal:' . strtolower($unit),
+          'id'         => 'rawpheno_tripal:' . strtolower($unit),
           'name'       => strtolower($unit),
           'definition' => $unit,
           'cv_name'    => 'phenotype_measurement_units'

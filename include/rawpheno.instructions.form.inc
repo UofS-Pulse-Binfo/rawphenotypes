@@ -75,12 +75,14 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
   // Construct table.
   $arr_tbl_args['empty'] = '0 Column Header';
   $arr_tbl_args['header'] = array(t('Column Header/Trait'), t('Collection Method'), t('Definition'));
+
   unset($trait_set['type4']);
+
   foreach($trait_set as $type) {
     $arr_tbl_args['rows'] = isset($arr_cvterm[$type]) ? $arr_cvterm[$type] : array();
 
     $form['tbl_project_headers_' . $type] = array(
-      '#markup' => theme('table', $arr_tbl_args),
+      '#markup' => (count($arr_tbl_args['rows']) <= 0) ? 'no-trait' : theme('table', $arr_tbl_args),
     );
   }
 

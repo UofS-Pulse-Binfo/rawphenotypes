@@ -104,9 +104,10 @@ function rawpheno_rawdata($form, &$form_state) {
   );
 
   // Attach D3 JS library.
-  $d3_lib = libraries_load('d3');
+  $d3_lib = libraries_load('d3js');
+
   if (isset($d3_lib) && !empty($d3_lib['loaded'])) {
-    $form['#attached']['libraries_load'][] = array('d3');
+    $form['d3lib']['#attached']['libraries_load'][] = array('d3js');
   }
 
   // Attach CSS and JavaScript.

@@ -64,6 +64,11 @@
  //  - Backup page and Instructions page.
  $form['page_button']['#prefix'] = '<a href="' . $rel_url . '" style="background-color: '.$theme_colour.'">';
  $form['page_button']['#suffix'] = '</a>';
+
+ if ($page_id == 'rawpheno_rawdata') {
+   $ver = rawpheno_function_d3_version();
+   $ver = explode('.', $ver);
+ }
 ?>
 
 
@@ -82,6 +87,19 @@
         Browser not supported. Please update your browser.
       </div>
     <?php
+      unset($form);
+    }
+    elseif (!module_exists('dragndrop_upload_element') AND $page_id == 'rawpheno_upload') {
+      // Test if page is upload page and Drag and Drop module is present and enabled.
+    ?>
+      <div id="container-no-info" class="messages warning">
+        This module requires Drag and Drop Upload module to be installed and enabled. Please contact the administrator of this website.
+      </div>
+    <?php
+      // Tell administrator to download and install Drag and Drop module.
+      $link_to_git_rawphenotypes = l('UofS Pulse Binfo - Rawphenotypes', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+      print tripal_set_message('Administrators, check to ensure that Drag and Drop module is installed and enabled in this site. To review external module dependencies of this module click the link below: <br />' . $link_to_git_rawphenotypes, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
     }
     elseif (!rawpheno_function_project()) {
       // No project available.
@@ -90,6 +108,10 @@
         There is no project available in this module. Please contact the administrator of this website.
       </div>
     <?php
+      // Admin: Create and configure projects:
+      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
     }
     elseif (!rawpheno_function_data() AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
       // Has project but project has no data associated to it.
@@ -99,22 +121,41 @@
         There is no project with data available in this module.
       </div>
     <?php
+      // Admin: Create and configure projects:
+      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
     }
-    elseif (count(rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
+    elseif (count($my_prj = rawpheno_function_user_project($GLOBALS['user']->uid)) < 1) {
       // User is not appointed to project.
     ?>
       <div id="container-no-info" class="messages warning">
-        You have no projects assigned to your account. Please contact the administrator of this website
+        You have no projects assigned to your account. Please contact the administrator of this website.
       </div>
     <?php
+      // Admin: Appoint user to upload data to project.
+      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can appoint users to upload data to Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
     }
-    elseif (file_prepare_directory($pub_dir = 'public://') == FALSE) {
+    elseif (file_prepare_directory($pub_dir = 'public://') == FALSE AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
       // Upload destination directory is not writable.
     ?>
       <div id="container-no-info" class="messages warning">
         The file destination directory is not writable. Please contact the administrator of this website.
       </div>
     <?php
+      unset($form);
+    }
+    elseif ($page_id == 'rawpheno_rawdata' AND ($ver[0] != '3' OR !libraries_load('d3js'))) {
+    ?>
+      <div id="container-no-info" class="messages warning">
+        Failed to initiliaze visualization library. Please contact the administrator of this website.
+      </div>
+    <?php
+      $link_to_manage_project = l('D3 - Data Driven Documents', 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip');
+      print tripal_set_message('Administrators, it appears that the site is using D3 version not supported by this module. Please download a D3 version 3.5.14 by clicking on the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
     }
     else {
       // Project is available.
@@ -297,8 +338,22 @@
                 <ul>
                   <li><a href="#fragment-1">Standard Procedure</a></li>
                   <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
+
+                  <?php
+                    // Test if optional traits have traits defined.
+                    $trait_type = rawpheno_function_trait_types();
+                    if ($form['tbl_project_headers_' . $trait_type['type2']]['#markup'] != 'no-trait') {
+                  ?>
                   <li><a href="#fragment-3">Optional Traits</a></li>
+                  <?php } ?>
+
+                  <?php
+                    // Test if subset traits have traits defined.
+                    if ($form['tbl_project_headers_' . $trait_type['type3']]['#markup'] != 'no-trait') {
+                  ?>
                   <li><a href="#fragment-4">Subset Traits</a></li>
+                  <?php } ?>
+
                   <li id="photo-appendix"><a href="#fragment-5">Photo Appendix</a></li>
                   <li id="reference"><a href="#fragment-6">Reference</a></li>
                 </ul>
@@ -337,17 +392,33 @@
                 $arr_type_note = array(
                   2 => 'These traits are essential to this project and data should be collected for all genotypes sent to you.',
                   3 => 'These traits are optional. We will be taking them in our location and have thus provided our procedure in case you interested in taking these data in your location as well. Feel free to record ANY data you are interested in (including traits not listed below –just add a column to the accompanying data spreadsheet for traits not listed below).',
-                  4 => 'The following traits require a fair amount of work and, as such, are completely optional. We will collect them in SK, if you are interested in these traits, please contact us to make sure we are collecting the same thing. Note: These columns are hidden by default. If you would like to record this data, select columns “X” and "AB" and either right-click (computer) or long-press (tablet) the column header then select “Unhide”. For the following “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. If 20 peduncles cannot be obtained, sample from a 3rd plant.'
+                  4 => 'The following traits require a fair amount of work and, as such, are completely optional. We will collect them in SK, if you are interested in these traits, please contact us to make sure we are collecting the same thing. Note: These columns are hidden by default. If you would like to record this data, select columns “X” and "AB" and either right-click (computer) or long-press (tablet) the column header then select “Unhide”. For the following “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. If 20 peduncles cannot be obtained, sample from a 3rd plant.',
+                  5 => 'These traits are optional. Please contact the Project Manager if you are interested in these traits.'
                 );
 
                 $i = 2;
-                $trait_type = rawpheno_function_trait_types();
+
+                // Plant property traits not included.
                 unset($trait_type['type4']);
+
                 foreach($trait_type as $type) {
-                  print '<div id="fragment-' . $i . '">';
-                  print '<h3>' . $arr_type_note[$i] . '</h3>';
-                  print drupal_render($form['tbl_project_headers_' . $type]);
-                  print '</div>';
+                  if ($form['tbl_project_headers_' . $type]['#markup'] == 'no-trait') {
+                    unset($form['tbl_project_headers_' . $type]);
+                  }
+                  else {
+                    // Notes:
+                    if (trim($form['project_panel']['#markup']) == 'AGILE: Application of Genomic Innovation in the Lentil Economy') {
+                      $notes = $arr_type_note[$i];
+                    }
+                    else {
+                      $notes = $arr_type_note[5];
+                    }
+
+                    print '<div id="fragment-' . $i . '">';
+                    print '<h3>' . $notes . '</h3>';
+                    print drupal_render($form['tbl_project_headers_' . $type]);
+                    print '</div>';
+                  }
 
                   $i++;
                 }

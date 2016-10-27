@@ -110,6 +110,17 @@ select:not([multiple]) {
 }
 
 
+/* Tripal set message */
+div.container-page .tripal-site-admin-only {
+  margin: 15px 0 0 0 !important;
+  text-align: left !important;
+}
+
+div.container-page .tripal-site-admin-only span {
+  background: none !important;
+}
+
+
 /* Remove the button when screen is at minimum width */
 @media(max-width: 1300px) {
   div.subtitle-right {

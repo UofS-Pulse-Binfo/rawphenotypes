@@ -817,3 +817,63 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
 
   return $arr_properties;
 }
+
+
+/**
+ * Function: return the version of the d3 library installed and is version that is supported by this version.
+ *
+ * @see implementation of hook_libraries_info().
+ *      implementation of hook_requirements().
+ */
+function rawpheno_function_d3_version() {
+ $file = libraries_get_path('d3') . '/d3.js';
+ $f = fopen($file, 'r');
+
+ if ($f === FALSE) {
+   $ver = 0;
+ }
+ else {
+   $c = fread($f, filesize($file));
+
+   $lines = explode("\n", $c);
+   $i = 0;
+   foreach($lines as $l) {
+     if ($i > 0 && strstr($l, 'version')) {
+       $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', $l));
+       break;
+     }
+     $i++;
+   }
+ }
+
+ fclose($f);
+
+ return $ver;
+}
+
+
+/**
+ * Function: ensure that user applied the patch to spreadsheet reader library
+ */
+function rawpheno_function_library_patch() {
+  $lib = array();
+
+  $lib['xlsx']  = libraries_get_path('spreadsheet-reader') . '/SpreadsheetReader_XLSX.php';
+  $lib['xls'] = libraries_get_path('spreadsheet-reader') . '/php-excel-reader/excel_reader2.php';
+
+  $patch['xlsx'] = '$Value = $Value -> format(\'Y-m-d\')';
+  $patch['xls'] = '0xe => "Y-m-d"';
+
+  $pass = 0;
+  foreach($lib as $ver => $file) {
+    $f = fopen($file, 'r');
+    $line = fread($f, filesize($file));
+    fclose($f);
+
+    if (strpos($line, $patch[$ver])) {
+      $pass++;
+    }
+  }
+
+  return ($pass == 2) ? 1 : 0;
+}

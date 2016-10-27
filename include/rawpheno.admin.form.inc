@@ -29,9 +29,16 @@ function rawpheno_admin_main_page($form, &$form_state) {
  * Function callback: Construct administrative interface to modify page title and colour scheme.
  */
 function rawpheno_admin_page($form, &$form_state) {
-  $form['page_title'] = array(
-    '#markup' => '<h1 class="admin-page-title">Page Configurations</h1>'
-  );
+  $breadcrumbs = array();
+  $breadcrumbs[] = l('Home', '');
+  $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
+  $breadcrumbs[] = l('Page Configurations', '/admin/tripal/extension/rawphenotypes/rawpheno_config');
+
+  drupal_set_breadcrumb($breadcrumbs);
+
+  // Set the title of this page. This line will create a page title on upper left hand
+  // corner of the page preceding the tabs.
+  drupal_set_title('Page Configurations');
 
   // Colour scheme.
   $form['fieldset_colour_scheme'] = array(
@@ -129,9 +136,16 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements')
  * Function callback: Construct administrative interface to manage R Friendly transformation of column headers.
  */
 function rawpheno_admin_rheaders($form, &$form_state) {
-  $form['page_title'] = array(
-    '#markup' => '<h1 class="admin-page-title">Define R Transformation Rules</h1>'
-  );
+  $breadcrumbs = array();
+  $breadcrumbs[] = l('Home', '');
+  $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
+  $breadcrumbs[] = l('Define R Transformation Rules', '/admin/tripal/extension/rawphenotypes/rawpheno_rheaders');
+
+  drupal_set_breadcrumb($breadcrumbs);
+
+  // Set the title of this page. This line will create a page title on upper left hand
+  // corner of the page preceding the tabs.
+  drupal_set_title('Define R Transformation Rules');
 
   // Fieldset to contain R-Friendly transformation rules form.
   $form['fieldset_rules'] = array(
@@ -203,9 +217,17 @@ function rawpheno_admin_rheaders_validate($form, &$form_state) {
  * and allow admin to create a new project.
  */
 function rawpheno_admin_all_projects($form, &$form_state) {
-  $form['page_title'] = array(
-    '#markup' => '<h1 class="admin-page-title">Manage Projects</h1>'
-  );
+  $breadcrumbs = array();
+  $breadcrumbs[] = l('Home', '');
+  $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
+  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+
+  drupal_set_breadcrumb($breadcrumbs);
+
+  // Set the title of this page. This line will create a page title on upper left hand
+  // corner of the page preceding the tabs.
+  drupal_set_title('Manage Projects');
+
   // CONSTRUCT FORMS REQUIRED BY THIS INTERFACE.
 
   // FORM
@@ -569,11 +591,22 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
  *   An integer containing the project id number.
  */
 function rawpheno_admin_project($form, &$form_state, $project_id) {
+  $breadcrumbs = array();
+  $breadcrumbs[] = l('Home', '');
+  $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
+  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+
+  drupal_set_breadcrumb($breadcrumbs);
+
+  // Set the title of this page. This line will create a page title on upper left hand
+  // corner of the page preceding the tabs.
+  drupal_set_title('Manage Project Assets');
+
   // Construct page title and link back to projects form.
   $markup = l('Go Back to Projects Table', 'admin/tripal/extension/rawphenotypes/all_projects');
 
   $project = chado_generate_var('project', array('project_id' => $project_id));
-  $markup .= '<h1 class="admin-page-title">Manage Project</h1><br /><h2>PROJECT: ' . $project->name . '</h2>';
+  $markup .= '<h2>PROJECT: ' . $project->name . '</h2>';
 
   $form['project_info'] = array(
     '#type' => 'markup',
@@ -804,7 +837,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
       // Delete link.
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $h->project_cvterm_id . '/header/delete';
-      $del_cell = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
+      $del_cell = l('Remove', $del_link, array('attributes' => array('class' => 'link-del')));
 
       // No edit and delete when column header is of type plantproperty.
       if ($header_asset['type'] == $trait_type['type4'] OR $header_asset['name'] == 'Planting Date (date)') {
@@ -868,7 +901,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
 
   // Table headers.
-  array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Delete'));
+  array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Remove'));
 
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;
@@ -897,7 +930,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     foreach($users as $u) {
       // Delete link.
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $u->project_user_id . '/user/delete';
-      $del_cell = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
+      $del_cell = l('Remove', $del_link, array('attributes' => array('class' => 'link-del')));
 
       array_push($arr_rows, array(($i+1), $u->name, $u->mail, $del_cell));
 
@@ -910,7 +943,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   }
 
   // Table headers.
-  array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Delete'));
+  array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Remove'));
 
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;
@@ -933,7 +966,6 @@ function ajax_rawpheno_filter_users() {
 }
 
 
-
 /**
  * Function callback: Construct form to edit column header and handle deletion.
  *
@@ -943,6 +975,17 @@ function ajax_rawpheno_filter_users() {
  *   A string containing the process to be carried out to a header.
  */
 function rawpheno_admin_project_headers($form, $form_state, $header_asset, $action) {
+  $breadcrumbs = array();
+  $breadcrumbs[] = l('Home', '');
+  $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
+  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+
+  drupal_set_breadcrumb($breadcrumbs);
+
+  // Set the title of this page. This line will create a page title on upper left hand
+  // corner of the page preceding the tabs.
+  drupal_set_title('Manage Project Assets / Update Header');
+
   if ($action == 'edit') {
     if ($header_asset['name'] == 'Lodging (Scale: 1-5) upright - lodged' OR $header_asset['name'] == 'Comments') {
       // Is lodging header.
@@ -957,7 +1000,7 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       // Add a link to allow administrator to go back to the list of traits in a project.
       $form['back_link'] = array(
         '#type' => 'markup',
-        '#markup' => l('Go back to projects table', 'admin/tripal/extension/rawphenotypes/all_projects') . ' | ' . l(t('Go back to project column headers table') ,'admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage') . '<br />' . '<h1 class="admin-page-title">Manage Project - Update Header</h1><br />',
+        '#markup' => l('Go back to projects table', 'admin/tripal/extension/rawphenotypes/all_projects') . ' | ' . l(t('Go back to project column headers table') ,'admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage'),
       );
 
       $form['fieldset_trait'] = array(
@@ -1169,7 +1212,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
       // Insert cvterm.
       $cvterm = tripal_insert_cvterm(
         array(
-          'id' => 'tripal:' . $trait_name,
+          'id' => 'rawpheno_tripal:' . $trait_name,
           'name' => $trait_name,
           'cv_name' => 'phenotype_measurement_types',
           'definition' => $trait_def
@@ -1504,8 +1547,12 @@ function rawpheno_admin_submit_add_existing($form, &$form_state) {
 
   // The type of header is set to OPTIONAL trait.
   foreach(array_filter($form_state['values']['tbl_existing_headers']) as $m) {
-    $trait_type = $form_state['input']['traittype-' . $m];
-    $trait_type = ($trait_type == 1) ? $types['type1'] : $types['type2'];
+    if (isset($form_state['input']['traittype-' . $m]) AND $form_state['input']['traittype-' . $m] == 1) {
+      $trait_type = $types['type1'];
+    }
+    else {
+      $trait_type = $types['type2'];
+    }
 
     db_insert('pheno_project_cvterm')
       ->fields(
@@ -1572,17 +1619,24 @@ function rawpheno_admin_validate_add_user($form, &$form_state) {
   }
   else {
     // Search user
-    $sql = "SELECT uid FROM {users}
-            WHERE
-              name = :name
-              AND uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id AND status = 1)
-            LIMIT 1";
-
-    $args = array(':name' => $user, ':project_id' => $project_id);
+    $sql = "SELECT uid FROM {users} WHERE name = :name LIMIT 1";
+    $args = array(':name' => $user);
     $u = db_query($sql, $args);
 
     if ($u->rowCount() < 1) {
       form_set_error('txt_autocomplete_user', t('User does not exist.'));
+    }
+    else {
+      $user_id = $u->fetchObject();
+
+      // Test if user was added twice in the same project.
+      $sql = "SELECT uid FROM pheno_project_user WHERE project_id = :project_id AND uid = :user_id";
+      $args = array(':project_id' => $project_id, ':user_id' => $user_id->uid);
+      $u = db_query($sql, $args);
+
+      if ($u->rowCount() > 0) {
+        form_set_error('txt_autocomplete_user', t('User was already added and cannot be added again'));
+      }
     }
   }
 }

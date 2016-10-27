@@ -388,7 +388,7 @@ function rawpheno_install() {
   foreach($arr_unit as $unit => $def) {
     $tmp = tripal_insert_cvterm(
       array(
-        'id' => 'tripal:' . $unit,
+        'id' => 'rawpheno_tripal:' . $unit,
         'name' => $unit,
         'definition' => $def,
         'cv_name' => $cv['cv_unit']
@@ -460,10 +460,10 @@ function rawpheno_install() {
     // Insert the cvterm.
     $cvterm = tripal_insert_cvterm(
       array(
-        'id' => 'tripal:' . $header,
-        'name' => $header,
+        'id'         => 'rawpheno_tripal:' . $header,
+        'name'       => $header,
         'definition' => $cvterm_definition,
-        'cv_name' => $cvterm_type
+        'cv_name'    => $cvterm_type
       )
     );
 
@@ -1084,11 +1084,12 @@ function rawpheno_update_7002() {
  * Implements hook_requirements().
  */
 function rawpheno_requirements($phase) {
+  $requirements = array();
+
   // On install of this module, check the following libraries.
   if (($phase == 'install' OR $phase == 'update') AND function_exists('libraries_get_path')) {
     $t = get_t();
 
-    $requirements = array();
     $libraries = 'sites/all/libraries/';
 
     $arr_req_libraries = array(
@@ -1110,7 +1111,7 @@ function rawpheno_requirements($phase) {
       'd3' =>
         array(
           'is_in'  => libraries_get_path('d3'),
-          'source' => 'https://github.com/mbostock/d3/releases/download/v3.5.14/d3.zip',
+          'source' => 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip',
           'path'   => $libraries . 'd3'
         )
     );
@@ -1131,6 +1132,34 @@ function rawpheno_requirements($phase) {
           ),
         );
       }
+
+      // Check version of D3 and esure patch has been implemented.
+      if ($i == 'd3' && $info['is_in']) {
+        $ver = rawpheno_function_d3_version();
+        $v = explode('.', $ver);
+
+        if (trim($v[0]) != '3') {
+          $requirements['d3_version'] = array(
+            'severity' => REQUIREMENT_ERROR,
+            'description' => $t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (!rawpheno_module).',
+              array('!rawpheno_module' => l('Rawphenotypes Module', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes'), '%ver' => $ver)
+            ),
+          );
+        }
+      }
+      elseif ($i == 'excel_reader' && $info['is_in']) {
+        $is_patched = rawpheno_function_library_patch();
+
+        if (!$is_patched) {
+          $requirements['patch'] = array(
+            'severity' => REQUIREMENT_ERROR,
+            'description' => $t('The Spreadsheet Reader library patch was not implemented. Please review the module requirements (!rawpheno_module).',
+              array('!rawpheno_module' => l('Rawphenotypes Module', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes'))
+            ),
+          );
+        }
+      }
+      //
     }
   }
 

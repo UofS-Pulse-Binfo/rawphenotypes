@@ -118,7 +118,7 @@ em {
 }
 
 
-@media(max-width: 1300px) {
+@media(max-width: 1500px) {
   #container-project-panel {
     font-size: 1.2em !important;
   }
@@ -130,6 +130,10 @@ em {
   div.gallery-img img, div.gallery-img {
     width: 300px;
     text-align: center;
+  }
+
+  #fragment-1 {
+    font-size: 0.7em !important;
   }
 }
 

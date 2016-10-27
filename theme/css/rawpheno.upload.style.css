@@ -2,16 +2,16 @@
  * @file
  * Style phenotypes/upload global css
  */
- 
+
 /* Import global css */
 @import 'rawpheno.style.css';
- 
+
 /* Page icon */
 .container-subtitle {
   background: url('../img/icon-upload.gif') no-repeat left top;
   background-position: 0 5px;
 }
- 
+
 .container-contents {
   background-color: #FFFFFF;
   padding: 0;
@@ -35,7 +35,7 @@ input#edit-next-step.form-button-disabled {
 
 /* Text stage indicator */
 div.subtitle-left {
-  font-size: 2.2em;
+  font-size: 2em;
   line-height: 35px;
 }
 
@@ -108,14 +108,14 @@ div.clear-both {
 #link-help:hover {
   text-decoration: underline;
 }
- 
+
 #container-help-information {
   border-bottom: 1px solid #CCCCCC;
   cursor: pointer;
   display: none;
   padding: 10px 0;
   margin: 0 0 10px 0;
-  
+
   -moz-box-shadow:    0 5px 7px -9px #333333;
   -webkit-box-shadow: 0 5px 7px -9px #333333;
   box-shadow:         0 5px 7px -9px #333333;
@@ -148,7 +148,7 @@ div.clear-both {
 /* Add stage number image as background */
 #container-help-information ul li:nth-child(1) {
   background: url('../img/01_stage.gif') no-repeat left top;
-}  
+}
 
 #container-help-information ul li:nth-child(2) {
   background: url('../img/02_stage.gif') no-repeat left top;
@@ -267,9 +267,9 @@ span.text-next-step {
   background: #FCFDFD url('../img/chrome-selectbox-down-arrow.gif') no-repeat;
   background-position: 99.3% 50%;
   border: 1px solid #AAAAAA;
-  padding: 10px; 
+  padding: 10px;
   font-size: 1.0em;
-  
+
   -moz-box-shadow:    1px 1px 4px 3px #EAEAEA;
   -webkit-box-shadow: 1px 1px 4px 3px #EAEAEA;
   box-shadow:         inset 1px 1px 4px 3px #EAEAEA;
@@ -291,10 +291,10 @@ div.form-item-sel-project {
 
 /* Reduce the font-size when window is resized */
 @media(max-width: 1350px) {
-  div.progress-stage { 
+  div.progress-stage {
     font-size: 1em;
   }
-  
+
   div.subtitle-left {
     font-size: 1.5em;
   }

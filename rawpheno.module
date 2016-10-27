@@ -383,19 +383,32 @@ function rawpheno_libraries_info() {
   );
 
   // D3 JavaScript.
-  $libraries['d3'] = array(
+  $libraries['d3js'] = array(
     'name' => 'D3 Data-Driven Documents',
-    'version' => '3.4.14',
     'vendor url' => 'https://d3js.org/',
-    'download url' => 'https://github.com/mbostock/d3/releases/download/v3.5.14/d3.zip',
-    'library path' => 'sites/all/libraries/',
-    'path' => 'sites/all/libraries/d3/',
+    'version callback' => 'rawpheno_function_d3_version_callback',
+    'download url' => 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip',
+    'library path' => 'sites/all/libraries',
+    'path' => 'd3',
     'files' => array(
       'js' => array('d3.js')
-    )
+    ),
   );
 
   return $libraries;
+}
+
+
+/**
+ * Function callback: return the version of the d3 library installed.
+ * To ensure that visualization works, tell user to update older version of d3.
+ *
+ * @see implementation of hook_libraries_info().
+ */
+function rawpheno_function_d3_version_callback() {
+ $ver = rawpheno_function_d3_version();
+
+ return $ver;
 }
 
 
@@ -409,11 +422,11 @@ function rawpheno_manageproject_autocomplete_search($project_id, $key = '') {
 
   $sql = "SELECT name, mail FROM {users}
           WHERE
-            uid NOT IN (SELECT uid FROM {pheno_project_user} WHERE project_id = :project_id) AND status = 1
+            status = 1
             AND LOWER(name) LIKE :name
           ORDER BY name DESC LIMIT 10";
 
-  $args = array(':project_id' => $project_id, ':name' => '%' . strtolower($key) . '%');
+  $args = array(':name' => '%' . strtolower($key) . '%');
   $user = db_query($sql, $args);
 
   foreach($user as $u) {
