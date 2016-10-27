@@ -69,6 +69,10 @@
    $ver = rawpheno_function_d3_version();
    $ver = explode('.', $ver);
  }
+ elseif (in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
+   $pub_dir = 'public://';
+   $perm = file_prepare_directory($pub_dir);
+ }
 ?>
 
 
@@ -138,7 +142,7 @@
       print tripal_set_message('Administrators, you can appoint users to upload data to Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
-    elseif (file_prepare_directory($pub_dir = 'public://') == FALSE AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
+    elseif (isset($perm) AND $perm === FALSE AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
       // Upload destination directory is not writable.
     ?>
       <div id="container-no-info" class="messages warning">
