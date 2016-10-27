@@ -1138,11 +1138,11 @@ function rawpheno_requirements($phase) {
         $ver = rawpheno_function_d3_version();
         $v = explode('.', $ver);
 
-        if (trim($v[0]) != '3') {
+        if (trim($v[0]) != '3' OR (int)$v[1] < 4) {
           $requirements['d3_version'] = array(
             'severity' => REQUIREMENT_ERROR,
-            'description' => $t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (!rawpheno_module).',
-              array('!rawpheno_module' => l('Rawphenotypes Module', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes'), '%ver' => $ver)
+            'description' => $t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (!rawpheno_module) or download D3 version 3.5.14 (!download).',
+              array('!rawpheno_module' => l('Rawphenotypes Module', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes'), '%ver' => $ver, '!download' => l('D3 3.5.14', 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip'))
             ),
           );
         }

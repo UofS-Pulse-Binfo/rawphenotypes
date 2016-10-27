@@ -84,7 +84,7 @@
     <?php
       unset($form);
     }
-    elseif (isset($dnd_in) AND !$dnd_in AND $page_id == 'rawpheno_upload') {
+    elseif (isset($dnd_in) AND !$dnd_in AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
       // Test if page is upload page and Drag and Drop module is present and enabled.
     ?>
       <div id="container-no-info" class="messages warning">
@@ -142,7 +142,18 @@
     <?php
       unset($form);
     }
-    elseif ($page_id == 'rawpheno_rawdata' AND ($d3ver != '3' OR !$d3_in)) {
+    elseif (isset($reader_in) AND empty($reader_in) AND in_array($page_id, array('rawpheno_upload', 'rawpheno_backup'))) {
+    ?>
+      <div id="container-no-info" class="messages warning">
+        The module requires Spreadsheet Reader library, which is missing. Please contact the administrator of this website.
+      </div>
+    <?php
+      // Admin: Review requirements
+      $link_to_git_rawphenotypes = l('UofS Pulse Binfo - Rawphenotypes', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+      print tripal_set_message('Administrators, check to ensure that Spreadsheet Reader library is installed in this site. To review external library dependencies of this module click the link below: <br />' . $link_to_git_rawphenotypes, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
+    }
+    elseif ($page_id == 'rawpheno_rawdata' AND ($d3ver != '3' OR (int)$d3rel < 4 OR !$d3_in)) {
       // Ensure that d3 is version 3.x.x
     ?>
       <div id="container-no-info" class="messages warning">

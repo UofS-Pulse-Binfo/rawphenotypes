@@ -262,7 +262,10 @@ function rawpheno_preprocess(&$variables, $hook) {
     // D3 version
     $ver = rawpheno_function_d3_version();
     $ver = explode('.', $ver);
+    // Version
     $variables['d3ver'] = trim($ver[0]);
+    // Release
+    $variables['d3rel'] = trim($ver[1]);
 
     // Does D3 exists
     $variables['d3_in'] = libraries_load('d3js');
@@ -277,7 +280,7 @@ function rawpheno_preprocess(&$variables, $hook) {
     // Path to module used to embed image in appendix tab.
     $variables['path'] = drupal_get_path('module', 'rawpheno');
   }
-  elseif ($hook == 'rawpheno_upload_form_master') {
+  elseif ($hook == 'rawpheno_upload_form_master' || $hook == 'rawpheno_backup') {
     $perm = file_prepare_directory($pub_dir);
     $variables['dir_permission'] = $perm;
 
@@ -285,26 +288,39 @@ function rawpheno_preprocess(&$variables, $hook) {
     $is_in = module_exists('dragndrop_upload_element');
     $variables['dnd_in'] = $is_in;
 
-    // UPLOAD PAGE.
-    // Cross-link upload page to instructions page.
-    $variables['rel_url'] = url('phenotypes/raw/instructions');
-    // Page Title
-    $variables['page_title'] = variable_get('rawpheno_upload_title');
+    // Does spreadsheet reader exist?
+    $is_in = libraries_get_path('spreadsheet-reader');
+    $variables['reader_in'] = $is_in;
 
-    // Needs url in help window and links in stage 3.
-    $variables['page_url'] =
-      array(
-        'rawpheno_rawdata'      => url('phenotypes/raw'),
-        'rawpheno_download'     => url('phenotypes/raw/download'),
-        'rawpheno_instructions' => url('phenotypes/raw/instructions'),
-        'rawpheno_upload'       => url('phenotypes/raw/upload'),
-        'rawpheno_backup'       => url('phenotypes/raw/backup')
-      );
+    if ($hook == 'rawpheno_upload_form_master') {
+      // UPLOAD PAGE.
+      // Cross-link upload page to instructions page.
+      $variables['rel_url'] = url('phenotypes/raw/instructions');
+      // Page Title
+      $variables['page_title'] = variable_get('rawpheno_upload_title');
 
-    // Stages in upload page.
-    $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
-                                        'review' => 'Describe New Trait',
-                                        'save'   => 'Save Spreadsheet');
+      // Needs url in help window and links in stage 3.
+      $variables['page_url'] =
+        array(
+          'rawpheno_rawdata'      => url('phenotypes/raw'),
+          'rawpheno_download'     => url('phenotypes/raw/download'),
+          'rawpheno_instructions' => url('phenotypes/raw/instructions'),
+          'rawpheno_upload'       => url('phenotypes/raw/upload'),
+          'rawpheno_backup'       => url('phenotypes/raw/backup')
+        );
+
+      // Stages in upload page.
+      $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
+                                          'review' => 'Describe New Trait',
+                                          'save'   => 'Save Spreadsheet');
+    }
+    else {
+      // BACKUP PAGE.
+      // Cross-link backup page to instructions page.
+      $variables['rel_url'] = url('phenotypes/raw/instructions');
+      // Page Title
+      $variables['page_title'] = variable_get('rawpheno_backup_title');
+    }
   }
   elseif ($hook == 'rawpheno_download') {
     // DOWNLOAD PAGE.
@@ -312,20 +328,6 @@ function rawpheno_preprocess(&$variables, $hook) {
     $variables['rel_url'] = url('phenotypes/raw');
     // Page Title
     $variables['page_title'] = variable_get('rawpheno_download_title');
-  }
-  elseif ($hook == 'rawpheno_backup') {
-    $perm = file_prepare_directory($pub_dir);
-    $variables['dir_permission'] = $perm;
-
-    // Does drag and drop module exist?
-    $is_in = module_exists('dragndrop_upload_element');
-    $variables['dnd_in'] = $is_in;
-
-    // BACKUP PAGE.
-    // Cross-link backup page to instructions page.
-    $variables['rel_url'] = url('phenotypes/raw/instructions');
-    // Page Title
-    $variables['page_title'] = variable_get('rawpheno_backup_title');
   }
 }
 
