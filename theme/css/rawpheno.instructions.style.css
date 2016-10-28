@@ -354,11 +354,24 @@ th {
   float: left;
   height: auto;
   margin: 15px 20px 0 0;
-  width: 25%;
+  padding: 0;
+  width: 27%;
+}
+
+#container-resource-links div:first-child {
+  background: url('../img/icon-instructions.gif') no-repeat left top;
 }
 
 #container-resource-links div:nth-child(2) {
-  border-left: 1px solid #EAEAEA;
-  border-right: 1px solid #EAEAEA;
-  padding: 0 25px;
+  background: url('../img/icon-upload.gif') no-repeat left top;
+}
+
+#container-resource-links div:nth-child(3) {
+  background: url('../img/icon-backup.gif') no-repeat left top;
+}
+
+#container-resource-links h3 {
+  font-size: 1.5em;
+  margin: 0 0 30px 0;
+  padding: 0 0 0 55px;
 }

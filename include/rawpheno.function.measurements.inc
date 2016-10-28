@@ -826,27 +826,32 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
  *      implementation of hook_requirements().
  */
 function rawpheno_function_d3_version() {
- $file = libraries_get_path('d3') . '/d3.js';
- $f = fopen($file, 'r');
+ if (libraries_get_path('d3')) {
+   $file = libraries_get_path('d3') . '/d3.js';
+   $f = fopen($file, 'r');
 
- if ($f === FALSE) {
-   $ver = 0;
+   if ($f === FALSE) {
+     $ver = 0;
+   }
+   else {
+     $c = fread($f, filesize($file));
+
+     $lines = explode("\n", $c);
+     $i = 0;
+     foreach($lines as $l) {
+       if ($i > 0 && strstr($l, 'version')) {
+         $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', $l));
+         break;
+       }
+       $i++;
+     }
+   }
+
+   fclose($f);
  }
  else {
-   $c = fread($f, filesize($file));
-
-   $lines = explode("\n", $c);
-   $i = 0;
-   foreach($lines as $l) {
-     if ($i > 0 && strstr($l, 'version')) {
-       $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', $l));
-       break;
-     }
-     $i++;
-   }
+   $ver = 0;
  }
-
- fclose($f);
 
  return $ver;
 }

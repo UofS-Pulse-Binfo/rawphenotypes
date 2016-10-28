@@ -436,6 +436,11 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
         // Save the header for later.
         $header = array();
         $new_header = array();
+        // Checking plot value requires cell value in Planting Date (date) and Location.
+        // Store index numbers of these two traits.
+        $plot_req = array();
+
+        $o = 0;
         foreach ($row as $r) {
           $without_format = rawpheno_function_delformat($r);
           $no_units = rawpheno_get_trait_name($r);
@@ -445,6 +450,16 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
             'units' => rawpheno_function_unit($without_format),
             'no units' => $no_units,
           );
+
+          // Store index number of Plot trait requirements.
+          if (!isset($plot_req['planting date (date)']) && $without_format == 'planting date (date)') {
+            $plot_req['planting date (date)'] = $o;
+          }
+          elseif (!isset($plot_req['location']) && $without_format == 'location') {
+            $plot_req['location'] = $o;
+          }
+
+          $o++;
         }
 
         // Foreach validator with a scope of header, execute the validation callback & save the results.
@@ -495,6 +510,12 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
                     'row' => $row,
                     'header' => $header
                   );
+
+                  // If column header is Plot, attach Plot validation requirement to
+                  // $context array. The indexes will be used to fetch the cell value in context row.
+                  if ($column_name == 'Plot') {
+                    $context['plot_req'] = $plot_req;
+                  }
 
                   $result = $validator['validation callback']($cell, $context, $tmp_storage);
 

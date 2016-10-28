@@ -295,7 +295,7 @@ module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements')
 function rawpheno_function_terms($type) {
   switch($type) {
     case 'project':
-      return 'AGILE: Application of Genomic Innovation in the Lentil Economy';
+      return 'AGILE: Application of Genomic Innovation in the Lentil Economy iii';
       break;
 
     case 'defaults':

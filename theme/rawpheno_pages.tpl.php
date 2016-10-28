@@ -164,6 +164,17 @@
       print tripal_set_message('Administrators, it appears that the site is using D3 version not supported by this module. Please download a D3 version 3.5.14 by clicking on the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
+    elseif (isset($writer_in) AND empty($writer_in) AND $page_id == 'rawpheno_instructions') {
+    ?>
+      <div id="container-no-info" class="messages warning">
+        The module requires Spreadsheet Writer library, which is missing. Please contact the administrator of this website.
+      </div>
+    <?php
+      // Admin: Review requirements
+      $link_to_git_rawphenotypes = l('UofS Pulse Binfo - Rawphenotypes', 'https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+      print tripal_set_message('Administrators, check to ensure that Spreadsheet Writer library is installed in this site. To review external library dependencies of this module click the link below: <br />' . $link_to_git_rawphenotypes, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
+    }
     else {
       // Project is available.
     ?>

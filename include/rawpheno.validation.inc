@@ -292,8 +292,14 @@ function validator_required_info_generate_msg($error_info) {
 
     // Generate the duplicate values message.
     if (!empty($dup_parts)) {
+      // When Plot - message should indicate when/where should it be unique.
+      $more_info = '.';
+      if ($column == 'Plot') {
+        $more_info = ' in a given Year in the Planting Date (date) and Location.';
+      }
+
       $placeholder = (sizeof($dup_parts) > 1) ? 'values are' : 'value is';
-      $msg = "The \"$column\" should be unique. The following $placeholder duplicated: "
+      $msg = "The \"$column\" should be unique$more_info The following $placeholder duplicated: "
         . implode('; ', $dup_parts) . '.';
       $messages[] = $msg;
     }
@@ -332,12 +338,23 @@ function validator_required_info_validate_cell($value, $context, &$storage) {
   // Validate if the plot is unique.
   // If this is the plot column...
   if ($context['header'][ $context['column index'] ]['no format'] == 'plot') {
+    // Get Planting date (date) and location index from the header rows.
+    $planting_date_i = $context['plot_req']['planting date (date)'];
+    $location_i = $context['plot_req']['location'];
 
-    // Has this value been used before?
-    $rows_used_in = array_keys($storage, $value);
+    // Get the cell value of header idexes.
+    // Extract the year (YYYY) from planting year (date)
+    $planting_date = $context['row'][$planting_date_i];
+    $planting_year = substr($planting_date, 0, 4);
+
+    // Location
+    $location = trim($context['row'][$location_i]);
+
+    // Has this value been used before? value being (year+location+plot)
+    $rows_used_in = array_keys($storage, $planting_year . $location . $value);
 
     // save to storage.
-    $storage[ $context['row index'] ] = $value;
+    $storage[ $context['row index'] ] = $planting_year . $location . $value;
 
     // if it has then save for error.
     if ($rows_used_in) {

@@ -263,9 +263,9 @@ function rawpheno_preprocess(&$variables, $hook) {
     $ver = rawpheno_function_d3_version();
     $ver = explode('.', $ver);
     // Version
-    $variables['d3ver'] = trim($ver[0]);
+    $variables['d3ver'] = (isset($ver[0])) ? trim($ver[0]) : 0;
     // Release
-    $variables['d3rel'] = trim($ver[1]);
+    $variables['d3rel'] = (isset($ver[1])) ? trim($ver[1]) : 0;
 
     // Does D3 exists
     $variables['d3_in'] = libraries_load('d3js');
@@ -279,6 +279,10 @@ function rawpheno_preprocess(&$variables, $hook) {
 
     // Path to module used to embed image in appendix tab.
     $variables['path'] = drupal_get_path('module', 'rawpheno');
+
+    // Spreadsheet writer is in?
+    $is_in = libraries_get_path('PHP_XLSXWriter_plus');
+    $variables['writer_in'] = $is_in;
   }
   elseif ($hook == 'rawpheno_upload_form_master' || $hook == 'rawpheno_backup') {
     $perm = file_prepare_directory($pub_dir);
