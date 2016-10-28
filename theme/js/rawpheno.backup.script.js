@@ -63,12 +63,22 @@
         // Examine the height. When height is 50px, user wants to disclose the entire cell contents
         // else, restore it to initial state.
         var id = $(this).attr('id');
+        var i = id.replace(/vn-file-|vr-file-/, '');
+
         var h = $(this).css('height');
         if (h == '65px') {
-          $(this).css('height', '100%');
+          $('#vr-file-' + i).css('height', '100%');
+
+          if ($('#vn-file-' + i)) {
+            $('#vn-file-' + i).css('height', '100%');
+          }
         }
         else {
-          $(this).css('height', '65px');
+          $('#vr-file-' + i).css('height', '65px');
+
+          if ($('#vn-file-' + i)) {
+            $('#vn-file-' + i).css('height', '65px');
+          }
         }
       });
 
