@@ -167,18 +167,7 @@
             // Determine which category the trait is in.
             // Include category in search result.
             var traitCategory = '';
-            if (traitIndex >= 0 && traitIndex <= 9) {
-              traitCategory = 'Essential Trait';
-            }
-            else if (traitIndex >= 10 && traitIndex <= 19) {
-              traitCategory = 'Optional Trait';
-            }
-            else {
-              traitCategory = 'Subset Trait';
-            }
 
-            // Find the table the trait is in.
-            var traitType = '<em>* This trait is '+traitCategory+'</em>';
             var countLi = $('#tabs tr').size();
             for(var x = 0; x < countLi; x++) {
               var m = $('#tabs tr').eq(x).find('div').text();
@@ -187,6 +176,21 @@
                 break;
               }
             }
+
+            var tabIn = $('tr').eq(x).closest('div').index();
+
+            if (tabIn == 2) {
+              traitCategory = 'Essential Trait';
+            }
+            else if (tabIn == 3) {
+              traitCategory = 'Optional Trait';
+            }
+            else if (tabIn == 4) {
+              traitCategory = 'Subset Trait';
+            }
+
+            // Find the table the trait is in.
+            var traitType = '<em>* This trait is '+traitCategory+'</em>';
 
             // When table is found.
             // Copy the table row <tr> with the trait information.
