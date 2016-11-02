@@ -287,6 +287,12 @@
 
             print drupal_render_children($form);
           ?>
+
+            <div id="float-text" style="display: none;">
+              Please select a project before adding your spreadsheet file.
+              <a href="" style="background-color: <?php print $theme_colour; ?>">Ok, got it!</a>
+            </div>
+
           </div>
 
         <?php

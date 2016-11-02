@@ -4,6 +4,23 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadStage01Behaviours = {
     attach: function (context, settings) {
+
+     if ($('#rawpheno-select-project-field option').val() == 0 && $('#float-text').length) {
+        $('#float-text').fadeIn(500);
+
+        // Add event listener to ok got it!
+        $('#float-text a').click(function(e) {
+          e.preventDefault();
+          $(this).parent().remove();
+        });
+      }
+
+     if ($('#float-text').length) {
+       $('#rawpheno-select-project-field').click(function(e) {
+         $('#float-text').remove();
+       });
+     }
+
       // Replace button value from browse to choose your file.
 	    $('.droppable-browse-button').text('choose your file');
 
@@ -61,6 +78,7 @@
         }
       })
       .ajaxComplete(function() {
+        // Remove any text message bubble.
         $('#rawpheno-select-project-field').removeAttr('disabled');
         // Stage 01 only.
         // Disable the select project when next stem button is present in the DOM.
