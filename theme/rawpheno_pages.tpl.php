@@ -289,7 +289,7 @@
           ?>
 
             <div id="float-text" style="display: none;">
-              Please select a project before adding your spreadsheet file.
+              Please select a project <em><strong>before</strong></em> adding your spreadsheet file.
               <a href="" style="background-color: <?php print $theme_colour; ?>">Ok, got it!</a>
             </div>
 
