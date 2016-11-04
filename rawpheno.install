@@ -1077,6 +1077,10 @@ function rawpheno_update_7002() {
 
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+
+  // Populate view.
+  $mview_id = tripal_get_mview_id('rawpheno_rawdata_mview');
+  tripal_populate_mview($mview_id);
 }
 
 
@@ -1090,7 +1094,7 @@ function rawpheno_requirements($phase) {
   if (($phase == 'install' OR $phase == 'update') AND function_exists('libraries_get_path')) {
     $t = get_t();
 
-    $libraries = 'sites/all/libraries/';
+    $libraries = 'i.e., sites/all/libraries/';
 
     $arr_req_libraries = array(
       // Libraries.
@@ -1125,7 +1129,7 @@ function rawpheno_requirements($phase) {
           'severity' => REQUIREMENT_ERROR,
           'description' =>
             $t('This module uses !library, which is missing.
-            Please download and extract the entire contents of the archive into %path directory on your server.',
+            Please download and extract the entire contents of the archive into Libraries Directory %path directory on your server.',
             array('!library' => l(strtoupper(str_replace('_',' ',$i)),
                                   $source,
                                   array('attributes' => array('target' => '_blank'))), '%path' => $path)

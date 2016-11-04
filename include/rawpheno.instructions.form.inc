@@ -255,7 +255,7 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
 
       // Load spreadsheet writer library.
       $xlsx_writer = libraries_load('spreadsheet_writer');
-      include_once $xlsx_writer['path'] . $xlsx_writer['files'][0];
+      include_once $xlsx_writer['library path'] . '/'. $xlsx_writer['files'][0];
 
       $writer = new XLSXWriter();
       // Measurement tab.

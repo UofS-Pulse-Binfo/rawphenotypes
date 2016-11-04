@@ -157,6 +157,7 @@
         }
         else if(data == 0) {
           // No data.
+          updateWidth();
           noData('.data-chart');
         }
         else {
@@ -934,7 +935,9 @@
         // Remove loading animation.
         $('.win-loading').remove();
 
-        d3.select('svg:last-child')
+        var s = (canvas == '.data-chart') ? '.data-chart' : 'svg:last-child';
+
+        d3.select(s)
           .attr('width', width)
           .attr('height', 150);
 

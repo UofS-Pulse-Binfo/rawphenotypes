@@ -36,10 +36,11 @@ div.subtitle-left {
 
 
 /* (DnD) File dropzone */
-#droppable-bdnd, #backup_dropzone-upload {
+#droppable-bdnd {
   background: url('../../theme/img/icon-excel.gif') no-repeat top center;
   background-position: 50% 100px;
   background-color: #FCFDFD;
+  border: 2px double #AAAAAA;
 
   -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
   -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
@@ -51,18 +52,16 @@ div.subtitle-left {
   width: 99.7%;
 }
 
-#backup_dropzone-upload  {
-  border: 2px solid #AAAAAA;
-}
-
-#droppable-bdnd {
-  border: none;
+#backup_dropzone-upload {
+  height: 300px;
+  margin: 0 0 15px 0;
+  padding: 0;
+  width: 99.7%;
 }
 
 
 /* (DnD) Drag file here message and link container */
 .droppable-message {
-  border: medium none;
   height: 85%;
   margin: 20px;
   padding: 0;
@@ -248,6 +247,12 @@ table tr:hover {
   width: 5%;
 }
 
+#tbl_project_archive_file td:nth-child(2),
+#tbl-user-project-file td:nth-child(2) {
+  font-size: 1.3em !important;
+}
+
+
 #tbl_project_archive_file tr td:nth-child(2),
 #tbl-user-project-file tr td:nth-child(2) {
   font-size: 1.2em;
@@ -424,4 +429,10 @@ a.link-restore {
 /* Failed validation result */
 p.fail {
   color: red;
+}
+
+/* alert when failed found */
+span.alert-error {
+  background: url('../../theme/img/message-16-warning.png') no-repeat top left;
+  padding: 0 7px 0 20px !important;
 }

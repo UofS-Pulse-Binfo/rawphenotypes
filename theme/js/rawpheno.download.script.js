@@ -33,12 +33,25 @@
         // check/uncheck checkbox.
         var state = ($(this).is(':checked')) ? 'selected' : '';
         resetSelect(sel[id], state);
-        $(sel[id]).scrollTop(0).focus().click();
+
+        if (id == locations) {
+          // Reset select all traits when checked.
+          if (chkb.eq(1).is(':checked')) {
+            chkb.eq(1).attr('checked', false);
+          }
+        }
+
+        $(sel[id]).scrollTop(0).focus();
       });
 
-      // Add event listener to select trait select boxe.
-      // Uncheck the select all option when select box is clicked/changed.
-      $(sel[traits]).change(function() {
+      // Add event listener to select trait select boxes.
+      $('#download-sel-location').change(function(e) {
+        // Reset checkboxes.
+        chkb.attr('checked', false);
+      });
+
+      $('#download-sel-trait').change(function(e) {
+        // Reset checkboxes.
         chkb.eq(1).attr('checked', false);
       });
 
@@ -71,7 +84,6 @@
       }).ajaxComplete(function() {
         //ajax end
         resetSelect(sel[traits], '')
-        chkb.attr('checked', false);
         $(':input').removeAttr('disabled');
       });
 

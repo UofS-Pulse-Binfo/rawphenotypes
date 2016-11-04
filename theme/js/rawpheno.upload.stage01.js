@@ -11,7 +11,9 @@
         // Add event listener to ok got it!
         $('#float-text a').click(function(e) {
           e.preventDefault();
-          $(this).parent().remove();
+          $(this).parent().fadeOut(400, function() {
+            $(this).remove();
+          });
         });
       }
 
@@ -115,7 +117,7 @@
         $('div.droppable-preview-file').hide();
         dropMessage.html(dropMessageHTML);
         // Create an error message.
-        $('<div class="messages error">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('hr');
+        $('<div class="messages error" style="margin-top: 10px !important;">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('select');
       };
     }
   };

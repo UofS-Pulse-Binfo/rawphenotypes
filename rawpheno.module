@@ -408,31 +408,42 @@ function rawpheno_libraries_info() {
   //       * line 834 in SpreadsheetReader_XLSX.php
   //           $Value = $Value -> format($Format['Code']); to $Value = $Value -> format('Y-m-d');
 
+  // Let Drupal decide where library is.
+  $lib_reader = libraries_get_path('spreadsheet-reader');
+
   $libraries['spreadsheet_reader'] = array(
     'name' => 'NUOVO Spreadsheet',
     'vendor url' => 'https://github.com/nuovo/spreadsheet-reader',
+    'version callback' => 'rawpheno_function_reader_version_callback',
     'download url' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
-    'path' => 'sites/all/libraries/spreadsheet-reader/',
+    'library path' => $lib_reader,
+    'path' => $lib_reader . '/',
     'files' => array(),
   );
 
   // Spreadsheet writer.
+  // Let Drupal decide where library is.
+  $lib_writer = libraries_get_path('PHP_XLSXWriter_plus');
+
   $libraries['spreadsheet_writer'] = array(
     'name' => 'PHP_XLSXWriter_plus Spreadsheet Writer',
     'vendor url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus',
+    'version' => 1,
     'download url' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
-    'path' => 'sites/all/libraries/PHP_XLSXWriter_plus/',
+    'library path' => $lib_writer,
     'files' => array('xlsxwriter.class.php'),
   );
 
   // D3 JavaScript.
+  // Let Drupal decide where library is
+  $lib_d3 = libraries_get_path('d3');
+
   $libraries['d3js'] = array(
     'name' => 'D3 Data-Driven Documents',
     'vendor url' => 'https://d3js.org/',
     'version callback' => 'rawpheno_function_d3_version_callback',
     'download url' => 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip',
-    'library path' => 'sites/all/libraries',
-    'path' => 'd3',
+    'library path' => $lib_d3,
     'files' => array(
       'js' => array('d3.js')
     ),
@@ -443,8 +454,18 @@ function rawpheno_libraries_info() {
 
 
 /**
+ * Function callback: return the version of the spreadsheet reader library installed.
+ *
+ * @see implementation of hook_libraries_info().
+ */
+function rawpheno_function_reader_version_callback() {
+ $ver = rawpheno_function_sreader_version();
+
+ return $ver;
+}
+
+/**
  * Function callback: return the version of the d3 library installed.
- * To ensure that visualization works, tell user to update older version of d3.
  *
  * @see implementation of hook_libraries_info().
  */

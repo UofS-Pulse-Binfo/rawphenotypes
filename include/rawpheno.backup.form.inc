@@ -264,8 +264,12 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         $row_validation_entries = str_replace(array('#item: (passed)', '#item: (failed)'),
                                               array('<p class="pass"> (PASSED)', '<p class="fail"> * (FAILED)'),
                                               $f->validation_result) . '</p>';
+        $alert = '';
+        if (($n = substr_count($row_validation_entries, 'FAILED')) > 0) {
+          $alert = '<span class="alert-error" title="File has failed validation notices...">' . $n . ' Validation errors</span>';
+        }
 
-        $row_validation = '<div class="container-cell" id="vr-file-' . $f->file_id . '" title="Click to expand or collapse">'. $row_validation_entries .'</div>';
+        $row_validation = $alert . '<div class="container-cell" id="vr-file-' . $f->file_id . '" title="Click to expand or collapse">'. $row_validation_entries .'</div>';
 
         // Determine if file is archived or not.
         if ($f->archive == 'n') {

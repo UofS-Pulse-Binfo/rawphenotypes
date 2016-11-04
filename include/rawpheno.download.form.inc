@@ -120,6 +120,12 @@ function rawpheno_download($form, &$form_state) {
     '#title' => t('Select all Locations'),
     '#type' => 'checkbox',
     '#default_value' => 0,
+    '#ajax' => array(
+      'event' => 'change',
+      'callback' => 'rawpheno_download_get_locations_traits',
+      'wrapper' => 'download-ajax-wrapper',
+      'progress' => array('type' => '', 'message' => '')
+    ),
   );
 
   $location_id = $opt_location;
@@ -144,7 +150,7 @@ function rawpheno_download($form, &$form_state) {
     '#id' => 'download-sel-trait',
   );
 
-  $form['ajax_container']['ajax_container_traits']['chk_select_all_traits'] = array(
+  $form['ajax_container']['chk_select_all_traits'] = array(
     '#title' => t('Select all Traits'),
     '#type' => 'checkbox',
     '#default_value' => 0,
@@ -217,6 +223,7 @@ function rawpheno_download_get_traits($form, $form_state) {
  *   An array containing all traits available.
  */
 function rawpheno_download_load_traits($location, $project) {
+  $opt_trait = array();
 
  $sql = "SELECT DISTINCT t1.cvterm_id, t1.name
          FROM
@@ -233,8 +240,20 @@ function rawpheno_download_load_traits($location, $project) {
         ORDER BY t1.cvterm_id ASC";
 
   $args = array(':location' => $location, ':project' => $project);
-  $opt_trait = chado_query($sql, $args)
-    ->fetchAllKeyed();
+  $t = chado_query($sql, $args);
+
+  if ($t->rowCount()) {
+    foreach($t as $m) {
+      $has_data = rawpheno_download_trait_has_data($m->cvterm_id, $location, $project);
+      if ($has_data) {
+        $opt_trait[$m->cvterm_id] = $m->name;
+      }
+    }
+  }
+  else {
+    $opt_trait[0] = 'No traits available';
+  }
+
 
   return $opt_trait;
 }
@@ -489,10 +508,40 @@ function rawpheno_download_r_compatible($cvterm_id) {
   $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
 
   $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id LIMIT 1";
-  $args = array(':cvterm_id' => $cvterm_id, 'cv_id' => $cv_rver->cv_id);
+  $args = array(':cvterm_id' => $cvterm_id, ':cv_id' => $cv_rver->cv_id);
 
   $r = chado_query($sql, $args)
     ->fetchField();
 
   return (isset($r) AND !empty($r)) ? $r : null;
+}
+
+
+/* Function test if a given trait has data for a given project and location.
+ *
+ * @param $trait
+ *   An integer containing the cvterm id number of a trait.
+ * @param $location
+ *   An array of locations.
+ * @param $project
+ *   An array of project id.
+ *
+ * @return
+ *   Boolean true - has data and false - no data.
+ */
+function rawpheno_download_trait_has_data($trait, $location, $project) {
+  $sql = "SELECT type_id
+          FROM pheno_measurements
+          WHERE
+            plant_id IN
+              (SELECT plant_id
+               FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
+               WHERE value IN (:location) AND project_id IN (:project))
+            AND type_id = :trait
+          LIMIT 1";
+
+  $args = array(':trait' => $trait, ':location' => $location, ':project' => $project);
+  $d = chado_query($sql, $args);
+
+  return ($d->rowCount()) ? TRUE : FALSE;
 }

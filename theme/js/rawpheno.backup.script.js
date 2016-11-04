@@ -36,24 +36,22 @@
           // Create a new instruction to user.
           $('.droppable-message span').eq(0).text('Drag your Microsoft Excel Spreadsheet file here');
           dropMessage.children().show();
+          // AJAX dies or is frozen after an error.
+          if ($('div.messages').length) {
+            alert();
 
-          if ($('div.file-upload-js-error').length > 0) {
-            // AJAX dies or is frozen after an error.
-            if ($('div.messages').length > 1) {
-              // Remove validation result and drupal error message.
-              $('div.messages')[0].remove();
-            }
+            // Remove validation result and drupal error message.
+            $('div.messages').remove();
           }
 		    });
 	    }
-
 
       // Remove validation result and error messages as soon
       // as DND receives a file. This is for both drag and drop and
       // using the choose a file link (file browser).
       $(document).ajaxStart(function() {
         // AJAX start.
-        if ($('div.messages').length > 1) {
+        if ($('div.messages').length) {
           $('div.messages').remove();
         }
       });
@@ -111,6 +109,17 @@
           location.assign(link);
         }
       });
+
+
+      // For security, suppress any alert message showing snippet of code or
+	    // module settings to the user.
+	    alert = function(e) {
+        // Create an error message.
+        $('div.droppable-preview-file').hide();
+        $('<div class="messages error">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('select');
+
+        return false;
+      };
     }
   };
 }(jQuery));

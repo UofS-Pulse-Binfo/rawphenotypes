@@ -411,6 +411,8 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
     // Result set for data/values.
     $d = db_query($sql, $args);
 
+    $bin = '';
+
     foreach($d as $e) {
       // Find the bin for this data.
       foreach($arr_bin_json as $b) {
@@ -820,7 +822,7 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
 
 
 /**
- * Function: return the version of the d3 library installed and is version that is supported by this version.
+ * Function: return the version of the d3 library installed.
  *
  * @see implementation of hook_libraries_info().
  *      implementation of hook_requirements().
@@ -838,11 +840,19 @@ function rawpheno_function_d3_version() {
 
      $lines = explode("\n", $c);
      $i = 0;
+
+     // Since the version is in the first 20-30 line, break loop past line #.
      foreach($lines as $l) {
-       if ($i > 0 && strstr($l, 'version')) {
-         $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', $l));
+       if ($i > 0 && stristr($l, 'version')) {
+         $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', strtolower($l)));
          break;
        }
+
+       if ($i == 30) {
+         $ver = 0;
+         break;
+       }
+
        $i++;
      }
    }
@@ -858,13 +868,44 @@ function rawpheno_function_d3_version() {
 
 
 /**
+ * Function: return the version of the spreadsheet writer library installed.
+ *
+ * @see implementation of hook_libraries_info().
+ *      implementation of hook_requirements().
+ */
+function rawpheno_function_sreader_version() {
+  if (libraries_get_path('d3')) {
+    $file = libraries_get_path('spreadsheet-reader') . '/CHANGELOG.md';
+
+    $f = fopen($file, 'r');
+    if ($f === FALSE) {
+     $ver = 0;
+    }
+    else {
+      $c = fread($f, filesize($file));
+
+      $lines = explode("\n", $c);
+      $i = 0;
+
+      $ver = str_replace('#', '', $lines[0]);
+    }
+  }
+  else {
+    $ver = 0;
+  }
+
+  return $ver;
+}
+
+
+/**
  * Function: ensure that user applied the patch to spreadsheet reader library
  */
 function rawpheno_function_library_patch() {
   $lib = array();
 
   $lib['xlsx']  = libraries_get_path('spreadsheet-reader') . '/SpreadsheetReader_XLSX.php';
-  $lib['xls'] = libraries_get_path('spreadsheet-reader') . '/php-excel-reader/excel_reader2.php';
+  $lib['xls']   = libraries_get_path('spreadsheet-reader') . '/php-excel-reader/excel_reader2.php';
 
   $patch['xlsx'] = '$Format[\'Code\'] = \'Y-m-d\'';
   $patch['xls'] = '0xf => "M-d-Y"';
