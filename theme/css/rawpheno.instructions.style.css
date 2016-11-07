@@ -363,11 +363,11 @@ th {
 }
 
 #container-resource-links div:nth-child(2) {
-  background: url('../img/icon-upload.gif') no-repeat left top;
+  background: url('../img/icon-backup.gif') no-repeat left top;
 }
 
 #container-resource-links div:nth-child(3) {
-  background: url('../img/icon-backup.gif') no-repeat left top;
+  background: url('../img/icon-upload.gif') no-repeat left top;
 }
 
 #container-resource-links h3 {
