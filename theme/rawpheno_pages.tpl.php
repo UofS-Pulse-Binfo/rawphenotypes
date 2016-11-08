@@ -456,15 +456,14 @@
 
                   <div id="photo-container">
                     <div id="gallery-container">
-                      <div class="side-nav"><a href="javascript:void();"><</a></div>
+                      <div class="side-nav nav-go-left"><a href="javascript:void();" class="a-left">&lang;</a></div>
                       <div class="gallery-img">
                         <input type="hidden" id="path" value="<?php print base_path() . $path; ?>/theme/img/appendix/">
                         <input type="hidden" id="cur-img" value="0">
                         <img src="<?php print base_path() . $path; ?>/theme/img/appendix/01-tendrils-no-elongation.jpg">
                         <br /><em>No elongation</em>
                       </div>
-                      <div class="side-nav"><a href="javascript:void();">></a></div>
-                      <div style="clear:both">&nbsp;</div>
+                      <div class="side-nav nav-go-right"><a href="javascript:void();" class="a-right">&rang;</a></div>
                     </div>
                   </div>
                 </div>

@@ -27,7 +27,15 @@ $validators = module_invoke_all('rawpheno_validators');
     <ul class="error-main">
       <?php
         foreach ($status as $key => $result) {
-          $class = ($result === TRUE) ? 'success' : 'failed';
+          $class = '';
+
+          if ($result === TRUE) {
+            $class = 'success';
+          }
+          else {
+            $class = ($result === 'todo') ? 'todo' : 'failed';
+          }
+
           print '<li class="' . $class . '"><em>' . $validators[$key]['label'] . '</em></li>';
 
           // Provide further information if the validation failed.

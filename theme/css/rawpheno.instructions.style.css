@@ -117,26 +117,6 @@ em {
   background: #FCFDFD;
 }
 
-
-@media(max-width: 1500px) {
-  #container-project-panel {
-    font-size: 1.2em !important;
-  }
-
-  #tabs .ui-tabs-nav li {
-    font-size: 0.70em;
-  }
-
-  div.gallery-img img, div.gallery-img {
-    width: 300px;
-    text-align: center;
-  }
-
-  #fragment-1 {
-    font-size: 0.7em !important;
-  }
-}
-
 #tabs .ui-tabs-nav {
   background: transparent;
   border-width: 0px 0px 1px 0px;
@@ -196,10 +176,6 @@ div.ui-tabs-panel {
   padding-right: 40px !important;
 }
 
-#fragment-1 {
-  /* min-width: 780px;*/
-}
-
 #fragment-1 ul li {
   margin: 2px 0;
 }
@@ -248,9 +224,19 @@ a.button:hover {
 }
 
 .side-nav {
-  float: left;
+  position: absolute;
   font-size: 2.5em;
-  margin: 130px 20px 0 20px;
+  top: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 5px;
+}
+
+.nav-go-left {
+  margin-left: 12px;
+}
+
+.nav-go-right {
+  margin-left: 435px;
 }
 
 .side-nav a:link {
@@ -258,9 +244,10 @@ a.button:hover {
   text-decoration: none;
 }
 
-.side-nav a:hover {
+.side-nav:hover {
   color: #000000;
   text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 .gallery-img {

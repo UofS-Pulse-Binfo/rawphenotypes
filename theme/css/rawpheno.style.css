@@ -119,11 +119,3 @@ div.container-page .tripal-site-admin-only {
 div.container-page .tripal-site-admin-only span {
   background: none !important;
 }
-
-
-/* Remove the button when screen is at minimum width */
-@media(max-width: 1300px) {
-  div.subtitle-right {
-    display: none;
-  }
-}

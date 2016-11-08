@@ -5,18 +5,24 @@
 (function($) {
   Drupal.behaviors.rawphenoInstructionsTab = {
     attach: function (context, settings) {
-      // Remove context button link when parent container is less than 500px.
-      // Viewport media query is present in css to restructure layout on various screen width.
-      var parentContainer = $('div.container-page');
-      if (parentContainer && parentContainer.width() <= 720) {
-        // Hide context button.
-        if ($('.subtitle-right a') && $('.subtitle-right a').is(':visible')) {
-          $('.subtitle-right a').hide();
-        }
+      // Maintain search box width to prevent autocomplete search suggestions
+      // from being cut off. When width becomes less, remove context button.
+      // Alternative button is provided in Standard Procedure Tab.
 
-        // Fix tabs stacking one on top of each other by reducing font-size
-        $('#tabs ul:first-child li').css('font-size', '0.70em');
-      }
+      // To prevent Tabs from stacking each other - use smaller font size.
+      var parentContainer = $('div.container-page');
+      $(window).resize(function() {
+        var w = parentContainer.width();
+        var e = $('.subtitle-right');
+
+        var eVal = (w <= 750) ? 'none' : '';
+        e.css('display', eVal);
+
+        // Manage tabs.
+        eVal = (w <= 850) ? 0.68 : 1;
+        e = $('#container-instructions #tabs li a');
+        e.css('font-size', eVal + 'em');
+      });
 
       // IMAGE GALLERY
       // Array to hold all image file.
@@ -59,7 +65,7 @@
 
         // Determine if user clicks on next or prev link
         // in the image gallery.
-        var showImg = ($(this).text() == '<') ? curImg - 1 : curImg + 1;
+        var showImg = ($(this).attr('class') == 'a-left') ? curImg - 1 : curImg + 1;
 
         // Replace the image src to show the next or prev image in the topic.
         if (gallery[topic][showImg]) {

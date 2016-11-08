@@ -116,7 +116,7 @@
 	    alert = function(e) {
         // Create an error message.
         $('div.droppable-preview-file').hide();
-        $('<div class="messages error">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('select');
+        $('<div class="messages error">The specified file is not a valid Microsoft Excel File and could not be uploaded.</div>').insertAfter('select');
 
         return false;
       };

@@ -7,6 +7,16 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadPageElementBehaviors = {
     attach: function (context, settings) {
+      // Manage header section of this page.
+      var parentContainer = $('div.container-page');
+      $(window).resize(function() {
+        var w = parentContainer.width();
+        var e = $('.subtitle-left');
+
+        var eVal = (w <= 850) ? 1.3 : 1.6;
+        e.css('font-size', eVal + 'em');
+      });
+
       // Link to collapse help window.
       var collapseLink = $('#link-help');
       // Container for help text information.
