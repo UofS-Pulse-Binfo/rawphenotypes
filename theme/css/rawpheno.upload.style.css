@@ -35,7 +35,7 @@ input#edit-next-step.form-button-disabled {
 
 /* Text stage indicator */
 div.subtitle-left {
-  font-size: 2em;
+  font-size: 1.6em;
   line-height: 35px;
 }
 
@@ -251,6 +251,11 @@ li em {
   background-position: 5px 0;
 }
 
+.todo {
+  background: url('../img/icon-todo.jpg') no-repeat;
+  background-position: 5px 0;
+  opacity: 0.2;
+}
 
 /* Next stage indicator preceding next step button */
 span.text-next-step {
@@ -286,16 +291,4 @@ div.form-item-sel-project {
   border: none;
   padding: 0;
   margin-bottom: 20px !important;
-}
-
-
-/* Reduce the font-size when window is resized */
-@media(max-width: 1350px) {
-  div.progress-stage {
-    font-size: 1em;
-  }
-
-  div.subtitle-left {
-    font-size: 1.5em;
-  }
 }
