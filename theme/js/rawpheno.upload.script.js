@@ -13,7 +13,7 @@
         var w = parentContainer.width();
         var e = $('.subtitle-left');
 
-        var eVal = (w <= 850) ? 1.3 : 1;
+        var eVal = (w <= 850) ? 1.3 : 1.6;
         e.css('font-size', eVal + 'em');
       });
 

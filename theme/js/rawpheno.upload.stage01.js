@@ -4,7 +4,6 @@
 (function($) {
   Drupal.behaviors.rawphenoUploadStage01Behaviours = {
     attach: function (context, settings) {
-
      if ($('#rawpheno-select-project-field option').val() == 0 && $('#float-text').length) {
         $('#float-text').fadeIn(500);
 

@@ -393,6 +393,20 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
       // If returned false then halt validation.
       if ($status[ $prj_validator_name ] === FALSE) {
+        // In order: Project, file, germ, header then subset
+        // Fail the project.
+        $status[ $prj_validator_name ] = FALSE;
+
+        // Todo list.
+        $all_validators = array('file', 'all', 'header', 'subset');
+
+        foreach($all_validators as $v) {
+          // Get all validator names for scope header.
+          foreach ($validators[ $v ] as $v_name => $v) {
+            $status[ $v_name ] = 'todo';
+          }
+        }
+
         return $status;
       }
     }
