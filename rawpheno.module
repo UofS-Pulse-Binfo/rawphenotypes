@@ -70,6 +70,7 @@ function rawpheno_menu() {
   );
     // Menu callback which generates a project specific data collection spreadsheet.
     $items['phenotypes/raw/instructions/%'] = array(
+      'title' => 'Instructions',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('rawpheno_instructions', 3),
       'access arguments' => array('access rawpheno'),

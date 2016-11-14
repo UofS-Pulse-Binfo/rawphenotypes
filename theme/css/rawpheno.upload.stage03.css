@@ -6,6 +6,13 @@
 /* Import global css */
 @import 'rawpheno.upload.style.css';
 
+/* Remove tripal job message - for instructional video */
+/*
+#messages {
+  display: none !important;
+}
+*/
+
 /* Main container of the progress bar */
 .container-status {
   background-color: #F7F7F7;

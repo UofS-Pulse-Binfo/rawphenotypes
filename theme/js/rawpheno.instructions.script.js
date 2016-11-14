@@ -54,9 +54,9 @@
       var imgPath = $('#path').val();
 
       // Attach behavior to Photo Appendix.
-      $('#fragment-5 a').click(function(){
+      $('#fragment-6 a').click(function(){
         // Option select containing topics.
-        var topic = $('#fragment-5 select').val();
+        var topic = $('#fragment-6 select').val();
         // Image container - showing default image.
         var curImg = $('#cur-img').val();
 
@@ -69,18 +69,18 @@
 
         // Replace the image src to show the next or prev image in the topic.
         if (gallery[topic][showImg]) {
-          $('#fragment-5 img').attr('src', imgPath+gallery[topic][showImg]+'.jpg');
-          $('#fragment-5 em').contents().replaceWith(caption[topic][showImg]);
+          $('#fragment-6 img').attr('src', imgPath+gallery[topic][showImg]+'.jpg');
+          $('#fragment-6 em').contents().replaceWith(caption[topic][showImg]);
           $('#cur-img').val(showImg);
         }
       });
 
       // When user will change topic, load default or first item in the
       // image and caption array.
-      $('#fragment-5 select').change(function(){
+      $('#fragment-6 select').change(function(){
         var topic = $(this).val();
-        $('#fragment-5 img').attr('src', imgPath+gallery[topic][0]+'.jpg');
-        $('#fragment-5 em').contents().replaceWith(caption[topic][0]);
+        $('#fragment-6 img').attr('src', imgPath+gallery[topic][0]+'.jpg');
+        $('#fragment-6 em').contents().replaceWith(caption[topic][0]);
         $('#cur-img').val(0);
       });
 
@@ -184,16 +184,7 @@
             }
 
             var tabIn = $('tr').eq(x).closest('div').index();
-
-            if (tabIn == 2) {
-              traitCategory = 'Essential Trait';
-            }
-            else if (tabIn == 3) {
-              traitCategory = 'Optional Trait';
-            }
-            else if (tabIn == 4) {
-              traitCategory = 'Subset Trait';
-            }
+            traitCategory = $('#instructions-tab').find('li').eq(tabIn - 1).text();
 
             // Find the table the trait is in.
             var traitType = '<em>* This trait is '+traitCategory+'</em>';

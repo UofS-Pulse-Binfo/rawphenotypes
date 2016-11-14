@@ -189,7 +189,8 @@ function rawpheno_function_trait_types() {
   return array('type1' => 'essential',
                'type2' => 'optional',
                'type3' => 'subset',
-               'type4' => 'plantproperty');
+               'type4' => 'plantproperty',
+               'type5' => 'contributed');
 }
 
 

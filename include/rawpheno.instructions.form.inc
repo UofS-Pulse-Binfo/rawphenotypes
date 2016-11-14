@@ -137,18 +137,41 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
 
     $header_found_count = 0;
     $essential_found_count = 0;
+    $essential_count = 0;
+    $header_count = 0;
 
     foreach($h as $header => $type) {
+      // Ignore trait contributed.
+      if ($type == $trait_set['type5']) {
+        continue;
+      }
+
+      $header_count++;
+
+      // Use ready made AGILE data collection spreadsheet.
+      // Total number of headers, excluding contributed matches AGILE traits.
       if (in_array($header, $AGILE_column_headers)) {
         $header_found_count++;
       }
 
+      // Same essential traits as in AGILE traits.
       if ($type == $trait_set['type1'] AND in_array($header, $AGILE_essential_headers)) {
         $essential_found_count++;
       }
+
+      // Same number of essential traits as in AGILE traits.
+      if ($type == $trait_set['type1']) {
+        $essential_count++;
+      }
+
+      // Finally, name must be AGILE: Application of Genomic Innovation in the Lentil Economy as condition for this block.
     }
 
-    if (count($h) == count($AGILE_column_headers) AND $header_found_count == count($AGILE_column_headers) AND $essential_found_count == count($AGILE_essential_headers)) {
+    // Check if AGILE trait set was not altered.
+    if ($header_count == count($AGILE_column_headers)
+        && $header_found_count == count($AGILE_column_headers)
+        && $essential_found_count == count($AGILE_essential_headers)
+        && $essential_count == count($AGILE_essential_headers)) {
       // AGILE Project match the original trait set. Download ready-made data collection spreadsheet file.
      $link_to_xls = file_create_url('public://AGILE-PhenotypeDataCollection-v5.xlsx.zip');
     }
@@ -202,10 +225,10 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
     // of column headers passed to the spreadsheet writer.
     $sql = "SELECT project_cvterm_id, name, type
             FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
-            WHERE project_id = :project_id AND type <> :plantproperty
+            WHERE project_id = :project_id AND type NOT IN ( :exclude_property )
             ORDER BY type ASC";
 
-    $args = array(':project_id' => $project_id, ':plantproperty' => $trait_type['type4']);
+    $args = array(':project_id' => $project_id, ':exclude_property' => array($trait_type['type4'], $trait_type['type5']));
     $cvterm = chado_query($sql, $args);
 
     // Only when project has headers.

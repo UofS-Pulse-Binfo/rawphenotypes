@@ -140,6 +140,8 @@ function validator_is_excel_validate_file($file) {
  *   TRUE if the file has a measurements tab; FALSE otherwise.
  */
 function validator_tab_exists_validate_file($file) {
+  // Required traits - plot, rep, entry, location and name.
+  $required_trait = rawpheno_function_headers('required');
 
   // Check it opens.
   $xls_obj = rawpheno_open_file($file);
@@ -155,15 +157,27 @@ function validator_tab_exists_validate_file($file) {
       $i = 0;
       $have_data = 0;
       foreach ($xls_obj as $row) {
-        // only check the first two lines.
-        if ($i > 2) break;
+        // For some reason, when a spreadsheet is system generated and submitted
+        // for validation process, the reader could not locate data in measurements tab.
+        // This test ensure that a row has at least 5 elements to account for
+        // Plot, Entry, Name, Location and Rep - then try to validate the spreadsheet
+        // otherwise, it is assumed that it is a blank spreadsheet downloaded from instructions
+        // or simply a file with no data.
+        // NOTE: works however, after file has been resaved.
 
-        // Check the row isn't empty.
-        if (strlen(trim(implode('', $row))) >= 5) {
-          $have_data++;
+        if (count($row) > count($required_trait)) {
+          // only check the first two lines.
+          if ($i > 2) break;
+
+          // Check the row isn't empty.
+          if (strlen(trim(implode('', $row))) >= 5) {
+            $have_data++;
+          }
+
+          $i++;
         }
-        $i++;
       }
+
       if ($have_data > 1) return TRUE;
     }
   }

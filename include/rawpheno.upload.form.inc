@@ -854,7 +854,7 @@ function rawpheno_file_validate($file) {
 
     // Read only the status from test listed above.
     foreach($s as $i => $v) {
-      if (in_array($i, $flag_index) AND $v === FALSE) {
+      if (in_array($i, $flag_index) AND ($v === FALSE || $v === 'todo')) {
         $status[$i] = $v;
       }
     }
@@ -1004,13 +1004,15 @@ function rawpheno_submit_review($form, &$form_state) {
     foreach($new_header as $i => $header) {
       // For each new header store information provided in the interface.
       // Indicates if user has check this header for saving.
+      $header = trim(str_replace(array("\n", "\r", "  "), ' ', $header));
       $arr_newheaders[$header]['flag'] = ($form_state['values']['chk_' . $i] == 1) ? 1 : 0;
 
       // Determine if the form in review traits has been filled out and checkbox
       // has been checked by user. If it has been checked then save the trait.
-      if ($form_state['values']['chk_' . $i] == 1) {
+      if ($form_state['values']['chk_' . $i] === 1) {
         // Before save, we need to tell if the header is present in the database and
         // user just wants to reuse them. Otherwise, add a new header.
+        // Reuse header - set to OPTIONAL.
         if ((isset($form_state['values']['sel_header_' . $i]) AND $form_state['values']['sel_header_' . $i] > 0) OR
             (isset($form_state['values']['txt_header_cvterm_id_' . $i]))) {
 
@@ -1026,6 +1028,7 @@ function rawpheno_submit_review($form, &$form_state) {
           $h = db_query($sql, $args);
           if ($h->rowCount() <= 0) {
             // Add to project only when it is not in the project.
+            // Set the trait type to contributed.
             db_insert('pheno_project_cvterm')
               ->fields(array(
                 'project_id' => $project_id,
@@ -1040,7 +1043,11 @@ function rawpheno_submit_review($form, &$form_state) {
           continue;
         }
 
+        // Check if the trait exists in the database, then it is likely
+        // that the user is reusing the trait - threfore it is not contributed and just map
+        // the cvterm id to a project.
 
+        // Add the as contributed - set to CONTRIBUTED.
         // Construct the column header name.
         $name   = trim($form_state['values']['txt_header_' . $i]);
         $unit   = trim($form_state['values']['txt_unit_' . $i]);
@@ -1049,13 +1056,15 @@ function rawpheno_submit_review($form, &$form_state) {
 
         // Format the header.
         if (strpbrk($name, '()')) {
-          $name = ucfirst(strtolower($name));
+          // Header has a unit part.
+          $name = trim(str_replace(array("\n", "\r", "  "), ' ', $name));
         }
         else {
+          // Construct header plus the unit.
           $name = $name . ' (' . strtolower($unit) . ')';
         }
 
-        // First, save the measurement.
+        // Trait properties - use when inserting the cterm and reference to other property.
         $m_cvterm = array(
           'id'         => 'rawpheno_tripal:' . $name,
           'name'       => $name,
@@ -1063,29 +1072,37 @@ function rawpheno_submit_review($form, &$form_state) {
           'cv_name'    => 'phenotype_measurement_types'
         );
 
-        $m_cvterm_id = chado_select_record('cvterm',array('cvterm_id'),
-                                           array('name' => $m_cvterm['name'],
-                                           'cv_id' => array('name' => $m_cvterm['cv_name'])));
-        if (!$m_cvterm_id) {
-          $m_cvterm_id = tripal_insert_cvterm($m_cvterm);
-        }
+        // Search the name in cvterm and decide if trait should be considered optional or contributed.
+        $sql = "SELECT t2.cvterm_id
+                FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING (cv_id)
+                WHERE
+                  trim(lower(t2.name)) = trim(lower(:cvterm_name))
+                  AND t1.name = :cv_name LIMIT 1";
 
-        // Grab just the id.
-        if (is_array($m_cvterm_id)) {
-          $m_cvterm_id = $m_cvterm_id[0]->cvterm_id;
+        $args = array(':cvterm_name' => $m_cvterm['name'], ':cv_name' => $m_cvterm['cv_name']);
+        $result = chado_query($sql, $args)
+          ->fetchObject();
+
+        if ($result) {
+          // Found use the id.
+          $m_cvterm_id = $result->cvterm_id;
+          // Trait is optional.
+          $type = $trait_type['type2'];
         }
-        elseif (is_object($m_cvterm_id)) {
-          $m_cvterm_id = $m_cvterm_id->cvterm_id;
+        else {
+          // Not found, insert and get the inserted id.
+          $m = tripal_insert_cvterm($m_cvterm);
+          $m_cvterm_id = $m->cvterm_id;
+          // Trait is contributed.
+          $type = $trait_type['type5'];
         }
 
         // When saving this data for this header, use the cvterm_id.
         $arr_newheaders[$header]['alt_header'] = $m_cvterm_id;
-
-        // Map this header to project.
         db_insert('pheno_project_cvterm')
           ->fields(array('project_id' => $project_id,
                          'cvterm_id' => $m_cvterm_id,
-                         'type' => $trait_type['type2']))
+                         'type' => $type))
           ->execute();
 
         // Create a R Friendly version.

@@ -166,7 +166,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         if (!empty($cell_entry) OR (strval($cell_entry) === '0')) {
 
           // Get the column header of a cell.
-          $cell_colheader = str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]);
+          $cell_colheader = trim(str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]));
 
           // Determine if user wants to save this trait.
           if (count($arr_newheaders) > 0 AND array_key_exists($cell_colheader, $arr_newheaders)) {

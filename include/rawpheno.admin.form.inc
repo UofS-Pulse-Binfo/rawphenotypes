@@ -657,8 +657,11 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   // Add form elements.
   // Query all traits in cvterm that is not listed as among the traits in a project,
   // and suggest it to admin in table form with checboxes.
-  $sql = "SELECT t2.cvterm_id, t2.name, t2.definition
-          FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
+  $sql = "SELECT t2.cvterm_id, t2.name
+          FROM
+            {cv} AS t1
+            INNER JOIN {cvterm} AS t2
+            USING(cv_id)
           WHERE
             t1.name = 'phenotype_measurement_types'
             AND t2.cvterm_id NOT IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
@@ -670,14 +673,6 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   $arr_tblchkbox_rows = array();
 
   if ($headers->rowCount() > 0) {
-    // Add a select box to each column header to let
-    // admin define the type when selecting from the list.
-    // Remove plant property type
-    $tmp_type = $trait_type;
-    unset($tmp_type['type4']);
-    $t = array_values($tmp_type);
-    $types = array_combine($t, array_map('strtoupper', $t));
-
     foreach($headers as $h) {
       $arr_tblchkbox_rows[$h->cvterm_id] =
         array(
@@ -1048,9 +1043,11 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       $trait_name = preg_replace('/\(.*/', ' ', $header_asset['name']);
 
       // Add form elements.
+      // Include the project id when modifying a trait header.
       $default_values = array('count_project'        => $header_asset['count_project'],
                               'count_data'           => $header_asset['count_data'],
                               'txt_id'               => $header_asset['cvterm_id'],
+                              'prj_id'               => $header_asset['in_project_id'],
                               'txt_trait_name'       => trim($trait_name),
                               'sel_trait_rep'        => trim($trait_rep),
                               'sel_trait_unit'       => trim($trait_unit),
@@ -1263,6 +1260,9 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
     }
     // UPDATE.
     else {
+      // Project id the trait is in.
+      $prj_id = $form_state['values']['prj_id'];
+
       // Uses cvterm id number.
       // Update cvterm record (name and definition).
       chado_update_record('cvterm',
@@ -1335,6 +1335,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
       db_update('pheno_project_cvterm')
         ->fields(array('type' => $trait_type))
         ->condition('cvterm_id', $asset_id, '=')
+        ->condition('project_id', $prj_id, '=')
         ->execute();
 
       drupal_set_message(t('You have successfully updated a column header in this project.'), 'status');
@@ -1375,8 +1376,14 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   // Get trait types array.
   $a = rawpheno_function_trait_types();
   // In this trait types array, remove the plant property option.
-  // Allow only to add essential, optional or subset column header types.
+  // Allow only to add essential, optional, contributed or subset column header types.
   unset($a['type4']);
+
+  // Type is no user contributed. Do not suggest contributed so user will have not option to add contributed
+  // trait using admin since contributed traits are traits derived from submitted spreadsheet in stage 01 : Describe New Trait.
+  if (!isset($default['sel_trait_type']) || $default['sel_trait_type'] != $a['type5']) {
+    unset($a['type5']);
+  }
 
   // Get the values and use it as both key and value.
   $t = array_values($a);
@@ -1394,11 +1401,19 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     $disabled = FALSE;
   }
 
-  // Project id the trait is in.
+  // Project id the trait is in or the trait id number.
   $form['fieldset_trait']['txt_id'] = array(
     '#type' => 'hidden',
     '#value' => $default['txt_id'],
   );
+
+  // Exclusive to modifying trait, include the project id the trait is registered.
+  if (isset($default['prj_id']) && $default['prj_id'] > 0) {
+    $form['fieldset_trait']['prj_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $default['prj_id'],
+    );
+  }
 
   // Trait name field.
   $form['fieldset_trait']['txt_trait_name'] = array(
@@ -1487,6 +1502,15 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
     '#default_value' => isset($default['txt_trait_method']) ? $default['txt_trait_method'] : '',
     '#disabled' => $disabled,
   );
+
+  // Tell user about contributed trait when detected. Such trait is not included when generating data collection
+  // spreadsheet file - to incorporate it, please set the trait type to either essential or optional.
+  if (isset($a['type5']) && isset($default['sel_trait_type']) && $default['sel_trait_type'] == $a['type5']) {
+    // The header is contributed. Indicate to user as such.
+    $form['fieldset_trait']['warning_contributed'] = array(
+      '#markup' => '<div class="messages warning">This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Project. To include this trait, set the trait type to Essential or Optional.</div>',
+    );
+  }
 
   // Trait is essential field. Default to unchecked.
   $form['fieldset_trait']['sel_trait_type'] = array(

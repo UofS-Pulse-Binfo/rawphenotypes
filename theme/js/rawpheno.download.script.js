@@ -75,6 +75,9 @@
             }
           }, 1000);
         }
+        else {
+          e.preventDefault();
+        }
       });
 
       // Disable fields on AJAX (selectbox, checkbox, buttons and all).

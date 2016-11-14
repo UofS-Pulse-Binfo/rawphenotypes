@@ -359,7 +359,7 @@
               <div id="container-search-result"></div>
 
               <div id="tabs">
-                <ul>
+                <ul id="instructions-tab">
                   <li><a href="#fragment-1">Standard Procedure</a></li>
                   <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
 
@@ -378,8 +378,14 @@
                   <li><a href="#fragment-4">Subset Traits</a></li>
                   <?php } ?>
 
-                  <li id="photo-appendix"><a href="#fragment-5">Photo Appendix</a></li>
-                  <li id="reference"><a href="#fragment-6">Reference</a></li>
+                  <?php
+                     // Test contributed trait.
+                     if ($form['tbl_project_headers_' . $trait_type['type5']]['#markup'] != 'no-trait') {
+                  ?>
+                  <li><a href="#fragment-5">Contributed</a></li>
+                  <?php } ?>
+
+                  <li id="photo-appendix"><a href="#fragment-6">Photo Appendix</a></li>
                 </ul>
 
                 <div id="fragment-1">
@@ -417,7 +423,8 @@
                   2 => 'These traits are essential to this project and data should be collected for all genotypes sent to you.',
                   3 => 'These traits are optional. We will be taking them in our location and have thus provided our procedure in case you interested in taking these data in your location as well. Feel free to record ANY data you are interested in (including traits not listed below –just add a column to the accompanying data spreadsheet for traits not listed below).',
                   4 => 'The following traits require a fair amount of work and, as such, are completely optional. We will collect them in SK, if you are interested in these traits, please contact us to make sure we are collecting the same thing. Note: These columns are hidden by default. If you would like to record this data, select columns “X” and "AB" and either right-click (computer) or long-press (tablet) the column header then select “Unhide”. For the following “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. If 20 peduncles cannot be obtained, sample from a 3rd plant.',
-                  5 => 'These traits are optional. Please contact the Project Manager if you are interested in these traits.'
+                  5 => 'These traits are additional traits contributed by Phenotypic Data Collectors. Trait definition and method of collection were provided by the data collector.',
+                  6 => 'These traits are optional. Please contact the Project Manager if you are interested in these traits.'
                 );
 
                 $i = 2;
@@ -435,12 +442,27 @@
                       $notes = $arr_type_note[$i];
                     }
                     else {
-                      $notes = $arr_type_note[5];
+                      $notes = $arr_type_note[6];
                     }
 
                     print '<div id="fragment-' . $i . '">';
                     print '<h3>' . $notes . '</h3>';
                     print drupal_render($form['tbl_project_headers_' . $type]);
+
+
+                    if ($i == 2) {
+                      print '
+                      <h3>Further reference for Reproductive stages:</h3>
+                      <em>Erskine et al. (1990) Stages of Development in Lentil. Experimental Agriculture. 26(3): 297-302.</em>
+                      <ul>
+                        <li><strong>R1 - First Bloom</strong><p>One open flower at any node</p></li>
+                        <li><strong>R3 - Early Pod</strong><p>Pod on nodes 10-13 of the basal primary branch visible</p></li>
+                        <li><strong>R5 - Full Seed</strong><p>Seeds in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity</p></li>
+                        <li><strong>R7 - Physiological Maturity</strong><p>The leaves start yellowing and 50% of the pods have turned yellow</p></li>
+                      </ul>';
+                    }
+
+
                     print '</div>';
                   }
 
@@ -448,7 +470,7 @@
                 }
                 ?>
 
-                <div id="fragment-5">
+                <div id="fragment-6">
                   <h3>Topic: <select>
                     <option value="0">Tendrils</option>
                     <option value="1">Pods</option>
@@ -466,17 +488,6 @@
                       <div class="side-nav nav-go-right"><a href="javascript:void();" class="a-right">&rang;</a></div>
                     </div>
                   </div>
-                </div>
-
-                <div id="fragment-6">
-                  <h3>Further reference for Reproductive stages:</h3>
-                  <em>Erskine et al. (1990) Stages of Development in Lentil. Experimental Agriculture. 26(3): 297-302.</em>
-                  <ul>
-                    <li><strong>R1 - First Bloom</strong><p>One open flower at any node</p></li>
-                    <li><strong>R3 - Early Pod</strong><p>Pod on nodes 10-13 of the basal primary branch visible</p></li>
-                    <li><strong>R5 - Full Seed</strong><p>Seeds in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity</p></li>
-                    <li><strong>R7 - Physiological Maturity</strong><p>The leaves start yellowing and 50% of the pods have turned yellow</p></li>
-                  </ul>
                 </div>
               </div>
             </div>

@@ -436,3 +436,9 @@ span.alert-error {
   background: url('../../theme/img/message-16-warning.png') no-repeat top left;
   padding: 0 7px 0 20px !important;
 }
+
+.todo {
+  background: url('../img/icon-todo.jpg') no-repeat;
+  background-position: 5px 0;
+  opacity: 0.2;
+}

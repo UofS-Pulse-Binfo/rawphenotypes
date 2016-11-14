@@ -225,19 +225,19 @@ function rawpheno_download_get_traits($form, $form_state) {
 function rawpheno_download_load_traits($location, $project) {
   $opt_trait = array();
 
- $sql = "SELECT DISTINCT t1.cvterm_id, t1.name
-         FROM
-           {cvterm} AS t1
-           RIGHT JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
-         WHERE
-           t2.project_id IN
+  $sql = "SELECT DISTINCT t1.cvterm_id, t1.name
+          FROM
+            {cvterm} AS t1
+            RIGHT JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
+          WHERE
+            t2.project_id IN
 
-           (SELECT project_id
-            FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
-            WHERE value IN (:location) AND project_id IN (:project))
+            (SELECT project_id
+             FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
+             WHERE value IN (:location) AND project_id IN (:project))
 
-           AND t1.name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
-        ORDER BY t1.cvterm_id ASC";
+            AND t1.name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+         ORDER BY t1.cvterm_id ASC";
 
   $args = array(':location' => $location, ':project' => $project);
   $t = chado_query($sql, $args);
