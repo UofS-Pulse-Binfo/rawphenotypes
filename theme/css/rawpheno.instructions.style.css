@@ -232,11 +232,11 @@ a.button:hover {
 }
 
 .nav-go-left {
-  margin-left: 12px;
+  margin-left: 12px !important;
 }
 
 .nav-go-right {
-  margin-left: 435px;
+  margin-left: 435px !important;
 }
 
 .side-nav a:link {
