@@ -126,6 +126,7 @@ function rawpheno_download($form, &$form_state) {
       'wrapper' => 'download-ajax-wrapper',
       'progress' => array('type' => '', 'message' => '')
     ),
+    '#id' => 'chk-select-all-locations',
   );
 
   $location_id = $opt_location;
@@ -154,6 +155,7 @@ function rawpheno_download($form, &$form_state) {
     '#title' => t('Select all Traits'),
     '#type' => 'checkbox',
     '#default_value' => 0,
+    '#id' => 'chk-select-all-traits',
   );
 
   $form['div_buttons'] = array(
@@ -516,32 +518,3 @@ function rawpheno_download_r_compatible($cvterm_id) {
   return (isset($r) AND !empty($r)) ? $r : null;
 }
 
-
-/* Function test if a given trait has data for a given project and location.
- *
- * @param $trait
- *   An integer containing the cvterm id number of a trait.
- * @param $location
- *   An array of locations.
- * @param $project
- *   An array of project id.
- *
- * @return
- *   Boolean true - has data and false - no data.
- */
-function rawpheno_download_trait_has_data($trait, $location, $project) {
-  $sql = "SELECT type_id
-          FROM pheno_measurements
-          WHERE
-            plant_id IN
-              (SELECT plant_id
-               FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
-               WHERE value IN (:location) AND project_id IN (:project))
-            AND type_id = :trait
-          LIMIT 1";
-
-  $args = array(':trait' => $trait, ':location' => $location, ':project' => $project);
-  $d = chado_query($sql, $args);
-
-  return ($d->rowCount()) ? TRUE : FALSE;
-}

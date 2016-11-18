@@ -438,11 +438,11 @@
                   }
                   else {
                     // Notes:
-                    if (trim($form['project_panel']['#markup']) == 'AGILE: Application of Genomic Innovation in the Lentil Economy') {
-                      $notes = $arr_type_note[$i];
+                    if ($type == $trait_type['type3'] && trim($form['project_panel']['#markup']) != 'AGILE: Application of Genomic Innovation in the Lentil Economy') {
+                      $notes = $arr_type_note[6];
                     }
                     else {
-                      $notes = $arr_type_note[6];
+                      $notes = $arr_type_note[$i];
                     }
 
                     print '<div id="fragment-' . $i . '">';

@@ -462,7 +462,11 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
           );
 
           if (isset($cvterm_info)) {
-            $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim(strpbrk($cvterm_info->name, '()'), '()');
+            $unit_val = strpbrk($cvterm_info->name, '()');
+            // Remove any parenthesis making its way to the final value.
+            $unit_val = str_replace(array('(', ')'), '', $unit_val);
+
+            $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim($unit_val);
             $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#disabled'] = TRUE;
           }
           else {

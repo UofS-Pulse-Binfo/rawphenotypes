@@ -924,3 +924,66 @@ function rawpheno_function_library_patch() {
 
   return ($pass == 2) ? 1 : 0;
 }
+
+
+/**
+ * Function: ensure that trait name in the spreadsheet file is in trait name (unit) format.
+ * e.g. Planting Date )date( or Planting Date (date.
+ *
+ * @param $trait
+ *   A string containing the trait name parsed in the spreadsheet file.
+ *
+ * @return true or false.
+ */
+function rawpheno_valid_trait_format($trait) {
+  $is_valid = TRUE;
+  $trait = trim($trait);
+  // Test if the trait uses parenthesis.
+  // ( and ) indicate that unit is supplied with the trait name,
+  // otherwise, ignore this check (e.g. comments)
+  if (preg_match('/[(|)]/', $trait) === 1 && $trait != 'Lodging (Scale: 1-5) upright - lodged') {
+    // With these characters present, test if the format is trait name (unit).
+
+    // Pattern: first string can be any chars but ( and ) followed by 0 or more space then 1 ( then any chars and ) as the end of string.
+    $is_valid = (preg_match('/\A[^()]+\s*\({1}[^)(]+\)\z/i', $trait) === 1) ? TRUE : FALSE;
+  }
+
+  return $is_valid;
+}
+
+
+/* Function test if a given trait has data for a given project and location.
+ *
+ * @param $trait
+ *   An integer containing the cvterm id number of a trait.
+ * @param $location
+ *   An array of locations.
+ * @param $project
+ *   An array of project id.
+ *
+ * @return
+ *   Boolean true - has data and false - no data.
+ */
+function rawpheno_download_trait_has_data($trait, $location, $project) {
+  $in_location = '';
+  $args = array(':trait' => $trait, ':project' => $project);
+
+  if (!empty($location)) {
+    $in_location = ' value IN (:location) AND ';
+    $args[':location'] = $location;
+  }
+
+  $sql = sprintf("SELECT type_id
+          FROM pheno_measurements
+          WHERE
+            plant_id IN
+              (SELECT plant_id
+               FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
+               WHERE %s project_id IN (:project))
+            AND type_id = :trait
+          LIMIT 1", $in_location);
+
+  $d = chado_query($sql, $args);
+
+  return ($d->rowCount()) ? TRUE : FALSE;
+}

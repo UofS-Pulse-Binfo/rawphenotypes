@@ -165,7 +165,7 @@ function validator_tab_exists_validate_file($file) {
         // or simply a file with no data.
         // NOTE: works however, after file has been resaved.
 
-        if (count($row) > count($required_trait)) {
+        if (count($row) >= count($required_trait)) {
           // only check the first two lines.
           if ($i > 2) break;
 
@@ -198,12 +198,16 @@ function validator_column_exists_generate_msg($error_info) {
   $messages = array();
 
   if (isset($error_info['missing'])) {
-    $text1 = 'The following columns must exist: "' . implode('", "',$error_info['missing']). '". Please add empty column in your spreadsheet for each of the missing trait mentioned.';
+    $text1 = 'The following Essential Traits must exist: "' . implode('", "',$error_info['missing']). '". Please add empty column in your spreadsheet for each of the missing Essential Trait mentioned. Check the Instructions Page to ensure that Essential Traits required by this project are present and match as listed.';
     $messages[] = $text1;
   }
 
   if (isset($error_info['duplicates'])) {
     $messages[] = 'The following columns were duplicated: "' . implode('", "',$error_info['duplicates']). '". Please ensure each column is unique (only occurs once in the spreadsheet).';
+  }
+
+  if (isset($error_info['invalidformat'])) {
+    $messages[] = 'The following columns have units not properly enclosed in parenthesis or is missing: "' . implode('", "',$error_info['invalidformat']). '". Please ensure units are correctly enclosed in parenthesis.';
   }
 
   return $messages;
@@ -254,6 +258,24 @@ function validator_column_exists_validate_header($header, $project_id) {
     }
     $result['duplicates'] = $duplicates;
   }
+
+  // Third check - ensure that when ( or ) are present in the name
+  // then it is assumed that trait has unit thus it mus be check that
+  // unit is correctly enclosed in parenthesis and or no missing opening
+  // or closing paren.
+  $invalid_format = array();
+  foreach($header as $f) {
+    $h = trim(str_replace(array("\n", "\r", "  "), ' ', $f['original']));
+
+    $is_valid = rawpheno_valid_trait_format($h);
+    if ($is_valid === FALSE) {
+      // Return the trait name, unit, and all.
+      $invalid_format[] = $h;
+    }
+  }
+
+  if (count($invalid_format)) $result['invalidformat'] = $invalid_format;
+
 
   if (empty($result)) {
     return TRUE;

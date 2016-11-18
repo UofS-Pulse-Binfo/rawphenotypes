@@ -5,54 +5,92 @@
 (function($) {
   Drupal.behaviors.rawphenoSelTrait = {
     attach: function (context, settings) {
-      // Reference all select elements.
-      var sel = $('select');
+      // When project is selected.
+      // Reset the form - uncheck and unselect.
 
-      // Use these vars to reference location and trait select boxes
-      // instead of index 1 and index 2, respectively.
-      var locations = 1, traits = 2;
+      // Reference project select box.
+      var selPrj = $('#download-sel-project');
+      // Reference locations select box, checkbox, and label.
+      var locations = {'selectbox': $('#download-sel-location'),
+                       'checkbox' : $('#chk-select-all-locations'),
+                       'label'    : $('label[for="chk-select-all-locations"]')};
 
-      // Reference all checkboxes.
-      var chkb = $('input:checkbox:lt(2)');
+      // Reference traits.
+      var traits =    {'selectbox': $('#download-sel-trait'),
+                       'checkbox' : $('#chk-select-all-traits'),
+                       'label'    : $('label[for="chk-select-all-traits"]')};
 
-      // When user click the select project select box, reset the form
-      // by removing any default/user selected option and uncheck the checkboxes.
-      $('#download-sel-project').click(function() {
-        // Reset select boxes.
-        resetSelect(sel[locations], '');
-        resetSelect(sel[traits], '');
+      // Add event listener to select a project field.
+      selPrj.focus(function() {
+        // Reset locations and related fields.
+        resetSelect(locations.selectbox, '');
+        checkUncheck(locations.checkbox, '');
 
-        // Reset checkboxes.
-        chkb.attr('checked', false);
+        // Reset traits and related fields.
+        resetSelect(traits.selectbox, '');
+        checkUncheck(traits.checkbox, '');
       });
 
-      // Add event listener to checkboxes.
-      chkb.click(function(i) {
-        // id attribute of the checked field.
-        var id = (i.target.id.indexOf('location') > 0) ? locations : traits;
-        // check/uncheck checkbox.
-        var state = ($(this).is(':checked')) ? 'selected' : '';
-        resetSelect(sel[id], state);
+      // Add event listener to locations checkboxes/labels.
+      locations.label.add(locations.checkbox).click(function(e) {
+        // Check the state of the checkbox and reset or select the select box.
+        var s = whatState(locations.checkbox);
 
-        if (id == locations) {
-          // Reset select all traits when checked.
-          if (chkb.eq(1).is(':checked')) {
-            chkb.eq(1).attr('checked', false);
-          }
+        // Support for Safari and IE
+        // Source: http://stackoverflow.com/questions/5899783/detect-safari-chrome-ie-firefox-opera-with-user-agent
+        //         http://stackoverflow.com/questions/19999388/check-if-user-is-using-ie-with-jquery/21712356#21712356
+        var ua = window.navigator.userAgent;
+        var old_ie = ua.indexOf('MSIE ');
+        var new_ie = ua.indexOf('Trident/');
+
+        if ((navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) || old_ie > -1 || new_ie > -1) {
+          s = !s;
         }
 
-        $(sel[id]).scrollTop(0).focus();
+        resetSelect(locations.selectbox, s);
+        // Reset the traits select box and uncheck the traits checkbox when this checkbox is clicked.
+        resetSelect(traits.selectbox, '');
+        checkUncheck(traits.checkbox);
+
+        // Set the focus to locations select box and first option in the list.
+        if (s == 'selected') {
+          locations.selectbox.scrollTop(0).focus();
+        }
       });
 
-      // Add event listener to select trait select boxes.
-      $('#download-sel-location').change(function(e) {
+      // Add event listener to traits checkboxes/labels
+      traits.label.add(traits.checkbox).click(function(e) {
+        // Check the state of the checkbox and reset or select the select box.
+        var s = whatState(traits.checkbox);
+
+        resetSelect(traits.selectbox, s);
+        traits.selectbox.scrollTop(0).focus();
+      })
+
+      // Add event listener to select boxes.
+      // Locations.
+      locations.selectbox.change(function(e) {
         // Reset checkboxes.
-        chkb.attr('checked', false);
+        checkUncheck(locations.checkbox);
+        checkUncheck(traits.checkbox);
       });
 
-      $('#download-sel-trait').change(function(e) {
+      // Traits.
+      traits.selectbox.change(function(e) {
         // Reset checkboxes.
-        chkb.eq(1).attr('checked', false);
+        checkUncheck(traits.checkbox);
+      });
+
+
+
+      // Disable fields on AJAX (selectbox, checkbox, buttons and all).
+      $(document).ajaxStart(function() {
+        //ajax start
+        $(':input').attr('disabled', 'disabled');
+      }).ajaxComplete(function() {
+        //ajax end
+        resetSelect(traits.selectbox, '')
+        $(':input').removeAttr('disabled');
       });
 
 
@@ -60,10 +98,12 @@
       var btnSubmit = $('#edit-download-submit-download');
 
       // Submit button event with timer.
+      // Server side scrip in sync with this timer.
       btnSubmit.click(function(e) {
         if (btnSubmit.val() == 'Download') {
           btnSubmit.val('Download will start in 3');
           var sec = 2;
+
           var timer = setInterval(function() {
             btnSubmit.val('Download will start in ' + sec);
             if (sec < 0) {
@@ -75,29 +115,49 @@
             }
           }, 1000);
         }
-        else {
-          e.preventDefault();
-        }
-      });
-
-      // Disable fields on AJAX (selectbox, checkbox, buttons and all).
-      $(document).ajaxStart(function() {
-        //ajax start
-        $(':input').attr('disabled', 'disabled');
-      }).ajaxComplete(function() {
-        //ajax end
-        resetSelect(sel[traits], '')
-        $(':input').removeAttr('disabled');
       });
 
 
-      // Function reset select box.
-      function resetSelect(select, state) {
-        $(select).find('option').each(function() {
-          var s = (state == '') ? '' : state;
+
+      // Function return the state of the checkbox.
+      function whatState(fld) {
+        return (fld.is(':checked')) ? 'selected' : '';
+      }
+
+      // Function reset and select select box.
+      function resetSelect(fld, v) {
+        $(fld).find('option').each(function() {
+          var s = (v == '') ? '' : v;
           $(this).attr('selected', s);
         });
       }
+
+      // Function uncheck and check checkbox.
+      function checkUncheck(fld) {
+        // Uncheck if it is checked.
+        if (fld.is(':checked')) {
+          fld.attr('checked', false);
+        }
+      }
+
+      // https://msdn.microsoft.com/en-us/library/ms537509(v=vs.85).aspx
+      // Returns the version of Internet Explorer or a -1
+      // (indicating the use of another browser).
+      function getInternetExplorerVersion() {
+        var rv = -1; // Return value assumes failure.
+        if (navigator.appName == 'Microsoft Internet Explorer')
+        {
+          var ua = navigator.userAgent;
+          var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+          if (re.exec(ua) != null)
+            rv = parseFloat( RegExp.$1 );
+        }
+        return rv;
+      }
+
+
+      // Suppress any AJAX error showing snippet of code.
+      alert = function(){ };
     }
   };
 }(jQuery));

@@ -63,6 +63,14 @@ function rawpheno_rawdata($form, &$form_state) {
     $traits = chado_query($sql, $q_string)
       ->fetchAllKeyed();
 
+    // List only traits that has actual data from pheno measurements table.
+    foreach($traits as $id => $val) {
+      $h = rawpheno_download_trait_has_data($id, '', $p_id);
+      if ($h === FALSE) {
+        unset($traits[$id]);
+      }
+    }
+
     $traits = $default_option + $traits;
 
     $form['sel_' . $p_id] = array(
