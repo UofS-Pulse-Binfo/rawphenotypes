@@ -383,6 +383,9 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
     $validators[ $v['scope'] ][ $k ] = $v;
   }
 
+  // Todo list.
+  $all_scope_validators = array('project', 'file', 'all', 'header', 'subset');
+
   // Add the libraries needed to parse excel files.
   rawpheno_add_parsing_libraries();
 
@@ -393,16 +396,14 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
       // If returned false then halt validation.
       if ($status[ $prj_validator_name ] === FALSE) {
-        // In order: Project, file, germ, header then subset
-        // Fail the project.
+        // Fail the project and set the rest to TODO.
         $status[ $prj_validator_name ] = FALSE;
 
-        // Todo list.
-        $all_validators = array('file', 'all', 'header', 'subset');
-
-        foreach($all_validators as $v) {
-          // Get all validator names for scope header.
-          foreach ($validators[ $v ] as $v_name => $v) {
+        // Todo the rest of validators.
+        // Since this is project scope and it got falsed - remove the project.
+        unset($all_scope_validators[0]);
+        foreach($all_scope_validators as $v) {
+          foreach($validators[ $v ] as $v_name => $validator) {
             $status[ $v_name ] = 'todo';
           }
         }
@@ -419,6 +420,28 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
       // If returned false then halt validation.
       if ($status[ $validator_name ] === FALSE) {
+        // Fail the file and set the rest to TODO but set the project to passed
+        // first since it is assumed that project validator returned a passed value.
+        $status[ 'project_selected' ] = TRUE;
+        $status[ $validator_name ] = FALSE;
+
+        // Todo the rest of validators.
+        // Since project is completed. skip this scope.
+        unset($all_scope_validators[0]);
+        foreach($all_scope_validators as $v) {
+          foreach($validators[ $v ] as $v_name => $validator) {
+            if ($status[ $v_name ] === TRUE) {
+              $status[ $v_name ] = TRUE;
+            }
+            elseif ($status[ $v_name ] === FALSE) {
+              $status[ $v_name ] = FALSE;
+            }
+            else {
+              $status[ $v_name ] = 'todo';
+            }
+          }
+        }
+
         return $status;
       }
     }
@@ -577,7 +600,9 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // Make sure all validators are represented in status.
   // If they are not already then a failure wasn't recorded -thus they passed :-).
   foreach($all_validators as $validator_name => $validator) {
-    if (!isset($status[$validator_name])) $status[$validator_name] = TRUE;
+    if (!isset($status[$validator_name])) {
+      $status[$validator_name] = TRUE;
+    }
   }
 
   return $status;

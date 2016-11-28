@@ -66,6 +66,12 @@
 		    });
 	    }
 
+	    // Remove message telling user a list of file extension allowed.
+	    // Please se hook form - Form DND.
+	    if ($('#container-upload .item-list')) {
+	      $('#container-upload .item-list ul').remove();
+	    }
+
       // Remove validation result and error messages as soon
       // as DND receives a file. This is for both drag and drop and
       // using the choose a file link (file browser).
@@ -144,3 +150,4 @@
     }
   };
 }(jQuery));
+

@@ -100,21 +100,10 @@
       // Submit button event with timer.
       // Server side scrip in sync with this timer.
       btnSubmit.click(function(e) {
-        if (btnSubmit.val() == 'Download') {
-          btnSubmit.val('Download will start in 3');
-          var sec = 2;
-
-          var timer = setInterval(function() {
-            btnSubmit.val('Download will start in ' + sec);
-            if (sec < 0) {
-              clearInterval(timer);
-              btnSubmit.val('Download');
-            }
-            else {
-              sec = sec - 1;
-            }
-          }, 1000);
-        }
+        $(this).hide();
+        $('#div-button').once(function() {
+          $(this).append('<span class="win-loading">Please wait...</span>');
+        });
       });
 
 
@@ -139,22 +128,6 @@
           fld.attr('checked', false);
         }
       }
-
-      // https://msdn.microsoft.com/en-us/library/ms537509(v=vs.85).aspx
-      // Returns the version of Internet Explorer or a -1
-      // (indicating the use of another browser).
-      function getInternetExplorerVersion() {
-        var rv = -1; // Return value assumes failure.
-        if (navigator.appName == 'Microsoft Internet Explorer')
-        {
-          var ua = navigator.userAgent;
-          var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
-          if (re.exec(ua) != null)
-            rv = parseFloat( RegExp.$1 );
-        }
-        return rv;
-      }
-
 
       // Suppress any AJAX error showing snippet of code.
       alert = function(){ };

@@ -987,3 +987,71 @@ function rawpheno_download_trait_has_data($trait, $location, $project) {
 
   return ($d->rowCount()) ? TRUE : FALSE;
 }
+
+
+/**
+ * Function get all traits given a location and project.
+ *
+ * @param $location
+ *   An array containing selected location from the location select box.
+ * @param $project
+ *   An array containing the selected project form the project select box.
+ * @return
+ *   An array containing all traits available.
+ */
+function rawpheno_download_load_traits($location, $project) {
+  $opt_trait = array();
+
+  $sql = "SELECT DISTINCT t1.cvterm_id, t1.name
+          FROM
+            {cvterm} AS t1
+            RIGHT JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
+          WHERE
+            t2.project_id IN
+
+            (SELECT project_id
+             FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
+             WHERE value IN (:location) AND project_id IN (:project))
+
+            AND t1.name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+         ORDER BY t1.cvterm_id ASC";
+
+  $args = array(':location' => $location, ':project' => $project);
+  $t = chado_query($sql, $args);
+
+  if ($t->rowCount()) {
+    foreach($t as $m) {
+      $has_data = rawpheno_download_trait_has_data($m->cvterm_id, $location, $project);
+      if ($has_data) {
+        $opt_trait[$m->cvterm_id] = $m->name;
+      }
+    }
+  }
+  else {
+    $opt_trait[0] = 'No traits available';
+  }
+
+
+  return $opt_trait;
+}
+
+
+/**
+ * Function get the R Compatible version of a trait.
+ *
+ * @param:
+ *  $cvterm_id a numeric value containing the cvterm id number of a given trait.
+ * @return
+ *  A string containing the R compatible version of the trait.
+ */
+function rawpheno_download_r_compatible($cvterm_id) {
+  $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+
+  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id LIMIT 1";
+  $args = array(':cvterm_id' => $cvterm_id, ':cv_id' => $cv_rver->cv_id);
+
+  $r = chado_query($sql, $args)
+    ->fetchField();
+
+  return (isset($r) AND !empty($r)) ? $r : null;
+}
