@@ -111,7 +111,7 @@ function rawpheno_menu() {
     'title' => 'Download Raw Phenotypic Data: CSV',
     'page callback' => 'trpdownload_download_page',
     'page arguments' => array('feature_csv'),
-    'access arguments' => array('access content'),
+    'access arguments' => array('access rawpheno'),
     'type' => MENU_CALLBACK,
   );
 
