@@ -1,7 +1,9 @@
 # Raw Phenotypes
-This module was designed for storing the raw phenotpic data being collected as part of ["Application of genomics to innovation in the Lentil Economy (AGILE)" project](http://knowpulse.usask.ca/portal/project/AGILE%3A-Application-of-Genomic-Innovation-in-the-Lentil-Economy). 
-
-__This module is currently not ready for use outside of KnowPulse. If you are interested in our functionality, feel free to contact us.__
+This module was designed to aid in collection and further analysis of raw phenotypic data. With this in mind it provides 
+1. An interface for defining projects including which traits are expected to be collected and the users collecting them;
+2. An interactive, researcher-friendly excel datasheet upload;
+3. Summary charts
+4. Data Download functionality with filter criteria and customizable R-friendly headers.
 
 ## Dependencies
 1. [Drag & Drop Upload](https://www.drupal.org/project/dragndrop_upload)
