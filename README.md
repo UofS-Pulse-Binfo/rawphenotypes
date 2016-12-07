@@ -1,5 +1,6 @@
 # Raw Phenotypes
-This module was designed to aid in collection and further analysis of raw phenotypic data. With this in mind it provides 
+This module was designed to aid in collection and further analysis of raw phenotypic data. With this in mind it provides:
+
 1. An interface for defining projects including which traits are expected to be collected and the users collecting them;
 2. An interactive, researcher-friendly excel datasheet upload;
 3. Summary charts
@@ -15,7 +16,10 @@ __Note: there are some modifications needed to the spreadsheet reader to get it 
 
 ## Features
 - A d3.js heatmap summarizes the raw data available by displaying the number of traits broken down by location (x-axis) and replicate (y-axis; grouped by year). This chart uses a materialized view for improved performance.
-- Upload data functionality supporting excel spreadsheets (XLSX). Currently the loader expects the traits required for the AGILE project but it also flexible enough to allow users to add additional traits (one per column) to the spreadsheet. If additional traits are present, the loader asks the user to describe the trait including the units and any scale used.
+- Upload data functionality supporting excel spreadsheets (XLSX). The loader expects the traits specified for a given project but is also flexible enough to allow users to add additional traits (one per column) to the spreadsheet. If additional traits are present, the loader asks the user to describe the trait including the units and any scale used.
 - During upload the file is validated using a number of tests including general "Is this an excel file?", as well as, "Do all the germplasm in the file already exist in the chado.stock table?". Validation tests are provided via a Drupal hook meaning you can add your own data-specific tests (see github wiki).
-- A searchable trait collection instruction page defining a standard protocol for collecting of the traits required by AGILE. In the future, the intent is for these instructions to be easily customizable -perhaps even drawn from the trait descriptions in chado.
+- A searchable trait collection instruction page defining a standard protocol for collection of the traits. This information is pulled from the trait controlled vocabulary and thus easily updatable.
 - Data Download functionality which allows users to select the locations and traits they are interested in. A comma-separated file is produced which can easily be opened in excel for viewing and is R-friendly for analysis.
+
+## Data Storage
+Trait information is stored in a custom controlled vocabulary set-up by this module. All the remaining data is stored in a custom relational schema. This allows us to keep the raw data separate from chado and paves the way for an ND Phenotypes module which stored the analyzed/filtered phenotypic data in the chado schema and provides trait pages and summary information on germplasm and project pages.
