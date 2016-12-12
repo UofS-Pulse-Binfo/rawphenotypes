@@ -97,11 +97,13 @@ function rawpheno_menu() {
 
   // DOWNLOADS PAGE
   // A page providing export data options.
+  // NOTE: Page below uses as different access arguments than
+  //       the rest of the pages. Not everyone can download.
   $items['phenotypes/raw/download'] = array(
     'title' => 'Download Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_download'),
-    'access arguments' => array('access rawpheno'),
+    'access arguments' => array('download rawpheno'),
     'file' => 'include/rawpheno.download.form.inc',
     'type' => MENU_NORMAL_ITEM,
     'weight' => 6,
@@ -110,8 +112,8 @@ function rawpheno_menu() {
   $items['phenotypes/raw/csv'] = array(
     'title' => 'Download Raw Phenotypic Data: CSV',
     'page callback' => 'trpdownload_download_page',
-    'page arguments' => array('feature_csv'),
-    'access arguments' => array('access rawpheno'),
+    'page arguments' => array('rawpheno_csv'),
+    'access arguments' => array('download rawpheno'),
     'type' => MENU_CALLBACK,
   );
 
@@ -230,8 +232,12 @@ function rawpheno_menu() {
 function rawpheno_permission() {
   return array(
     'access rawpheno' => array(
-      'title' => t('Access Raw Phenotypic pages (Instructions, Download, Upload, Backup and Summary Page'),
+      'title' => t('Access Raw Phenotypic pages (Instructions, Upload, Backup and Summary page'),
     ),
+
+    'download rawpheno' => array(
+      'title' => t('Download Phenotypic Data (CSV format) in Rawpheno Download Data page'),
+    )
   );
 }
 
@@ -883,6 +889,7 @@ function rawpheno_rawdata_trait_json() {
   }
 }
 
+
 /**
  *  Implements hook_register_trpdownload_type().
  */
@@ -890,23 +897,23 @@ function rawpheno_register_trpdownload_type() {
   $types = array();
 
   // The key is the machine name of my download type.
-  $types['feature_csv'] = array(
+  $types['rawpheno_csv'] = array(
     // A human readable name to show in an administrative interface one day.
-    'type_name' => 'Feature CSV',
+    'type_name' => 'Raw Phenotypes CSV',
     // A human readable description of the format.
     'format' => 'Comma-separated Values',
     // An array of functions that the API will use to customize your experience.
     'functions' => array(
       // The function that tripal jobs will call to generate the file.
-      'generate_file' => 'rawpheno_trpdownload_feature_csv_generate_file',
+      'generate_file' => 'rawpheno_trpdownload_generate_file',
       // OPTIONAL: provide a summary to the user on the download page.
-      'summarize' => 'rawpheno_trpdownload_feature_csv_summarize_download',
+      'summarize' => 'rawpheno_trpdownload_summarize_download',
       // OPTIONAL: determine your own filename.
-      'get_filename' => 'rawpheno_trpdownload_feature_csv_get_filename',
+      'get_filename' => 'rawpheno_trpdownload_get_filename',
       // OPTIONAL: Change the file suffix (defaults to .txt)
-      'get_file_suffix' => 'rawpheno_trpdownload_feature_csv_get_suffix',
+      'get_file_suffix' => 'rawpheno_trpdownload_get_suffix',
       // OPTIONAL: determine the human-readable format based on a function.
-      'get_format' => 'trpdownload_feature_csv_get_readable_format',
+      'get_format' => 'rawpheno_trpdownload_get_readable_format',
     ),
   );
 
@@ -916,7 +923,7 @@ function rawpheno_register_trpdownload_type() {
 /**
  * Generate a file summary.
  */
-function rawpheno_trpdownload_feature_csv_summarize_download($vars) {
+function rawpheno_trpdownload_summarize_download($vars) {
   // Path to module.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   // Style nav links.
@@ -999,10 +1006,11 @@ function rawpheno_trpdownload_feature_csv_summarize_download($vars) {
   return $output;
 }
 
+
 /**
  * Generate a readable and unique filename for the file to be generated.
  */
-function rawpheno_trpdownload_feature_csv_get_filename($vars) {
+function rawpheno_trpdownload_get_filename($vars) {
   $filename = 'rawpheno_csv' . date('YMd') .'_'. time();
   return $filename;
 }
@@ -1011,7 +1019,7 @@ function rawpheno_trpdownload_feature_csv_get_filename($vars) {
 /**
  * Determine the file suffix for the file to be generated.
  */
-function rawpheno_trpdownload_feature_csv_get_suffix($vars) {
+function rawpheno_trpdownload_get_suffix($vars) {
   return 'csv';
 }
 
@@ -1019,7 +1027,7 @@ function rawpheno_trpdownload_feature_csv_get_suffix($vars) {
 /**
  * Function callback: generate csv file.
  */
-function rawpheno_trpdownload_feature_csv_generate_file($variables, $job_id = NULL) {
+function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   // Get query string and filename.
   $code = '';
   foreach($variables as $l => $v) {
