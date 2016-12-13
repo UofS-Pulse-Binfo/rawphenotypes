@@ -23,3 +23,6 @@ __Note: there are some modifications needed to the spreadsheet reader to get it 
 
 ## Data Storage
 Trait information is stored in a custom controlled vocabulary set-up by this module. All the remaining data is stored in a custom relational schema. This allows us to keep the raw data separate from chado and paves the way for an ND Phenotypes module which stored the analyzed/filtered phenotypic data in the chado schema and provides trait pages and summary information on germplasm and project pages.
+
+## Documentation
+In addition to this README there is a wiki available at https://github.com/UofS-Pulse-Binfo/rawphenotypes/wiki which includes an administration tutorial, as well as, other useful information.
