@@ -18,6 +18,9 @@ __Note: there are some modifications needed to the spreadsheet reader to get it 
 - A d3.js heatmap summarizes the raw data available by displaying the number of traits broken down by location (x-axis) and replicate (y-axis; grouped by year). This chart uses a materialized view for improved performance.
 
 ![heatmap](https://raw.githubusercontent.com/wiki/UofS-Pulse-Binfo/rawphenotypes/images/rawphenotypes.screenshot.summary.heatmap.png)
+- If a trait is selected on the Heatmap summary, a barchart is dynamically generated beneath to show the range of values collected.
+
+![barchart](https://raw.githubusercontent.com/wiki/UofS-Pulse-Binfo/rawphenotypes/images/rawphenotypes.screenshot.summary.barchart.png)
 - Upload data functionality supporting excel spreadsheets (XLSX). The loader expects the traits specified for a given project but is also flexible enough to allow users to add additional traits (one per column) to the spreadsheet. If additional traits are present, the loader asks the user to describe the trait including the units and any scale used.
 
 ![upload1](https://raw.githubusercontent.com/wiki/UofS-Pulse-Binfo/rawphenotypes/images/rawphenotypes.screenshot.upload1.png)
