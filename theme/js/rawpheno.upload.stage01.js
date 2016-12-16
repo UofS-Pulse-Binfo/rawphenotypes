@@ -122,7 +122,7 @@
         $('div.droppable-preview-file').hide();
         dropMessage.html(dropMessageHTML);
         // Create an error message.
-        $('<div class="messages error" style="margin-top: 10px !important;">The specified file is not a valid Microsoft Excel File.</div>').insertAfter('select');
+        $('<div class="messages error" style="margin-top: 10px !important;">The specified file is not a valid Microsoft Excel File or File exceeds allowed file size.</div>').insertAfter('select');
       };
     }
   };

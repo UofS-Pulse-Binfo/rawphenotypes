@@ -177,7 +177,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_event' => 'auto',
     // NOTE: Accept the listed file extension and let the spreadsheet reader tell if file is valid to generate an an error message.
     //       No silent treatment.
-    '#upload_validators' => array('file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp')),
+    '#upload_validators' => array('file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp csv')),
     '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => 'Please wait...',
@@ -797,6 +797,9 @@ function rawpheno_file_insert($file) {
  *   Drupal file opbject.
  */
 function rawpheno_file_validate($file) {
+  // Set processing time to 20 mins.
+  ini_set('max_execution_time', 1200);
+
   if ($file->source == 'dnd') {
     // Upload data page.
 

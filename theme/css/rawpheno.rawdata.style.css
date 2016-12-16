@@ -190,6 +190,7 @@ div.tool-tip {
   fill: none;
   stroke: #000000;
   stroke-width: 1;
+  opacity: 0.1;
   shape-rendering: crispEdges;
 }
 

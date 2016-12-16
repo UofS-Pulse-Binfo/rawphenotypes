@@ -502,6 +502,11 @@
         // Get the width of the window before rendering chart elements.
         updateWidth();
 
+        // Store the window width/size - use the value in computing
+        // the required bin size base on the given screen width available
+        // for visualization.
+        storeScreenWidth(width);
+
         // Render heatmap.
         renderHeatmap();
 
@@ -959,6 +964,12 @@
         console.log(d);
       }
       ////
+
+      // Save the screen/window width to a cookie and read this
+      // value to let php decide bin size information.
+      function storeScreenWidth(winWidth) {
+        document.cookie = 'rawphenoRawdataSW=' + winWidth + ';path=/;domain=.knowpulse.usask.ca';
+      }
 
       function loading(chart) {
          var container = (chart == 'heatmap')

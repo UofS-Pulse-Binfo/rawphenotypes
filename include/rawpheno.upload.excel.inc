@@ -36,7 +36,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       array('!id' => $fid),
       array('print' => TRUE)
     );
-    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 100] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     exit(1);
   }
 
@@ -58,7 +58,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       array('@file' => print_r($file, TRUE)),
       array('print' => TRUE)
     );
-    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 101] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     exit(2);
   }
 
@@ -99,16 +99,16 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
         // Find the index number of name header in the spreadsheet.
         $name_index = array_search('name', array_map('rawpheno_function_delformat', $header));
-        if (!$name_index) {
+        if ($name_index === FALSE) {
           tripal_report_error(
             'rawpheno',
             TRIPAL_CRITICAL,
-            'Uploading Phenoypic Data: Uname to determine the name column.',
+            'Uploading Phenoypic Data: Unable to determine the name column.',
             array(),
             array('print' => TRUE)
           );
           $TRANSACTION->rollback();
-          tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+          tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 102] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
           exit(31);
         }
 
@@ -154,7 +154,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           array('print' => TRUE)
         );
         $TRANSACTION->rollback();
-        tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+        tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 103] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
         exit(32);
       }
 
@@ -217,7 +217,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                   array('print' => TRUE)
                 );
                 $TRANSACTION->rollback();
-                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 104] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
                 exit(33);
               }
             }
@@ -231,7 +231,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                 array('print' => TRUE)
               );
               $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+              tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 105] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
               exit(34);
             }
 
@@ -251,7 +251,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                 array('print' => TRUE)
               );
               $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+              tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 106] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
               exit(37);
             }
 
@@ -270,7 +270,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                 array('print' => TRUE)
               );
               $TRANSACTION->rollback();
-              tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+              tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 107] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
               exit(37);
             }
 
@@ -331,7 +331,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                         array('print' => TRUE)
                 );
                 $TRANSACTION->rollback();
-                tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+                tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 108] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
                 exit(38);
               }
             }
@@ -345,7 +345,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   catch (Exception $e) {
     $TRANSACTION->rollback();
     watchdog_exception('rawpheno', $e);
-    tripal_report_error('rawpheno', TRIPAL_CRITICAL, 'Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
+    tripal_report_error('rawpheno', TRIPAL_CRITICAL, '[CODE 109] Failed to load phenoypic data (job !id)', array('!id' => $job_id), array('print' => TRUE));
     exit(4);
   }
 
@@ -709,7 +709,7 @@ function rawpheno_add_parsing_libraries($file_type = 'XLSX') {
 function rawpheno_function_delformat($xls_cell_value) {
   // Remove any extra spaces, new lines, leading and trainling spaces
   // and covert the final result to lowercase.
-  return trim(strtolower(preg_replace('!\s+!', ' ', $xls_cell_value)));
+  return trim(strtolower(preg_replace('!\s+!', '', $xls_cell_value)));
 }
 
 

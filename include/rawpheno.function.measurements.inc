@@ -351,17 +351,38 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
     $all_average = $d->fetchCol(2);
     $max = max($all_average);
     $min = min($all_average);
+
+    // Window size from cookie variable.
+    $win_width = $_COOKIE['rawphenoRawdataSW'];
+
     // Total number of bins.
-    $total_bins = 4;
-    // Size of each bin.
+    // http://www.statisticshowto.com/choose-bin-sizes-statistics/
+    // https://www.qimacros.com/histogram-excel/how-to-determine-histogram-bin-interval/
+    $data_points = $d->rowCount();
+
+    if ($win_width <= 850) {
+      $total_bins = 10;
+    }
+    else {
+      if ($data_points > 999) {
+        $total_bins = 20;
+      }
+      else {
+        $total_bins = round(sqrt($data_points));
+      }
+    }
+
+    // Size of each bin/ interval.
     $interval = round($max/$total_bins);
 
     $i = 0;
     $to = 0;
-    $from = $min;
+    // Round the number down.
+    // eg. start at 11 round it to 10.
+    $from = floor($min / 10) * 10;
 
     while($to < $max) {
-      $from = ($i == 0) ? $min : ($to + 1);
+      $from = ($i == 0) ? $from : ($to + 1);
       $to = $from + $interval;
 
       $arr_bin_json[$i] = $from . '-' . $to;
