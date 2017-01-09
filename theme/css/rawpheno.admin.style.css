@@ -207,3 +207,90 @@ span.alert-error {
   background: url('../../theme/img/message-16-warning.png') no-repeat top left;
   padding: 0 7px 0 20px !important;
 }
+
+
+/* User My Folder */
+.row-user-my-folder {
+  border-bottom: 2px solid #bebfb9;
+  padding: 15px 30px 20px 30px;
+}
+
+.container-my-folder {
+  height: 200px;
+}
+
+#tbl-project-users tr.odd td:first-child {
+  background-color: #f3f4ee;
+}
+
+#tbl-project-users tr.odd td:nth-child(2) {
+  font-weight: bold;
+}
+
+#tbl-my-files tr.odd td:first-child {
+  background-color: #FFFFFF;
+  width: 55%;
+}
+
+#tbl-my-files td:nth-child(4),
+#tbl-my-files td:nth-child(5) {
+  width: 20%;
+}
+
+#tbl-my-files th:first-child {
+  text-align: left;
+}
+
+#tbl-my-files tr.odd td:nth-child(2) {
+  font-weight: normal;
+}
+
+#tbl-my-files tr {
+  border-bottom: 1px solid #EAEAEA;
+}
+
+#tbl-my-files tr:hover {
+  background-color: #FFFFFF !important;
+}
+
+.div-my-folder {
+  display: none;
+  overflow-y: scroll;
+}
+
+.tbl-my-folder td {
+  background-color: #FFFFFF !important;
+}
+
+/* File validation result cell */
+div.container-cell {
+  cursor: pointer;
+  height: 65px;
+  overflow: auto;
+}
+
+div.fade-out {
+  background-color: #EAEAEA;
+}
+
+div.container-cell p {
+  border-bottom: 1px solid #CCCCCC;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+}
+
+div.container-cell p:last-child {
+  border-bottom: none;
+}
+
+.tag-name {
+  color: #FFFFFF;
+  background-color: #118324;;
+  border: 1px solid #666666;
+  display: inline-block;
+  padding: 3px 10px;
+
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+}

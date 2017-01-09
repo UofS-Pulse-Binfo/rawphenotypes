@@ -781,7 +781,8 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   $headers = chado_query($sql, $args);
 
   // List active users in a project.
-  $sql = "SELECT project_user_id, uid, name, mail FROM {users} RIGHT JOIN {pheno_project_user} USING(uid)
+  $sql = "SELECT project_user_id, uid, name, mail, created, status, login
+          FROM {users} RIGHT JOIN {pheno_project_user} USING(uid)
           WHERE project_id = :project_id
           ORDER BY name DESC";
 
@@ -912,22 +913,107 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
 
   // TABLE
-  // Construct table that lists all active users to a project.
+  // Construct table that lists all active users to a project along with files
+  // associated to a user in a given project.
   // Options to delete items give admin record management functionality.
   // NOTE: Delete option will not physically delete a record in users table.
   //       When a user is deleted, it is removed from the project only.
 
   $arr_rows = $arr_headers = array();
 
+  // Query user backup files.
+  $sql_F = "
+    SELECT t1.*, t2.filename, t2.filesize, t2.timestamp, t2.uri
+    FROM pheno_backup_file AS t1 INNER JOIN file_managed AS t2 USING(fid)
+    WHERE t1.project_user_id = :project_user_id ORDER BY t1.version DESC";
+
+
   // Table rows
   if ($users->rowCount() > 0) {
     $i = 0;
     foreach($users as $u) {
+      if (empty($u->name)) {
+        continue;
+      }
+
       // Delete link.
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $u->project_user_id . '/user/delete';
       $del_cell = l('Remove', $del_link, array('attributes' => array('class' => 'link-del')));
 
-      array_push($arr_rows, array(($i+1), $u->name, $u->mail, $del_cell));
+      array_push($arr_rows, array(($i+1), '<div class="tag-name">' . $u->name . '</div>', $u->mail, '<em>' . format_date($u->login) . '</em>', $del_cell));
+
+      // Create user sub-table listing files per user account.
+      $args_F = array(':project_user_id' => $u->project_user_id);
+      $result_F = db_query($sql_F, $args_F);
+      $my_files_count = $result_F->rowCount();
+
+
+      $arr_header_F = array('File', 'Version', 'Archive', 'Notes', 'Validation Result');
+
+      $arr_rows_F = array();
+      if ($my_files_count > 0) {
+        $my_files = $result_F->fetchAll();
+        foreach($my_files as $f) {
+          // File.
+          $cell_file = l($f->filename . '(' . format_size($f->filesize) . ')', file_create_url($f->uri),
+            array('attributes' => array('target' => '_blank'))
+          );
+
+          $cell_file .= t('<br /><small>Uploaded: @timestamp</small>', array('@timestamp' => format_date($f->timestamp)));
+
+          // Is archive?
+          $cell_is_archive = ($f->archive == 'y') ? 'Yes' : 'No';
+
+          // Notes.
+          $cell_notes = (empty($f->notes))
+            ? '&nbsp;'
+            : '<div class="container-cell" title="Click to expand or collapse" id="vn-file-' . $f->file_id . '">' . $f->notes . '</div>';
+
+          // Validation Result.
+          $vr_tmp = str_replace(array('#item: (passed)', '#item: (failed)'),
+                                array('<p class="pass"> (PASSED)', '<p class="fail"> * (FAILED)'),
+                                $f->validation_result) . '</p>';
+          $alert = '';
+          if (($n = substr_count($vr_tmp, 'FAILED')) > 0) {
+            $alert = '<span class="alert-error" title="File has failed validation notices...">' . $n . ' Validation errors</span>';
+          }
+
+          $cell_validation = $alert . '<div class="container-cell" id="vr-file-' . $f->file_id . '" title="Click to expand or collapse">'. $vr_tmp .'</div>';
+
+
+          // Create row.
+          array_push($arr_rows_F, array($cell_file, '#' . $f->version, $cell_is_archive, $cell_notes, $cell_validation));
+        }
+      }
+
+      $file_table = theme('table',
+        array('header' => $arr_header_F,
+              'rows' => $arr_rows_F,
+              'attributes' => array('id' => 'tbl-my-files'))
+      );
+
+      $link_show_folder = ($my_files_count > 0)
+        ? l('[Show]', '#', array('attributes'=> array('id' => 'folder-' . $u->project_user_id, 'class'=>'link-show-folder')))
+        : '';
+
+      // Account status.
+      $acc_status = ($u->status == 1) ? 'Active' : 'Suspended';
+
+      $markup = sprintf('
+        <span><strong>[ACCOUNT]</strong> Status: %s | Created: %s - %d Files uploaded %s</span>
+        <div id="show-folder-'. $u->project_user_id .'" class="div-my-folder">
+          <div class="container-my-folder">%s</div>
+        </div>', $acc_status, format_date($u->created), $my_files_count, $link_show_folder, $file_table);
+
+      array_push($arr_rows, array(
+        'data' => array(
+          array(
+            'data' => $markup,
+            'colspan' => 5,
+            'class' => 'row-user-my-folder',
+          )
+        )
+      ));
 
       $i++;
     }
@@ -938,7 +1024,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   }
 
   // Table headers.
-  array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Remove'));
+  array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Last Login'), t('Remove'));
 
   // Update table properties.
   $arr_tbl_args['header'] = $arr_headers;
