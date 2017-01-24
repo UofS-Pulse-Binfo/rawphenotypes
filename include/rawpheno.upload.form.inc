@@ -881,8 +881,8 @@ function rawpheno_file_validate($file) {
     // Else, proceed to hook_file_insert().
   }
   else {
-    // Invalid file source.
-    return FALSE;
+    // File source is one that is not of interest to us.
+    // Do not return anything or it will trigger validation errors for other modules.
   }
 }
 
