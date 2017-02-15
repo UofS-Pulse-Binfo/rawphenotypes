@@ -239,6 +239,11 @@ label {
   text-align: left;
 }
 
+#barchart-legend-rect rect,
+#barchart-legend-text text {
+  cursor: pointer;
+}
+
 /* Loading message */
 div.win-loading {
   background: url('../img/throbber-active.gif') no-repeat left;
@@ -248,3 +253,43 @@ div.win-loading {
   top: 45%;
   left: 45%;
 }
+
+/* Warn user about barchart */
+.warn-message {
+  font-family: sans-serif;
+  font-weight: 300;
+  margin: 10px 20px 10px 20px !important;
+  font-size: 0.9em;
+  text-align: left;
+}
+
+.warn-message em {
+  text-decoration: underline;
+}
+
+/* Barchart Control */
+#chart-control-container {
+  background-color: #EAEAEA;
+  border: 1px solid #CCCCCC;
+  float: right;
+  font-family: sans-serif;
+  font-size: 0.9em;
+  font-weight: 300;
+  margin: 10px 20px 0 20px;
+  padding: 15px;
+  text-align: right;
+
+  -webkit-box-shadow: 2px 7px 8px -10px rgba(0,0,0,0.55);
+  -moz-box-shadow: 2px 7px 8px -10px rgba(0,0,0,0.55);
+  box-shadow: 2px 7px 8px -10px rgba(0,0,0,0.55);
+}
+
+#chart-control-container select {
+  border: 1px solid #AAAAAA;
+  font-size: 0.9em;
+  font-weight: 300;
+  margin: 0 0 0 10px;
+  padding: 2px;
+  width: 100px;
+}
+

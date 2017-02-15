@@ -6,15 +6,30 @@
   Drupal.behaviors.rawphenoRawDataCreateHeatMap = {
     attach: function (context, settings) {
       ////
+      // Variable to hold the default option when a category is selected.
+      var categoryOptionLocation, categoryOptionYear;
+
       // Add event listener to window resize.
       // Reposition elements with the new window width.
       d3.select(window).on('resize', render);
 
       // Add event listener to select fields.
-      $('select').change(function(i) {
+      $('#container-form-select select').change(function(i) {
+        // Clear warning message.
+        if ($('.warn-message')) {
+          $('.warn-message').remove();
+        }
+
+        // Remove previous barchart categorize options and start with a new set of selectboxes.
+        if($('#chart-control-container')) {
+          // Remove container and everything inside it (children).
+          $('#chart-control-container').remove();
+        }
+
         // Determine which select box was changed.
         var selectID = i.target.id;
 
+        // UPDATE HEATMAP OR DISPLAY BARCHART.
         // When user select a project.
         if (selectID == 'rawdata-sel-project') {
           // Start loading animation when user changes project.
@@ -54,25 +69,45 @@
 
           // Mark rep where trait was measured.
           markRep(project_id, traitId, traitSelectedName);
-          // Start loading animation when user select a trait of interest.
+          // Start loading animation when user changes project.
           loading('barchart');
 
-          // Render bar chart.
-          barchartFile = file + 'rawdata_trait' + '?p=' + project_id + '&t=' + traitId;
+          // Extract the available location and year for this particular trait.
+          // The values will be used to populate select boxes.
+          var categoryFile = file + 'rawdata_trait_category' + '?p=' + project_id + '&t=' + traitId;
 
-          d3.json(barchartFile, function(error, barchartData) {
+          d3.json(categoryFile, function(error, categoryData) {
             if (error) {
               // Error reading JSON.
               throw error;
             }
-            else if(barchartData == 0) {
+            else if(categoryData == 0) {
               // No data.
               noData('.bar-chart');
             }
             else {
-              // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
-              // and then call render function and position these elements in the right place.
-              initializeBarChart(barchartData);
+              // Default the barchart to the first entry/option in the select box.
+              var defaultYear = categoryData.planting_date[0];
+
+              // Render bar chart.
+              // Default to location and a year - first in the list.
+              var barchartFile = file + 'rawdata_trait' + '?p=' + project_id + '&t=' + traitId + '&c=location' + '&o=' + defaultYear;
+
+              d3.json(barchartFile, function(error, barchartData) {
+                if (error) {
+                  // Error reading JSON.
+                  throw error;
+                }
+                else if(barchartData == 0) {
+                  // No data.
+                  noData('.bar-chart');
+                }
+                else {
+                  // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
+                  // and then call render function and position these elements in the right place.
+                  initializeBarChart(barchartData, categoryData);
+                }
+              });
             }
           });
         }
@@ -122,10 +157,11 @@
 	    // Barchart variables
 	    // Main the svg canvas of the bar chart.
 	    var bsvg;
-	    var bx0, bxAxis, bins, dataByBins, dataByLocations, traitSelectedId, traitSelectedName;
+	    var bx0, bxAxis, bins, dataByBins, dataByTitles, traitSelectedId, traitSelectedName;
 	    // 10 px either side of a bin set (10X2)
       var gutter = 20;
       var barchartColor = d3.scale.category20b().domain([0, 20]);
+      var categorize;
 
       // Option to clear the chart.
       $('#container-marker-information, #container-marker-information a').click(function(event) {
@@ -166,7 +202,6 @@
           initializeHeatmapChart(data);
         }
       });
-
 
 
       // Function to add all heat map chart elements into the DOM.
@@ -324,9 +359,50 @@
       // Function to add all bar map chart elements into the DOM.
       // The height attribute or property of the elements remains constant whereas the
       // width is to be determined by the render function.
-      function initializeBarChart(data) {
+      function initializeBarChart(data, dataCategory) {
         // Remove loading animation.
         $('.win-loading').remove();
+
+        // Add filter/categorize controls only when none is available in the DOM.
+        if ($('#chart-control-container').length <= 0) {
+          // Add the container.
+          $('#container-barchart')
+            .prepend('<div id="chart-control-container">Categorize by: </div>');
+
+          // Add select boxes.
+          // Select a category.
+          var selCategory = $('<select id="sel-barchart-category">')
+            .appendTo('#chart-control-container');
+
+          // Populate select a category.
+          selCategory.append($('<option>').attr('value', 'location').text('Location'));
+          selCategory.append($('<option>').attr('value', 'year').text('Year'));
+          //
+
+          // Add select option given a select category.
+          $('<select id="sel-barchart-option">').appendTo('#chart-control-container');
+          // On each new trait, default the select set to location and the first option
+          // in the select option select box.
+          barchartFillSelect('location', dataCategory);
+
+          // Once the element is in the DOM, attach an event listener to them.
+          var catSel = $('#container-barchart select');
+          catSel.change(function() {
+            // Read the values in the select box and process accordingly.
+            var selValues = [];
+            catSel.each(function(i) {
+              selValues[i] = $(this).val();
+            });
+
+            // Store the value of select category.
+            // Either by location or year.
+            categorize = selValues[0];
+
+            var selId = $(this).attr('id');
+            // Category value, Option value, the select box changed and the category data.
+            barchartCategorize(selValues[0], selValues[1], selId, dataCategory);
+          });
+        }
 
         // Add all barchart elements.
         bsvg = d3.select('.bar-chart')
@@ -337,22 +413,20 @@
           .attr('transform', 'translate(' + (margin.left + gutter) + ',' + margin.top + ')');
 
         // CHART DATA.
-        // Locations / data.
-        dataByLocations = d3.nest()
-          .key(function(d) { return d.location; })
+        // Titles / data.
+        dataByTitles = d3.nest()
+          .key(function(d) { return d.title; })
           .sortKeys(d3.ascending)
           .entries(data.data);
-
-        var locations = dataByLocations.map(function(d) { return d.key; });
 
         // Bins.
         bins = data.bin;
 
-        // Count the number of rows per location in the same bin.
-        // Bin / location / count stocks in the same bin.
+        // Count the number of rows per title in the same bin.
+        // Bin / title / count stocks in the same bin.
         dataByBins = d3.nest()
           .key(function(d) { return d.bin; })
-          .key(function(d) { return d.location; })
+          .key(function(d) { return d.title; })
           .rollup(function(v) {
             return v.length;
           })
@@ -366,7 +440,7 @@
 
         // CHART ELEMENTS.
         // Titles and legend
-        barChartInfo();
+        barChartInfo(categorize);
 
         // X axis scale.
         bx0 = d3.scale.ordinal().domain(bins);
@@ -428,13 +502,15 @@
               return 'bin-' + i;
             });
 
-        // In each bin container, add same number of bars representing each location
-        // present in the data. When a location is not present, add a space to maintain
-        // equal order of location per bin.
-        bins.forEach(function(bin, bin_i) {
-          locations.forEach(function(location, location_i) {
+        // In each bin container, add same number of bars representing each title
+        // present in the data. When a title is not present, add a space to maintain
+        // equal order of title per bin.
+        var title = dataByTitles.map(function(d) { return d.key; });
 
-            var stockCount = +getStockCount(bin, location);
+        bins.forEach(function(bin, bin_i) {
+          title.forEach(function(title, title_i) {
+
+            var stockCount = +getStockCount(bin, title);
             var h = by0(stockCount);
 
             d3.select('#bin-' + bin_i)
@@ -446,7 +522,7 @@
                 .transition()
                 .style('opacity', 1);
               infoBox
-                .html('Location ' + location +' ('+stockCount+' stocks)')
+                .html(title +' ('+stockCount+' stocks)')
                 .style('left', (d3.event.pageX + 10) + 'px')
                 .style('top', (d3.event.pageY) + 'px');
             })
@@ -457,7 +533,7 @@
 
             .append('rect')
             .attr('class', 'rect-each-bar')
-              .attr('fill', barchartColor(location_i))
+              .attr('fill', barchartColor(title_i))
               .attr('y', h)
               .attr('height', (chartDimension.height - h));
           });
@@ -480,6 +556,11 @@
         d3.select('#container-barchart')
           .append('h2')
 			    .text('Figure: Distribution of ' + traitSelectedName + ' across Germplasm Phenotyped');
+
+        d3.select('#container-barchart')
+          .append('div')
+          .attr('class', 'messages warning warn-message')
+          .html('The following chart uses raw data and, as such, <em>should never be used in publication and presentation</em>. It is meant to give you a quick visual and to identify problems such as outliers to aid you in your analysis.');
 
         // Position all bar chart elements into the right place.
         renderBarChart();
@@ -593,7 +674,7 @@
             return 'translate('+ ((gBinWidth + gutter) * i) +', 0)';
           });
 
-        var barWidth = Math.round(gBinWidth / dataByLocations.length);
+        var barWidth = Math.round(gBinWidth / dataByTitles.length);
 
         var x = 0;
         d3.selectAll('.rect-each-bar')
@@ -604,7 +685,7 @@
           .style('opacity', 1)
           .attr('width', (barWidth - 2))
           .attr('x', function(d, i) {
-            x = (i%dataByLocations.length == 0) ? 0 : x + 1;
+            x = (i%dataByTitles.length == 0) ? 0 : x + 1;
             return x * (barWidth + 1);
           });
 
@@ -693,8 +774,21 @@
       }
 
       // Bar chart.
-      function barChartInfo() {
+      function barChartInfo(categorize) {
         // Add legend.
+        var yCaption = 'Number of Experimental Units';
+        var bcLegend;
+
+        if (categorize == 'location' || typeof categorize === 'undefined') {
+          bcLegend = dataByTitles;
+        }
+        else {
+         bcLegend = [];
+          d3.map(dataByTitles, function(d) {
+            bcLegend.push({'key' : d.key});
+          });
+        }
+
         var legend = bsvg.append('g')
           .attr('id', 'barchart-legend-rect');
 
@@ -702,9 +796,14 @@
           .attr('id', 'barchart-legend-text');
 
         legend.selectAll('rect')
-          .data(dataByLocations)
+          .data(bcLegend)
 			    .enter()
 			    .append('rect')
+			    .attr('id', function(d, i) {
+			      return 'legend-rect-' + i;
+			    })
+			    .on('mousemove', highlight)
+			    .on('mouseout', nohighlight)
 			    .attr('fill', function(d, i) { return barchartColor(i); })
 			    .attr('height', 14)
 			    .attr('width', 15)
@@ -712,9 +811,14 @@
 			    .attr('y', function(d, i) { return 17 * i; })
 
 	      legendText.selectAll('text')
-	        .data(dataByLocations)
+	        .data(bcLegend)
 	        .enter()
 	        .append('text')
+	        .attr('id', function(d, i) {
+			      return 'legend-text-' + i;
+			    })
+			    .on('mousemove', highlight)
+			    .on('mouseout', nohighlight)
 	        .text(function(d, i) {
 	          // Trim location when it is too long.
 	          var loc = d.key;
@@ -730,18 +834,50 @@
           .attr('transform', function() {
             return 'translate(45, '+ Math.round(height/2) +') rotate(-90)';
           })
-          .text('Number of Germplasm');
+          .text(yCaption);
 
         // Location - x axis.
+        var baseUnit = extractBaseUnit(traitSelectedName);
+
         bsvg.append('g').append('text')
           .attr('id', 'x-caption')
           .attr('class', 'chart-axes')
-          .text('Average [' + traitSelectedName + ']');
+          .text('Average Observed Measurements per Experiment Unit ' + baseUnit);
       }
 
 
 
       // Helper functions:
+      // Get the unit part given a trait (unit) string.
+      // Function highlight rect corresponding to an item in the legend.
+      function nohighlight() {
+        d3.selectAll('.rect-each-bar').transition().style('opacity', 1);
+      }
+
+      function highlight() {
+        var id = d3.select(this).attr('id');
+        var rect_id = '#' + id.replace(/text/i, 'rect');
+        var fill = d3.select(rect_id).attr('fill');
+
+        // Lower the opacity of all rect except rect with fill above.
+        d3.selectAll('rect.rect-each-bar').transition().style('opacity', function() {
+          var m = d3.select(this).attr('fill');
+          return (m == fill) ? 1 : 0.1;
+        });
+      }
+
+      function extractBaseUnit(traitName) {
+        var regExp = /\(.*\)/;
+        var matches = regExp.exec(traitName);
+        // The unit might contain other text information.
+        // In AGILE project - R1, R3, R5, R7, 1st, 2nd
+        var u = matches[0];
+        var baseUnit;
+        baseUnit = u.replace(/(R1|R3|R5|R7|1st|2nd);\s/i, '');
+
+        return baseUnit;
+      }
+
       // Mark/hightlight reps and add informaton about the marker.
       function markRep(project, trait_id, trait_name) {
         d3.select('#text-not-found').remove();
@@ -960,8 +1096,9 @@
 
       // Debugging function. Echo the contents of d.
       function echo(d) {
+        alert(JSON.stringify(d));
         //console.log(JSON.stringify(d));
-        console.log(d);
+        //console.log(d);
       }
       ////
 
@@ -971,6 +1108,79 @@
         document.cookie = 'rawphenoRawdataSW=' + winWidth + ';path=/;domain=.knowpulse.usask.ca';
       }
 
+      // Populate select box based on categorized value.
+      // Location + Year by default.
+      function barchartFillSelect(category, dataCategory) {
+        // Reference select option.
+        var selOption = $('#sel-barchart-option');
+
+        if (category == 'location') {
+          // Fill the select box with years.
+          $(dataCategory.planting_date).each(function(i, v) {
+            selOption.append($('<option>').attr('value', v).text(v));
+          });
+        }
+        else if(category == 'year') {
+          // Fill the select box with location.
+          $(dataCategory.location).each(function(i, v) {
+            selOption.append($('<option>').attr('value', v).text(v));
+          });
+        }
+      }
+
+      // Categorize chart.
+      function barchartCategorize(categoryValue, optionValue, sel, dataCategory){
+        // Category option has been changed.
+        // When category select is selected, reload the barchart and default
+        // to location and first option in the year select box.
+        if (sel == 'sel-barchart-category') {
+          // Reset the options in select options.
+          $('#sel-barchart-option').find('option').remove();
+
+          // Category select selected.
+          // Re populate the select option select box.
+          barchartFillSelect(categoryValue, dataCategory);
+
+          // Default to corresponding values.
+          optionValue = (categoryValue == 'location')
+            ? dataCategory.planting_date[0]
+            : dataCategory.location[0];
+        }
+
+        // Read the main select box and get the project id and trait id.
+        var prjTrait = [];
+        $('#container-form-select select').each(function(i) {
+          prjTrait[i] = $(this).val();
+        });
+
+        // Read the JSON given the values from select boxes.
+        var barchartFile = file + 'rawdata_trait' + '?p=' + prjTrait[0] + '&t=' + prjTrait[1] + '&c=' + categoryValue + '&o=' + optionValue;
+
+        // Render the barchart.
+        d3.json(barchartFile, function(error, barchartData) {
+          if (error) {
+            // Error reading JSON.
+            throw error;
+          }
+          else if(barchartData == 0) {
+            // No data.
+            noData('.bar-chart');
+          }
+          else {
+            // Reset the stage.
+            $('#container-barchart').find('g, h2, .messages').remove();
+
+            // Show please wait animation...
+            loading('barchart');
+
+            // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
+            // and then call render function and position these elements in the right place.
+            initializeBarChart(barchartData, dataCategory);
+          }
+        });
+      }
+
+      // Show please wait animation while chart is processing.
       function loading(chart) {
          var container = (chart == 'heatmap')
            ? '#container-rawdata'

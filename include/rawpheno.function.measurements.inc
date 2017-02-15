@@ -92,9 +92,17 @@ function rawpheno_function_headers($type) {
       $type_id = array(0,1,2,3,4,5,6,7,8,9,10,15,20,21);
       break;
 
+    case 'plot':
+      // Plot column headers
+      // Used in: upload file to determine if to re-use plant_id or insert a new row.
+      // plot, rep, year (planting date), location.
+      $type_id = array(0,3,4,5);
+      break;
+
     case 'subset':
       $type_id = array(24,25,26);
       break;
+    break;
   }
 
   $arr_requested_trait = array();
@@ -318,37 +326,59 @@ function rawpheno_function_user_project($user_id) {
  *   Comments
  *   # of Seeds Planted (count)
  */
-function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NULL) {
+function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $data = NULL) {
   // Array to hold the computed Bin.
   $arr_bin_json = array();
   // Array to hold the data.
   $arr_data_json = array();
 
+  // Categorize: Location or Year.
+  $category_val = $option['category'];
+  // Options: If Location (years) | If Year (location).
+  $option_val   = $option['option'];
+
+  // Array to store each location found in the data set.
+  $not_data = array();
+
+  $categorize = ($category_val == 'location')
+    ? 'AND SUBSTRING(t3.value, 1, 4) = :category_option'
+    : 'AND t4.value = :category_option';
+
   // NUMERIC DATA TYPE.
   if ($type == 'int') {
     // Get the average of each value and in a stock, in a location.
-    $sql = "SELECT
-              t1.stock_id AS stock,
-              t3.value AS location,
-              ROUND(AVG(t2.value::numeric)) AS average
-            FROM
-              {pheno_plant} AS t1
-              INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-              INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE
-              t2.type_id = :trait_id
-              AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
-              AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-            GROUP BY t3.value, t1.stock_id, t2.value
-            ORDER BY t3.value, average ASC";
+    $sql = sprintf("
+      SELECT
+        t1.stock_id AS stock,
+        ROUND(AVG(t2.value::numeric)) AS average,
+        SUBSTRING(t3.value, 1, 4) AS planting_year,
+        t4.value AS location
+      FROM
+        {pheno_plant} AS t1
+        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
+        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
+        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
+      WHERE
+        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
+        AND t2.type_id = :trait_id
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        %s
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+      GROUP BY t1.stock_id, t2.value, t3.value, t4.value
+      ORDER BY location, average ASC", $categorize);
 
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
+    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
 
     // Result set for averages.
     $d = db_query($sql, $args);
 
+    // No data return 0.
+    if ($d->rowCount() < 1) {
+      return 0;
+    }
+
     // Get the min and max values from the averages.
-    $all_average = $d->fetchCol(2);
+    $all_average = $d->fetchCol(1);
     $max = max($all_average);
     $min = min($all_average);
 
@@ -360,17 +390,7 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
     // https://www.qimacros.com/histogram-excel/how-to-determine-histogram-bin-interval/
     $data_points = $d->rowCount();
 
-    if ($win_width <= 850) {
-      $total_bins = 10;
-    }
-    else {
-      if ($data_points > 999) {
-        $total_bins = 20;
-      }
-      else {
-        $total_bins = round(sqrt($data_points));
-      }
-    }
+    $total_bins = ($win_width <= 850) ? 10 : 20;
 
     // Size of each bin/ interval.
     $interval = round($max/$total_bins);
@@ -405,33 +425,43 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
         }
       }
 
-      // Add entry to json
-      $arr_data_json[] = array('location' => $stock->location,
-                               'bin' => $stock_bin);
+      $title = ($category_val == 'location') ? $stock->location : $stock->planting_year;
+      $arr_data_json[] = ['title' => $title, 'bin' => $stock_bin];
     }
   }
   // TEXT DATA TYPE
   elseif ($type == 'txt' OR $type == 'y/n/?') {
-    // Text, list, enumeration of values.
-    $arr_bin_json = ($type == 'txt') ? $data : array('y', 'n', '?');
+    $sql = sprintf("
+      SELECT
+        t1.stock_id AS stock,
+        t2.value AS v,
+        SUBSTRING(t3.value, 1, 4) AS planting_year,
+        t4.value AS location
+      FROM
+        {pheno_plant} AS t1
+        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
+        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
+        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
+      WHERE
+        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
+        AND t2.type_id = :trait_id
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        %s
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+      ORDER BY location ASC", $categorize);
 
-    $sql = "SELECT
-              t3.value AS location,
-              t2.value AS v
-            FROM
-              {pheno_plant} AS t1
-              INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-              INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE
-              t2.type_id = :trait_id
-              AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
-              AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-            ORDER BY t3.value ASC";
-
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
+    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
 
     // Result set for data/values.
     $d = db_query($sql, $args);
+
+    // No data return 0.
+    if ($d->rowCount() < 1) {
+      return 0;
+    }
+
+    // Text, list, enumeration of values.
+    $arr_bin_json = ($type == 'txt') ? $data : array('y', 'n', '?');
 
     $bin = '';
 
@@ -442,11 +472,41 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
           $bin = $b;
       }
 
-      $arr_data_json[] = ['location' => $e->location, 'bin' => $bin];
+      $title = ($category_val == 'location') ? $e->location : $e->planting_year;
+      $arr_data_json[] = ['title' => $title, 'bin' => $bin];
     }
   }
   // SCALE DATA TYPE
   elseif ($type == 'scale') {
+    $sql = sprintf("
+      SELECT
+        t1.stock_id AS stock,
+        t2.value AS v,
+        SUBSTRING(t3.value, 1, 4) AS planting_year,
+        t4.value AS location
+      FROM
+        {pheno_plant} AS t1
+        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
+        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
+        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
+      WHERE
+        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
+        AND t2.type_id = :trait_id
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        %s
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+      ORDER BY location ASC", $categorize);
+
+    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
+
+    // Result set for data/values.
+    $d = db_query($sql, $args);
+
+    // No data return 0.
+    if ($d->rowCount() < 1) {
+      return 0;
+    }
+
     // Scale uses scale codes stored in scale memeber table.
     // Get the scale codes and make it the default bins. The scale codes are added in the install of this module.
     $s = db_query("SELECT code FROM {pheno_scale_member} ORDER BY code ASC");
@@ -460,31 +520,14 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $data = NU
       return 0;
     }
 
-    $sql = "SELECT
-              t3.value AS location,
-              t2.value AS v
-            FROM
-              {pheno_plant} AS t1
-              INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-              INNER JOIN {pheno_plantprop} AS t3 USING (plant_id)
-            WHERE
-              t2.type_id = :trait_id
-              AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
-              AND t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-            ORDER BY t3.value ASC";
-
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id);
-
-    // Result set for data/values.
-    $d = db_query($sql, $args);
-
     if ($d->rowCount() > 0) {
       foreach($d as $e) {
-        $arr_data_json[] = ['location' => $e->location, 'bin' => $e->v];
+
+        $title = ($category_val == 'location') ? $e->location : $e->planting_year;
+        $arr_data_json[] = ['title' => $title, 'bin' => $e->v];
       }
     }
   }
-
 
   // Return bin and data.
   return ['bin' => $arr_bin_json, 'data' => $arr_data_json];
@@ -1075,4 +1118,49 @@ function rawpheno_download_r_compatible($cvterm_id) {
     ->fetchField();
 
   return (isset($r) AND !empty($r)) ? $r : null;
+}
+
+
+/**
+ * Function to check if a given plant property header combination has a record in the database.
+ * The value returned will help determine if a plant_id should be re-used or a new plant_id id
+ * should be created/inserted when processing a row in the spreadsheet file.
+ *
+ * @param $plot
+ *   A string composed of stock_id, plot, rep, location and year - concatinated as a single string.
+ * @param $project_id
+ *   An integer containing the current active project id number.
+ *
+ * @return integer
+ *   Plant Id number of the record that matched or 0 if no match was found.
+ */
+function rawpheno_function_plot_exists($plot, $project_id) {
+  // TODO: move the condition in the where clause of this query.
+  $sql = "
+    SELECT
+      t1.plant_id
+    FROM
+      pheno_plant AS t1
+      INNER JOIN pheno_plantprop AS t2 USING(plant_id)
+      INNER JOIN pheno_plantprop AS t3 USING(plant_id)
+      INNER JOIN pheno_plantprop AS t4 USING(plant_id)
+      INNER JOIN pheno_measurements AS t5 USING(plant_id)
+    WHERE
+      t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Plot' LIMIT 1)
+      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Rep' LIMIT 1)
+      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
+      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+      AND
+        t1.stock_id || '-' ||
+        t2.value    || '-' ||
+        t3.value    || '-' ||
+        t4.value    || '-' ||
+        SUBSTRING(t5.value, 1, 4) = :plot
+    LIMIT 1";
+
+  $args = array(':project_id' => $project_id, ':plot' => $plot);
+  $m = chado_query($sql, $args);
+
+  return $m->fetchField(0);
 }

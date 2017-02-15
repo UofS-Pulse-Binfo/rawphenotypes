@@ -48,9 +48,18 @@ function rawpheno_menu() {
       'type' => MENU_CALLBACK,
     );
 
-    // Menu callback which returns all data.
+    // Menu callback which returns summary data for a trait (for histogram).
     $items['rawdata_trait'] = array(
       'page callback' => 'rawpheno_rawdata_trait_json',
+      'access callback' => true,
+      'delivery callback' => 'drupal_json_output',
+      'type' => MENU_CALLBACK,
+    );
+
+    // Menu callback that returns year and location given a trait use to populate select boxes
+    // to categorize barchart in rawdata page.
+    $items['rawdata_trait_category'] = array(
+      'page callback' => 'rawpheno_rawdata_trait_category_json',
       'access callback' => true,
       'delivery callback' => 'drupal_json_output',
       'type' => MENU_CALLBACK,
@@ -785,6 +794,51 @@ function rawpheno_rawdata_summary_json() {
 
 
 /**
+ * Function callback: Generate year and location used in categorizing barchart.
+ *
+ * @see hook_menu()
+ *
+ * @return
+ *   A JSON containing the location and year for a given trait.
+ */
+function rawpheno_rawdata_trait_category_json() {
+  if ((!isset($_GET['p']) OR strlen($_GET['p']) >= 10) OR
+      (!isset($_GET['t']) OR strlen($_GET['t']) >= 10)) {
+
+    // No data.
+    return 0;
+  }
+  else {
+    $project_id = trim(strip_tags($_GET['p']));
+    $trait_id = trim(strip_tags($_GET['t']));
+
+    // Location and planting_year (as Year).
+    $category = array('location', 'planting_date');
+    $arr_json = array();
+
+    foreach($category as $c) {
+      $col = ($c == 'location') ? 'location' : 'SUBSTRING(planting_date, 1, 4)';
+
+      $sql = sprintf("
+        SELECT DISTINCT %s AS col
+        FROM {rawpheno_rawdata_mview} WHERE plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+        AND STRPOS(all_traits, :trait_id) > 0
+        ORDER BY col ASC", $col);
+
+      $args = array(':project_id' => $project_id, ':trait_id' => $trait_id);
+      $r = chado_query($sql, $args);
+
+      foreach($r as $d) {
+        $arr_json[$c][] = $d->col;
+      }
+    }
+  }
+
+  return $arr_json;
+}
+
+
+/**
  * Function callback: Generate data for the bar chart.
  *
  * @see hook_menu()
@@ -811,11 +865,17 @@ function rawpheno_rawdata_trait_json() {
   $scale_type = 'scale';
   $ynunsure_type = 'y/n/?';
 
+  // Valid categorize options.
+  $arr_valid_category = array('location', 'year');
+
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
   // 10 Digits more will throw a PSQL ERROR.
   if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
-       (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10)) {
+      (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10) OR
+      (!isset($_GET['o']) OR empty($_GET['o']) OR strlen($_GET['o']) >= 20) OR
+      (!isset($_GET['c']) OR empty($_GET['c']) OR !in_array($_GET['c'], $arr_valid_category))) {
+
     // No data.
     return 0;
   }
@@ -867,11 +927,20 @@ function rawpheno_rawdata_trait_json() {
       return 0;
     }
     else {
+      $category = trim(strip_tags($_GET['c']));
+      $option   = trim(strip_tags($_GET['o']));
+
+      // Pass the values in categorize barchart.
+      $arr_category = array(
+        'category' => $category,
+        'option'   => $option
+      );
+
       // Else, chart it, but before doing so, determine if text or integer type.
       if ($data_type[0] == $int_type) {
         // Interger data type.
         $type = (rawpheno_function_unit($cvterm->name) == $scale_type) ? $scale_type : $int_type;
-        return rawpheno_function_create_json($project_id, $trait_id, $type);
+        return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category);
       }
       elseif ($data_type[0] == $txt_type) {
         // Text data type, but, if the length of data is sooo long, don't chart it.
@@ -882,7 +951,7 @@ function rawpheno_rawdata_trait_json() {
         else {
           // Yes, chart it!
           $type = (rawpheno_function_unit($cvterm->name) == $ynunsure_type) ? $ynunsure_type : $txt_type;
-          return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_data);
+          return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category, $arr_data);
         }
       }
     }
@@ -890,6 +959,7 @@ function rawpheno_rawdata_trait_json() {
 }
 
 
+// TRIPAL DOWNLOAD API IMPLEMENTATION (Function Callback).
 /**
  *  Implements hook_register_trpdownload_type().
  */
@@ -1169,13 +1239,14 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
           // Finally we add in all the traits.
           . "UNION
 
-          SELECT t1.plant_id AS id, t1.type_id as tid, t2.name AS def, t1.value AS value, 'C' as grp
+          SELECT t1.plant_id AS id, t1.type_id as tid, t2.name AS def, ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t1.value), '<m_value>') AS value, 'C' as grp
           FROM {pheno_measurements} AS t1
           INNER JOIN chado.cvterm AS t2 ON t1.type_id = t2.cvterm_id
           WHERE t2.cvterm_id IN (:traits) AND t1.plant_id IN" . $sub_sql
 
           // Lastly we order the results by plant_id and grouping string, and tid.
-          . "ORDER BY id, grp, tid ASC";
+          . "GROUP BY t1.plant_id, t1.type_id, t2.name
+             ORDER BY id, grp, tid ASC";
 
   $results = db_query($sql, $arr_q_string);
 
@@ -1216,6 +1287,14 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       foreach ($header as $id => $title) {
         if (!isset($row[$id])) {
           $row[$id] = 'NA';
+        }
+        else {
+          $l = explode('<m_value>', $row[$id]);
+
+          if (count($l) >= 2) {
+            $row[$id] = str_replace('<m_value>',',', $row[$id]);
+            drush_print('Multiple values found: Line #' . ($cur_line + 1) . ' Col: ' . $title);
+          }
         }
       }
 

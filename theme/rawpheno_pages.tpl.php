@@ -190,7 +190,7 @@
       ?>
         <div id="container-marker-information" title="Click to clear chart">
           <h2 id="title-pheno">&nbsp;</h2>
-          &nbsp;: are measured in <em id="text-rep">&nbsp;</em> with a leaf symbol (<span>&nbsp;</span>) <a href="#">Clear chart</a>
+          &nbsp;: are measured in the <em id="text-rep">&nbsp;</em> designated with a leaf symbol (<span>&nbsp;</span>) <a href="#">Clear chart</a>
         </div>
 
         <div id="container-form-select">

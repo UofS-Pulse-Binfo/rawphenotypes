@@ -86,7 +86,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Write to file and progress bar API reads the content and pass it JSON generator
       // in file rawpheno.module function: rawpheno_upload_job_progress_json().
       // Echo to terminal.
-      print $i . " of " . $row_count . ' - ' . $percent . '%'."\n";
+
+      // Add 1 to account for the header row.
+      print $i . " of " . ($row_count + 1) . ' - ' . $percent . '%'."\n";
 
       // To file.
       $percent = round(($i / $row_count) * 100);
@@ -132,16 +134,68 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
       // Determine if name has a stock id number.
       if (isset($stock_id) && $stock_id > 0) {
-        // Plant_id for this row.
-        $pheno_plantid = db_insert('pheno_plant')
-          ->fields(array('stock_id' => $stock_id))
-          ->execute();
+        $p_id = 0;
 
-        // Map this record/stock to a project.
-        db_insert('pheno_plant_project')
-          ->fields(array('project_id' => $project_id,
-                         'plant_id' => $pheno_plantid))
-          ->execute();
+        // Test if stock was measured in the active project, if not, insert as a new record.
+        // Otherwise, do more check (plot) to see if plant_id should be re-used.
+        $sql = "
+          SELECT plant_id
+          FROM pheno_plant AS t1 INNER JOIN pheno_plant_project AS t2 USING(plant_id)
+          WHERE t1.stock_id = :stock_id AND t2.project_id = :project_id LIMIT 1";
+
+        $args = array(':stock_id' => $stock_id, ':project_id' => $project_id);
+        $p = chado_query($sql, $args);
+
+        if ($p->rowCount()) {
+          // Found a stock record in the project. Do more test.
+          // Array to hold plot headers.
+          // Plot, Rep, Location, Planting Date (date)
+          $arr_plot_cols = rawpheno_function_headers('plot');
+
+          // Construct query string.
+          // In order: stock_id, plot, rep, location, year (extract year in planting date)
+          $plot = $stock_id;
+
+          foreach($arr_plot_cols as $plot_col) {
+            $plot_col = rawpheno_function_delformat($plot_col);
+
+            // Cell value of plot property header.
+            $col_index = array_search(strtolower($plot_col), array_map('rawpheno_function_delformat', $header));
+            $cell_val = trim($row[$col_index]);
+
+            // If planting date - extract the year value.
+            if ($plot_col == 'plantingdate(date)') {
+              $y = explode('-', $cell_val);
+              $cell_val = $y[0];
+            }
+
+            $plot .= '-' . $cell_val;
+          }
+
+          // Search.
+          $p_id = rawpheno_function_plot_exists($plot, $project_id);
+        }
+
+
+        if ($p_id) {
+          // Plot found - re-use the plant_id.
+          $pheno_plantid = $p_id;
+          print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ';
+        }
+        else {
+          // Plot not found - insert as new row.
+          $pheno_plantid = db_insert('pheno_plant')
+            ->fields(array('stock_id' => $stock_id))
+            ->execute();
+
+          // Map this record/stock to a project.
+          db_insert('pheno_plant_project')
+            ->fields(array('project_id' => $project_id,
+                           'plant_id' => $pheno_plantid))
+            ->execute();
+
+          print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ';
+        }
       }
       else {
         // Warn the admin tht germplasm is not available...
