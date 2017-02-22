@@ -105,7 +105,7 @@
                 else {
                   // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
                   // and then call render function and position these elements in the right place.
-                  initializeBarChart(barchartData, categoryData);
+                  initializeBarChart(barchartData, categoryData, project_id, traitId);
                 }
               });
             }
@@ -359,7 +359,7 @@
       // Function to add all bar map chart elements into the DOM.
       // The height attribute or property of the elements remains constant whereas the
       // width is to be determined by the render function.
-      function initializeBarChart(data, dataCategory) {
+      function initializeBarChart(data, dataCategory, pId, tId) {
         // Remove loading animation.
         $('.win-loading').remove();
 
@@ -400,7 +400,7 @@
 
             var selId = $(this).attr('id');
             // Category value, Option value, the select box changed and the category data.
-            barchartCategorize(selValues[0], selValues[1], selId, dataCategory);
+            barchartCategorize(selValues[0], selValues[1], selId, dataCategory, pId, tId);
           });
         }
 
@@ -851,7 +851,11 @@
       // Get the unit part given a trait (unit) string.
       // Function highlight rect corresponding to an item in the legend.
       function nohighlight() {
-        d3.selectAll('.rect-each-bar').transition().style('opacity', 1);
+        d3.selectAll('.rect-each-bar')
+          .transition()
+          .duration(function() { return randomNumber(); })
+          .ease('back')
+          .style('opacity', 1);
       }
 
       function highlight() {
@@ -860,10 +864,14 @@
         var fill = d3.select(rect_id).attr('fill');
 
         // Lower the opacity of all rect except rect with fill above.
-        d3.selectAll('rect.rect-each-bar').transition().style('opacity', function() {
-          var m = d3.select(this).attr('fill');
-          return (m == fill) ? 1 : 0.1;
-        });
+        d3.selectAll('rect.rect-each-bar')
+          .transition()
+          .duration(function() { return randomNumber(); })
+          .ease('back')
+          .style('opacity', function() {
+            var m = d3.select(this).attr('fill');
+            return (m == fill) ? 1 : 0.1;
+          });
       }
 
       function extractBaseUnit(traitName) {
@@ -1129,7 +1137,7 @@
       }
 
       // Categorize chart.
-      function barchartCategorize(categoryValue, optionValue, sel, dataCategory){
+      function barchartCategorize(categoryValue, optionValue, sel, dataCategory, pId, tId){
         // Category option has been changed.
         // When category select is selected, reload the barchart and default
         // to location and first option in the year select box.
@@ -1147,14 +1155,8 @@
             : dataCategory.location[0];
         }
 
-        // Read the main select box and get the project id and trait id.
-        var prjTrait = [];
-        $('#container-form-select select').each(function(i) {
-          prjTrait[i] = $(this).val();
-        });
-
         // Read the JSON given the values from select boxes.
-        var barchartFile = file + 'rawdata_trait' + '?p=' + prjTrait[0] + '&t=' + prjTrait[1] + '&c=' + categoryValue + '&o=' + optionValue;
+        var barchartFile = file + 'rawdata_trait' + '?p=' + pId + '&t=' + tId + '&c=' + categoryValue + '&o=' + optionValue;
 
         // Render the barchart.
         d3.json(barchartFile, function(error, barchartData) {
@@ -1175,7 +1177,7 @@
 
             // Initialize barchart by adding all elements (rect, g, text, etc.) into the DOM,
             // and then call render function and position these elements in the right place.
-            initializeBarChart(barchartData, dataCategory);
+            initializeBarChart(barchartData, dataCategory, pId, tId);
           }
         });
       }
