@@ -320,7 +320,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                 'rawpheno',
                 TRIPAL_ERROR,
                 'Uploading Phenoypic Data: Unable to find unit for Plant Measurement Type (Term=!name; Type ID=!id).',
-                array('!name' => $cv_name, '!id' => $type_id),
+                array('!name' => $cell_colheader, '!id' => $type_id),
                 array('print' => TRUE)
               );
               $TRANSACTION->rollback();
@@ -938,7 +938,7 @@ function rawpheno_get_trait_id($header) {
 function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   // Get the trait id if that is not provided to us.
   if (!$trait_id) {
-    $type_id = rawpheno_get_trait_id($trait_name);
+    $trait_id = rawpheno_get_trait_id($trait_name);
   }
 
   // First we try to get the unit through relationships since that avoids making assumptions.
