@@ -165,3 +165,13 @@ div.droppable-controls {
 
   -webkit-filter: drop-shadow(0 -4px 2px rgba(49, 67, 85, 0.1));
 }
+
+#edit-dnd-upload .throbber {
+  background: url('../../theme/img/wait-validating.gif') no-repeat bottom center !important;
+  padding: 90px 90px 10px 90px !important;
+}
+
+#edit-dnd-upload .message {
+  display: block;
+  padding: 20px 0 0 0 !important;
+}

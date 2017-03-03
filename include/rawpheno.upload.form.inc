@@ -180,7 +180,7 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_validators' => array('file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp csv')),
     '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
     '#progress_indicator' => 'throbber',
-    '#progress_message' => 'Please wait...',
+    '#progress_message' => 'Validating your spreadsheet file. Please wait...',
     '#allow_replace' => 1,
     '#standard_upload' => 1,
     '#upload_button_text' => '',
