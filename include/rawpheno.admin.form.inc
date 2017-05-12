@@ -971,8 +971,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
       $arr_rows_F = array();
       if ($my_files_count > 0) {
-        $my_files = $result_F->fetchAll();
-        foreach($my_files as $f) {
+        foreach($result_F as $f) {
           // File.
           $cell_file = l($f->filename . '(' . format_size($f->filesize) . ')', file_create_url($f->uri),
             array('attributes' => array('target' => '_blank'))

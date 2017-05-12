@@ -245,9 +245,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     // Create table elements.
     // Rows.
     if ($my_files->rowCount() > 0) {
-      $files = $my_files->fetchAll();
-
-      foreach($files as $f) {
+      foreach($my_files as $f) {
         // File header will contain filename, timestamp and filesize.
         $row_file = l($f->filename . '(' . format_size($f->filesize) . ')',
                       file_create_url($f->uri),
@@ -337,9 +335,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     // Create table elements.
     // Rows.
     if ($my_files->rowCount() > 0) {
-      $files = $my_files->fetchAll();
-
-      foreach($files as $f) {
+      foreach($my_files as $f) {
         $row_view = l('View', './phenotypes/raw/backup/' . $f->project_id);
         $row_prj_name = l($arr_my_project[$f->project_id], 'phenotypes/raw/backup/' . $f->project_id);
 

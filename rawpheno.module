@@ -1193,8 +1193,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
           WHERE t2.cvterm_id IN (:traits) AND t1.plant_id IN" . $sub_sql . "
           GROUP BY t2.cvterm_id, t2.definition";
 
-  $result = db_query($sql, $arr_q_string)
-    ->fetchAll();
+  $result = db_query($sql, $arr_q_string);
 
   // Array to hold column headers.
   //Add Name/Stock name column headers array.

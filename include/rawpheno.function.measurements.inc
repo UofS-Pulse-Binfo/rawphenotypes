@@ -410,8 +410,7 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
     }
 
     // Assign each row with a bin.
-    $m = db_query($sql, $args)
-      ->fetchAll();
+    $m = db_query($sql, $args);
 
     foreach($m as $stock) {
       $stock_avg = (int)$stock->average;
