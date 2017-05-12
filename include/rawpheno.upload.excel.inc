@@ -153,9 +153,12 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           $arr_plot_cols = rawpheno_function_headers('plot');
 
           // Construct query string.
-          // In order: stock_id, plot, rep, location, year (extract year in planting date)
+          // String : stock_id - plot - rep - location - year
+          //        eg. 147-5-2-Saskatoon-2015
           $plot = $stock_id;
 
+          // Given a row, construct the search string (format) above and use it to search if
+          // the such combination matched any record in the database.
           foreach($arr_plot_cols as $plot_col) {
             $plot_col = rawpheno_function_delformat($plot_col);
 
@@ -172,7 +175,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             $plot .= '-' . $cell_val;
           }
 
-          // Search.
+          // Search the query string.
           $p_id = rawpheno_function_plot_exists($plot, $project_id);
         }
 
