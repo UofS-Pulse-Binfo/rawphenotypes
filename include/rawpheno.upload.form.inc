@@ -358,7 +358,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
 
         // Clean up the current header.
         $name = rawpheno_function_delformat($k);
-        array_push($arr_checked_header, $name);
+        $arr_checked_header[] = $name;
 
         // Test if the header has a unit component and set the variable accordingly.
         $has_unit = (strpbrk($name, '()')) ? 'yes' : 'no';

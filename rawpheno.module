@@ -916,10 +916,10 @@ function rawpheno_rawdata_trait_json() {
 
     foreach($d as $m) {
       $dtype = (is_numeric($m->data)) ? 'int' : 'txt';
-      array_push($arr_data_type, $dtype);
+      $arr_data_type[] = $dtype;
 
-      array_push($arr_data_length, $m->data_length);
-      array_push($arr_data, $m->data);
+      $arr_data_length[] = $m->data_length;
+      $arr_data[] = $m->data;
     }
 
     // Get the overall data type.
@@ -1166,7 +1166,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     $n = chado_query($sql, array(':cvterm' => $nt, ':project_id' => $project));
 
     if ($n->rowCount() == 1) {
-      array_push($traits, $n->fetchField());
+      $traits[] = $n->fetchField();
     }
   }
 

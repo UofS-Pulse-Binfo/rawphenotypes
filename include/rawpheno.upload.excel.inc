@@ -834,7 +834,7 @@ function rawpheno_indicate_new_headers($file, $project_id) {
       // Determine if column header exists in the expected column headers.
       if (!in_array($temp_value, $expected_headers) && !empty($value)) {
         // Not in expected column headers, save it as new header.
-        array_push($new_headers, $value);
+        $new_headers[] = $value;
       }
     }
   }
@@ -1017,11 +1017,11 @@ function rawpheno_project_essential_traits($project_id) {
 
     foreach($trait as $t) {
       $m = rawpheno_get_trait_name($t->cvterm);
-      array_push($arr_essential_traits, $m);
+      $arr_essential_traits[] = $m;
     }
 
     // Add Name column header to the traits returned.
-    array_push($arr_essential_traits, 'Name');
+    $arr_essential_traits[] = 'Name';
 
     return $arr_essential_traits;
   }
@@ -1057,7 +1057,7 @@ function rawpheno_project_plantproperty_traits($project_id) {
     foreach($trait as $t) {
       // Remove the trait rep and unit from the trait.
       $m = rawpheno_get_trait_name($t->cvterm);
-      array_push($arr_plantproperty_traits, $m);
+      $arr_plantproperty_traits[] = $m;
     }
 
     return $arr_plantproperty_traits;
@@ -1087,11 +1087,11 @@ function rawpheno_project_traits($project_id) {
     $trait = chado_query($sql, $args);
 
     foreach($trait as $t) {
-      array_push($arr_trait, $t->cvterm);
+      $arr_trait[] = $t->cvterm;
     }
 
     // Add Name column header to the traits returned.
-    array_push($arr_trait, 'Name');
+    $arr_trait[] = 'Name';
 
     return $arr_trait;
   }
