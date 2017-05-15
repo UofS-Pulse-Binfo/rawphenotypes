@@ -797,10 +797,13 @@ function rawpheno_file_insert($file) {
  *   Drupal file opbject.
  */
 function rawpheno_file_validate($file) {
-  // Set processing time to 20 mins.
-  ini_set('max_execution_time', 1200);
+  // 10 mins (60 * 10).
+  $max_time = 600;
 
   if ($file->source == 'dnd') {
+    // Set processing time to 10 mins.
+    ini_set('max_execution_time', $max_time);
+
     // Upload data page.
 
     // Project id number the spreadsheet and column headers are specific to.
@@ -841,6 +844,9 @@ function rawpheno_file_validate($file) {
     }
   }
   elseif ($file->source == 'bdnd') {
+    // Set processing time to 10 mins.
+    ini_set('max_execution_time', $max_time);
+
     // Backup file page.
 
     // Array to hold the validation result.
