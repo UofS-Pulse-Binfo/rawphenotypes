@@ -165,7 +165,10 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         '#file_upload_max_size' => '10M',
         '#upload_location' => 'public://',
         '#upload_event' => 'manual',
-        '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
+        '#upload_validators' => array(
+          'file_validate_extensions' => array('xlsx xls'),
+          'rawpheno_validate_spreadsheet_file' => array($form_state),
+        ),
         '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
         '#progress_indicator' => 'throbber',
         '#progress_message' => 'Please wait...',
