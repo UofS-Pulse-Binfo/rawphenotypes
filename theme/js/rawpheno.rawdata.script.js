@@ -45,7 +45,7 @@
           // Start the heat map chart.
           // Read JSON data for heat map.
           var project_id = i.target.value;
-          heatmapFile = file + '/rawdata/?p=' + project_id;
+          heatmapFile = file + '/rawdata/?project_id=' + project_id;
           d3.json(heatmapFile, function(error, data) {
             if (error) {
               // Error reading JSON.
@@ -74,7 +74,7 @@
 
           // Extract the available location and year for this particular trait.
           // The values will be used to populate select boxes.
-          var categoryFile = file + 'rawdata_trait_category' + '?p=' + project_id + '&t=' + traitId;
+          var categoryFile = file + 'rawdata_trait_category' + '?project_id=' + project_id + '&trait_id=' + traitId;
 
           d3.json(categoryFile, function(error, categoryData) {
             if (error) {
@@ -91,7 +91,7 @@
 
               // Render bar chart.
               // Default to location and a year - first in the list.
-              var barchartFile = file + 'rawdata_trait' + '?p=' + project_id + '&t=' + traitId + '&c=location' + '&o=' + defaultYear;
+              var barchartFile = file + 'rawdata_trait' + '?project_id=' + project_id + '&trait_id=' + traitId + '&category=location' + '&option=' + defaultYear;
 
               d3.json(barchartFile, function(error, barchartData) {
                 if (error) {
@@ -185,7 +185,7 @@
       // project select box.
       // Read JSON data for heat map.
       var project_id = $('#rawdata-sel-project').val();
-	    heatmapFile = file + '/rawdata/?p=' + project_id;
+	    heatmapFile = file + '/rawdata/?project_id=' + project_id;
 	    d3.json(heatmapFile, function(error, data) {
 		    if (error) {
           // Error reading JSON.
@@ -1156,7 +1156,7 @@
         }
 
         // Read the JSON given the values from select boxes.
-        var barchartFile = file + 'rawdata_trait' + '?p=' + pId + '&t=' + tId + '&c=' + categoryValue + '&o=' + optionValue;
+        var barchartFile = file + 'rawdata_trait' + '?project_id=' + pId + '&trait_id=' + tId + '&category=' + categoryValue + '&option=' + optionValue;
 
         // Render the barchart.
         d3.json(barchartFile, function(error, barchartData) {

@@ -686,13 +686,13 @@ function rawpheno_instructions_autocomplete_search($project_id, $key = '') {
 function rawpheno_rawdata_summary_json() {
   // Ensure project id is valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
-  if (!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) {
+  if (!isset($_GET['project_id']) OR empty($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) {
     // No data.
     return 0;
   }
   else {
     // Get data for this project.
-    $project_id = (int)trim(strip_tags($_GET['p']));
+    $project_id = (int)trim(strip_tags($_GET['project_id']));
 
     // Get trait id of planting data.
     $planting_date = rawpheno_get_trait_id('Planting Date (date)');
@@ -842,15 +842,15 @@ function rawpheno_rawdata_summary_json() {
  *   A JSON containing the location and year for a given trait.
  */
 function rawpheno_rawdata_trait_category_json() {
-  if ((!isset($_GET['p']) OR strlen($_GET['p']) >= 10) OR
-      (!isset($_GET['t']) OR strlen($_GET['t']) >= 10)) {
+  if ((!isset($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) OR
+      (!isset($_GET['trait_id']) OR strlen($_GET['trait_id']) >= 10)) {
 
     // No data.
     return 0;
   }
   else {
-    $project_id = trim(strip_tags($_GET['p']));
-    $trait_id = trim(strip_tags($_GET['t']));
+    $project_id = trim(strip_tags($_GET['project_id']));
+    $trait_id = trim(strip_tags($_GET['trait_id']));
 
     // Location and planting_year (as Year).
     $category = array('location', 'planting_date');
@@ -911,17 +911,22 @@ function rawpheno_rawdata_trait_json() {
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
   // 10 Digits more will throw a PSQL ERROR.
-  if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
-      (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10) OR
-      (!isset($_GET['o']) OR empty($_GET['o']) OR strlen($_GET['o']) >= 20) OR
-      (!isset($_GET['c']) OR empty($_GET['c']) OR !in_array($_GET['c'], $arr_valid_category))) {
+
+  // Project Id : project id
+  // Trait Id   : trait id
+  // Option     : year or location values
+  // Category   : year or location
+  if ((!isset($_GET['project_id']) OR empty($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) OR
+      (!isset($_GET['trait_id']) OR empty($_GET['trait_id']) OR strlen($_GET['trait_id']) >= 10) OR
+      (!isset($_GET['option']) OR empty($_GET['option']) OR strlen($_GET['option']) >= 20) OR
+      (!isset($_GET['category']) OR empty($_GET['category']) OR !in_array($_GET['category'], $arr_valid_category))) {
 
     // No data.
     return 0;
   }
   else {
-    $project_id = (int)trim(strip_tags($_GET['p']));
-    $trait_id   = (int)trim(strip_tags($_GET['t']));
+    $project_id = (int)trim(strip_tags($_GET['project_id']));
+    $trait_id   = (int)trim(strip_tags($_GET['trait_id']));
 
     // Get cvterm.
     $cvterm = tripal_get_cvterm(array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types')));
@@ -967,8 +972,8 @@ function rawpheno_rawdata_trait_json() {
       return 0;
     }
     else {
-      $category = trim(strip_tags($_GET['c']));
-      $option   = trim(strip_tags($_GET['o']));
+      $category = trim(strip_tags($_GET['category']));
+      $option   = trim(strip_tags($_GET['option']));
 
       // Pass the values in categorize barchart.
       $arr_category = array(
