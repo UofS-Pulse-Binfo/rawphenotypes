@@ -1311,21 +1311,26 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     // Total lines;
     $total_lines = count($rows);
-    drush_print('Total Lines: ' . $total_lines);
+    // INFO:
+    // drush_print('Total Lines: ' . $total_lines);
 
     // Now we want to process each row to add entries for missing data.
     // We will do this by looping through the header for each row and if there isn't
     // already data set for that cell then we will add missing data.
     // Note: We will save the data to the file as we go.
     $cur_line = 0;
+    $past_percent = '';
+    drush_print('0% complete...');
+
     foreach ($rows as $row) {
-      $cur_line++;
-      $percent = $cur_line/$total_lines * 100;
-      if ($percent%5 == 0) {
-        drush_print(round($percent,2).'% Complete.');
-        db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
-          array(':percent' => round($percent), ':id' => $job_id));
+      // To file... to screen...
+      $percent = round(($cur_line / $total_lines) * 100);
+      if ($percent % 10 == 0 && $past_percent != $percent) {
+        drush_print($percent . '% complete...');
       }
+
+      db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
+        array(':percent' => $percent, ':id' => $job_id));
 
       // First, add missing data for each entry in the header that is not in the row.
       foreach ($header as $id => $title) {
@@ -1337,7 +1342,9 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
           if (count($l) >= 2) {
             $row[$id] = str_replace('<m_value>',',', $row[$id]);
-            drush_print('Multiple values found: Line #' . ($cur_line + 1) . ' Col: ' . $title);
+            // INFO:
+            // Multiple values detected.
+            // drush_print('Multiple values found: Line #' . ($cur_line + 1) . ' Col: ' . $title);
           }
         }
       }
@@ -1347,9 +1354,18 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
       // Write this row to the file as CSV.
       fputcsv($FILE, $row);
+
+      $cur_line++;
+      $past_percent = $percent;
     }
 
-     // Finally, close the file.
-     fclose($FILE);
+    // Finally, close the file.
+    fclose($FILE);
+
+    if ($percent != 100) {
+      drush_print('100% complete...');
+    }
+
+    drush_print('Download complete.');
   }
 }

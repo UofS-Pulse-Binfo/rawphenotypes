@@ -77,7 +77,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   try {
 
     // Read each row.
-    print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
+
+    // INFO:
+    // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
     // Each row in the spreadsheet.
@@ -87,11 +89,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // in file rawpheno.module function: rawpheno_upload_job_progress_json().
       // Echo to terminal.
 
-      // Add 1 to account for the header row.
-      print $i . " of " . ($row_count + 1) . ' - ' . $percent . '%'."\n";
-
-      // To file.
+      // To file... to screen...
       $percent = round(($i / $row_count) * 100);
+      if ($percent % 10 == 0) {
+        // Add 1 to account for the header row.
+        print $percent . '% complete...' . "\n";
+      }
+
       file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
 
       // HEADER!
@@ -183,7 +187,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         if ($p_id) {
           // Plot found - re-use the plant_id.
           $pheno_plantid = $p_id;
-          print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ';
+
+          // INFO:
+          // print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ' . "\n";
         }
         else {
           // Plot not found - insert as new row.
@@ -197,7 +203,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                            'plant_id' => $pheno_plantid))
             ->execute();
 
-          print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ';
+          // INFO:
+          // print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ' . "\n";
         }
       }
       else {
@@ -407,7 +414,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   }
 
   unset($TRANSACTION); //Commit
-  print "Complete.\n";
+  print "Upload complete.\n";
 
   print "\nUpdating the materialized view summarizing phenotypic data.\n";
   $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');

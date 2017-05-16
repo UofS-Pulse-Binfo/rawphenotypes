@@ -252,7 +252,7 @@ span.alert-error {
 }
 
 #tbl-my-files tr:hover {
-  background-color: #FFFFFF !important;
+  background-color: #FFFFFF;
 }
 
 .div-my-folder {
@@ -261,7 +261,7 @@ span.alert-error {
 }
 
 .tbl-my-folder td {
-  background-color: #FFFFFF !important;
+  background-color: #FFFFFF;
 }
 
 /* File validation result cell */
