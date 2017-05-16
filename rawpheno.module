@@ -1366,6 +1366,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       drush_print('100% complete...');
     }
 
-    drush_print('Download complete.');
+    drush_print('Download complete');
   }
 }

@@ -42,8 +42,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
   $xls_file = drupal_realpath($file->uri);
 
+  // INFO:
   // Keep a record of which file we are loading in the logs.
-  print "\nXLSX File: " . $xls_file . "\n";
+  // print "\nXLSX File: " . $xls_file . "\n";
 
   // Add the libraries needed to parse excel files.
   rawpheno_add_parsing_libraries();
@@ -77,7 +78,6 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   try {
 
     // Read each row.
-
     // INFO:
     // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
@@ -89,13 +89,12 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // in file rawpheno.module function: rawpheno_upload_job_progress_json().
       // Echo to terminal.
 
-      // To file... to screen...
       $percent = round(($i / $row_count) * 100);
       if ($percent % 10 == 0) {
-        // Add 1 to account for the header row.
         print $percent . '% complete...' . "\n";
       }
 
+      // To file.
       file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
 
       // HEADER!
@@ -187,9 +186,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         if ($p_id) {
           // Plot found - re-use the plant_id.
           $pheno_plantid = $p_id;
-
           // INFO:
-          // print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ' . "\n";
+          // print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ';
         }
         else {
           // Plot not found - insert as new row.
@@ -204,7 +202,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             ->execute();
 
           // INFO:
-          // print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ' . "\n";
+          // print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ';
         }
       }
       else {
