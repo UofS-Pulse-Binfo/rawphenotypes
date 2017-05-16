@@ -252,114 +252,151 @@ function rawpheno_permission() {
 
 
 /**
- * Implements hook_preprocess().
+ * Implements hook_preprocess_HOOK().
  */
-function rawpheno_preprocess(&$variables, $hook) {
-  if (in_array($hook, array('rawpheno_rawdata', 'rawpheno_instructions', 'rawpheno_upload_form_master', 'rawpheno_backup', 'rawpheno_download'))) {
-    // Colour scheme selected by the user from the admin/configuration.
-    $colour = variable_get('rawpheno_colour_scheme');
+// Rawdata page.
+function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-    // This colour will fill background of header and top right button, and border of content area.
-    $variables['theme_colour'] = (empty($colour)) ? '#304356' : $colour;
+  // Cross-link rawdata page to download page.
+  $variables['rel_url'] = url('phenotypes/raw/download');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_rawdata_title');
+  // D3 version
+  $ver = rawpheno_function_d3_version();
+  $ver = explode('.', $ver);
+  // Version
+  $variables['d3ver'] = (isset($ver[0])) ? trim($ver[0]) : 0;
+  // Release
+  $variables['d3rel'] = (isset($ver[1])) ? trim($ver[1]) : 0;
 
-    // Projects assigned to user.
-    $log_user = $GLOBALS['user']->uid;
-    $my_projects = rawpheno_function_user_project($log_user);
-    $variables['my_projects'] = $my_projects;
+  // Does D3 exists
+  $variables['d3_in'] = libraries_load('d3js');
+}
 
-    // Does the module contain project?
-    $has_prj = rawpheno_function_project();
-    $variables['has_prj'] = $has_prj;
+// Instruction page.
+function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-    // If it has project, does it have data?
-    $has_data = rawpheno_function_data();
-    $variables['has_data'] = $has_data;
+  // Cross-link instructions page to upload page.
+  $variables['rel_url'] = url('phenotypes/raw/upload');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_instructions_title');
 
+  // Path to module used to embed image in appendix tab.
+  $variables['path'] = drupal_get_path('module', 'rawpheno');
 
-    if ($hook == 'rawpheno_rawdata') {
-      // RAWDATA PAGE.
-      // Cross-link rawdata page to download page.
-      $variables['rel_url'] = url('phenotypes/raw/download');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_rawdata_title');
-      // D3 version
-      $ver = rawpheno_function_d3_version();
-      $ver = explode('.', $ver);
-      // Version
-      $variables['d3ver'] = (isset($ver[0])) ? trim($ver[0]) : 0;
-      // Release
-      $variables['d3rel'] = (isset($ver[1])) ? trim($ver[1]) : 0;
+  // Spreadsheet writer is in?
+  $is_in = libraries_get_path('PHP_XLSXWriter_plus');
+  $variables['writer_in'] = $is_in;
+}
 
-      // Does D3 exists
-      $variables['d3_in'] = libraries_load('d3js');
-    }
-    elseif ($hook == 'rawpheno_instructions') {
-      // INSTRUCTIONS PAGE.
-      // Cross-link instructions page to upload page.
-      $variables['rel_url'] = url('phenotypes/raw/upload');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_instructions_title');
+// Upload page.
+function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-      // Path to module used to embed image in appendix tab.
-      $variables['path'] = drupal_get_path('module', 'rawpheno');
+  // Directory permission used in upload and backup.
+  $pub_dir = 'public://';
 
-      // Spreadsheet writer is in?
-      $is_in = libraries_get_path('PHP_XLSXWriter_plus');
-      $variables['writer_in'] = $is_in;
-    }
-    elseif ($hook == 'rawpheno_upload_form_master' || $hook == 'rawpheno_backup') {
-      // Directory permission used in upload and backup.
-      $pub_dir = 'public://';
+  $perm = file_prepare_directory($pub_dir);
+  $variables['dir_permission'] = $perm;
 
-      $perm = file_prepare_directory($pub_dir);
-      $variables['dir_permission'] = $perm;
+  // Does drag and drop module exist?
+  $is_in = module_exists('dragndrop_upload_element');
+  $variables['dnd_in'] = $is_in;
 
-      // Does drag and drop module exist?
-      $is_in = module_exists('dragndrop_upload_element');
-      $variables['dnd_in'] = $is_in;
+  // Does spreadsheet reader exist?
+  $is_in = libraries_get_path('spreadsheet-reader');
+  $variables['reader_in'] = $is_in;
 
-      // Does spreadsheet reader exist?
-      $is_in = libraries_get_path('spreadsheet-reader');
-      $variables['reader_in'] = $is_in;
+  // Cross-link upload page to instructions page.
+  $variables['rel_url'] = url('phenotypes/raw/instructions');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_upload_title');
 
-      if ($hook == 'rawpheno_upload_form_master') {
-        // UPLOAD PAGE.
-        // Cross-link upload page to instructions page.
-        $variables['rel_url'] = url('phenotypes/raw/instructions');
-        // Page Title
-        $variables['page_title'] = variable_get('rawpheno_upload_title');
+  // Needs url in help window and links in stage 3.
+  $variables['page_url'] =
+    array(
+      'rawpheno_rawdata'      => url('phenotypes/raw'),
+      'rawpheno_download'     => url('phenotypes/raw/download'),
+      'rawpheno_instructions' => url('phenotypes/raw/instructions'),
+      'rawpheno_upload'       => url('phenotypes/raw/upload'),
+      'rawpheno_backup'       => url('phenotypes/raw/backup')
+    );
 
-        // Needs url in help window and links in stage 3.
-        $variables['page_url'] =
-          array(
-            'rawpheno_rawdata'      => url('phenotypes/raw'),
-            'rawpheno_download'     => url('phenotypes/raw/download'),
-            'rawpheno_instructions' => url('phenotypes/raw/instructions'),
-            'rawpheno_upload'       => url('phenotypes/raw/upload'),
-            'rawpheno_backup'       => url('phenotypes/raw/backup')
-          );
+  // Stages in upload page.
+  $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
+                                      'review' => 'Describe New Trait',
+                                      'save'   => 'Save Spreadsheet');
+}
 
-        // Stages in upload page.
-        $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
-                                            'review' => 'Describe New Trait',
-                                            'save'   => 'Save Spreadsheet');
-      }
-      else {
-        // BACKUP PAGE.
-        // Cross-link backup page to instructions page.
-        $variables['rel_url'] = url('phenotypes/raw/instructions');
-        // Page Title
-        $variables['page_title'] = variable_get('rawpheno_backup_title');
-      }
-    }
-    elseif ($hook == 'rawpheno_download') {
-      // DOWNLOAD PAGE.
-      // Cross-link download page to download page.
-      $variables['rel_url'] = url('phenotypes/raw');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_download_title');
-    }
-  }
+// Backup page.
+function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+
+  // Directory permission used in upload and backup.
+  $pub_dir = 'public://';
+
+  $perm = file_prepare_directory($pub_dir);
+  $variables['dir_permission'] = $perm;
+
+  // Does drag and drop module exist?
+  $is_in = module_exists('dragndrop_upload_element');
+  $variables['dnd_in'] = $is_in;
+
+  // Does spreadsheet reader exist?
+  $is_in = libraries_get_path('spreadsheet-reader');
+  $variables['reader_in'] = $is_in;
+
+  // Cross-link backup page to instructions page.
+  $variables['rel_url'] = url('phenotypes/raw/instructions');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_backup_title');
+}
+
+// Download page.
+function rawpheno_preprocess_rawpheno_download(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+
+  // Cross-link download page to download page.
+  $variables['rel_url'] = url('phenotypes/raw');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_download_title');
+}
+
+// Load module colour scheme, check if user has project and check if module has data.
+function rawpheno_module_defaults() {
+  // Colour scheme selected by the user from the admin/configuration.
+  $colour = variable_get('rawpheno_colour_scheme');
+  // This colour will fill background of header and top right button, and border of content area.
+  $colour = (empty($colour)) ? '#304356' : $colour;
+
+  // Projects assigned to user.
+  $log_user = $GLOBALS['user']->uid;
+  $my_projects = rawpheno_function_user_project($log_user);
+
+  // Does the module contain project?
+  $has_project = rawpheno_function_project();
+
+  // If it has project, does it have data?
+  $has_data = rawpheno_function_data();
+
+  return array(
+    $colour,      // Colour scheme.
+    $my_projects, // User appointed project.
+    $has_project, // Module has at least a project.
+    $has_data,    // Module has data.
+  );
 }
 
 
