@@ -252,9 +252,9 @@ function rawpheno_permission() {
 
 
 /**
- * Implements hook_preprocess_HOOK().
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Rawdata Page.
  */
-// Rawdata page.
 function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
@@ -276,7 +276,10 @@ function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
   $variables['d3_in'] = libraries_load('d3js');
 }
 
-// Instruction page.
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Instuctions Page.
+ */
 function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
@@ -295,7 +298,10 @@ function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
   $variables['writer_in'] = $is_in;
 }
 
-// Upload page.
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Upload Page.
+ */
 function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
@@ -336,7 +342,10 @@ function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
                                       'save'   => 'Save Spreadsheet');
 }
 
-// Backup page.
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Backup Page.
+ */
 function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
@@ -362,7 +371,10 @@ function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
   $variables['page_title'] = variable_get('rawpheno_backup_title');
 }
 
-// Download page.
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Download Page.
+ */
 function rawpheno_preprocess_rawpheno_download(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
@@ -374,7 +386,14 @@ function rawpheno_preprocess_rawpheno_download(&$variables, $hook) {
   $variables['page_title'] = variable_get('rawpheno_download_title');
 }
 
-// Load module colour scheme, check if user has project and check if module has data.
+/**
+ * Helper function: preforms module page load check and gets module colour scheme
+ * used in initiating variables in hook_preprocess_HOOK() implementation above.
+ *
+ * @return array
+ *   An array containing the default colour scheme, projects appointed to a user,
+ *   check if module has an active project as well as if module has data.
+ */
 function rawpheno_module_defaults() {
   // Colour scheme selected by the user from the admin/configuration.
   $colour = variable_get('rawpheno_colour_scheme');
