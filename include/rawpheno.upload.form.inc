@@ -179,7 +179,6 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     //       No silent treatment.
     '#upload_validators' => array(
       'file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp csv'),
-      'rawpheno_validate_spreadsheet_file' => array(),
     ),
     '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
     '#progress_indicator' => 'throbber',
@@ -800,7 +799,7 @@ function rawpheno_file_insert($file) {
  * @param $file
  *   Drupal file opbject.
  */
-function rawpheno_validate_spreadsheet_file($file) {
+function rawpheno_file_validate($file) {
   // 10 mins (60 * 10).
   $max_time = 600;
 

@@ -167,7 +167,6 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         '#upload_event' => 'manual',
         '#upload_validators' => array(
           'file_validate_extensions' => array('xlsx xls'),
-          'rawpheno_validate_spreadsheet_file' => array($form_state),
         ),
         '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
         '#progress_indicator' => 'throbber',
