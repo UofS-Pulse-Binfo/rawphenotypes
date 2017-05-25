@@ -165,7 +165,9 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
         '#file_upload_max_size' => '10M',
         '#upload_location' => 'public://',
         '#upload_event' => 'manual',
-        '#upload_validators' => array('file_validate_extensions' => array('xlsx xls')),
+        '#upload_validators' => array(
+          'file_validate_extensions' => array('xlsx xls'),
+        ),
         '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
         '#progress_indicator' => 'throbber',
         '#progress_message' => 'Please wait...',
@@ -245,9 +247,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     // Create table elements.
     // Rows.
     if ($my_files->rowCount() > 0) {
-      $files = $my_files->fetchAll();
-
-      foreach($files as $f) {
+      foreach($my_files as $f) {
         // File header will contain filename, timestamp and filesize.
         $row_file = l($f->filename . '(' . format_size($f->filesize) . ')',
                       file_create_url($f->uri),
@@ -280,7 +280,14 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
           $row_del = l('', './phenotypes/raw/backup/' . $project_id .'/archive/' . $f->file_id,
                        array('attributes' => array('class' => 'link-archive', 'title' => 'Archive file')));
 
-          array_push($arr_rows, array($row_file, '#' . $f->version, $row_notes, $row_validation, $row_download, $row_del));
+          $arr_rows[] = array(
+            $row_file,         // Filename.
+            '#' . $f->version, // File version.
+            $row_notes,        // Notes, comments to file.
+            $row_validation,   // Validation result performed to file.
+            $row_download,     // Link to download file.
+            $row_del           // Link delete (archive) file.
+          );
         }
         else {
           // File is archived.
@@ -290,7 +297,14 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
           $row_del = l('', './phenotypes/raw/backup/' . $project_id .'/delete/' . $f->file_id,
                        array('attributes' => array('class' => 'link-delete', 'title' => 'Delete file')));
 
-          array_push($arr_row_archive, array($row_file, '#' . $f->version, $row_notes, $row_validation, $row_download, $row_del));
+          $arr_row_archive[] = array(
+            $row_file,         // Filename.
+            '#' . $f->version, // File version.
+            $row_notes,        // Notes, comments to file.
+            $row_validation,   // Validation result performed to file.
+            $row_download,     // Link to download file.
+            $row_del           // Link to delete (physically delete) file.
+          );
         }
       }
     }
@@ -323,13 +337,15 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     // Create table elements.
     // Rows.
     if ($my_files->rowCount() > 0) {
-      $files = $my_files->fetchAll();
-
-      foreach($files as $f) {
+      foreach($my_files as $f) {
         $row_view = l('View', './phenotypes/raw/backup/' . $f->project_id);
         $row_prj_name = l($arr_my_project[$f->project_id], 'phenotypes/raw/backup/' . $f->project_id);
 
-        array_push($arr_rows, array($row_prj_name, $f->filecount, $row_view));
+        $arr_rows[] = array(
+          $row_prj_name,
+          $f->filecount,
+          $row_view
+        );
       }
     }
     else {

@@ -410,8 +410,7 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
     }
 
     // Assign each row with a bin.
-    $m = db_query($sql, $args)
-      ->fetchAll();
+    $m = db_query($sql, $args);
 
     foreach($m as $stock) {
       $stock_avg = (int)$stock->average;
@@ -426,7 +425,10 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       }
 
       $title = ($category_val == 'location') ? $stock->location : $stock->planting_year;
-      $arr_data_json[] = ['title' => $title, 'bin' => $stock_bin];
+      $arr_data_json[] = array(
+        'title' => $title,
+        'bin' => $stock_bin
+      );
     }
   }
   // TEXT DATA TYPE
@@ -473,7 +475,10 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       }
 
       $title = ($category_val == 'location') ? $e->location : $e->planting_year;
-      $arr_data_json[] = ['title' => $title, 'bin' => $bin];
+      $arr_data_json[] = array(
+        'title' => $title,
+        'bin' => $bin
+      );
     }
   }
   // SCALE DATA TYPE
@@ -524,13 +529,16 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       foreach($d as $e) {
 
         $title = ($category_val == 'location') ? $e->location : $e->planting_year;
-        $arr_data_json[] = ['title' => $title, 'bin' => $e->v];
+        $arr_data_json[] = array(
+          'title' => $title,
+          'bin' => $e->v
+        );
       }
     }
   }
 
   // Return bin and data.
-  return ['bin' => $arr_bin_json, 'data' => $arr_data_json];
+  return array('bin' => $arr_bin_json, 'data' => $arr_data_json);
 }
 
 

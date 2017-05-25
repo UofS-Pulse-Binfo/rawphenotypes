@@ -850,17 +850,29 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       $class = ($header_asset['type'] == $trait_type['type1']) ? 'essential-trait' : 'non-essentialtrait';
 
       if ($header_asset['type'] == $trait_type['type4']) {
+        // Row where trait is plantproperty.
         $header_cell = '<h4>' . $header_asset['name'] . '</h4>';
         $definition_cell = $header_asset['name'];
       }
       else {
+        // All traits.
         $header_cell = '<h4>' . $header_asset['name'] . '</h4><p class="r-ver">' . rawpheno_admin_mark_empty($header_asset['r_version']) . '</p>';
         $definition_cell = '<p><strong>DEFINITION:</strong><br /> ' . @rawpheno_admin_mark_empty($header_asset['definition']) .  '</p>' .
                            '<p><strong>COLLECTION METHOD:</strong><br />' . @rawpheno_admin_mark_empty($header_asset['method']) . '</p>';
       }
 
-      array_push($arr_rows, array(($i+1), $header_cell, $definition_cell,
-        array('data' => strtoupper($header_asset['type']), 'class' => array($class)), $edit_cell, $del_cell));
+      // Register a row.
+      $arr_rows[] = array(
+        ($i+1),           // Row counter.
+        $header_cell,     // Trait/header name.
+        $definition_cell, // Trait/header definition.
+        array(
+          'data' => strtoupper($header_asset['type']),
+          'class' => array($class)
+        ),                // Add class to cell to highlight text when trait is essential trait.
+        $edit_cell,       // A link to edit a trait.
+        $del_cell         // A link to delete a trait.
+      );
 
       $i++;
     }
@@ -940,7 +952,14 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $u->project_user_id . '/user/delete';
       $del_cell = l('Remove', $del_link, array('attributes' => array('class' => 'link-del')));
 
-      array_push($arr_rows, array(($i+1), '<div class="tag-name">' . $u->name . '</div>', $u->mail, '<em>' . format_date($u->login) . '</em>', $del_cell));
+      // Create a row of user with other relevant user info.
+      $arr_rows[] = array(
+        ($i+1),                                         // Row number.
+        '<div class="tag-name">' . $u->name . '</div>', // Name of user.
+        $u->mail,                                       // Email address.
+        '<em>' . format_date($u->login) . '</em>',      // Date of last login.
+        $del_cell                                       // Link to remove user from a project.
+      );
 
       // Create user sub-table listing files per user account.
       $args_F = array(':project_user_id' => $u->project_user_id);
@@ -952,8 +971,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
       $arr_rows_F = array();
       if ($my_files_count > 0) {
-        $my_files = $result_F->fetchAll();
-        foreach($my_files as $f) {
+        foreach($result_F as $f) {
           // File.
           $cell_file = l($f->filename . '(' . format_size($f->filesize) . ')', file_create_url($f->uri),
             array('attributes' => array('target' => '_blank'))
@@ -980,9 +998,14 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
 
           $cell_validation = $alert . '<div class="container-cell" id="vr-file-' . $f->file_id . '" title="Click to expand or collapse">'. $vr_tmp .'</div>';
 
-
-          // Create row.
-          array_push($arr_rows_F, array($cell_file, '#' . $f->version, $cell_is_archive, $cell_notes, $cell_validation));
+          // Create row showing backed up file with file description.
+          $arr_rows_F[] = array(
+            $cell_file,        // Filename.
+            '#' . $f->version, // File version.
+            $cell_is_archive,  // Indicate if file is archived or not.
+            $cell_notes,       // Notes, comments to file.
+            $cell_validation   // Validation result performed to the file.
+          );
         }
       }
 
@@ -1005,7 +1028,8 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
           <div class="container-my-folder">%s</div>
         </div>', $acc_status, format_date($u->created), $my_files_count, $link_show_folder, $file_table);
 
-      array_push($arr_rows, array(
+      // Create markup (container for table of files) to show user backed up files.
+      $arr_rows[] = array(
         'data' => array(
           array(
             'data' => $markup,
@@ -1013,7 +1037,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
             'class' => 'row-user-my-folder',
           )
         )
-      ));
+      );
 
       $i++;
     }
@@ -1517,7 +1541,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   $reps = rawpheno_function_trait_reps();
   $reps_val = array();
   foreach($reps as $r) {
-    array_push($reps_val, $r . ';');
+    $reps_val[] = $r . ';';
   }
   $trait_rep = array('' => 'None') + array_combine($reps_val, $reps);
 

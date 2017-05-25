@@ -32,15 +32,17 @@ div.table-data {
 /* Tables rows */
 div.container-table-data tr.even,
 div.container-table-data tr.odd {
-  border-left-color: #FFFFFF !important;
+  border-left-color: #FFFFFF;
 }
 
-tr:hover {
-  background-color: #EAEAEA !important;
+div.container-table-data tr.even:hover,
+div.container-table-data tr.odd:hover {
+  background-color: #EAEAEA;
 }
 
-td {
-  vertical-align: top !important;
+div.container-table-data td,
+div.container-table-data td {
+  vertical-align: top;
 }
 
 /* TABLE: Project column headers and project users tables */
@@ -48,7 +50,7 @@ td {
 #tbl-existing-headers,
 #tbl-project-headers,
 #tbl-project-users {
-  border: none !important;
+  border: none;
   margin-bottom: 0;
 }
 
@@ -62,11 +64,11 @@ td {
 /* Style table of existing column header */
 #tbl-existing-headers th:nth-child(2),
 #tbl-project-user-accounts th:nth-child(2) {
-  width: 100px !important;
+  width: 100px;
 }
 
 #tbl-project-headers th:nth-child(2) {
-  width: 20% !important;
+  width: 20%;
 }
 
 /* Make the first column  smaller in tables with tabs */
@@ -179,12 +181,12 @@ p.r-ver {
 }
 
 td p {
-  margin: 0 !important;
+  margin: 0;
 }
 
 /* Fieldset wrapper */
 div.fieldset-wrapper {
-  padding: 0 50px !important;
+  padding: 0 50px;
 }
 
 h1.admin-page-title {
@@ -197,15 +199,15 @@ h1.admin-page-title {
   box-shadow:         0 5px 7px -9px #333333;
 }
 
-h4 {
-  padding: 0 !important;
-  margin: 0 !important;
+td h4 {
+  padding: 0;
+  margin: 0;
 }
 
 /* alert when failed found */
 span.alert-error {
   background: url('../../theme/img/message-16-warning.png') no-repeat top left;
-  padding: 0 7px 0 20px !important;
+  padding: 0 7px 0 20px;
 }
 
 
@@ -250,7 +252,7 @@ span.alert-error {
 }
 
 #tbl-my-files tr:hover {
-  background-color: #FFFFFF !important;
+  background-color: #FFFFFF;
 }
 
 .div-my-folder {
@@ -259,7 +261,7 @@ span.alert-error {
 }
 
 .tbl-my-folder td {
-  background-color: #FFFFFF !important;
+  background-color: #FFFFFF;
 }
 
 /* File validation result cell */

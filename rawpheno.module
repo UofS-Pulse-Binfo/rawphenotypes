@@ -252,114 +252,170 @@ function rawpheno_permission() {
 
 
 /**
- * Implements hook_preprocess().
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Rawdata Page.
  */
-function rawpheno_preprocess(&$variables, $hook) {
-  if (in_array($hook, array('rawpheno_rawdata', 'rawpheno_instructions', 'rawpheno_upload_form_master', 'rawpheno_backup', 'rawpheno_download'))) {
-    // Colour scheme selected by the user from the admin/configuration.
-    $colour = variable_get('rawpheno_colour_scheme');
+function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-    // This colour will fill background of header and top right button, and border of content area.
-    $variables['theme_colour'] = (empty($colour)) ? '#304356' : $colour;
+  // Cross-link rawdata page to download page.
+  $variables['rel_url'] = url('phenotypes/raw/download');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_rawdata_title');
+  // D3 version
+  $ver = rawpheno_function_d3_version();
+  $ver = explode('.', $ver);
+  // Version
+  $variables['d3ver'] = (isset($ver[0])) ? trim($ver[0]) : 0;
+  // Release
+  $variables['d3rel'] = (isset($ver[1])) ? trim($ver[1]) : 0;
 
-    // Projects assigned to user.
-    $log_user = $GLOBALS['user']->uid;
-    $my_projects = rawpheno_function_user_project($log_user);
-    $variables['my_projects'] = $my_projects;
+  // Does D3 exists
+  $variables['d3_in'] = libraries_load('d3js');
+}
 
-    // Does the module contain project?
-    $has_prj = rawpheno_function_project();
-    $variables['has_prj'] = $has_prj;
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Instuctions Page.
+ */
+function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-    // If it has project, does it have data?
-    $has_data = rawpheno_function_data();
-    $variables['has_data'] = $has_data;
+  // Cross-link instructions page to upload page.
+  $variables['rel_url'] = url('phenotypes/raw/upload');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_instructions_title');
 
+  // Path to module used to embed image in appendix tab.
+  $variables['path'] = drupal_get_path('module', 'rawpheno');
 
-    if ($hook == 'rawpheno_rawdata') {
-      // RAWDATA PAGE.
-      // Cross-link rawdata page to download page.
-      $variables['rel_url'] = url('phenotypes/raw/download');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_rawdata_title');
-      // D3 version
-      $ver = rawpheno_function_d3_version();
-      $ver = explode('.', $ver);
-      // Version
-      $variables['d3ver'] = (isset($ver[0])) ? trim($ver[0]) : 0;
-      // Release
-      $variables['d3rel'] = (isset($ver[1])) ? trim($ver[1]) : 0;
+  // Spreadsheet writer is in?
+  $is_in = libraries_get_path('PHP_XLSXWriter_plus');
+  $variables['writer_in'] = $is_in;
+}
 
-      // Does D3 exists
-      $variables['d3_in'] = libraries_load('d3js');
-    }
-    elseif ($hook == 'rawpheno_instructions') {
-      // INSTRUCTIONS PAGE.
-      // Cross-link instructions page to upload page.
-      $variables['rel_url'] = url('phenotypes/raw/upload');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_instructions_title');
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Upload Page.
+ */
+function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
 
-      // Path to module used to embed image in appendix tab.
-      $variables['path'] = drupal_get_path('module', 'rawpheno');
+  // Directory permission used in upload and backup.
+  $pub_dir = 'public://';
 
-      // Spreadsheet writer is in?
-      $is_in = libraries_get_path('PHP_XLSXWriter_plus');
-      $variables['writer_in'] = $is_in;
-    }
-    elseif ($hook == 'rawpheno_upload_form_master' || $hook == 'rawpheno_backup') {
-      // Directory permission used in upload and backup.
-      $pub_dir = 'public://';
+  $perm = file_prepare_directory($pub_dir);
+  $variables['dir_permission'] = $perm;
 
-      $perm = file_prepare_directory($pub_dir);
-      $variables['dir_permission'] = $perm;
+  // Does drag and drop module exist?
+  $is_in = module_exists('dragndrop_upload_element');
+  $variables['dnd_in'] = $is_in;
 
-      // Does drag and drop module exist?
-      $is_in = module_exists('dragndrop_upload_element');
-      $variables['dnd_in'] = $is_in;
+  // Does spreadsheet reader exist?
+  $is_in = libraries_get_path('spreadsheet-reader');
+  $variables['reader_in'] = $is_in;
 
-      // Does spreadsheet reader exist?
-      $is_in = libraries_get_path('spreadsheet-reader');
-      $variables['reader_in'] = $is_in;
+  // Cross-link upload page to instructions page.
+  $variables['rel_url'] = url('phenotypes/raw/instructions');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_upload_title');
 
-      if ($hook == 'rawpheno_upload_form_master') {
-        // UPLOAD PAGE.
-        // Cross-link upload page to instructions page.
-        $variables['rel_url'] = url('phenotypes/raw/instructions');
-        // Page Title
-        $variables['page_title'] = variable_get('rawpheno_upload_title');
+  // Needs url in help window and links in stage 3.
+  $variables['page_url'] =
+    array(
+      'rawpheno_rawdata'      => url('phenotypes/raw'),
+      'rawpheno_download'     => url('phenotypes/raw/download'),
+      'rawpheno_instructions' => url('phenotypes/raw/instructions'),
+      'rawpheno_upload'       => url('phenotypes/raw/upload'),
+      'rawpheno_backup'       => url('phenotypes/raw/backup')
+    );
 
-        // Needs url in help window and links in stage 3.
-        $variables['page_url'] =
-          array(
-            'rawpheno_rawdata'      => url('phenotypes/raw'),
-            'rawpheno_download'     => url('phenotypes/raw/download'),
-            'rawpheno_instructions' => url('phenotypes/raw/instructions'),
-            'rawpheno_upload'       => url('phenotypes/raw/upload'),
-            'rawpheno_backup'       => url('phenotypes/raw/backup')
-          );
+  // Stages in upload page.
+  $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
+                                      'review' => 'Describe New Trait',
+                                      'save'   => 'Save Spreadsheet');
+}
 
-        // Stages in upload page.
-        $variables['upload_stages'] = array('check'  => 'Validate Spreadsheet',
-                                            'review' => 'Describe New Trait',
-                                            'save'   => 'Save Spreadsheet');
-      }
-      else {
-        // BACKUP PAGE.
-        // Cross-link backup page to instructions page.
-        $variables['rel_url'] = url('phenotypes/raw/instructions');
-        // Page Title
-        $variables['page_title'] = variable_get('rawpheno_backup_title');
-      }
-    }
-    elseif ($hook == 'rawpheno_download') {
-      // DOWNLOAD PAGE.
-      // Cross-link download page to download page.
-      $variables['rel_url'] = url('phenotypes/raw');
-      // Page Title
-      $variables['page_title'] = variable_get('rawpheno_download_title');
-    }
-  }
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Backup Page.
+ */
+function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+
+  // Directory permission used in upload and backup.
+  $pub_dir = 'public://';
+
+  $perm = file_prepare_directory($pub_dir);
+  $variables['dir_permission'] = $perm;
+
+  // Does drag and drop module exist?
+  $is_in = module_exists('dragndrop_upload_element');
+  $variables['dnd_in'] = $is_in;
+
+  // Does spreadsheet reader exist?
+  $is_in = libraries_get_path('spreadsheet-reader');
+  $variables['reader_in'] = $is_in;
+
+  // Cross-link backup page to instructions page.
+  $variables['rel_url'] = url('phenotypes/raw/instructions');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_backup_title');
+}
+
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Download Page.
+ */
+function rawpheno_preprocess_rawpheno_download(&$variables, $hook) {
+  // Colour scheme, project check and data check.
+  $rawpheno_load = rawpheno_module_defaults();
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+
+  // Cross-link download page to download page.
+  $variables['rel_url'] = url('phenotypes/raw');
+  // Page Title
+  $variables['page_title'] = variable_get('rawpheno_download_title');
+}
+
+/**
+ * Helper function: preforms module page load check and gets module colour scheme
+ * used in initiating variables in hook_preprocess_HOOK() implementation above.
+ *
+ * @return array
+ *   An array containing the default colour scheme, projects appointed to a user,
+ *   check if module has an active project as well as if module has data.
+ */
+function rawpheno_module_defaults() {
+  // Colour scheme selected by the user from the admin/configuration.
+  $colour = variable_get('rawpheno_colour_scheme');
+  // This colour will fill background of header and top right button, and border of content area.
+  $colour = (empty($colour)) ? '#304356' : $colour;
+
+  // Projects assigned to user.
+  $log_user = $GLOBALS['user']->uid;
+  $my_projects = rawpheno_function_user_project($log_user);
+
+  // Does the module contain project?
+  $has_project = rawpheno_function_project();
+
+  // If it has project, does it have data?
+  $has_data = rawpheno_function_data();
+
+  return array(
+    $colour,      // Colour scheme.
+    $my_projects, // User appointed project.
+    $has_project, // Module has at least a project.
+    $has_data,    // Module has data.
+  );
 }
 
 
@@ -649,13 +705,13 @@ function rawpheno_instructions_autocomplete_search($project_id, $key = '') {
 function rawpheno_rawdata_summary_json() {
   // Ensure project id is valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
-  if (!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) {
+  if (!isset($_GET['project_id']) OR empty($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) {
     // No data.
     return 0;
   }
   else {
     // Get data for this project.
-    $project_id = (int)trim(strip_tags($_GET['p']));
+    $project_id = (int)trim(strip_tags($_GET['project_id']));
 
     // Get trait id of planting data.
     $planting_date = rawpheno_get_trait_id('Planting Date (date)');
@@ -805,15 +861,15 @@ function rawpheno_rawdata_summary_json() {
  *   A JSON containing the location and year for a given trait.
  */
 function rawpheno_rawdata_trait_category_json() {
-  if ((!isset($_GET['p']) OR strlen($_GET['p']) >= 10) OR
-      (!isset($_GET['t']) OR strlen($_GET['t']) >= 10)) {
+  if ((!isset($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) OR
+      (!isset($_GET['trait_id']) OR strlen($_GET['trait_id']) >= 10)) {
 
     // No data.
     return 0;
   }
   else {
-    $project_id = trim(strip_tags($_GET['p']));
-    $trait_id = trim(strip_tags($_GET['t']));
+    $project_id = trim(strip_tags($_GET['project_id']));
+    $trait_id = trim(strip_tags($_GET['trait_id']));
 
     // Location and planting_year (as Year).
     $category = array('location', 'planting_date');
@@ -874,17 +930,22 @@ function rawpheno_rawdata_trait_json() {
   // Ensure project id and trait id are valid.
   // Must exists, must not be empty and must not be more that 10 chars/digits.
   // 10 Digits more will throw a PSQL ERROR.
-  if ((!isset($_GET['p']) OR empty($_GET['p']) OR strlen($_GET['p']) >= 10) OR
-      (!isset($_GET['t']) OR empty($_GET['t']) OR strlen($_GET['t']) >= 10) OR
-      (!isset($_GET['o']) OR empty($_GET['o']) OR strlen($_GET['o']) >= 20) OR
-      (!isset($_GET['c']) OR empty($_GET['c']) OR !in_array($_GET['c'], $arr_valid_category))) {
+
+  // Project Id : project id
+  // Trait Id   : trait id
+  // Option     : year or location values
+  // Category   : year or location
+  if ((!isset($_GET['project_id']) OR empty($_GET['project_id']) OR strlen($_GET['project_id']) >= 10) OR
+      (!isset($_GET['trait_id']) OR empty($_GET['trait_id']) OR strlen($_GET['trait_id']) >= 10) OR
+      (!isset($_GET['option']) OR empty($_GET['option']) OR strlen($_GET['option']) >= 20) OR
+      (!isset($_GET['category']) OR empty($_GET['category']) OR !in_array($_GET['category'], $arr_valid_category))) {
 
     // No data.
     return 0;
   }
   else {
-    $project_id = (int)trim(strip_tags($_GET['p']));
-    $trait_id   = (int)trim(strip_tags($_GET['t']));
+    $project_id = (int)trim(strip_tags($_GET['project_id']));
+    $trait_id   = (int)trim(strip_tags($_GET['trait_id']));
 
     // Get cvterm.
     $cvterm = tripal_get_cvterm(array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types')));
@@ -916,10 +977,10 @@ function rawpheno_rawdata_trait_json() {
 
     foreach($d as $m) {
       $dtype = (is_numeric($m->data)) ? 'int' : 'txt';
-      array_push($arr_data_type, $dtype);
+      $arr_data_type[] = $dtype;
 
-      array_push($arr_data_length, $m->data_length);
-      array_push($arr_data, $m->data);
+      $arr_data_length[] = $m->data_length;
+      $arr_data[] = $m->data;
     }
 
     // Get the overall data type.
@@ -930,8 +991,8 @@ function rawpheno_rawdata_trait_json() {
       return 0;
     }
     else {
-      $category = trim(strip_tags($_GET['c']));
-      $option   = trim(strip_tags($_GET['o']));
+      $category = trim(strip_tags($_GET['category']));
+      $option   = trim(strip_tags($_GET['option']));
 
       // Pass the values in categorize barchart.
       $arr_category = array(
@@ -1166,7 +1227,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     $n = chado_query($sql, array(':cvterm' => $nt, ':project_id' => $project));
 
     if ($n->rowCount() == 1) {
-      array_push($traits, $n->fetchField());
+      $traits[] = $n->fetchField();
     }
   }
 
@@ -1193,8 +1254,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
           WHERE t2.cvterm_id IN (:traits) AND t1.plant_id IN" . $sub_sql . "
           GROUP BY t2.cvterm_id, t2.definition";
 
-  $result = db_query($sql, $arr_q_string)
-    ->fetchAll();
+  $result = db_query($sql, $arr_q_string);
 
   // Array to hold column headers.
   //Add Name/Stock name column headers array.
@@ -1270,21 +1330,26 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     // Total lines;
     $total_lines = count($rows);
-    drush_print('Total Lines: ' . $total_lines);
+    // INFO:
+    // drush_print('Total Lines: ' . $total_lines);
 
     // Now we want to process each row to add entries for missing data.
     // We will do this by looping through the header for each row and if there isn't
     // already data set for that cell then we will add missing data.
     // Note: We will save the data to the file as we go.
     $cur_line = 0;
+    $past_percent = '';
+    drush_print('0% complete...');
+
     foreach ($rows as $row) {
-      $cur_line++;
-      $percent = $cur_line/$total_lines * 100;
-      if ($percent%5 == 0) {
-        drush_print(round($percent,2).'% Complete.');
-        db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
-          array(':percent' => round($percent), ':id' => $job_id));
+      // To file... to screen...
+      $percent = round(($cur_line / $total_lines) * 100);
+      if ($percent % 10 == 0 && $past_percent != $percent) {
+        drush_print($percent . '% complete...');
       }
+
+      db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
+        array(':percent' => $percent, ':id' => $job_id));
 
       // First, add missing data for each entry in the header that is not in the row.
       foreach ($header as $id => $title) {
@@ -1296,7 +1361,9 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
           if (count($l) >= 2) {
             $row[$id] = str_replace('<m_value>',',', $row[$id]);
-            drush_print('Multiple values found: Line #' . ($cur_line + 1) . ' Col: ' . $title);
+            // INFO:
+            // Multiple values detected.
+            // drush_print('Multiple values found: Line #' . ($cur_line + 1) . ' Col: ' . $title);
           }
         }
       }
@@ -1306,9 +1373,18 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
       // Write this row to the file as CSV.
       fputcsv($FILE, $row);
+
+      $cur_line++;
+      $past_percent = $percent;
     }
 
-     // Finally, close the file.
-     fclose($FILE);
+    // Finally, close the file.
+    fclose($FILE);
+
+    if ($percent != 100) {
+      drush_print('100% complete...');
+    }
+
+    drush_print('Download complete');
   }
 }

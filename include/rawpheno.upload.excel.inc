@@ -42,8 +42,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
   $xls_file = drupal_realpath($file->uri);
 
+  // INFO:
   // Keep a record of which file we are loading in the logs.
-  print "\nXLSX File: " . $xls_file . "\n";
+  // print "\nXLSX File: " . $xls_file . "\n";
 
   // Add the libraries needed to parse excel files.
   rawpheno_add_parsing_libraries();
@@ -77,7 +78,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   try {
 
     // Read each row.
-    print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
+    // INFO:
+    // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
     // Each row in the spreadsheet.
@@ -87,11 +89,12 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // in file rawpheno.module function: rawpheno_upload_job_progress_json().
       // Echo to terminal.
 
-      // Add 1 to account for the header row.
-      print $i . " of " . ($row_count + 1) . ' - ' . $percent . '%'."\n";
+      $percent = round(($i / $row_count) * 100);
+      if ($percent % 10 == 0) {
+        print $percent . '% complete...' . "\n";
+      }
 
       // To file.
-      $percent = round(($i / $row_count) * 100);
       file_unmanaged_save_data($percent, $filename, FILE_EXISTS_REPLACE);
 
       // HEADER!
@@ -153,9 +156,12 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           $arr_plot_cols = rawpheno_function_headers('plot');
 
           // Construct query string.
-          // In order: stock_id, plot, rep, location, year (extract year in planting date)
+          // String : stock_id - plot - rep - location - year
+          //        eg. 147-5-2-Saskatoon-2015
           $plot = $stock_id;
 
+          // Given a row, construct the search string (format) above and use it to search if
+          // the such combination matched any record in the database.
           foreach($arr_plot_cols as $plot_col) {
             $plot_col = rawpheno_function_delformat($plot_col);
 
@@ -172,7 +178,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             $plot .= '-' . $cell_val;
           }
 
-          // Search.
+          // Search the query string.
           $p_id = rawpheno_function_plot_exists($plot, $project_id);
         }
 
@@ -180,7 +186,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         if ($p_id) {
           // Plot found - re-use the plant_id.
           $pheno_plantid = $p_id;
-          print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ';
+          // INFO:
+          // print 'FOUND PLOT: ' . $plot . ' [re-using plot id #' . $pheno_plantid . '] ~ ';
         }
         else {
           // Plot not found - insert as new row.
@@ -194,7 +201,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
                            'plant_id' => $pheno_plantid))
             ->execute();
 
-          print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ';
+          // INFO:
+          // print 'NEW STOCK: #' . $stock_id . ' [adding plot id #' . $pheno_plantid . '] ~ ';
         }
       }
       else {
@@ -404,7 +412,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   }
 
   unset($TRANSACTION); //Commit
-  print "Complete.\n";
+  print "Upload complete.\n";
 
   print "\nUpdating the materialized view summarizing phenotypic data.\n";
   $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');
@@ -834,7 +842,7 @@ function rawpheno_indicate_new_headers($file, $project_id) {
       // Determine if column header exists in the expected column headers.
       if (!in_array($temp_value, $expected_headers) && !empty($value)) {
         // Not in expected column headers, save it as new header.
-        array_push($new_headers, $value);
+        $new_headers[] = $value;
       }
     }
   }
@@ -1017,11 +1025,11 @@ function rawpheno_project_essential_traits($project_id) {
 
     foreach($trait as $t) {
       $m = rawpheno_get_trait_name($t->cvterm);
-      array_push($arr_essential_traits, $m);
+      $arr_essential_traits[] = $m;
     }
 
     // Add Name column header to the traits returned.
-    array_push($arr_essential_traits, 'Name');
+    $arr_essential_traits[] = 'Name';
 
     return $arr_essential_traits;
   }
@@ -1057,7 +1065,7 @@ function rawpheno_project_plantproperty_traits($project_id) {
     foreach($trait as $t) {
       // Remove the trait rep and unit from the trait.
       $m = rawpheno_get_trait_name($t->cvterm);
-      array_push($arr_plantproperty_traits, $m);
+      $arr_plantproperty_traits[] = $m;
     }
 
     return $arr_plantproperty_traits;
@@ -1087,11 +1095,11 @@ function rawpheno_project_traits($project_id) {
     $trait = chado_query($sql, $args);
 
     foreach($trait as $t) {
-      array_push($arr_trait, $t->cvterm);
+      $arr_trait[] = $t->cvterm;
     }
 
     // Add Name column header to the traits returned.
-    array_push($arr_trait, 'Name');
+    $arr_trait[] = 'Name';
 
     return $arr_trait;
   }

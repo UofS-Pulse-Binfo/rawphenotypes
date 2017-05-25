@@ -10,3 +10,11 @@ Thumbs.db
 .Spotlight-V100
 .Trashes
 
+.gitignore
+theme/css/.fuse_hidden000001c700000001
+
+.fuse
+
+
+.fuse_hidden0000008f00000001
+.fuse*

@@ -177,7 +177,9 @@ function rawpheno_upload_form_stage_check($form, &$form_state) {
     '#upload_event' => 'auto',
     // NOTE: Accept the listed file extension and let the spreadsheet reader tell if file is valid to generate an an error message.
     //       No silent treatment.
-    '#upload_validators' => array('file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp csv')),
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('xlsx xls jpg jpeg gif png txt doc pdf ppt pps odt ods odp csv'),
+    ),
     '#droppable_area_text' => t('Drag your Microsoft Excel Spreadsheet file here'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => 'Validating your spreadsheet file. Please wait...',
@@ -358,7 +360,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
 
         // Clean up the current header.
         $name = rawpheno_function_delformat($k);
-        array_push($arr_checked_header, $name);
+        $arr_checked_header[] = $name;
 
         // Test if the header has a unit component and set the variable accordingly.
         $has_unit = (strpbrk($name, '()')) ? 'yes' : 'no';
@@ -789,18 +791,22 @@ function rawpheno_file_insert($file) {
   }
 }
 
+
 /**
- * Implements hook_file_validate().
+ * Upload validators callback:
  * Basic compliance test to spreadsheet submitted.
  *
  * @param $file
  *   Drupal file opbject.
  */
 function rawpheno_file_validate($file) {
-  // Set processing time to 20 mins.
-  ini_set('max_execution_time', 1200);
+  // 10 mins (60 * 10).
+  $max_time = 600;
 
   if ($file->source == 'dnd') {
+    // Set processing time to 10 mins.
+    ini_set('max_execution_time', $max_time);
+
     // Upload data page.
 
     // Project id number the spreadsheet and column headers are specific to.
@@ -841,6 +847,9 @@ function rawpheno_file_validate($file) {
     }
   }
   elseif ($file->source == 'bdnd') {
+    // Set processing time to 10 mins.
+    ini_set('max_execution_time', $max_time);
+
     // Backup file page.
 
     // Array to hold the validation result.
