@@ -283,7 +283,7 @@ function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
 function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
-  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data'], $variables['has_genus']) = $rawpheno_load;
 
   // Cross-link instructions page to upload page.
   $variables['rel_url'] = url('phenotypes/raw/upload');
@@ -305,7 +305,7 @@ function rawpheno_preprocess_rawpheno_instructions(&$variables, $hook) {
 function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
-  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data'], $variables['has_genus']) = $rawpheno_load;
 
   // Directory permission used in upload and backup.
   $pub_dir = 'public://';
@@ -349,7 +349,7 @@ function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
 function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
-  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data'], $variables['has_genus']) = $rawpheno_load;
 
   // Directory permission used in upload and backup.
   $pub_dir = 'public://';
@@ -378,7 +378,7 @@ function rawpheno_preprocess_rawpheno_backup(&$variables, $hook) {
 function rawpheno_preprocess_rawpheno_download(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
-  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data'], $variables['has_genus']) = $rawpheno_load;
 
   // Cross-link download page to download page.
   $variables['rel_url'] = url('phenotypes/raw');
@@ -404,6 +404,21 @@ function rawpheno_module_defaults() {
   $log_user = $GLOBALS['user']->uid;
   $my_projects = rawpheno_function_user_project($log_user);
 
+  // If project has genus defined.
+  $my_project_ids = array_keys($my_projects);
+  $my_project_genus = array();
+
+  foreach($my_project_ids as $p_id) {
+    $genus = rawpheno_function_project_organism($p_id);
+
+    if ($genus) {
+      $my_project_genus[] = $genus;
+    }
+  }
+
+  // Each project must have a genus, see that is true.
+  $has_genus = (count($my_project_ids) == count($my_project_genus)) ? 1 : 0;
+
   // Does the module contain project?
   $has_project = rawpheno_function_project();
 
@@ -415,6 +430,7 @@ function rawpheno_module_defaults() {
     $my_projects, // User appointed project.
     $has_project, // Module has at least a project.
     $has_data,    // Module has data.
+    $has_genus,   // All project assigned to user should have genus defined.
   );
 }
 
