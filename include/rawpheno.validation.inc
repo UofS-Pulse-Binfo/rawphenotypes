@@ -639,14 +639,19 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   0 = no matching stock.
  *   9 = too many matching stocks (not unique).
  */
-function validator_germplasm_present_validate_cell($value, $context, &$storage) {
+function validator_germplasm_present_validate_cell($value, $context, &$storage, $project_genus_organism_ids) {
 
   // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
   if (empty($value)) {
     return TRUE;
   }
 
-  $stocks = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $value))->fetchAll();
+  // Limit the stocks for comparison/validation to just the organism defined in the project.
+  $sql = "SELECT stock_id FROM {stock} WHERE name = :name AND organism_id IN (:project_organism_ids)";
+  $args = array(':name' => $value, ':project_organism_ids' => $project_genus_organism_ids);
+
+  $stocks = chado_query($sql, $args)
+    ->fetchAll();
 
   if (sizeof($stocks) == 1) {
     return TRUE;

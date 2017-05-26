@@ -515,6 +515,10 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // Change to the correct spreadsheet.
   rawpheno_change_sheet($xls_obj, 'measurements');
 
+  // Limit the stocks for comparison/validation to just the organism that matched the project genus.
+  $project_prop = rawpheno_function_project_organism($project_id, 'full');
+  $project_genus_organism_ids = array_keys($project_prop['organism']);
+
   // This increment variable $i is required since xls and xlsx
   // parsers assign array index differently.
   // XLS starts at 1, while XLSX at 0;
@@ -616,7 +620,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
                     $context['plot_req'] = $plot_req;
                   }
 
-                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage, $project_genus_organism_ids);
 
                   // Note: we use tmp storage b/c passing $storage[$validator_name] directly
                   // doesn't seem to work.

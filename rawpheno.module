@@ -258,7 +258,7 @@ function rawpheno_permission() {
 function rawpheno_preprocess_rawpheno_rawdata(&$variables, $hook) {
   // Colour scheme, project check and data check.
   $rawpheno_load = rawpheno_module_defaults();
-  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data']) = $rawpheno_load;
+  list($variables['theme_colour'], $variables['my_projects'], $variables['has_prj'], $variables['has_data'], $variables['has_genus']) = $rawpheno_load;
 
   // Cross-link rawdata page to download page.
   $variables['rel_url'] = url('phenotypes/raw/download');

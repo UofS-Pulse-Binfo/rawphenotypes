@@ -688,10 +688,76 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   $project = chado_generate_var('project', array('project_id' => $project_id));
   $markup .= '<h2>PROJECT: ' . $project->name . '</h2>';
 
+  // Fetch the genus of this project.
+  $project_genus = rawpheno_function_project_organism($project_id);
+
+  // When project has no genus set, warn admin.
+  if (!$project_genus) {
+    $project_genus = '---';
+    $warning = '&nbsp;&nbsp;<img src="../../../../../../../misc/message-16-warning.png" title="Project genus not set." alt="Project genus not set." /> Not set';
+  }
+  else {
+    $warning = '';
+  }
+
+  $markup .= '<div class="tag-name">GENUS: ' . $project_genus . '</div>' . $warning;
+
   $form['project_info'] = array(
     '#type' => 'markup',
     '#markup' => $markup,
   );
+
+  // Check if project has data and so, do not allow admin to change genus.
+  // Otherwise, it's safe, allow admin to change.
+  $project_has_data = rawpheno_function_data($project_id);
+
+  if ($project_genus == '---' || !$project_has_data) {
+    // Fetch genus.
+    // NOTE: saving genus instead of the organism.
+    $sql = "SELECT genus, UPPER(genus) FROM {organism} GROUP BY genus ORDER BY genus";
+    $g = chado_query($sql);
+
+    if ($g->rowCount() > 0) {
+      $genus = $g->fetchAllKeyed();
+      // When project has organism set, remove it from options.
+      if ($project_genus) {
+        unset($genus[$project_genus]);
+      }
+
+      $options = array('' => '---') + $genus;
+
+      // Not set, show the form.
+      $collapse = (!$project_genus) ? FALSE : TRUE;
+
+      $form['fieldset_update_genus'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Update Genus'),
+        '#collapsed' => $collapse,
+        '#collapsible' => TRUE,
+      );
+
+      // List genus - select box to select genus the project is collecting data for/to.
+      $form['fieldset_update_genus']['sel_genus'] = array(
+        '#type' => 'select',
+        '#title' => t('Project is collecting data for genus:'),
+        '#options' => $options,
+        '#default_value' => array_keys($options)[0],
+        '#id' => 'admin-sel-genus'
+      );
+
+      $form['fieldset_update_genus']['save_genus'] = array(
+        '#type' => 'submit',
+        '#value' => t('Update genus'),
+        '#validate' => array('rawpheno_admin_validate_update_genus'),
+        '#submit' => array('rawpheno_admin_submit_update_genus'),
+        '#limit_validation_errors' => array(
+          array('sel_genus')
+        )
+      );
+
+      $form['#project_id']  = $project_id;
+    }
+  }
 
   // Arguments to all SQL queries below.
   $args = array(':project_id' => $project_id);
@@ -1898,6 +1964,72 @@ function rawpheno_admin_user_assets($asset_id) {
   $arr_project_assets['project_data_count'] = $data_count;
 
   return $arr_project_assets;
+}
+
+
+/**
+ * Function callback: Update project genus.
+ */
+function rawpheno_admin_submit_update_genus($form, $form_state) {
+  $project_id = $form['#project_id'];
+
+  // Form field values.
+  $genus = $form_state['values']['sel_genus'];
+  // Ensure that only the first letter is capitalized.
+  $genus = ucfirst($genus);
+
+  // Get genus/organism controlled vocabulary term.
+  // Term.
+  $term = rawpheno_function_organism_cv();
+  $genus_cvterm = tripal_get_cvterm($term);
+
+  // Locate project in projectprop.
+  $sql = "SELECT projectprop_id FROM {projectprop} WHERE project_id = :project_id AND type_id = :organism_cvterm_id";
+  $args = array(':project_id' => $project_id, ':organism_cvterm_id' => $genus_cvterm->cvterm_id);
+
+  $g = chado_query($sql, $args);
+
+  if ($g->rowCount() > 0) {
+    // No record found.
+    // Update is an insert row command.
+    // Final check before updating. Should have no data.
+    $project_has_data = rawpheno_function_data($project_id);
+
+    if (!$project_has_data) {
+      db_update('chado.projectprop')
+        ->fields(array(
+          'value' => $genus
+          )
+        )
+        ->condition('project_id', $project_id, '=')
+        ->condition('type_id', $genus_cvterm->cvterm_id, '=')
+        ->execute();
+    }
+  }
+  else {
+    // Appears the project has an entry in the projectprop table.
+    // Update is an update row command.
+    db_insert('chado.projectprop')
+      ->fields(array(
+        'project_id' => $project_id,
+        'type_id' => $genus_cvterm->cvterm_id,
+        'value' => $genus,
+        'rank' => 0,
+        )
+      )
+      ->execute();
+  }
+}
+
+
+/**
+ * Function callback: Validate update genus.
+ */
+function rawpheno_admin_validate_update_genus($form, &$form_state) {
+  $genus = $form_state['values']['sel_genus'];
+  if (empty($genus)) {
+    form_set_error('sel_organism', t('No genus selected. Please select genus and try again'));
+  }
 }
 
 
