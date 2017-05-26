@@ -265,11 +265,30 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       '#description' => t('Please note that column headers Plot, Entry, Rep, Name, Location and Planting Date (date) are added to project by default.'),
     );
 
-    $form['fieldset_sel_project']['add_project'] = array(
-      '#type' => 'submit',
-      '#value' => t('Create Project'),
-      '#id' => 'admin-add-project',
-    );
+    // Fetch genus.
+    // NOTE: saving genus cvterm instead of the organism.
+    $sql = "SELECT genus, UPPER(genus) FROM {organism} GROUP BY genus ORDER BY genus";
+    $g = chado_query($sql);
+
+    if ($g->rowCount() > 0) {
+      $genus = $g->fetchAllKeyed();
+      $genus_options = array('' => '---') + $genus;
+
+      // List genus - select box to select genus the project is collecting data for/to.
+      $form['fieldset_sel_project']['sel_genus'] = array(
+        '#type' => 'select',
+        '#title' => t('Project is collecting data for genus:'),
+        '#options' => $genus_options,
+        '#default_value' => array_keys($genus_options)[0],
+        '#id' => 'admin-sel-genus',
+      );
+
+      $form['fieldset_sel_project']['add_project'] = array(
+        '#type' => 'submit',
+        '#value' => t('Create Project'),
+        '#id' => 'admin-add-project',
+      );
+    }
   }
   else {
     $form['fieldset_sel_project']['no_project'] = array(
@@ -310,7 +329,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
             t1.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
             AND t2.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
             AND t3.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
-            AND t3.type = 'essential'
+            AND t3.type = :essential_trait
             AND t4.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
           GROUP BY t1.project_id
           ORDER BY t1.project_id DESC";
@@ -330,6 +349,25 @@ function rawpheno_admin_all_projects($form, &$form_state) {
     $i = 0;
 
     foreach($projects as $p) {
+      // Fetch project genus.
+      $project_prop = rawpheno_function_project_organism($p->project_id, 'full');
+      $project_genus = $project_prop['genus'];
+
+      // Markup the genus.
+      if (empty($project_genus)) {
+        // Warn admin no organism set.
+        $markup_project_genus = '<img src="../../../../misc/message-16-warning.png" title="Project genus not set." alt="Project genus not set." /> Not set';
+        $project_organism_markup = '';
+      }
+      else {
+        // Display genus.
+        $markup_project_genus = '<div class="tag-name more-info" id="prj' . $p->project_id . '">' . $project_genus . '</div>';
+
+        // Project genus organism.
+        $project_organism = array_values($project_prop['organism']);
+        $project_organism_markup = '<span id="genus-list-prj'. $p->project_id .'" class="hover-more-info">' . implode(', ', $project_organism) . '</span>';
+      }
+
       $view_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $p->project_id . '/project/manage';
       $view_cell = l('View', $view_link);
       $name_cell = l($p->name, $view_link);
@@ -344,9 +382,17 @@ function rawpheno_admin_all_projects($form, &$form_state) {
         ? ''
         : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
 
-
       // + 1 to account for Name column header.
-      array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell));
+      $arr_rows[] = array(
+        ($i+1),                                           // Row counter.
+        $name_cell,                                       // Project name/title.
+        $markup_project_genus . $project_organism_markup, // Project genus and project oranism.
+        ($p->header_count + 1),                           // Traits count.
+        $p->essential_count . $warn_header,               // Essential traits count.
+        $p->user_count . $warn_user,                      // User count.
+        $view_cell                                        // View project assets link.
+      );
+
       $i++;
     }
   }
@@ -355,9 +401,16 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   }
 
   // Table headers.
-  array_push($arr_headers, '-', t('Project Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
+  array_push($arr_headers, '-', t('Project Name'), t('Genus/Organism'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
 
-  $table = theme('table', array('header' => $arr_headers, 'rows' => $arr_rows, 'empty' => $empty_table_title));
+  $table = theme('table',
+    array(
+      'header' => $arr_headers,
+      'rows' => $arr_rows,
+      'empty' => $empty_table_title,
+      'attributes' => array('id' => 'rawphenotypes-project'),
+    )
+  );
 
   // Render table.
   $form['tbl_projects'] = array(
@@ -367,6 +420,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // Attach css.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
+  $form['#attached']['js'] = array($path . 'js/rawpheno.admin.script.js');
 
   return $form;
 }
@@ -380,6 +434,11 @@ function rawpheno_admin_all_projects_validate($form, &$form_state) {
   $project_id = $form_state['values']['sel_project'];
   if ($project_id <= 0) {
     form_set_error('sel_project', t('No project selected. Please select a project and try again'));
+  }
+
+  $genus = $form_state['values']['sel_genus'];
+  if (empty($genus)) {
+    form_set_error('sel_organism', t('No genus selected. Please select genus and try again'));
   }
 }
 
@@ -449,6 +508,27 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
     ->execute();
   }
 
+  // Link genus and project in projectprop.
+  $genus = $form_state['values']['sel_genus'];
+  // Ensure that only the first letter is capitalized.
+  $genus = ucfirst($genus);
+
+  // Get genus/organism controlled vocabulary term.
+  // Term.
+  $term = rawpheno_function_organism_cv();
+  $genus_cvterm = tripal_get_cvterm($term);
+
+  if ($genus_cvterm) {
+    db_insert('chado.projectprop')
+      ->fields(array(
+        'project_id' => $project_id,
+        'type_id' => $genus_cvterm->cvterm_id,
+        'value' => $genus,
+        'rank' => 0,
+        )
+      )
+      ->execute();
+  }
 
   // Redirect user to project asset management page.
   $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');

@@ -212,6 +212,17 @@ function rawpheno_function_trait_reps() {
 
 
 /**
+ * Function return genus controlled vocabulary.
+ */
+function rawpheno_function_organism_cv() {
+  return array(
+    'name' => 'genus',
+    'cv_id' => array('name' => 'taxonomic_rank')
+  );
+}
+
+
+/**
  * Function that list default/initial units available to this module.
  *
  * @param $set
@@ -253,11 +264,23 @@ function rawpheno_function_project() {
  * Function to test if the module has a project set up for user and
  * that project has dataset associated to it.
  *
+ * @param $project_id
+ *  An integer containing the project id, when supplied test the to see if that
+ *  project has data associated to it.
+ *
  * @return FALSE when there is no data.
  */
-function rawpheno_function_data() {
-  $sql = "SELECT plant_project_id FROM pheno_plant_project";
-  $stock_count = db_query($sql)
+function rawpheno_function_data($project_id = NULL) {
+  if ($project_id) {
+    $sql = "SELECT plant_project_id FROM pheno_plant_project WHERE project_id = :project_id";
+    $args = array(':project_id' => $project_id);
+  }
+  else {
+    $sql = "SELECT plant_project_id FROM pheno_plant_project";
+    $args = array();
+  }
+
+  $stock_count = db_query($sql, $args)
     ->rowCount();
 
   return ($stock_count <= 0) ? 0 : 1;
@@ -1172,3 +1195,63 @@ function rawpheno_function_plot_exists($plot, $project_id) {
 
   return $m->fetchField(0);
 }
+
+
+/**
+ * Function to fetch the organism the project is collecting data for/to.
+ *
+ * @param $project_id
+ *   An integer containing the project id number.
+ *
+ * @param $dataset
+ *   String (full) to indicate function will return project organism and organism id array.
+ *
+ * @return string and array of integer (id number of organism).
+ *   The genus/organism name and organism id number.
+ */
+function rawpheno_function_project_organism($project_id, $dataset = NULL) {
+  // Get genus cvterm.
+  $term = rawpheno_function_organism_cv();
+  // Get cvterm_id of genus term.
+  $genus_cvterm = tripal_get_cvterm($term);
+  // Project genus/organism string value;
+  $project_genus = '';
+  // Array to hold project genus organism information.
+  $arr_project_genus_organism = array();
+
+  // Get the organism the project is collecting data for/to.
+  $sql = "SELECT organism_id, genus, common_name FROM {organism}
+  WHERE genus = (SELECT TRIM(value) FROM {projectprop} WHERE project_id = :project_id AND type_id = :genus_cvterm_id LIMIT 1)";
+
+  $args = array(':project_id' => $project_id, ':genus_cvterm_id' => $genus_cvterm->cvterm_id);
+  $p = chado_query($sql, $args);
+
+  if ($p->rowCount() > 0) {
+    foreach($p as $i => $o) {
+      // Extract the genus from the result set.
+      if ($i == 0) {
+        $project_genus = $o->genus;
+
+        // Wants the genus only.
+        if (!$dataset) {
+          return $project_genus;
+        }
+      }
+
+      // Save the organisms.
+      // This list will be used to limit the stock when validating a spreadsheet.
+      $arr_project_genus_organism[$o->organism_id] = $o->common_name;
+    }
+
+    // Full info. genus + organisms.
+    return array(
+      'genus' => $project_genus,
+      'organism' => $arr_project_genus_organism,
+    );
+  }
+  else {
+    // Not set, as for previous releases, warn the admin about this.
+    return 0;
+  }
+}
+

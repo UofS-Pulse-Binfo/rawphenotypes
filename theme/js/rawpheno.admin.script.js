@@ -57,6 +57,16 @@
       });
 
 
+      // Add event listener to Genus.
+      $('.more-info')
+        .mouseover(function() {
+          $(this).next().show();
+        })
+        .mouseout(function() {
+          $(this).next().hide();
+        });
+
+
       // Add event listener to user my folder.
       $('.link-show-folder').click(function(e) {
         e.preventDefault();
