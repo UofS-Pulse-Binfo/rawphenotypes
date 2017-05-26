@@ -298,6 +298,10 @@ function rawpheno_function_terms($type) {
       return 'AGILE: Application of Genomic Innovation in the Lentil Economy';
       break;
 
+    case 'project_genus':
+      return 'Lens';
+      break;
+
     case 'defaults':
       // Default colour scheme and heading/title.
       return array('colour' => '#304356',
@@ -427,6 +431,47 @@ function rawpheno_install() {
                        'uid' => 1))
         ->execute();
       }
+
+    // Tell the module that AGILE is collecting data for project genus.
+    // NOTE: Code block in hook_update().
+    // This project - genus.
+    $project_genus = rawpheno_function_terms('project_genus');
+    // Ensure only first letter is capitalized.
+    $project_genus = ucfirst($project_genus);
+    // Get genus/organism controlled vocabulary term.
+    // Term.
+    $term = rawpheno_function_organism_cv();
+    $genus_cvterm = tripal_get_cvterm($term);
+
+    // Make sure nothing was previously inserted.
+    $sql = "SELECT projectprop_id FROM {projectprop}
+            WHERE project_id = :project_id AND type_id = :organism_cvterm_id";
+
+    $args = array(':project_id' => $project_ID, ':organism_cvterm_id' => $genus_cvterm->cvterm_id);
+    $o = chado_query($sql, $args);
+
+    if ($o->rowCount() > 0) {
+      // Update.
+      db_update('chado.projectprop')
+        ->fields(array(
+          'value' => $project_genus,
+          )
+        )
+        ->condition('project_id', $project_ID, '=')
+        ->condition('type_id', $genus_cvterm->cvterm_id, '=')
+        ->execute();
+    }
+    else {
+      // All clear...
+      chado_insert_record('projectprop',
+        array(
+          'project_id' => $project_ID,
+          'type_id' => $genus_cvterm->cvterm_id,
+          'value' => $project_genus,
+          'rank' => 0,
+        )
+      );
+    }
   }
 
   // Initialize R Transformation rules required in generating R version of header.
@@ -687,6 +732,8 @@ function rawpheno_uninstall() {
     $del = "DELETE FROM {cv} WHERE cv_id = :cv_id";
     chado_query($del, $args);
   }
+
+  // Do not delete rows in projectprop.
 }
 
 
