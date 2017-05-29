@@ -430,31 +430,25 @@ function rawpheno_install() {
         ->fields(array('project_id' => $project_ID,
                        'uid' => 1))
         ->execute();
-      }
+    }
 
-    // Tell the module that AGILE is collecting data for project genus.
-    // NOTE: Code block in hook_update().
+    // Tell the module that AGILE is collecting data for project organism.
     // This project - genus.
     $project_genus = rawpheno_function_terms('project_genus');
-    // Ensure only first letter is capitalized.
-    $project_genus = ucfirst($project_genus);
     // Get genus/organism controlled vocabulary term.
     // Term.
     $term = rawpheno_function_organism_cv();
+    // Get cvterm_id of genus term.
     $genus_cvterm = tripal_get_cvterm($term);
 
     // Make sure nothing was previously inserted.
-    $sql = "SELECT projectprop_id FROM {projectprop}
-            WHERE project_id = :project_id AND type_id = :organism_cvterm_id";
+    $projectprop_genus = rawpheno_function_project_organism($project_ID);
 
-    $args = array(':project_id' => $project_ID, ':organism_cvterm_id' => $genus_cvterm->cvterm_id);
-    $o = chado_query($sql, $args);
-
-    if ($o->rowCount() > 0) {
-      // Update.
+    if ($projectprop_genus) {
+      // Found a row.
       db_update('chado.projectprop')
         ->fields(array(
-          'value' => $project_genus,
+          'value' => $project_genus
           )
         )
         ->condition('project_id', $project_ID, '=')
@@ -462,15 +456,16 @@ function rawpheno_install() {
         ->execute();
     }
     else {
-      // All clear...
-      chado_insert_record('projectprop',
-        array(
+      // Clear, insert a row.
+      db_insert('chado.projectprop')
+        ->fields(array(
           'project_id' => $project_ID,
           'type_id' => $genus_cvterm->cvterm_id,
           'value' => $project_genus,
           'rank' => 0,
+          )
         )
-      );
+        ->execute();
     }
   }
 
@@ -916,6 +911,42 @@ function rawpheno_update_7002() {
     );
 
     $project_ID = $tmp->project_id;
+
+    // Tell the module that AGILE is collecting data for project organism.
+    // This project - genus.
+    $project_genus = rawpheno_function_terms('project_genus');
+    // Get genus/organism controlled vocabulary term.
+    // Term.
+    $term = rawpheno_function_organism_cv();
+    // Get cvterm_id of genus term.
+    $genus_cvterm = tripal_get_cvterm($term);
+
+    // Make sure nothing was previously inserted.
+    $projectprop_genus = rawpheno_function_project_organism($project_ID);
+
+    if ($projectprop_genus) {
+      // Found a row.
+      db_update('chado.projectprop')
+        ->fields(array(
+          'value' => $project_genus
+          )
+        )
+        ->condition('project_id', $project_ID, '=')
+        ->condition('type_id', $genus_cvterm->cvterm_id, '=')
+        ->execute();
+    }
+    else {
+      // Clear, insert a row.
+      db_insert('chado.projectprop')
+        ->fields(array(
+          'project_id' => $project_ID,
+          'type_id' => $genus_cvterm->cvterm_id,
+          'value' => $project_genus,
+          'rank' => 0,
+          )
+        )
+        ->execute();
+    }
   }
 
   // Trait types array.
