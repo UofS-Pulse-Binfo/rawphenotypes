@@ -189,3 +189,26 @@
   width: 80px;
 }
 
+/* Emphasize file count */
+.ap-em-count {
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 1em;
+}
+
+/* Media query - apply stype when viewport is 1500px */
+@media(max-width: 1500px) {
+  #rawpheno-notification-block-wrapper {
+    font-size: 0.9em;
+  }
+
+  .rawpheno-notification-title {
+    background-position: top left;
+  }
+
+  .rawpheno-item-wrapper {
+    margin: 0;
+    padding: 50px 0 0 0;
+  }
+}
+

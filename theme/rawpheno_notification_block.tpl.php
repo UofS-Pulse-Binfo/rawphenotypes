@@ -5,6 +5,7 @@
  *
  * Available variables:
  * - $path: The directory path to rawpheno module.
+ * - $hostname: Base host name.
  * - $page_id: String ID of the page/form.
  * - $rel_url: Each page has a link to a related page.
  * - $theme_colour: Colour setting selected by user in administration panel. Default to navyblue/#304356.
@@ -34,7 +35,7 @@
 <div id="rawpheno-notification-dashboard">
   <div class="rawpheno-notification-item rawpheno-item-a" title="Raw Phenotypes Backup Spreadsheet File">
     <div class="rawpheno-item-wrapper">
-      <h3>You have <?php print $file_count ?> Files in your Backups</h3>
+      <h3>You have <span class="ap-em-count"><?php print $file_count; ?> Files</span> in your Backups</h3>
       <a href="<?php print $path_phenotypes_raw . 'backup'; ?>" class="rawpheno-notification-arrow-right">Backup Spreadsheet File</a> |
       <a href="#" id="rawpheno-notification-why-backup-link">Why Backup?</a>
     </div>
@@ -45,7 +46,7 @@
         <p>
           <img src="<?php print $path_module . 'theme/img/cloud-image.png'; ?>" id="rawpheno-notification-image" />
           <h3>You can never have too many Backups!</h3>
-          It is important to backup your data collection spreadsheets on <?php print strtoupper($_SERVER['SERVER_NAME']); ?>
+          It is important to backup your data collection spreadsheets on <?php print $hostname; ?>
           servers to ensure your supervisor and/or colleagues have access to the data. Furthermore, it protects the data
           in case of tablet/computer failure, forgotten passwords, corrupted files, incomplete file transfers, sudden rainstorms, etc. Remember, you can never have too many backups!
         </p>
@@ -56,7 +57,7 @@
 
   <div class="rawpheno-notification-item rawpheno-item-b" title="Raw Phenotypes Upload Data">
     <div class="rawpheno-item-wrapper">
-      <h3>Upload data to <?php print strtoupper($_SERVER['SERVER_NAME']); ?></h3>
+      <h3>Upload data to <?php print $hostname; ?></h3>
       <a href="<?php print $path_phenotypes_raw . 'upload'; ?>" class="rawpheno-notification-arrow-right">Upload Data</a> |
       <a href="<?php print $path_phenotypes_raw . 'instructions'; ?>">Download Standard Spreadsheet File</a>
     </div>
