@@ -70,7 +70,7 @@
       <h3>Need Help? Select a topic below.</h3>
       <ul>
         <li><a href="<?php print $path_phenotypes_video . 'rawpheno_backup.mp4'; ?>" target="_blank" class="rawpheno-notification-arrow-right">How to Backup Data Collection Spreadsheet File</a></li>
-        <li><a href="<?php print $path_phenotypes_video . 'rawpheno_upload.mp4'; ?>" target="_blank" class="rawpheno-notification-arrow-right">How to Upload Data to <?php print strtoupper($_SERVER['SERVER_NAME']); ?></a></li>
+        <li><a href="<?php print $path_phenotypes_video . 'rawpheno_upload.mp4'; ?>" target="_blank" class="rawpheno-notification-arrow-right">How to Upload Data to <?php print $hostname; ?></a></li>
         <li><a href="<?php print $path_phenotypes_raw   . 'instructions'; ?>" target="_blank" class="rawpheno-notification-arrow-right">Standard Phenotyping Procedure</a></li>
         <li><a href="<?php print $path_phenotypes_raw   . 'videos'; ?>" target="_blank" class="rawpheno-notification-arrow-right">Other Video Demonstrations</a></li>
       </ul>

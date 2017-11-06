@@ -1410,7 +1410,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
  */
 function rawpheno_block_info() {
   $block['rawpheno_notification_block'] = array(
-    'info' => t('Rawpheno Block'),
+    'info' => t('Raw Phenotype Dashboard'),
   );
 
   return $block;
