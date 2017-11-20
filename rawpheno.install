@@ -298,6 +298,10 @@ function rawpheno_function_terms($type) {
       return 'AGILE: Application of Genomic Innovation in the Lentil Economy';
       break;
 
+    case 'project_genus':
+      return 'Lens';
+      break;
+
     case 'defaults':
       // Default colour scheme and heading/title.
       return array('colour' => '#304356',
@@ -426,7 +430,43 @@ function rawpheno_install() {
         ->fields(array('project_id' => $project_ID,
                        'uid' => 1))
         ->execute();
-      }
+    }
+
+    // Tell the module that AGILE is collecting data for project organism.
+    // This project - genus.
+    $project_genus = rawpheno_function_terms('project_genus');
+    // Get genus/organism controlled vocabulary term.
+    // Term.
+    $term = rawpheno_function_organism_cv();
+    // Get cvterm_id of genus term.
+    $genus_cvterm = tripal_get_cvterm($term);
+
+    // Make sure nothing was previously inserted.
+    $projectprop_genus = rawpheno_function_project_organism($project_ID);
+
+    if ($projectprop_genus) {
+      // Found a row.
+      db_update('chado.projectprop')
+        ->fields(array(
+          'value' => $project_genus
+          )
+        )
+        ->condition('project_id', $project_ID, '=')
+        ->condition('type_id', $genus_cvterm->cvterm_id, '=')
+        ->execute();
+    }
+    else {
+      // Clear, insert a row.
+      db_insert('chado.projectprop')
+        ->fields(array(
+          'project_id' => $project_ID,
+          'type_id' => $genus_cvterm->cvterm_id,
+          'value' => $project_genus,
+          'rank' => 0,
+          )
+        )
+        ->execute();
+    }
   }
 
   // Initialize R Transformation rules required in generating R version of header.
@@ -687,6 +727,8 @@ function rawpheno_uninstall() {
     $del = "DELETE FROM {cv} WHERE cv_id = :cv_id";
     chado_query($del, $args);
   }
+
+  // Do not delete rows in projectprop.
 }
 
 
@@ -869,6 +911,42 @@ function rawpheno_update_7002() {
     );
 
     $project_ID = $tmp->project_id;
+
+    // Tell the module that AGILE is collecting data for project organism.
+    // This project - genus.
+    $project_genus = rawpheno_function_terms('project_genus');
+    // Get genus/organism controlled vocabulary term.
+    // Term.
+    $term = rawpheno_function_organism_cv();
+    // Get cvterm_id of genus term.
+    $genus_cvterm = tripal_get_cvterm($term);
+
+    // Make sure nothing was previously inserted.
+    $projectprop_genus = rawpheno_function_project_organism($project_ID);
+
+    if ($projectprop_genus) {
+      // Found a row.
+      db_update('chado.projectprop')
+        ->fields(array(
+          'value' => $project_genus
+          )
+        )
+        ->condition('project_id', $project_ID, '=')
+        ->condition('type_id', $genus_cvterm->cvterm_id, '=')
+        ->execute();
+    }
+    else {
+      // Clear, insert a row.
+      db_insert('chado.projectprop')
+        ->fields(array(
+          'project_id' => $project_ID,
+          'type_id' => $genus_cvterm->cvterm_id,
+          'value' => $project_genus,
+          'rank' => 0,
+          )
+        )
+        ->execute();
+    }
   }
 
   // Trait types array.

@@ -108,6 +108,18 @@
       print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
+    elseif (!$has_genus) {
+      // A project has no genus defined.
+    ?>
+      <div id="container-no-info" class="messages warning">
+        A project(s) has no genus defined. Please contact the administrator of this website.
+      </div>
+    <?php
+     // Admin: Create and configure projects:
+      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can assign an genus to a project by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      unset($form);
+    }
     elseif (!$has_data AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
       // Has project but project has no data associated to it.
       // Excempt pages upload, backup and instructions.

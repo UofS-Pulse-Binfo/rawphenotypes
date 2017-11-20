@@ -82,6 +82,10 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
     // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
+    // Limit the stocks for comparison/validation to just the organism that matched the project genus.
+    $project_prop = rawpheno_function_project_organism($project_id, 'full');
+    $project_genus_organism_ids = array_keys($project_prop['organism']);
+
     // Each row in the spreadsheet.
     foreach ($xls_obj as $row) {
       // Create progress update by computing the number of rows saved in percent.
@@ -131,8 +135,15 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Process the name column first since we need a plant_id before we can insert any more data.
       // Name column header goes into pheno_plant.
       // Check if stock name exists.
+
+      // Limit the name search to just stocks in project organism.
       $stock_id = NULL;
-      $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => trim($row[$name_index])));
+
+      // Limit the stocks for comparison/validation to just the organism defined in the project.
+      $sql = "SELECT stock_id FROM {stock} WHERE name = :name AND organism_id IN (:project_organism_ids)";
+      $args = array(':name' => trim($row[$name_index]), ':project_organism_ids' => $project_genus_organism_ids);
+
+      $r = chado_query($sql, $args);
       if ($r) $stock_id = $r->fetchField();
 
       // Determine if name has a stock id number.
@@ -515,6 +526,10 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // Change to the correct spreadsheet.
   rawpheno_change_sheet($xls_obj, 'measurements');
 
+  // Limit the stocks for comparison/validation to just the organism that matched the project genus.
+  $project_prop = rawpheno_function_project_organism($project_id, 'full');
+  $project_genus_organism_ids = array_keys($project_prop['organism']);
+
   // This increment variable $i is required since xls and xlsx
   // parsers assign array index differently.
   // XLS starts at 1, while XLSX at 0;
@@ -616,7 +631,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
                     $context['plot_req'] = $plot_req;
                   }
 
-                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage, $project_genus_organism_ids);
 
                   // Note: we use tmp storage b/c passing $storage[$validator_name] directly
                   // doesn't seem to work.
