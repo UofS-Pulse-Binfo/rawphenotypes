@@ -366,36 +366,46 @@ function validator_required_info_generate_msg($error_info) {
  *   TRUE if it passed validation; FALSE otherwise.
  */
 function validator_required_info_validate_cell($value, $context, &$storage) {
+  if ($context['header'][ $context['column index'] ]['no format'] == 'name' ||
+      $context['header'][ $context['column index'] ]['no format'] == 'plantingdate(date)') {
 
-  // Validate if the cell is empty.
-  if (empty($value)) return array('code' => 1, 'row' => $context['row index']);
-  if ($value < 0) return array('code' => 1, 'row' => $context['row index']);
+    // Planting date and Name (germplasm) remain required - no NAs allowed.
+    if (empty($value)) {
+      return array('code' => 1, 'row' => $context['row index']);
+    }
+  }
+  else {
+    // All else, but plot has extra step.
+    if (empty($value) || $value < 0) {
+      return array('code' => 1, 'row' => $context['row index']);
+    }
 
-  // Validate if the plot is unique.
-  // If this is the plot column...
-  if ($context['header'][ $context['column index'] ]['no format'] == 'plot') {
-    // Get Planting date (date) and location index from the header rows.
-    $planting_date_i = $context['plot_req']['planting date (date)'];
-    $location_i = $context['plot_req']['location'];
+    // Is this plot?
+    // Skip duplicate plot check when value is NA.
+    if ($context['header'][ $context['column index'] ]['no format'] == 'plot' && $value != 'NA') {
+      // Get Planting date (date) and location index from the header rows.
+      $planting_date_i = $context['plot_req']['planting date (date)'];
+      $location_i = $context['plot_req']['location'];
 
-    // Get the cell value of header idexes.
-    // Extract the year (YYYY) from planting year (date)
-    $planting_date = $context['row'][$planting_date_i];
-    $planting_year = substr($planting_date, 0, 4);
+      // Get the cell value of header idexes.
+      // Extract the year (YYYY) from planting year (date)
+      $planting_date = $context['row'][$planting_date_i];
+      $planting_year = substr($planting_date, 0, 4);
 
-    // Location
-    $location = trim($context['row'][$location_i]);
+      // Location
+      $location = trim($context['row'][$location_i]);
 
-    // Has this value been used before? value being (year+location+plot)
-    $rows_used_in = array_keys($storage, $planting_year . $location . $value);
+      // Has this value been used before? value being (year+location+plot)
+      $rows_used_in = array_keys($storage, $planting_year . $location . $value);
 
-    // save to storage.
-    $storage[ $context['row index'] ] = $planting_year . $location . $value;
+      // save to storage.
+      $storage[ $context['row index'] ] = $planting_year . $location . $value;
 
-    // if it has then save for error.
-    if ($rows_used_in) {
-      $rows_used_in[] = $context['row index'];
-      return array('code' => 2, 'value' => $value, 'rows' => $rows_used_in);
+      // if it has then save for error.
+      if ($rows_used_in) {
+        $rows_used_in[] = $context['row index'];
+        return array('code' => 2, 'value' => $value, 'rows' => $rows_used_in);
+      }
     }
   }
 
@@ -486,8 +496,10 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
   // Determine the units for this column.
   $unit = $context['header'][ $context['column index'] ]['units'];
 
-  // We always want to allow empty cells but not treat zero as empty...
-  if (empty($value) AND !(strval($value) === '0')) {
+  // We always want to allow empty cells or NA but not treat zero as empty...
+  if ((empty($value) AND !(strval($value) === '0')) ||
+      ($value == 'NA' && $context['header'][ $context['column index'] ]['no format'] != 'plantingdate(date)')) {
+
     return TRUE;
   }
 
