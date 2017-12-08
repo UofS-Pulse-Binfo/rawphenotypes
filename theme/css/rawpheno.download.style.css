@@ -68,9 +68,15 @@ label.option {
 
 
 /* R Friendly checkbox */
+div.form-item-chk-envdata,
 div.form-item-chk-rfriendly {
   display: inline-block;
-  margin-right: 20px;
+  margin-right: 10px;
+}
+
+div.form-item-chk-envdata {
+  border-right: 1px solid #CCCCCC;
+  padding-right: 15px;
 }
 
 label img {

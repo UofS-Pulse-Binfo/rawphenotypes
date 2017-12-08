@@ -79,7 +79,8 @@ table th:first-child {
 
 
 /* Default the table project user to hidden */
-#container-prj-usr {
+#container-prj-usr,
+#container-prj-env  {
   display: none;
 }
 
@@ -295,4 +296,10 @@ div.container-cell p:last-child {
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
   border-radius: 10px;
+}
+
+/* Environment Data */
+.envdata-field-wrapper {
+  float: left;
+  margin-right: 30px;
 }

@@ -154,11 +154,20 @@ function rawpheno_download($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
+
+  $form['div_buttons']['chk_envdata'] = array(
+    '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data when available)', array('@img' => '../../' . $path . 'img/env.gif')),
+    '#type' => 'checkbox',
+    '#default_value' => 0,
+  );
+
+
   $form['div_buttons']['chk_rfriendly'] = array(
     '#title' => t('<img src="@img" alt="Make R Friendly" title="Make R Friendly" align="absmiddle" /> (Make R Friendly)', array('@img' => '../../' . $path . 'img/r.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
   );
+
 
   $form['div_buttons']['download_submit_download'] = array(
     '#type' => 'submit',
@@ -232,12 +241,13 @@ function rawpheno_download_submit($form, &$form_state) {
   $trt = $form_state['values']['sel_trait'];
   $trt = (count($trt) > 0) ? implode(',', $trt) : 0;
 
-  // Lastly, if user wants the R version.
+  // Lastly, if user wants Environment Data and R version.
+  $env = $form_state['values']['chk_envdata'];
   $rvr = $form_state['values']['chk_rfriendly'];
 
   // Contain all query parameters/string into one string.
   // Decode first when reading this string using base64_decode() function.
-  $url = base64_encode('p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr);
+  $url = base64_encode('p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env);
 
   // Format url for redirect.
   $form_state['redirect'] = array(

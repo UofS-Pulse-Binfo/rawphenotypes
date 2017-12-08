@@ -484,6 +484,10 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
   $arr_valid['user']['table'] = 'pheno_project_user';
   $arr_valid['user']['id'] = 'project_user_id';
 
+  $arr_valid['envdata']['command'] = array('delete');
+  $arr_valid['envdata']['table'] = 'pheno_environment_data';
+  $arr_valid['envdata']['id'] = 'environment_data_id';
+
   // Ensure query strings are valid. The string length check ensure that Posgres
   // will not throw Numeric value out of range PDOexception.
   if (!isset($asset_id) OR $asset_id <= 0 OR strlen($asset_id) >= 10) {
@@ -555,6 +559,24 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
             else {
               // Call user function.
               $form = rawpheno_admin_project_users($form, $form_state, $user_project_asset, $action);
+            }
+            ////////////
+          }
+          else if($asset_type == 'envdata') {
+            ////////////
+            if ($asset_id > 0 && $action == 'delete') {
+              // Locate file. Ensure that file to be deleted exists.
+              $envdata_project_asset = rawpheno_admin_envdata_asset($asset_id);
+
+              if ($envdata_project_asset) {
+                // Call user function.
+                $form = rawpheno_admin_project_envdata($form, $form_state, $envdata_project_asset, $action);
+              }
+              else {
+                // User is administrator.
+                drupal_set_message(t('Cannot @action Environment Data File. File does not exist.',
+                  array('@action' => $action)) . $goback, 'error');
+              }
             }
             ////////////
           }
@@ -766,6 +788,90 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
      ),
    );
 
+
+  // Environement Data File Upload.
+  $inline_wraper = array(
+    '#prefix' => '<div class="envdata-field-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  $form['fieldset_envdata'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Upload Environment Data File'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+
+  // Add seach field to filter the list of name.
+  $form['fieldset_envdata']['file'] = array(
+    '#title' => 'File :',
+    '#type' => 'file',
+  ) + $inline_wraper;
+
+  // Location: fetch all location in a project based on uploaded data.
+  $sql = "SELECT location
+          FROM {rawpheno_rawdata_mview} INNER JOIN pheno_plant_project USING(plant_id)
+          WHERE project_id = :project_id
+          GROUP BY location
+          ORDER BY location ASC";
+
+  $locations = chado_query($sql, $args);
+  $location_options = ($locations->rowCount() > 0) ? $locations->fetchAllKeyed(0,0) : array();
+
+  $form['fieldset_envdata']['select_location'] = array(
+    '#title' => 'Location :',
+    '#type' => 'select',
+    '#options' => $location_options,
+    '#empty_option' => t('- Select -'),
+
+    '#ajax' => array(
+      'wrapper' => 'envdata-year',
+      'callback' => 'rawpheno_ajax_fetch_years',
+      'progress' => array('type' => 'throbber', 'message' => ''),
+    ),
+  ) + $inline_wraper;
+
+  // Year: fetch all years in a project given a location.
+  if (isset($form_state['values']['select_location']) &&
+      $form_state['values']['select_location'] != '') {
+
+    $location_value = $form_state['values']['select_location'];
+
+    $sql = "SELECT SUBSTRING(planting_date, 1, 4) AS year
+            FROM {rawpheno_rawdata_mview}
+            WHERE location = :location
+              AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+            ORDER BY year DESC";
+
+    $years = chado_query($sql, $args + array(':location' => $location_value));
+    // Assoc. array will remove any duplicates in the query result.
+    $year_options = ($years->rowCount() > 0) ? $years->fetchAllKeyed(0,0) : array();
+  }
+  else {
+    $year_options = array();
+  }
+
+  $inline_wraper['#prefix'] = '<div id="envdata-year" class="envdata-field-wrapper">';
+  $form['fieldset_envdata']['select_year'] = array(
+    '#title' => 'Year :',
+    '#type' => 'select',
+    '#options' => $year_options,
+    '#empty_option' => t('- Select -'),
+  ) + $inline_wraper;
+
+  // Submit:
+  $form['fieldset_envdata']['upload_env_file'] = array(
+    '#type' => 'submit',
+    '#value' => t('Upload file'),
+    '#validate' => array('rawpheno_admin_validate_upload_envdata'),
+    '#submit' => array('rawpheno_admin_submit_upload_envdata'),
+    '#limit_validation_errors' => array(
+      array('filefield_file'),
+      array('select_location'),
+      array('select_year'),
+    ),
+  );
+
   // DISPLAY SUMMARY OF DATA REQUIRED BY THIS INTERFACE.
 
   // List column headers in a project.
@@ -787,6 +893,14 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
           ORDER BY name DESC";
 
   $users = db_query($sql, $args);
+
+  // Environment data files.
+  $sql = "SELECT environment_data_id, location, year, sequence_no, filename, uri, timestamp
+          FROM {pheno_environment_data} INNER JOIN file_managed USING(fid)
+          WHERE project_id = :project_id
+          ORDER BY location, year, sequence_no ASC";
+
+  $envdata = db_query($sql, $args);
 
   // Array to hold table headers.
   $arr_headers = array();
@@ -903,6 +1017,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
                     <ul>
                       <li class="active-tab">' . ($headers->rowCount() + 1) . ' Column Headers</li>
                       <li>' . $users->rowCount() . ' Active Users</li>
+                      <li>' . $envdata->rowCount() . ' Environment Data File</li>
                     </ul>
                   </div>'
   );
@@ -973,7 +1088,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
       if ($my_files_count > 0) {
         foreach($result_F as $f) {
           // File.
-          $cell_file = l($f->filename . '(' . format_size($f->filesize) . ')', file_create_url($f->uri),
+          $cell_file = l($f->filename . ' (' . format_size($f->filesize) . ')', file_create_url($f->uri),
             array('attributes' => array('target' => '_blank'))
           );
 
@@ -1062,14 +1177,65 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#suffix' => '</div>',
   );
 
+  //
+  $arr_rows = $arr_headers = array();
+
+  // Environment Data.
+  if ($envdata->rowCount() > 0) {
+    // Table headers.
+    array_push($arr_headers, '-', t('File'), t('Location'), t('Year'), t('Sequence No.'), t('Delete'));
+
+    // Query environment data files.
+    $sql = "SELECT environment_data_id, filename, location, year, sequence_no, timestamp, uri, filesize
+            FROM pheno_environment_data INNER JOIN file_managed USING(fid)
+            WHERE project_id = :project_id
+            ORDER BY location, year, sequence_no DESC";
+
+    $env_datafile = chado_query($sql, $args);
+
+    foreach($env_datafile as $i => $env) {
+      $cell_file = l($env->filename . ' (' . format_size($env->filesize) . ')', file_create_url($env->uri),
+        array('attributes' => array('target' => '_blank'))
+      );
+
+      $cell_file .= t('<br /><small>Uploaded: @timestamp</small>', array('@timestamp' => format_date($env->timestamp)));
+
+      $del_link = 'admin/tripal/extension/rawphenotypes/all_projects/' . $env->environment_data_id . '/envdata/delete';
+      $cell_del = l('Delete', $del_link, array('attributes' => array('class' => 'link-del')));
+
+      $arr_rows[] = array($i+1, $cell_file, $env->location, $env->year, '#' . $env->sequence_no, $cell_del);
+    }
+  }
+  else {
+    // When no records found, update the empty table property.
+    $arr_tbl_args['empty'] = t('No environment data file in this project.');
+  }
+
+  // Update table properties.
+  $arr_tbl_args['header'] = $arr_headers;
+  $arr_tbl_args['rows'] = $arr_rows;
+  $arr_tbl_args['attributes']['id'] = 'tbl-project-envdata';
+
+  // Render the table element.
+  $form['tbl_project_envdata'] = array(
+    '#markup' => theme('table', $arr_tbl_args),
+    '#prefix' => '<div id="container-prj-env" class="container-table-data tab-data">',
+    '#suffix' => '</div>',
+  );
+
   return $form;
 }
 
-
-function ajax_rawpheno_filter_users() {
-    return $form['fieldset_users']['tbl_users'];
+/**
+ * AJAX Function callback.
+ */
+function rawpheno_ajax_fetch_years($form, &$form_state) {
+  return $form['fieldset_envdata']['select_year'];
 }
 
+function ajax_rawpheno_filter_users($form, &$form_state) {
+  return $form['fieldset_users']['tbl_users'];
+}
 
 /**
  * Function callback: Construct form to edit column header and handle deletion.
@@ -1475,6 +1641,50 @@ function rawpheno_admin_project_users($form, $form_state, $user_project_asset, $
   }
 }
 
+/**
+ * Function callback: Delete environment data file from a project.
+ *
+ * @param $envdata_project_asset
+ *   An array containing data and file information about an environment data file.
+ */
+function rawpheno_admin_project_envdata($form, $form_state, $envdata_project_asset, $action) {
+  if ($action == 'delete') {
+    db_delete('pheno_environment_data')
+      ->condition('environment_data_id', $envdata_project_asset['envdata_id'])
+      ->execute();
+
+    // To delete a file in Drupal use file_delete function.
+    // Get file object and load it to file delete funciton.
+    $file = file_load($envdata_project_asset['fid']);
+    file_delete($file, TRUE);
+
+    // Assign a new sequence. This will maintain the order of sequence number.
+    $sql = "SELECT * FROM pheno_environment_data
+            WHERE project_id = :project_id AND location = :location AND year = :year
+            ORDER BY sequence_no ASC";
+
+    $result = chado_query($sql, array(
+      ':project_id' => $envdata_project_asset['project_id'],
+      ':location' => $envdata_project_asset['location'],
+      ':year' => $envdata_project_asset['year'],
+    ));
+
+    if ($result->rowCount() > 0) {
+      foreach($result as $seq => $row) {
+        // Record.
+        chado_query("UPDATE pheno_environment_data SET sequence_no = :new_seqno WHERE environment_data_id = :envdata_id",
+        array(
+          ':new_seqno' => $seq + 1,
+          ':envdata_id' => $row->environment_data_id,
+        ));
+      }
+    }
+
+    // Redirect user.
+    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $envdata_project_asset['project_id'] . '/project/manage');
+    drupal_goto($path);
+  }
+}
 
 /**
  * Function callback: Construct a form to either modify or add a column header.
@@ -1775,6 +1985,96 @@ function rawpheno_admin_validate_add_user($form, &$form_state) {
   }
 }
 
+/**
+ * Function callback: Save environment data file.
+ */
+function rawpheno_admin_submit_upload_envdata($form, &$form_state) {
+  $project_id = $form_state['input']['txt_id'];
+  $location   = $form_state['values']['select_location'];
+  $year       = $form_state['values']['select_year'];
+
+  if ($project_id && $location && $year) {
+    $dir_public = 'public://';
+
+    // File extension validator.
+    $file_validate_ext = array(
+      'file_validate_extensions' => array('xlsx csv tsv txt docx pptx'),
+    );
+
+    // Save env data file.
+    $env_file = file_save_upload('file', $file_validate_ext, $dir_public, FILE_EXISTS_RENAME);
+
+    if ($env_file) {
+      // Rename file to include location, year, sequence no.
+      // Fetch the largest seq no in a project, location and year.
+      $sql = "SELECT sequence_no FROM pheno_environment_data
+              WHERE location = :location AND year = :year AND project_id = :project_id
+              ORDER BY sequence_no DESC LIMIT 1";
+
+      $result = chado_query($sql, array(
+        ':project_id' => $project_id,
+        ':location' => $location,
+        ':year'   => $year,
+      ));
+
+      $seq_no = ($result->rowCount() > 0) ? (int)$result->fetchField() + 1 : 1;
+      $u_no = date('ymdis');
+
+      $env_file_ext = pathinfo($env_file->filename, PATHINFO_EXTENSION);
+      $new_filename = str_replace(array(' ', '-', ','), '_', $location) . '_' . $year . '_' . $u_no . '_environment_data.' . $env_file_ext;
+      $new_filename = strtolower($new_filename);
+
+      // Rename file.
+      file_move($env_file, $dir_public . $new_filename);
+
+      // Update file table, Make file permanent.
+      $env_file->uri = $dir_public . $new_filename;
+      $env_file->status = FILE_STATUS_PERMANENT;
+      $env_file->filename = $new_filename;
+
+      // Update file properties.
+      file_save($env_file);
+      // Tell Drupal, rawpheno is using this file.
+      file_usage_add($env_file, 'rawpheno', 'file', $env_file->fid);
+
+      // Create a row in the table.
+      db_insert('pheno_environment_data')
+        ->fields(array(
+          'project_id' => $project_id,
+          'fid'       => $env_file->fid,
+          'location' => $location,
+          'year'    => $year,
+          'sequence_no' => $seq_no))
+        ->execute();
+
+      drupal_set_message(t('You have successfully uploaded environment data file to this project.'), 'status');
+    }
+  }
+}
+
+/**
+ * Function callback: Validate environment data file.
+ */
+function rawpheno_admin_validate_upload_envdata($form, &$form_state) {
+  // Location:
+  if (empty($form_state['values']['select_location'])) {
+    form_set_error('select_location', t('Location field is empty. Please select an option and try again.'));
+  }
+
+  // Year:
+  if (empty($form_state['values']['select_year'])) {
+    form_set_error('select_year', t('Year field is empty. Please select an option and try again.'));
+  }
+
+  // Environment Data File:
+  $field_value = $_FILES['files']['name']['file'];
+
+  if (empty($field_value)) {
+    form_set_error('file', t('Environment Data File is empty. Please select a file and try again.'));
+  }
+
+  // File extension is handled by file_validate_extensions above.
+}
 
 /**
  * Function get properties of project the user is assigned.
@@ -1818,6 +2118,38 @@ function rawpheno_admin_user_assets($asset_id) {
   $arr_project_assets['project_data_count'] = $data_count;
 
   return $arr_project_assets;
+}
+
+/**
+ * Function fetch environment data properties.
+ *
+ * @param $asset_id
+ *   An integer containing the environment data id number.
+ *
+ * @return
+ *   An array containing data and file information of environment data.
+ */
+function rawpheno_admin_envdata_asset($asset_id) {
+  $sql = "SELECT environment_data_id, project_id, location, year, fid
+          FROM pheno_environment_data WHERE environment_data_id = :envdata_id
+          LIMIT 1";
+
+  $envdata = chado_query($sql, array(':envdata_id' => $asset_id));
+
+  if ($envdata) {
+    $e = $envdata->fetchObject();
+
+    return array(
+      'envdata_id' => $e->environment_data_id,
+      'project_id' => $e->project_id,
+      'location' => $e->location,
+      'year' => $e->year,
+      'fid' => $e->fid,
+    );
+  }
+  else {
+    return 0;
+  }
 }
 
 

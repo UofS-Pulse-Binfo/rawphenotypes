@@ -7,18 +7,26 @@
     attach: function (context, settings) {
       var headers = 'container-prj-hdr';
       var users = 'container-prj-usr';
+      var envdata = 'container-prj-env';
 
       $('#nav-tabs li').click(function(i) {
 
         if ($(this).index() == 0) {
           // Column headers tab.
+          $('#' + envdata).hide();
           $('#' + users).hide();
           $('#' + headers).show();
         }
-        else {
+        else if ($(this).index() == 1) {
           // Active users tab.
+          $('#' + envdata).hide();
           $('#' + headers).hide();
           $('#' + users).show();
+        }
+        else {
+          $('#' + users).hide();
+          $('#' + headers).hide();
+          $('#' + envdata).show();
         }
 
         $('li.active-tab').removeClass('active-tab');
