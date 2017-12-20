@@ -1027,7 +1027,7 @@ function rawpheno_submit_review($form, &$form_state) {
 
       // Determine if the form in review traits has been filled out and checkbox
       // has been checked by user. If it has been checked then save the trait.
-      if ($form_state['values']['chk_' . $i] === 1) {
+      if ($form_state['values']['chk_' . $i] === 1 && !empty($form_state['values']['txt_header_' . $i])) {
         // Before save, we need to tell if the header is present in the database and
         // user just wants to reuse them. Otherwise, add a new header.
         // Reuse header - set to OPTIONAL.
@@ -1068,6 +1068,8 @@ function rawpheno_submit_review($form, &$form_state) {
         // Add the as contributed - set to CONTRIBUTED.
         // Construct the column header name.
         $name   = trim($form_state['values']['txt_header_' . $i]);
+        $name   = preg_replace('/\s+/', ' ', $name);
+
         $unit   = trim($form_state['values']['txt_unit_' . $i]);
         $method = trim($form_state['values']['txtarea_describe_' . $i]);
         $def    = trim($form_state['values']['txt_def_' . $i]);

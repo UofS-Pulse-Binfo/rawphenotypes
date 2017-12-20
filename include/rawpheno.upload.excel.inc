@@ -237,6 +237,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
           // Get the column header of a cell.
           $cell_colheader = trim(str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]));
+          // Remove additional spaces from column headers.
+          $cell_colheader = preg_replace('/\s+/', ' ', $cell_colheader);
+
 
           // Determine if user wants to save this trait.
           if (count($arr_newheaders) > 0 AND array_key_exists($cell_colheader, $arr_newheaders)) {
@@ -967,16 +970,16 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
 
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
-  $sql = "SELECT rel.object_id as id, cvt.name as name
+  $sql = "SELECT rel.subject_id as id, cvt.name as name
           FROM chado.cvterm_relationship rel LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id = rel.object_id
-          WHERE rel.subject_id = :trait LIMIT 1";
+          WHERE rel.object_id = :trait LIMIT 1";
 
   $args = array(':trait' => $trait_id);
   $unit = db_query($sql, $args)
-    ->fetchAll();
+    ->fetchObject();
 
-  if (sizeof($unit) == 1) {
-    return $unit[0];
+  if ($unit) {
+    return array('id' => $unit->id, 'name' => $unit->name);
   }
 
   // If that doesn't work then we try to extract it from the name.

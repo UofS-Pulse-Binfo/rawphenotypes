@@ -394,6 +394,7 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
 
     // Size of each bin/ interval.
     $interval = round($max/$total_bins);
+    $stock_bin = 0;
 
     $i = 0;
     $to = 0;
