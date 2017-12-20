@@ -73,6 +73,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   $tmp = file_directory_temp();
   $filename = $tmp . '/' . 'job-progress' . $job_id . '.txt';
 
+  // Variations of Not Applicable.
+  $not_applicable = array('na', 'n/a', 'n.a.');
+
   // Start Transaction.
   $TRANSACTION = db_transaction();
   try {
@@ -223,12 +226,20 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Read each row and each cell.
       // Each row will be an array where name is always the first element.
       foreach($row as $cell_index => $cell_entry) {
+        // For consistency, convert all variations of not applicable to NA.
+        if (is_string($cell_entry) && in_array(strtolower($cell_entry), $not_applicable)) {
+          $cell_entry = 'NA';
+        }
+
         // We don't want to insert empty data.
         // That said, while PHP thinks 0 is empty, we do not.
         if (!empty($cell_entry) OR (strval($cell_entry) === '0')) {
 
           // Get the column header of a cell.
           $cell_colheader = trim(str_replace(array("\n", "\r", "  "), ' ', $header[$cell_index]));
+          // Remove additional spaces from column headers.
+          $cell_colheader = preg_replace('/\s+/', ' ', $cell_colheader);
+
 
           // Determine if user wants to save this trait.
           if (count($arr_newheaders) > 0 AND array_key_exists($cell_colheader, $arr_newheaders)) {
@@ -300,7 +311,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           }
           // THE REST OF THE COLUMN HEADERS
           // Everything else into pheno_measurements.
-          elseif (!empty($cell_colheader)) {
+          elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
             // Get the cvterm_id for the trait measurement.
             $type_id = rawpheno_get_trait_id($cell_colheader);
 
@@ -520,6 +531,9 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // XLS starts at 1, while XLSX at 0;
   $i = 0;
 
+  // Variations of Not Applicable.
+  $not_applicable = array('na', 'n/a', 'n.a.');
+
   // Iterate though each row.
   $num_errored_rows = 0;
   $storage = array();
@@ -588,6 +602,11 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
           // We always want to strip flanking white space.
           // FYI: This is done when the data is loaded as well.
           $cell = trim($cell);
+
+          // For consistency, convert all variations of not applicable to NA.
+          if (is_string($cell) && in_array(strtolower($cell), $not_applicable)) {
+            $cell = 'NA';
+          }
 
           // Foreach validator:
           foreach (array('all','subset') as $scope) {
@@ -951,16 +970,16 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
 
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
-  $sql = "SELECT rel.object_id as id, cvt.name as name
+  $sql = "SELECT rel.subject_id as id, cvt.name as name
           FROM chado.cvterm_relationship rel LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id = rel.object_id
-          WHERE rel.subject_id = :trait LIMIT 1";
+          WHERE rel.object_id = :trait LIMIT 1";
 
   $args = array(':trait' => $trait_id);
   $unit = db_query($sql, $args)
-    ->fetchAll();
+    ->fetchObject();
 
-  if (sizeof($unit) == 1) {
-    return $unit[0];
+  if ($unit) {
+    return array('id' => $unit->id, 'name' => $unit->name);
   }
 
   // If that doesn't work then we try to extract it from the name.
