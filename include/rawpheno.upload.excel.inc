@@ -330,6 +330,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
             // Retrieve the unit for this trait.
             $cv_unit = rawpheno_get_trait_unit($cell_colheader, $type_id);
+
             if ($cv_unit) {
               $unit_id = $cv_unit['id'];
               $unit = $cv_unit['name'];
@@ -964,22 +965,21 @@ function rawpheno_get_trait_id($header) {
  */
 function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   // Get the trait id if that is not provided to us.
-  if (!$trait_id) {
+  if ($trait_id == NULL) {
     $trait_id = rawpheno_get_trait_id($trait_name);
   }
 
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
-  $sql = "SELECT rel.subject_id as id, cvt.name as name
-          FROM chado.cvterm_relationship rel LEFT JOIN chado.cvterm cvt ON cvt.cvterm_id = rel.object_id
-          WHERE rel.object_id = :trait LIMIT 1";
+  $sql = "SELECT cvterm_id, name FROM {cvterm} WHERE cvterm_id =
+    (SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :trait LIMIT 1)";
 
   $args = array(':trait' => $trait_id);
-  $unit = db_query($sql, $args)
+  $unit = chado_query($sql, $args)
     ->fetchObject();
 
-  if ($unit) {
-    return array('id' => $unit->id, 'name' => $unit->name);
+  if ($unit->rowCount() > 0) {
+    return array('id' => $unit->cvterm_id, 'name' => $unit->name);
   }
 
   // If that doesn't work then we try to extract it from the name.
