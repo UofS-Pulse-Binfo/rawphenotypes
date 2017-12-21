@@ -975,11 +975,11 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
     (SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :trait LIMIT 1)";
 
   $args = array(':trait' => $trait_id);
-  $unit = chado_query($sql, $args)
-    ->fetchObject();
+  $unit = chado_query($sql, $args);
 
   if ($unit->rowCount() > 0) {
-    return array('id' => $unit->cvterm_id, 'name' => $unit->name);
+    $r = $unit->fetchObject();
+    return array('id' => $r->cvterm_id, 'name' => $r->name);
   }
 
   // If that doesn't work then we try to extract it from the name.
