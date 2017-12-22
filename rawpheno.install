@@ -1083,6 +1083,53 @@ function rawpheno_update_7002() {
   tripal_populate_mview($mview_id);
 }
 
+/**
+ * Implements hook_update_N().
+ * Add custom table for environment data.
+ *
+ * N
+ * 7  - Drupal core compatibility.
+ * 0  - Module's major release version.
+ * 03 - Sequence count.
+ */
+function rawpheno_update_7003() {
+  // PHENO-ENVRONMENT-DATA
+  $schema['pheno_environment_data'] = array(
+    'description' => t('This table will hold information about environment data.'),
+    'fields' => array(
+      'environment_data_id' => array(
+        'description' => t('Primary Key: A unique ID number'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'project_id' => array(
+        'description' => t('The project ID number from table chado.project'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => t('File ID number from file_managed table'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'sequence_no' => array(
+        'description' => t('The sequence number of the file.'),
+        'type' => 'int',
+      ),
+      'location' => array(
+        'description' => t('Location information of the file.'),
+        'type' => 'text',
+      ),
+      'year' => array(
+        'description' => t('Year information of the file.'),
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('environment_data_id'),
+  );
+
+  db_create_table('pheno_environment_data', $schema['pheno_environment_data']);
+}
 
 /**
  * Implements hook_requirements().
