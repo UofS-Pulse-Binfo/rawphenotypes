@@ -160,6 +160,7 @@ function rawpheno_download($form, &$form_state) {
     '#type' => 'checkbox',
     '#default_value' => 0,
     '#disabled' => TRUE,
+    '#access' => FALSE,
   );
 
 
