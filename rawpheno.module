@@ -1500,7 +1500,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       ));
 
       if ($files->rowCount() > 0) {
-        $command = 'tar -cf ' . escapeshellarg($tmp_file) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
+        $command = 'tar -czf ' . escapeshellarg($tmp_file) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
         // Environment data here...
         foreach($files as $file) {
           $command .= escapeshellarg($file->filename) . ' ';
