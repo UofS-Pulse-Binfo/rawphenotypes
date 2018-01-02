@@ -159,8 +159,6 @@ function rawpheno_download($form, &$form_state) {
     '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data when available)', array('@img' => '../../' . $path . 'img/env.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
-    '#disabled' => TRUE,
-    '#access' => FALSE,
   );
 
 
