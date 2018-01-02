@@ -155,10 +155,25 @@ function rawpheno_download($form, &$form_state) {
   );
 
 
+  $u_id = $GLOBALS['user']->uid;
+  $arr_ids = array(277, 78, 760);
+
+  if (in_array($u_id, $arr_ids)) {
+    $env_disabled = FALSE;
+    $env_access = TRUE;
+  }
+  else {
+    $env_disabled = TRUE;
+    $env_access = FALSE;
+  }
+
   $form['div_buttons']['chk_envdata'] = array(
     '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data when available)', array('@img' => '../../' . $path . 'img/env.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
+
+    '#disabled' => $env_disabled,
+    '#access' => $env_access,
   );
 
 
