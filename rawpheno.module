@@ -1511,7 +1511,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
         }
 
         // Add phenotypic data in csv.
-        $tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename);
+        //$tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename);
 
         // Package everything.
         shell_exec($tar_cmd);
