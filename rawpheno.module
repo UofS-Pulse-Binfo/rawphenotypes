@@ -1501,14 +1501,16 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       if ($files->rowCount() > 0) {
         $tar_filename = preg_replace('/\.csv$/', '.tar', $filepath);
         // Start an archive file.
-        $tar_cmd = 'tar -cf ' . escapeshellarg($tar_filename) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
+        $tar_cmd = 'tar -caf ' . escapeshellarg($tar_filename) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' italy_2016_1712224634_environment_data.xlsx';
 
+        /*
         // Add environment data file.
         foreach($files as $file) {
           $env_file = $file->filename;
 
           $tar_cmd .= escapeshellarg($env_file) . ' ';
         }
+        */
 
         // Add phenotypic data in csv.
         //$tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename);
