@@ -119,7 +119,7 @@ function rawpheno_menu() {
   );
 
   $items['phenotypes/raw/csv'] = array(
-    'title' => 'Download Raw Phenotypic Data: CSV',
+    'title' => 'Download Raw Phenotypic Data: CSV/TAR',
     'page callback' => 'trpdownload_download_page',
     'page arguments' => array('rawpheno_csv'),
     'access arguments' => array('download rawpheno'),
@@ -1486,7 +1486,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     // Add environment data files if requested.
     if ($envdata == 1 && $f_type == 'tar') {
-      $tmp_file = $dir['tripal_temp'] . '/' . 'tar_temp' . uniqid() . '.tar';
       drush_print("Generating Archive File: " . $tmp_file);
 
       // Fetch all environment data files in a given project and location.
@@ -1502,6 +1501,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       if ($files->rowCount() > 0) {
         $tar_filename = preg_replace('/\.csv$/', '.tar', $filepath);
         // Start an archive file.
+        //
         $tar_cmd = 'tar -cf ' . escapeshellarg($tar_filename) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
 
         // Add environment data file.
