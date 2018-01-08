@@ -1505,14 +1505,17 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
         $tar_cmd = 'tar -cf ' . escapeshellarg($tar_filename) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
 
         // Add environment data file.
+        $envs = array();
         foreach($files as $file) {
           $env_file = $file->filename;
 
-          $tar_cmd .= escapeshellarg($env_file) . ' ';
+          $envs[] = escapeshellarg($env_file);
         }
 
+        $tar_cmd .= implode(' ', $envs) . ' 2>&1';
+
         // Add phenotypic data in csv.
-        $tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename);
+        $tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename) . ' 2>&1';
 
         // Package everything.
         shell_exec($tar_cmd);
