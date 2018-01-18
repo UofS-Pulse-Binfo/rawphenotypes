@@ -51,7 +51,7 @@ function rawpheno_trpdownload_summarize_download($vars) {
   // PROJECTS:
   $q = trim(implode('', $vars['download_args']['q']));
   $q = base64_decode($q);
-  list($project, $location, $traits, $r_version, $envdata) = explode('&', $q);
+  list($project, $location, $traits, $r_version, $envdata, $envfile) = explode('&', $q);
 
   $tmp = trim(str_replace('p=', '', $project));
   $project = explode(',', $tmp);
@@ -110,8 +110,47 @@ function rawpheno_trpdownload_summarize_download($vars) {
 
   $output = '<div style="overflow-y: scroll; height: 60px; border: 1px solid #EAEAEA; padding: 5px 20px; background-color: #FFFFFF">' . $summary . '</div>';
 
+  // Environment data files.
+  if ($envdata == 1 && $envfile !== 0) {
+    $envfile = trim(str_replace('file=', '', $envfile));
+
+    $file_icon = theme_image(array(
+      'path' => drupal_get_path('module','trpdownload_api').'/theme/icons/file_generic.128.png',
+      'alt' => 'download environment data file',
+      'attributes' => array()
+    ));
+
+    // File type:
+    $file_type = (strpos($envfile, 'tar')) ? 'TAR Archive File' : 'Microsoft Excel File';
+    // File link:
+    $file_link = l($envfile,
+      file_create_url('public://') . $envfile,
+      array('attributes' => array('download' => $envfile, 'target' => '_blank'))
+    );
+
+    $output .= '<div style="position: absolute; left: 0; width: 100%; margin-top: 40px; padding: 10px;">
+      <div style="margin: 0 20px 0 0;">
+        <div class="download-pane" style="margin: 0 20px;">'
+
+         . $file_icon .
+
+         '<div class="inner-pane file">
+            <h2>Environment Data File:</h2>
+            <div class="file-link">' . $file_link . '</div>
+            <div class="file-format">Format:' . $file_type . '</div>
+          </div>
+        </div>
+      </div>
+    </div>';
+
+    $margin = '200px';
+  }
+  else {
+    $margin = '30px';
+  }
+
   // Div container to hold navigation links to rawphenotypes page.
-  $output .= '<div style="position: absolute; margin-top: 30px; display: inline-block; left: 12%; width: 70%; text-align: center;">
+  $output .= '<div style="position: absolute; margin-top: ' . $margin . '; display: inline-block; left: 12%; width: 70%; text-align: center;">
     <div class="container-buttons" style="padding: 30px 0 0 0; margin: 30px 0 0 0;text-align: center; width: 100%;">
       <div class="buttons-wrapper" style=" display: inline-block; margin: 0 auto; width: 90%;">
         <a href="../upload" target="_blank" style="background: url(../../../' . $path . 'img/icon-upload.gif) no-repeat center top;' . $style . '"><span style="' . $style2 . '">Upload New Data</span></a>
@@ -139,71 +178,14 @@ function rawpheno_trpdownload_get_filename($vars) {
  * Determine the file suffix for the file to be generated.
  */
 function rawpheno_trpdownload_get_suffix($vars) {
-  foreach($vars as $l => $v) {
-    if(is_array($v)) {
-      foreach($v as $j => $m) {
-        if ($j == 'code') {
-          $code = $m;
-        }
-      }
-    }
-  }
-
-  $q = base64_decode($code);
-  list($project, $location, ,, $envdata) = explode('&', $q);
-  $envdata   = trim(str_replace('e=', '', $envdata));
-
-  if ($envdata == 1) {
-    // Projects:
-    $tmp = trim(str_replace('p=', '', $project));
-    $project = explode(',', $tmp);
-
-    // Locations:
-    $location = trim(str_replace('l=', '', $location));
-
-    if ($location == '0') {
-      // Load all locations available.
-      $sql = "SELECT DISTINCT value AS location
-              FROM pheno_plantprop
-              WHERE type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
-              ORDER BY value ASC";
-      $location = chado_query($sql)
-        ->fetchCol(0);
-    }
-    else {
-      $location = explode(',', $location);
-    }
-
-    // Try to see if options point to some location with env. data. Otherwise
-    // generate the regular comma separated file.
-    $sql = "SELECT filename FROM pheno_environment_data INNER JOIN file_managed USING (fid)
-            WHERE project_id IN (:project) AND location IN(:location)
-            ORDER BY project_id, location, year, sequence_no ASC";
-
-    $files = chado_query($sql, array(
-      ':project' => $project,
-      ':location' => $location,
-    ));
-
-    return ($files->rowCount() > 0) ? 'tar' : 'csv';
-  }
-  else {
-    return 'csv';
-  }
+  return 'csv';
 }
 
 /**
  * Function callback: determine the human-readable file format.
  */
 function rawpheno_trpdownload_get_readable_format($vars) {
-  $envdata = rawpheno_trpdownload_get_suffix($vars);
-
-  if ($envdata == 'tar') {
-    return 'TAR archive';
-  }
-  else {
-    return 'Comma-separated Values';
-  }
+  return 'Comma-separated Values';
 }
 
 /**
@@ -227,7 +209,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
 
   $q = base64_decode($code);
-  list($project, $location, $traits, $r_version, $envdata) = explode('&', $q);
+  list($project, $location, $traits, $r_version,,) = explode('&', $q);
 
   // Projects:
   $tmp = trim(str_replace('p=', '', $project));
@@ -263,8 +245,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
   // Rversion
   $r_version = trim(str_replace('r=', '', $r_version));
-  // Environment Data.
-  $envdata   = trim(str_replace('e=', '', $envdata));
 
   // Add planting date and # of seeds planted to the list of traits.
   // But, before doing this, make sure that these two column headers
@@ -364,17 +344,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   $results = db_query($sql, $arr_q_string);
 
   if ($results) {
-    // What is the definite file type?
-    if ($envdata == 1) {
-      $f_type = rawpheno_trpdownload_get_suffix($variables);
-
-      if ($f_type == 'tar') {
-        // When requesting environment data, file extension is tar,
-        // but still need to create a csv file by replacing tar back to csv.
-        $filename = preg_replace('/\.tar$/', '.csv', $filename);
-      }
-    }
-
     // Directories:
     $dir = array(
       'tripal_download' => variable_get('trpdownload_fullpath'),
@@ -448,44 +417,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     // Finally, close the file.
     fclose($FILE);
-
-    // Add environment data files if requested.
-    if ($envdata == 1 && $f_type == 'tar') {
-      drush_print('Generating Archive File...');
-
-      // Fetch all environment data files in a given project and location.
-      $sql = "SELECT filename FROM pheno_environment_data INNER JOIN file_managed USING (fid)
-              WHERE project_id IN (:project) AND location IN(:location)
-              ORDER BY project_id, location, year, sequence_no ASC";
-
-      $files = chado_query($sql, array(
-        ':project' => $project,
-        ':location' => $location,
-      ));
-
-      if ($files->rowCount() > 0) {
-        $tar_filename = preg_replace('/\.csv$/', '.tar', $filepath);
-        // Start an archive file.
-        //
-        $tar_cmd = 'tar -cf ' . escapeshellarg($tar_filename) . ' -C ' . escapeshellarg($dir['tripal_public']) . ' ';
-
-        // Add environment data file.
-        $envs = array();
-        foreach($files as $file) {
-          $env_file = $file->filename;
-
-          $envs[] = escapeshellarg($env_file);
-        }
-
-        $tar_cmd .= implode(' ', $envs) . ' 2>&1';
-
-        // Add phenotypic data in csv.
-        $tar_cmd .= ' -C ' . escapeshellarg($dir['tripal_download']) . ' ' . escapeshellarg($filename) . ' 2>&1';
-
-        // Package everything.
-        shell_exec($tar_cmd);
-      }
-    }
 
     if ($percent != 100) {
       drush_print('100% complete...');
