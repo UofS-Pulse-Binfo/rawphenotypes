@@ -300,12 +300,14 @@ function rawpheno_admin_all_projects($form, &$form_state) {
             COUNT(DISTINCT t2.cvterm_id) AS header_count,
             COUNT(DISTINCT t3.cvterm_id) AS essential_count,
             COUNT(DISTINCT t4.uid) AS user_count,
+            COUNT(DISTINCT t5.environment_data_id) AS env_count,
             t1.project_id
           FROM
             {project} AS t1
             INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
             INNER JOIN pheno_project_cvterm AS t3 USING (project_id)
             INNER JOIN pheno_project_user AS t4 USING (project_id)
+            LEFT JOIN pheno_environment_data AS t5 USING (project_id)
           WHERE
             t1.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
             AND t2.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
@@ -313,7 +315,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
             AND t3.type = 'essential'
             AND t4.project_id IN (SELECT DISTINCT project_id FROM pheno_project_cvterm)
           GROUP BY t1.project_id
-          ORDER BY t1.project_id DESC";
+          ORDER BY t1.name ASC";
 
   $args = array(':essential_trait' => $trait_type['type1']);
 
@@ -336,17 +338,22 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
       // Warn user that the project has no essential trait. Project must have at least 1 essential trait
       // list of column headers before it can process and store phenotypic data. The same for user.
+      $m = $GLOBALS['base_path'] . drupal_get_path('module', 'rawpheno');
       $warn_header = ($p->essential_count > 0)
         ? ''
-        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
+        : '&nbsp;&nbsp;<img src="' . $m . '/theme/img/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
 
       $warn_user = ($p->user_count > 0)
         ? ''
-        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
+        : '&nbsp;&nbsp;<img src="' . $m . 'theme/img/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
+
+      $warn_env = ($p->env_count > 0)
+        ? ''
+        : '&nbsp;&nbsp;<img src="' . $m . '/theme/img/message-16-warning.png" title="Project has no environment data file" alt="Project has no environment data file" />';
 
 
       // + 1 to account for Name column header.
-      array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell));
+      array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $p->env_count . $warn_env, $view_cell));
       $i++;
     }
   }
@@ -355,7 +362,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   }
 
   // Table headers.
-  array_push($arr_headers, '-', t('Project Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
+  array_push($arr_headers, '-', t('Project Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('Environment Data File'), t('View'));
 
   $table = theme('table', array('header' => $arr_headers, 'rows' => $arr_rows, 'empty' => $empty_table_title));
 
@@ -451,7 +458,7 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
 
 
   // Redirect user to project asset management page.
-  $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');
+  $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');
   drupal_goto($path);
 }
 
@@ -1369,7 +1376,7 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
     }
   }
   elseif ($action == 'delete') {
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage');
 
     // Admin wants to delete/remove the trait from the project.
     db_delete('pheno_project_cvterm')
@@ -1630,7 +1637,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
  */
 function rawpheno_admin_project_users($form, $form_state, $user_project_asset, $action) {
   if ($action == 'delete') {
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $user_project_asset['project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $user_project_asset['project_id'] . '/project/manage');
 
     db_delete('pheno_project_user')
       ->condition('project_user_id', $user_project_asset['project_user_id'])
@@ -1681,7 +1688,7 @@ function rawpheno_admin_project_envdata($form, $form_state, $envdata_project_ass
     }
 
     // Redirect user.
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $envdata_project_asset['project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $envdata_project_asset['project_id'] . '/project/manage');
     drupal_goto($path);
   }
 }
@@ -1998,7 +2005,7 @@ function rawpheno_admin_submit_upload_envdata($form, &$form_state) {
 
     // File extension validator.
     $file_validate_ext = array(
-      'file_validate_extensions' => array('xlsx csv tsv txt docx pptx'),
+      'file_validate_extensions' => array('xlsx csv tsv txt docx pptx pdf'),
     );
 
     // Save env data file.

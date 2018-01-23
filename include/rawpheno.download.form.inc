@@ -24,15 +24,23 @@ function rawpheno_download($form, &$form_state) {
     $project_selected = $form_state['values']['sel_project'];
   }
 
-  $sql = "SELECT DISTINCT t1.project_id, t1.name
-          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id)
-          ORDER BY t1.project_id DESC";
+  // Sort the project names according to Planting Date
+  $sql = "SELECT project_id, name
+          FROM {project} AS t1
+            RIGHT JOIN pheno_plant_project AS t2 USING (project_id)
+            LEFT JOIN pheno_measurements AS t3 USING (plant_id)
+          WHERE t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+          GROUP BY project_id, name, t3.value
+          ORDER BY t3.value DESC";
 
   $opt_project = chado_query($sql)
     ->fetchAllKeyed();
 
   if (count($opt_project) <= 0) {
     return $form;
+  }
+  else {
+    $opt_project = array_unique($opt_project, SORT_REGULAR);
   }
 
   // AJAX wrapper.
@@ -54,7 +62,7 @@ function rawpheno_download($form, &$form_state) {
   $form['ajax_container']['sel_project'] = array(
     '#type' => 'select',
     '#title' => t('Project'),
-    '#options' => array(0 => 'All Projects') + $opt_project,
+    '#options' => $opt_project,
     '#multiple' => FALSE,
     '#id' => 'download-sel-project',
     '#ajax' => array(
@@ -72,13 +80,13 @@ function rawpheno_download($form, &$form_state) {
 
   // Define the project ids required by the next field.
   if (isset($project_selected)) {
-    // When a project is selected.
-    // 0 is the first option in the select box and translates to all projects.
-    $project_id = ($project_selected == 0) ? array_keys($opt_project) : $project_selected;
+    // When a project is selected. Default to the project selected.
+    $project_id = $project_selected;
   }
   else {
-    // No project select. This is the defaul select all project.
-    $project_id = array_keys($opt_project);
+    // No project select. This is the default to the first project.
+    $p = array_keys($opt_project);
+    $project_id = reset($p);
   }
 
   // LOCATION SELECT BOX.
@@ -94,7 +102,7 @@ function rawpheno_download($form, &$form_state) {
 
   $form['ajax_container']['sel_location'] = array(
     '#type' => 'select',
-    '#title' => t('Location'),
+    '#title' => t('Select Location'),
     '#options' => $opt_location,
     '#multiple' => TRUE,
     '#size' => 7,
@@ -142,7 +150,6 @@ function rawpheno_download($form, &$form_state) {
 
   drupal_add_js(array('rawpheno' => array('envdata_option' => $add_option)), array('type' => 'setting'));
 
-
   // TRAITS.
   // Select traits wrapper.
   $form['ajax_container']['ajax_container_traits'] = array(
@@ -152,11 +159,27 @@ function rawpheno_download($form, &$form_state) {
   );
 
   // Get traits given a location and project.
-  $opt_trait = rawpheno_download_load_traits($location_id, $project_id);
+  $sql = "SELECT cvterm_id, name
+          FROM {cvterm}
+            RIGHT JOIN pheno_measurements AS t1 ON cvterm_id = type_id
+          WHERE
+            t1.value IS NOT NULL
+            AND name NOT IN ('Planting Date (date)', '# of Seeds Planted (count)')
+            AND plant_id IN (SELECT plant_id
+              FROM pheno_plantprop INNER JOIN pheno_plant_project USING(plant_id)
+              WHERE value IN (:location) AND project_id IN (:project))
+          GROUP BY cvterm_id, name
+          ORDER BY name ASC";
+
+  $opt_trait = chado_query($sql, array(
+    ':location' => $location_id,
+    ':project' => $project_id
+  ))
+    ->fetchAllKeyed();
 
   $form['ajax_container']['ajax_container_traits']['sel_trait'] = array(
     '#type' => 'select',
-    '#title' => t('@trait_count Traits available', array('@trait_count' => count($opt_trait))),
+    '#title' => t('Select Trait - @trait_count Traits available', array('@trait_count' => count($opt_trait))),
     '#options' => $opt_trait,
     '#multiple' => TRUE,
     '#size' => 15,
@@ -235,6 +258,20 @@ function rawpheno_download_get_traits($form, $form_state) {
 
 
 /**
+ * Implements hook_validate().
+ */
+function rawpheno_download_validate($form, &$form_state) {
+  if (!$form_state['values']['sel_location']) {
+    form_set_error('sel_location', t('No location(s) selected. Please select location(s) and try again'));
+  }
+
+  if (!$form_state['values']['sel_trait']) {
+    form_set_error('sel_trait', t('No trait(s) selected. Please select trait(s) and try again'));
+  }
+}
+
+
+/**
  * Implements hook_form_submit().
  *
  * Generate a comma separated values (csv) file based on the location and trait set selected.
@@ -267,6 +304,17 @@ function rawpheno_download_submit($form, &$form_state) {
 
   // Construct environment data files archive.
   $env_filename = 0;
+
+  // Due to unable to execute shell_exec/tar in tripal download api -
+  // This block will fetch all environment data files when available for
+  // a given project and location combination. Once files are ready, tar
+  // them together when more than 1 files returned otherwise, use single file.
+  // The filename for either case will be forwarded to tripal download api
+  // wich will create a markup for a secondary download link.
+  // See: rawpheno_trpdownload_summarize_download()
+
+  // In this method, tripal download api will be solely responsible for
+  // generating the rawphenotypic data file while hook_submit is for env files.
 
   if (isset($env) && $env == 1) {
     // Ensure that project and location combination return an environment data file.

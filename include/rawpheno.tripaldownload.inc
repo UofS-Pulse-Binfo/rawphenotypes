@@ -135,7 +135,7 @@ function rawpheno_trpdownload_summarize_download($vars) {
          . $file_icon .
 
          '<div class="inner-pane file">
-            <h2>Environment Data File:</h2>
+            <h2>Environment Data File(s):</h2>
             <div class="file-link">' . $file_link . '</div>
             <div class="file-format">Format:' . $file_type . '</div>
           </div>
