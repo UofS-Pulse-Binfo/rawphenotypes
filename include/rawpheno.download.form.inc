@@ -159,6 +159,11 @@ function rawpheno_download($form, &$form_state) {
   );
 
   // Get traits given a location and project.
+  if (isset($project_selected) && isset($location)) {
+    $project_id = $project_selected;
+    $location_id = $location;
+  }
+
   $sql = "SELECT cvterm_id, name
           FROM {cvterm}
             RIGHT JOIN pheno_measurements AS t1 ON cvterm_id = type_id
@@ -235,24 +240,6 @@ function rawpheno_download_get_locations_traits($form, $form_state) {
  * Function callback: AJAX update trait select box.
  */
 function rawpheno_download_get_traits($form, $form_state) {
-  $location = $form_state['values']['sel_location'];
-  $project = $form_state['values']['sel_project'];
-
-  // Determine if the selected project is all project.
-  if ($project == 0) {
-    // Yes, then read the value of the hidden field containing project ids.
-    $t = $form_state['values']['txt_project'];
-    $project = explode(',', $t);
-  }
-
-  // Get all traits given a location and project.
-  $opt_trait = rawpheno_download_load_traits($location, $project);
-
-  // Update the #options value of select a trait select box.
-  $form['ajax_container']['ajax_container_traits']['sel_trait']['#options'] = $opt_trait;
-  // Update the title.
-  $form['ajax_container']['ajax_container_traits']['sel_trait']['#title'] = t('@count_trait Traits available', array('@count_trait' => count($opt_trait)));
-
   return $form['ajax_container']['ajax_container_traits'];
 }
 
