@@ -95,7 +95,10 @@
         $(':input').removeAttr('disabled');
 
         if (!env) {
-          $('#chk-envdata').attr('disabled', 'disabled');
+          $('#chk-envdata').attr({
+            'checked' : false,
+            'disabled': 'disabled'
+          });
         }
       });
 
