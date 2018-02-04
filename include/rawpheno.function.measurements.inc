@@ -361,9 +361,9 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       WHERE
         t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
         AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
         %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
       GROUP BY t1.stock_id, t2.value, t3.value, t4.value
       ORDER BY location, average ASC", $categorize);
 
@@ -448,9 +448,9 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       WHERE
         t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
         AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
         %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
       ORDER BY location ASC", $categorize);
 
     $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
@@ -498,9 +498,9 @@ function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $
       WHERE
         t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
         AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
         %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1)
+        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
       ORDER BY location ASC", $categorize);
 
     $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
