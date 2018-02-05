@@ -564,6 +564,7 @@ function rawpheno_install() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -571,14 +572,14 @@ function rawpheno_install() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.
@@ -1032,6 +1033,7 @@ function rawpheno_update_7002() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -1039,14 +1041,14 @@ function rawpheno_update_7002() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.
