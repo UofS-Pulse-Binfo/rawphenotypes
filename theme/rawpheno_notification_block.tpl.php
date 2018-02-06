@@ -68,12 +68,19 @@
   <div class="rawpheno-notification-item rawpheno-item-c" title="Raw Phenotypes Help Topics">
     <div class="rawpheno-item-wrapper">
       <h3>Need Help? Select a topic below.</h3>
-      <ul>
-        <li><a href="<?php print $path_phenotypes_video . 'rawpheno_backup.mp4'; ?>" target="_blank" class="rawpheno-notification-arrow-right">How to Backup Data Collection Spreadsheet File</a></li>
-        <li><a href="<?php print $path_phenotypes_video . 'rawpheno_upload.mp4'; ?>" target="_blank" class="rawpheno-notification-arrow-right">How to Upload Data to <?php print $hostname; ?></a></li>
-        <li><a href="<?php print $path_phenotypes_raw   . 'instructions'; ?>" target="_blank" class="rawpheno-notification-arrow-right">Standard Phenotyping Procedure</a></li>
-        <li><a href="<?php print $path_phenotypes_raw   . 'videos'; ?>" target="_blank" class="rawpheno-notification-arrow-right">Other Video Demonstrations</a></li>
-      </ul>
+
+      <select id="rawpheno-notification-helptopic-select">
+        <option value="">---</option>
+        <option value="<?php print $path_phenotypes_video . 'rawpheno_backup.mp4'; ?>">How to Backup Spreadsheet File</option>
+        <option value="<?php print $path_phenotypes_video . 'rawpheno_upload.mp4'; ?>">How to Upload Data to <?php print $hostname; ?></option>
+        <option value="<?php print $path_phenotypes_raw   . 'instructions';        ?>">Standard Phenotyping Procedure</option>
+        <option value="<?php print $path_phenotypes_raw   . 'videos';              ?>">Other Video Demonstrations</option>
+      </select>
+
+      <?php if (isset($support_email) && !empty($support_email)) { ?>
+        <h3>Still need a help? Send us an email.</h3>
+        <span class="rawpheno-notification-arrow-right">Email: <a href="mailto:<?php print $support_email; ?>">KnowPulse Support</a></span>
+      <?php } ?>
     </div>
   </div>
 </div>

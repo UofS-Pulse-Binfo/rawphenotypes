@@ -25,6 +25,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   $plantprop_headers = unserialize($plantprop_headers);
   $arr_newheaders = unserialize($arr_newheaders);
 
+  // Project name.
+  $project_name = rawpheno_function_getproject($project_id);
+
   // First we load the file.
   $file = file_load($fid);
 
@@ -85,6 +88,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
     // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
+    // Skip columns.
+    $skip = array();
+    // Project name.
+    $project_name = rawpheno_function_getproject($project_id);
+    // Calling all modules implementing hook_rawpheno_ignorecols_valsave_alter():
+    drupal_alter('rawpheno_ignorecols_valsave', $skip, $project_name);
+
     // Each row in the spreadsheet.
     foreach ($xls_obj as $row) {
       // Create progress update by computing the number of rows saved in percent.
@@ -134,9 +144,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Process the name column first since we need a plant_id before we can insert any more data.
       // Name column header goes into pheno_plant.
       // Check if stock name exists.
-      $stock_id = NULL;
-      $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => trim($row[$name_index])));
-      if ($r) $stock_id = $r->fetchField();
+      unset($stock_id);
+      $stock_id = rawpheno_function_getstockid(trim($row[$name_index]), $project_name);
+      print $stock_id . ' -- ' . $row[$name_index] . "\n";
 
       // Determine if name has a stock id number.
       if (isset($stock_id) && $stock_id > 0) {
@@ -226,6 +236,14 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Read each row and each cell.
       // Each row will be an array where name is always the first element.
       foreach($row as $cell_index => $cell_entry) {
+        // Skip this cell when col from durpal_alter hook matches the col.
+        $h = rawpheno_function_delformat($header[$cell_index]);
+
+        if (count($skip) > 0 && in_array($h, $skip)) {
+          print 'skipping value : ' . $h . '=' . $cell_entry . "\n";
+          continue;
+        }
+
         // For consistency, convert all variations of not applicable to NA.
         if (is_string($cell_entry) && in_array(strtolower($cell_entry), $not_applicable)) {
           $cell_entry = 'NA';
@@ -312,6 +330,11 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           // THE REST OF THE COLUMN HEADERS
           // Everything else into pheno_measurements.
           elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
+            if (in_array($cell_colheader, $skip)) {
+              print 'skipping header : ' . $cell_colheader . "\n";
+              continue;
+            }
+
             // Get the cvterm_id for the trait measurement.
             $type_id = rawpheno_get_trait_id($cell_colheader);
 
@@ -535,6 +558,13 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // Variations of Not Applicable.
   $not_applicable = array('na', 'n/a', 'n.a.');
 
+  // Skip columns.
+  $skip = array();
+  // Project name.
+  $project_name = rawpheno_function_getproject($project_id);
+  // Calling all modules implementing hook_rawpheno_ignorecols_valsave_alter():
+  drupal_alter('rawpheno_ignorecols_valsave', $skip, $project_name);
+
   // Iterate though each row.
   $num_errored_rows = 0;
   $storage = array();
@@ -557,12 +587,18 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
         $o = 0;
         foreach ($row as $r) {
           $without_format = rawpheno_function_delformat($r);
+
+          // To maintain index of both cells and header, tag either to skip or process
+          // based on headers in drupal_alter hook.
+          $s = (in_array($without_format, $skip)) ? 1 : 0;
+
           $no_units = rawpheno_get_trait_name($r);
           $header[] = array(
             'no format' => $without_format,
             'original' => $r,
             'units' => rawpheno_function_unit($without_format),
             'no units' => $no_units,
+            'skip' => $s,
           );
 
           // Store index number of Plot trait requirements.
@@ -596,6 +632,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
         $row_has_error = FALSE;
         foreach ($row as $column_index => $cell) {
+          if ($header[$column_index]['skip'] == 1) continue;
 
           $column_name = $header[$column_index]['no units'];
           if (empty($column_name)) continue;

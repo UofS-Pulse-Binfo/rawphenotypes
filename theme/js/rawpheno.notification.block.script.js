@@ -45,6 +45,18 @@
 
         whyBackupInfo.slideUp().hide();
       });
+
+      // Convert help topic select box to a jump menu.
+      if ($('#rawpheno-notification-helptopic-select').length) {
+        $('#rawpheno-notification-helptopic-select').change(function() {
+          var url = $(this).attr('value');
+
+          if (url) {
+            window.open(url, '_blank');
+          }
+        });
+      }
+
     }
   };
 }(jQuery));

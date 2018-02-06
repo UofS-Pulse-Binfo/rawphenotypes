@@ -1173,3 +1173,48 @@ function rawpheno_function_plot_exists($plot, $project_id) {
 
   return $m->fetchField(0);
 }
+
+
+/**
+ * Function to get stock_id number of a stock name in chado.stock.
+ * NOTE: AGL applies only to when saving data. Validation (germplasm exists)
+ *       is based on stock w/o this token.
+ *
+ * @param $stock_name
+ *   A string, the name of the stock.
+ * @param $project_name
+ *   A string, the name of the project.
+ *
+ * @return
+ *   An integer, the stock id number.
+ */
+function rawpheno_function_getstockid($stock_name, $project_name) {
+  // Calling all modules implementing hook_rawpheno_AGILE_stock_name_alter():
+  drupal_alter('rawpheno_AGILE_stock_name', $stock_name, $project_name);
+
+  // Limit the search to project organism.
+  $result = chado_query(
+    "SELECT stock_id FROM {stock} WHERE name = :name LIMIT 1",
+    array(':name' => $stock_name)
+  );
+
+  return ($result) ? $result->fetchField() : 0;
+}
+
+
+/**
+ * Function: get project name.
+ *
+ * @param $project_id
+ *   An integer value, the project id number.
+ *
+ * @return
+ *   A string value, the name for the project from chado.project table.
+ */
+function rawpheno_function_getproject($project_id) {
+  $result = chado_query("SELECT name FROM {project} WHERE project_id = :project_id LIMIT 1", array(
+    ':project_id' => $project_id,
+  ));
+
+  return ($result) ? $result->fetchField() : 0;
+}

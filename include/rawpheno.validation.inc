@@ -232,6 +232,8 @@ function validator_column_exists_validate_header($header, $project_id) {
   $nospace_header = array();
 
   foreach ($header as $h) {
+    if ($h['skip'] == 1) continue;
+
     $delformat_header[] = $h['no units'];
     $nospace_header[] = str_replace(' ','', $h['no format']);
   }
@@ -265,6 +267,8 @@ function validator_column_exists_validate_header($header, $project_id) {
   // or closing paren.
   $invalid_format = array();
   foreach($header as $f) {
+    if ($f['skip'] == 1) continue;
+
     $h = trim(str_replace(array("\n", "\r", "  "), ' ', $f['original']));
 
     $is_valid = rawpheno_valid_trait_format($h);

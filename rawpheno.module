@@ -1591,11 +1591,15 @@ function rawpheno_block_view($delta = '') {
       $u = explode('.', $url);
       $hostname = (empty($u[0])) ? $url : ucfirst($u[0]);
 
+      $support_email = '';
+      drupal_alter('rawpheno_support_email', $support_email);
+
       $content = theme('rawpheno_notification_block', array(
         'alert' => $alert,
         'username' => $user,
         'hostname' => $hostname,
         'file_count' => $file_count,
+        'support_email' => $support_email,
         'path_module' => base_path() . $path . '/',
         'path_phenotypes_raw' => $GLOBALS['base_url'] . '/phenotypes/raw/',
         'path_phenotypes_video' => file_create_url('public://') . 'tutorial_files/rawpheno_videos/',
