@@ -359,7 +359,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
         );
 
         // Clean up the current header.
-        $name = rawpheno_function_delformat($k);
+        $name = trim(strtolower(preg_replace('!\s+!', ' ', $k)));
         $arr_checked_header[] = $name;
 
         // Test if the header has a unit component and set the variable accordingly.
@@ -449,7 +449,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             '#description' => t('A human-readable text definition'),
           );
 
-           if (isset($cvterm_info)) {
+           if (isset($cvterm_info) && isset($cvterm_info->definition)) {
              $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i]['#value'] = $cvterm_info->definition;
              $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i]['#disabled'] = TRUE;
            }
