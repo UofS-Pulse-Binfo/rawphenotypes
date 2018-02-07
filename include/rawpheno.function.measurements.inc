@@ -1173,3 +1173,33 @@ function rawpheno_function_plot_exists($plot, $project_id) {
 
   return $m->fetchField(0);
 }
+
+
+/**
+ * Function to get environment data files.
+ *
+ * @param $project
+ *   An array, the titles or names of projects.
+ * @param $location
+ *   An array of locations.
+ *
+ * @return
+ *   An array of environment data filenames.
+ */
+function rawpheno_function_getenv($project, $location) {
+  $sql = "SELECT filename FROM pheno_environment_data INNER JOIN file_managed USING (fid)
+            WHERE project_id IN (:project) AND location IN(:location)
+            ORDER BY project_id, location, year, sequence_no ASC";
+
+  $files = chado_query($sql, array(
+    ':project' => $project,
+    ':location' => $location,
+  ));
+
+  if ($files->rowCount() > 0) {
+    return $files->fetchAll();
+  }
+  else {
+    return 0;
+  }
+}
