@@ -122,6 +122,27 @@ function rawpheno_download($form, &$form_state) {
 
   $location_id = $opt_location;
 
+  // Manage environment data file option.
+  // Allow option when a project is selected and project and location combination
+  // returns an environment data file.
+  $add_option = FALSE;
+
+  if (isset($project_selected) && $project_selected > 0) {
+    if (isset($form_state['values']['sel_location'])
+        && count($form_state['values']['sel_location']) > 0) {
+
+      $location = $form_state['values']['sel_location'];
+
+      $envfile = rawpheno_function_getenv($project_selected, $location);
+      if ($envfile) {
+        $add_option = TRUE;
+      }
+    }
+  }
+
+  drupal_add_js(array('rawpheno' => array('envdata_option' => $add_option)), array('type' => 'setting'));
+
+
   // TRAITS.
   // Select traits wrapper.
   $form['ajax_container']['ajax_container_traits'] = array(
@@ -154,13 +175,12 @@ function rawpheno_download($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
-
   $form['div_buttons']['chk_envdata'] = array(
-    '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data when available)', array('@img' => '../../' . $path . 'img/env.gif')),
+    '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data)', array('@img' => '../../' . $path . 'img/env.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
+    '#id' => 'chk-envdata',
   );
-
 
   $form['div_buttons']['chk_rfriendly'] = array(
     '#title' => t('<img src="@img" alt="Make R Friendly" title="Make R Friendly" align="absmiddle" /> (Make R Friendly)', array('@img' => '../../' . $path . 'img/r.gif')),
@@ -245,16 +265,54 @@ function rawpheno_download_submit($form, &$form_state) {
   $env = $form_state['values']['chk_envdata'];
   $rvr = $form_state['values']['chk_rfriendly'];
 
+  // Construct environment data files archive.
+  $env_filename = 0;
+
+  if (isset($env) && $env == 1) {
+    // Ensure that project and location combination return an environment data file.
+    $project = explode(',', $prj);
+    $location = explode(',', $loc);
+
+    $files = rawpheno_function_getenv($project, $location);
+
+    if (count($files) > 0) {
+      // Env file available.
+      $envs = array();
+
+      foreach($files as $file) {
+        $envs[] = $file->filename;
+      }
+
+      if (count($envs) == 1) {
+        // Single env file found. Fetch the file (xlsx usually) and submit to tripal download.
+        $env_filename = reset($envs);
+      }
+      else {
+        // Multiple env files found. Fetch all files, tar (archive) and submit to tripal download.
+        $public = drupal_realpath('public://');
+        $tar_filename = 'environment_data_' . date('ymdis') . '.tar';
+        $tar_file = $public . '/' . $tar_filename;
+
+        $tar_cmd = 'tar -cf ' . escapeshellarg($tar_file) . ' -C ' . escapeshellarg($public) . ' ';
+        $tar_cmd .= implode(' ', $envs) . ' 2>&1';
+
+        // Package everything...
+        shell_exec($tar_cmd);
+        $env_filename = $tar_filename;
+      }
+    }
+  }
+
   // Contain all query parameters/string into one string.
   // Decode first when reading this string using base64_decode() function.
-  $url = base64_encode('p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env);
+  $url = 'p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env . '&file=' . $env_filename;
 
   // Format url for redirect.
   $form_state['redirect'] = array(
     '/phenotypes/raw/csv',
     array(
       'query' => array(
-        'code' => $url,
+        'code' => base64_encode($url),
       ),
     ),
   );
