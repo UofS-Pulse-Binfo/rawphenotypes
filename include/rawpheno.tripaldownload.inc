@@ -69,7 +69,7 @@ function rawpheno_trpdownload_summarize_download($vars) {
     // Load all locations available.
     $sql = "SELECT DISTINCT value AS location
             FROM pheno_plantprop
-            WHERE type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
+            WHERE type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
             ORDER BY value ASC";
     $location = chado_query($sql)
       ->fetchCol(0);
@@ -222,7 +222,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     // Load all locations available.
     $sql = "SELECT DISTINCT value AS location
             FROM pheno_plantprop
-            WHERE type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
+            WHERE type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
             ORDER BY value ASC";
     $location = chado_query($sql)
       ->fetchCol(0);
