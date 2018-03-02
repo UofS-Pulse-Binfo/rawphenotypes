@@ -693,6 +693,68 @@ function rawpheno_uninstall() {
 
 /**
  * Implements hook_update_N().
+ * Map cvterm in tripal database to rawpheno_tripal.
+ *
+ * N
+ * 7  - Drupal core compatibility.
+ * 2  - Module's major release version.
+ * 01 - Sequence count.
+ */
+function rawpheno_update_7201() {
+  // Rawphenotypes database name.
+  $rawpheno_dbname = 'rawpheno_tripal';
+  // db_id
+  $rawpheno_dbid = '';
+
+  // In db table, check to see if rawpheno_tripal exists.
+  $sql = "SELECT db_id FROM {db} WHERE name = :rawpheno_dbname LIMIT 1";
+  $args = array(':rawpheno_dbname' => $rawpheno_dbname);
+
+  $db_id = chado_query($sql, $args);
+
+  if ($db_id->rowCount()) {
+    // Already created. Save the db_id
+    $rawpheno_dbid = $db_id
+      ->fetchField();
+  }
+  else {
+    // Not created. Insert a row and get the id.
+    $db_id = chado_insert_record('db', array('name' => $rawpheno_dbname));
+    $rawpheno_dbid = $db_id['db_id'];
+  }
+
+  // Get the db id of Tripal db. Use it to futher filter the rows for update
+  // since previous version use tripal as default db.
+  $sql = "SELECT db_id FROM {db} WHERE name = 'tripal' LIMIT 1";
+  $tripal = chado_query($sql);
+
+  if ($tripal->rowCount()) {
+    $tripal_dbid = $tripal
+      ->fetchField();
+
+    // With the db_id, update all rawphenotypes cvterms to use this db_id in dbxref.
+    $t = rawpheno_function_terms('vocabularies');
+    unset($t['cv_rver'], $t['cv_desc']);
+    $terms = array_values($t);
+
+    // Update db_id in dbxerf table. Map all rawphenotypes cvterms to rapheno_tripal db.
+    $sql = "
+      UPDATE {dbxref} SET db_id = :rawpheno_dbid
+      WHERE
+        dbxref_id IN (SELECT t2.dbxref_id FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING (cv_id) WHERE t1.name IN (:terms))
+        AND db_id = :tripal_dbid";
+
+    $args = array(':rawpheno_dbid' => $rawpheno_dbid, // Map to rawpheno_tripal instead.
+                  ':terms' => $terms,                 // Only for terms phenotype_plant_property, phenotype_measurement_units and phenotype_measurement_type
+                  ':tripal_dbid' => $tripal_dbid);    // Where previously set to TRIPAL.
+
+    chado_query($sql, $args);
+  }
+}
+
+
+/**
+ * Implements hook_update_N().
  * Update custom table with tables relating a project to set of cvterms
  * and project to stock/name.
  *
