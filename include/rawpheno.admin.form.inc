@@ -1774,11 +1774,16 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   $unit = chado_query($sql)
     ->fetchAllKeyed();
 
+  // Default to text unit.
+  $unit_keys = array_keys($unit);
+  $textunit = array_search('text', $unit_keys);
+  $textunit_id = $unit_keys[$textunit];
+
   $form['fieldset_trait']['sel_trait_unit'] = array(
     '#type' => 'select',
     '#title' => t('Unit:'),
     '#options' => $unit,
-    '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : reset($unit),
+    '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : $textunit_id,
     '#disabled' => $disabled,
   );
 

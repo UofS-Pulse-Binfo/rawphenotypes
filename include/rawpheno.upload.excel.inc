@@ -862,6 +862,7 @@ function rawpheno_indicate_new_headers($file, $project_id) {
       // Determine if column header exists in the expected column headers.
       if (!in_array($temp_value, $expected_headers) && !empty($value)) {
         // Not in expected column headers, save it as new header.
+        $value = preg_replace('/\s+/', ' ', $value);
         $new_headers[] = $value;
       }
     }

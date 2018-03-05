@@ -1023,6 +1023,8 @@ function rawpheno_submit_review($form, &$form_state) {
       // For each new header store information provided in the interface.
       // Indicates if user has check this header for saving.
       $header = trim(str_replace(array("\n", "\r", "  "), ' ', $header));
+      $header = preg_replace('/\s+/', ' ', $header);
+
       $arr_newheaders[$header]['flag'] = ($form_state['values']['chk_' . $i] == 1) ? 1 : 0;
 
       // Determine if the form in review traits has been filled out and checkbox
