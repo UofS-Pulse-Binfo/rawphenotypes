@@ -25,7 +25,7 @@ function rawpheno_rawdata($form, &$form_state) {
   $sql = "SELECT DISTINCT t1.project_id, t1.name
           FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id)
           WHERE plant_id IS NOT NULL
-          ORDER BY t1.project_id DESC";
+          ORDER BY t1.project_id ASC";
 
   $project = chado_query($sql)
     ->fetchAllKeyed();

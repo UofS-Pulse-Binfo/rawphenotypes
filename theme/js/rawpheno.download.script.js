@@ -81,6 +81,19 @@
         checkUncheck(traits.checkbox);
       });
 
+      // Environment data file option.
+      var env = Drupal.settings.rawpheno.envdata_option;
+      var envFld = $('#chk-envdata');
+
+      if (env) {
+        // Project + location have env data file - enable
+        envFld.parent().fadeIn();
+      }
+      else {
+        // No file. clear the check - disable.
+        checkUncheck(envFld, '');
+        envFld.parent().fadeOut();
+      }
 
 
       // Disable fields on AJAX (selectbox, checkbox, buttons and all).
