@@ -146,7 +146,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Check if stock name exists.
       unset($stock_id);
       $stock_id = rawpheno_function_getstockid(trim($row[$name_index]), $project_name);
-      print $stock_id . ' -- ' . $row[$name_index] . "\n";
+      // print $stock_id . ' -- ' . $row[$name_index] . "\n";
 
       // Determine if name has a stock id number.
       if (isset($stock_id) && $stock_id > 0) {
