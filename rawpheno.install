@@ -406,8 +406,9 @@ function rawpheno_install() {
   // Default Project.
   // This is the default project, only when such project exists, otherwise, insert the column headers
   // and make them available for use in admin control panel.
+  // @note project.name must be unique so no need to limit 1.
   $default_project = rawpheno_function_terms('project');
-  $sql = "SELECT project_id FROM {project} WHERE name = :default_project LIMIT 1";
+  $sql = "SELECT project_id FROM {project} WHERE name = :default_project";
   $args = array(':default_project' => $default_project);
   $prj_id = chado_query($sql, $args);
 
@@ -564,6 +565,7 @@ function rawpheno_install() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -571,14 +573,14 @@ function rawpheno_install() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.
@@ -649,7 +651,8 @@ function rawpheno_uninstall() {
   // # 2. DROP MATERIALIZED VIEW TABLE.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
-  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
+  // @note tripal_mviews.mv_table must be unique (constraint).
+  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
     ->fetchField();
 
@@ -706,7 +709,8 @@ function rawpheno_update_7201() {
   $rawpheno_dbid = '';
 
   // In db table, check to see if rawpheno_tripal exists.
-  $sql = "SELECT db_id FROM {db} WHERE name = :rawpheno_dbname LIMIT 1";
+  // @note db.name must be unique (constraint).
+  $sql = "SELECT db_id FROM {db} WHERE name = :rawpheno_dbname";
   $args = array(':rawpheno_dbname' => $rawpheno_dbname);
 
   $db_id = chado_query($sql, $args);
@@ -724,7 +728,8 @@ function rawpheno_update_7201() {
 
   // Get the db id of Tripal db. Use it to futher filter the rows for update
   // since previous version use tripal as default db.
-  $sql = "SELECT db_id FROM {db} WHERE name = 'tripal' LIMIT 1";
+  // @note db.name must be unique (constraint).
+  $sql = "SELECT db_id FROM {db} WHERE name = 'tripal'";
   $tripal = chado_query($sql);
 
   if ($tripal->rowCount()) {
@@ -917,7 +922,8 @@ function rawpheno_update_7002() {
   // AGILE Project.
   $default_project = rawpheno_function_terms('project');
 
-  $sql = "SELECT project_id FROM {project} WHERE name = :default_project LIMIT 1";
+  // @note project.name must be unique (constraint).
+  $sql = "SELECT project_id FROM {project} WHERE name = :default_project";
   $args = array(':default_project' => $default_project);
   $prj_id = chado_query($sql, $args);
 
@@ -1076,7 +1082,8 @@ function rawpheno_update_7002() {
   // Replace materialized view.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
-  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
+  // @note tripal_mviews.mv_table must be unique (constraint).
+  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
     ->fetchField();
 
@@ -1094,6 +1101,7 @@ function rawpheno_update_7002() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -1101,14 +1109,14 @@ function rawpheno_update_7002() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.

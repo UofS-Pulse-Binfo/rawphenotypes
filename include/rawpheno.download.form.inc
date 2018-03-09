@@ -85,7 +85,7 @@ function rawpheno_download($form, &$form_state) {
   $sql = "SELECT DISTINCT value, value AS prj_location
           FROM pheno_plantprop
           WHERE
-            type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1) AND
+            type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
             plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id IN (:project_id))
           ORDER BY value ASC";
 

@@ -843,7 +843,7 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties['type'] = $h->type;
 
   // cvterm properties.
-  $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id LIMIT 1";
+  $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id";
   $args = array(':cvterm_id' => $arr_properties['cvterm_id']);
 
   $h = chado_query($sql, $args)
@@ -1120,7 +1120,8 @@ function rawpheno_download_load_traits($location, $project) {
 function rawpheno_download_r_compatible($cvterm_id) {
   $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
 
-  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id LIMIT 1";
+  // @note cvtermprop cvterm_id + type_id + rank is unique (constraint).
+  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id AND rank = 0";
   $args = array(':cvterm_id' => $cvterm_id, ':cv_id' => $cv_rver->cv_id);
 
   $r = chado_query($sql, $args)
@@ -1156,10 +1157,10 @@ function rawpheno_function_plot_exists($plot, $project_id) {
       INNER JOIN pheno_measurements AS t5 USING(plant_id)
     WHERE
       t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Plot' LIMIT 1)
-      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Rep' LIMIT 1)
-      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
-      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Plot' AND cv.name = 'phenotype_plant_property_types')
+      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types')
+      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
+      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
       AND
         t1.stock_id || '-' ||
         t2.value    || '-' ||

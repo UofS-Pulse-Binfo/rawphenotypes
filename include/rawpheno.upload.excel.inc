@@ -936,10 +936,10 @@ function rawpheno_get_trait_id($header) {
 
   // Query trait. Module stores unit in lowercase but user can use any case
   // in the spreadsheet. eg Planting Date (date) and Planting Date (Date).
+  // @note cvterm.name + cv.name + not obsolete combination is unique (constraints).
   $sql = "SELECT t2.cvterm_id
           FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
-          WHERE lower(t2.name) = :cvterm_name AND t1.name = :cv_name
-          LIMIT 1";
+          WHERE lower(t2.name) = :cvterm_name AND t1.name = :cv_name AND is_obsolete = 0";
 
   $args = array(':cvterm_name' => trim(strtolower($header)), ':cv_name' => 'phenotype_measurement_types');
   $type = chado_query($sql, $args)
@@ -971,6 +971,8 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
 
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
+  // @todo make this more specific (restrict relationship by type?)
+  // @todo rather then limit, check if there are 1+ and warn the admin.
   $sql = "SELECT cvterm_id, name FROM {cvterm} WHERE cvterm_id =
     (SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :trait LIMIT 1)";
 
@@ -1139,13 +1141,15 @@ function rawpheno_function_cvterm_properties($cvterm_id) {
   // This information is stored in cvterm relationship together with the cvterm id of the unit as the subject_id
   // and cvterm_id of the header as the object_id. Given a header cvterm id, get the subject id and use it to
   // get the information required from cvtermprop table.
+  // @todo check if there is more then one unit for a given trait and if so, warn the admin.
   $sql = "SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :cvterm_id AND type_id = :cv_unit LIMIT 1";
   $args = array(':cvterm_id' => $cvterm_id, ':cv_unit' => $cv_unit->cv_id);
 
   $d = chado_query($sql, $args)
     ->fetchField();
 
-  $sql = "SELECT value FROM {cvtermprop} WHERE type_id = :cv_unit AND cvterm_id = :cvterm_id LIMIT 1";
+  // @note cvterm_id + type_id + rank is unique (constraint).
+  $sql = "SELECT value FROM {cvtermprop} WHERE type_id = :cv_unit AND cvterm_id = :cvterm_id AND rank = 0";
   $args = array(':cv_unit' => $cv_unit->cv_id, ':cvterm_id' => $d);
 
   $d = chado_query($sql, $args);
