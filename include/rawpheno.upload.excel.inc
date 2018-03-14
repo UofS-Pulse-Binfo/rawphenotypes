@@ -331,7 +331,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           // Everything else into pheno_measurements.
           elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
             if (in_array($cell_colheader, $skip)) {
-              print 'skipping header : ' . $cell_colheader . "\n";
+              // print 'skipping header : ' . $cell_colheader . "\n";
               continue;
             }
 
