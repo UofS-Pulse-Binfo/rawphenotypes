@@ -240,7 +240,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         $h = rawpheno_function_delformat($header[$cell_index]);
 
         if (count($skip) > 0 && in_array($h, $skip)) {
-          print 'skipping value : ' . $h . '=' . $cell_entry . "\n";
+          // print 'skipping value : ' . $h . '=' . $cell_entry . "\n";
           continue;
         }
 
