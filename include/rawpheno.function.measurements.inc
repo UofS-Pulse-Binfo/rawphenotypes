@@ -1218,9 +1218,9 @@ function rawpheno_function_getproject($project_id) {
 
   return ($result) ? $result->fetchField() : 0;
 }
- 
 
-/** 
+
+/**
  * Function to get environment data files.
  *
  * @param $project
@@ -1251,53 +1251,72 @@ function rawpheno_function_getenv($project, $location) {
 
 
 /**
- * Function to fetch support email address from 3 sources.
- *   A. Persistent variable set by hook_alter implementation.
- *   B. A Email address of a Drupal username set by hook_alter implementation.
- *   C. Drupal site-wide mail provided during installation.
+ * Function to fetch support email address using 4 options below.
  *
- * @param $support_email
- *   A string, a Drupal username or support email address.
+ * 1. Using a hook_alter implementation request a support email by providing a Drupal username.
+ * 2. Using a hook_alter implementation request a support email by providing a Drupal user id #.
+ * 3. Using a hook_alter implementation set a support email by providing an email address.
+ * 4. *Default fetch email address of Drupal user id #1 or Drupal site-wide email address.
  *
  * @return
  *   A string, support email address.
  */
-function rawpheno_function_get_support_email($support_email) {
-  // Get persistent variable and see if this has been set.
-  $tmp_email = variable_get('kp_rawpheno_support_email');
-  
-  if (empty($tmp_email)) {
-    // Persistent var not set, check for support email provided by hook_alter,
-    // this time to see if email should be a Drupal user's email. If none
-    // is provided, attempt user #1.
-    $user_name = '';
-    drupal_alter('rawpheno_support_email', $user_name);
-    
-    // Get the email address.
-    $user = (empty($user_name)) ? "uid = 1" : "name = '" . $user_name . "'";
-    
-    $sql = sprintf("SELECT main FROM users WHERE %s LIMIT 1", $user);
-    $support_email = chado_query($sql)
-      ->fetchField();
-    
-    // Still no support email... get Drupal site-wide mail supplied when
-    // setting up the website. 
-    if (empty($support_email)) {
-      $support_email = variable_get('site-mail');    
-    }       
+function rawpheno_function_get_support_email() {
+  $support_email = variable_get('kp_rawpheno_support_email');
+
+  if (!empty($support_email)) {
+    return $support_email;
   }
-  else {
-    $support_email = $tmp_email;
+
+  // Nothing set.
+  $support_email = '#';
+
+  // As provided by hook_alter implementation - following command#value format.
+  // example: $support_email = 'username#DrupalUsername';
+  drupal_alter('rawpheno_support_email', $support_email);
+
+  @list($command, $value) = explode('#', $support_email);
+
+  switch ($command) {
+    case 'username':
+    case 'useridno':
+      // By username or user id no.
+      $user = ($command == 'username') ? 'name' : 'uid';
+
+      $sql = sprintf("SELECT mail FROM users WHERE %s = :user LIMIT 1", $user);
+      $support_email = chado_query($sql, array(':user' => $value))
+        ->fetchField();
+
+      break;
+
+    case 'emailadd':
+      // Use the email as provided.
+      $support_email = $value;
+
+      break;
+
+    default:
+      // Get email from user id #1.
+      $support_email = chado_query("SELECT mail FROM users WHERE uid = 1")
+        ->fetchField();
+
+      if (empty($support_email)) {
+        // Or site-wide email provided when setting up a Drupal site.
+        $support_email = variable_get('site-mail');
+      }
   }
-  
+
   // Set this variable to support email so this can be accessed
   // by the entire rawphenotypes module as well as pages hosting
-  // this application (eg. video demo page) 
-  
+  // this application (eg. video demo page)
+
   // This will also set an email in case one is determined.
-  if (empty($tmp_email)) {
-    variable_set('kp_rawpheno_support_email', $support_email);  
-  } 
-  
+  $cur_email = variable_get('kp_rawpheno_support_email');
+  if (empty($cur_email) || $cur_email != $support_email) {
+    // Update only when new support email and no value detected.
+    variable_set('kp_rawpheno_support_email', $support_email);
+  }
+
+
   return $support_email;
 }
