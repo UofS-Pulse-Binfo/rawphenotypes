@@ -25,6 +25,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   $plantprop_headers = unserialize($plantprop_headers);
   $arr_newheaders = unserialize($arr_newheaders);
 
+  // print_r($arr_newheaders);
+
   // First we load the file.
   $file = file_load($fid);
 
@@ -75,6 +77,9 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
   // Variations of Not Applicable.
   $not_applicable = array('na', 'n/a', 'n.a.');
+
+  // New trait that failed validation.
+  $failed_newtrait = array();
 
   // Start Transaction.
   $TRANSACTION = db_transaction();
@@ -249,6 +254,28 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
               continue;
             }
             elseif ($arr_newheaders[$cell_colheader]['flag'] == 1) {
+              // Test if the validation performed on this field had a success flag.
+              if (isset($arr_newheaders[$cell_colheader]['test'])) {
+                $failed_count = 0;
+
+                foreach($arr_newheaders[$cell_colheader]['test'] as $test_i => $test_result) {
+                  if ($test_result == FALSE) {
+                    // This new trait failed validation, skip.
+                    $failed_count++;
+                  }
+                }
+
+                if ($failed_count > 0) {
+                  // Log this failed new trait.
+                  if (!in_array($cell_colheader, $failed_newtrait)) {
+                    $failed_newtrait[] = $cell_colheader;
+                  }
+
+                  continue;
+                }
+              }
+
+
               // Get the cvterm name for this new header.
               $alt_name = $arr_newheaders[$cell_colheader]['alt_header'];
               $name = tripal_get_cvterm(array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
@@ -429,6 +456,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   print "\nUpdating the materialized view summarizing phenotypic data.\n";
   $mview_id = tripal_get_mview_id('rawpheno_rawdata_summary');
   if ($mview_id) tripal_populate_mview($mview_id);
+
+  print "Scanning logs for failed traits...\n";
+  if (count($failed_newtrait) > 0) {
+    print "Failed traits sent to admin/support email.";
+    // @TODO: Email administrator of new traits that failed validation.
+    //        FUNCTIONALITY IN ANOTHER BRANCH PullRequest: #36 - Create a function
+    //        to fetch support email address.
+  }
+  else {
+    print "No failed new traits.";
+  }
 }
 
 

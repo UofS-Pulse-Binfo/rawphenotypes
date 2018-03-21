@@ -1018,6 +1018,9 @@ function rawpheno_submit_review($form, &$form_state) {
   if (count($new_header) > 0) {
     $trait_type = rawpheno_function_trait_types();
 
+    // Count trait that has been checked for saving.
+    $has_newtraits_checked = 0;
+
     // Read each column header.
     foreach($new_header as $i => $header) {
       // For each new header store information provided in the interface.
@@ -1030,6 +1033,8 @@ function rawpheno_submit_review($form, &$form_state) {
       // Determine if the form in review traits has been filled out and checkbox
       // has been checked by user. If it has been checked then save the trait.
       if ($form_state['values']['chk_' . $i] === 1 && !empty($form_state['values']['txt_header_' . $i])) {
+        $has_newtraits_checked++;
+
         // Before save, we need to tell if the header is present in the database and
         // user just wants to reuse them. Otherwise, add a new header.
         // Reuse header - set to OPTIONAL.
@@ -1060,6 +1065,7 @@ function rawpheno_submit_review($form, &$form_state) {
 
           // When saving this data for this header, use the cvterm_id.
           $arr_newheaders[$header]['alt_header'] = $cvterm_id;
+          $arr_newheaders[$header]['unit'] = $form_state['values']['txt_unit_' . $i];
           continue;
         }
 
@@ -1073,6 +1079,10 @@ function rawpheno_submit_review($form, &$form_state) {
         $name   = preg_replace('/\s+/', ' ', $name);
 
         $unit   = trim($form_state['values']['txt_unit_' . $i]);
+
+        // Save the unit entered for this trait.
+        $arr_newheaders[$header]['unit'] = $unit;
+
         $method = trim($form_state['values']['txtarea_describe_' . $i]);
         $def    = trim($form_state['values']['txt_def_' . $i]);
 
@@ -1190,10 +1200,71 @@ function rawpheno_submit_review($form, &$form_state) {
     }
   }
 
-  // 2. The entire spreadsheet.
+  // 2. The entire spreadsheet and validate new traits..
   // Get the variable that holds the path to the spreadsheet file in the server.
   $file = file_load($form_state['multistep_values']['fid']);
   $xls_file = drupal_realpath($file->uri);
+
+  // Before saving, double check to ensure that new traits user wants in the system
+  // must have data that matches the unit is measuring. When a trait fails validation,
+  // we flag it as such then it will be ignored in the save process.
+  // Additional email notification to admin (email support) about this trait.
+
+  // Find all traits checked out by user.
+
+  // Validate all checked traits.
+  if ($has_newtraits_checked > 0) {
+    // Get headers and cell values in rows and columns used for validation.
+    // Number of rows to check.
+    $rows_to_check = 20;
+
+    // Add the libraries needed to parse excel files.
+    rawpheno_add_parsing_libraries();
+    $xls_obj = rawpheno_open_file($file);
+
+    // Change to the correct spreadsheet.
+    rawpheno_change_sheet($xls_obj, 'measurements');
+
+    $n_i = 0;
+
+    foreach ($xls_obj as $rows) {
+      // Headers.
+      if ($n_i == 0) {
+        foreach($rows as $row_index => $row_header) {
+          $h = trim(str_replace(array("\n", "\r", "  "), ' ', $row_header));
+          $h = preg_replace('/\s+/', ' ', $h);
+
+          if (in_array($h, array_keys($arr_newheaders)) && $arr_newheaders[$h]['flag'] == 1) {
+            // Save the index number.
+            $arr_newheaders[$h]['file_index'] = $row_index;
+          }
+        }
+
+        $n_i++;
+        continue;
+      }
+
+      // Cell/Data.
+      foreach($rows as $cell_index => $cell_data) {
+        foreach($arr_newheaders as $nt_header => $nt_prop) {
+          if ($nt_prop['file_index'] == $cell_index && $nt_prop['flag'] == 1) {
+            $cell_data = trim($cell_data);
+
+            $arr_newheaders[$nt_header]['test'][]
+              = rawpheno_function_match_unit($cell_data, $nt_prop['unit'], $nt_header);
+          }
+        }
+      }
+
+      // Stop at # of rows.
+      if ($n_i == $rows_to_check) {
+        break;
+      }
+
+      $n_i++;
+    }
+  }
+
 
   // Array of required traits excluding Name.
   $plantprop_headers = rawpheno_project_plantproperty_traits($project_id);
@@ -1210,7 +1281,7 @@ function rawpheno_submit_review($form, &$form_state) {
         $project_id,
         serialize($arr_newheaders),
         $form_state['multistep_values']['fid'],
-        serialize($plantprop_headers)
+        serialize($plantprop_headers),
       ),
       $user->uid
     );
