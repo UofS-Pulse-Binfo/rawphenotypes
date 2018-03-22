@@ -1018,6 +1018,13 @@ function rawpheno_submit_review($form, &$form_state) {
   if (count($new_header) > 0) {
     $trait_type = rawpheno_function_trait_types();
 
+    // In some cases, the unit contains 1st; 2nd; followed by the actual unit.
+    // Attempt to extract known unit.
+    // Known units:
+    // date, count, days, cm, scale, g, text, y/n/?;
+    $def_unit = rawpheno_function_default_unit('def');
+    $unit_set = array_keys($def_unit);
+
     // Count trait that has been checked for saving.
     $has_newtraits_checked = 0;
 
@@ -1034,6 +1041,23 @@ function rawpheno_submit_review($form, &$form_state) {
       // has been checked by user. If it has been checked then save the trait.
       if ($form_state['values']['chk_' . $i] === 1 && !empty($form_state['values']['txt_header_' . $i])) {
         $has_newtraits_checked++;
+
+        // Examine the unit and find any default unit.
+        // This will be use to test this new trait if data match the unit.
+        $tmp_unit = $form_state['values']['txt_unit_' . $i];
+
+        foreach($unit_set as $def_u) {
+          if (strpos($tmp_unit, $def_u) !== FALSE) {
+            $tmp_unit = $def_u;
+
+            break;
+          }
+        }
+
+        // If none detected, send the entire value/unit to validator
+        // which will evaluate to text.
+
+        $arr_newheaders[$header]['unit'] = $tmp_unit;
 
         // Before save, we need to tell if the header is present in the database and
         // user just wants to reuse them. Otherwise, add a new header.
@@ -1065,7 +1089,6 @@ function rawpheno_submit_review($form, &$form_state) {
 
           // When saving this data for this header, use the cvterm_id.
           $arr_newheaders[$header]['alt_header'] = $cvterm_id;
-          $arr_newheaders[$header]['unit'] = $form_state['values']['txt_unit_' . $i];
           continue;
         }
 
@@ -1079,10 +1102,6 @@ function rawpheno_submit_review($form, &$form_state) {
         $name   = preg_replace('/\s+/', ' ', $name);
 
         $unit   = trim($form_state['values']['txt_unit_' . $i]);
-
-        // Save the unit entered for this trait.
-        $arr_newheaders[$header]['unit'] = $unit;
-
         $method = trim($form_state['values']['txtarea_describe_' . $i]);
         $def    = trim($form_state['values']['txt_def_' . $i]);
 

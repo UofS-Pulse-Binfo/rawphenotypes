@@ -459,13 +459,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
   print "Scanning logs for failed traits...\n";
   if (count($failed_newtrait) > 0) {
-    print "Failed traits sent to admin/support email.";
+    print "Failed traits sent to admin/support email. \n";
     // @TODO: Email administrator of new traits that failed validation.
     //        FUNCTIONALITY IN ANOTHER BRANCH PullRequest: #36 - Create a function
     //        to fetch support email address.
   }
   else {
-    print "No failed new traits.";
+    print "No failed new traits. \n";
   }
 }
 
