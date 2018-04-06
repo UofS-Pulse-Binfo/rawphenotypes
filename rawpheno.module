@@ -327,8 +327,7 @@ function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
   // Page Title
   $variables['page_title'] = variable_get('rawpheno_upload_title');
   // Support Email.
-  $support_email = '';
-  drupal_alter('rawpheno_support_email', $support_email);
+  $support_email = rawpheno_function_get_support_email();
   $variables['support_email'] = $support_email;
 
   // Needs url in help window and links in stage 3.
@@ -1111,8 +1110,7 @@ function rawpheno_block_view($delta = '') {
       $u = explode('.', $url);
       $hostname = (empty($u[0])) ? $url : ucfirst($u[0]);
 
-      $support_email = '';
-      drupal_alter('rawpheno_support_email', $support_email);
+      $support_email = rawpheno_function_get_support_email();
 
       $content = theme('rawpheno_notification_block', array(
         'alert' => $alert,
