@@ -451,7 +451,7 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
 
 
   // Redirect user to project asset management page.
-  $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');
+  $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $project_id . '/project/manage');
   drupal_goto($path);
 }
 
@@ -1369,7 +1369,7 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
     }
   }
   elseif ($action == 'delete') {
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $header_asset['in_project_id'] . '/project/manage');
 
     // Admin wants to delete/remove the trait from the project.
     db_delete('pheno_project_cvterm')
@@ -1630,7 +1630,7 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
  */
 function rawpheno_admin_project_users($form, $form_state, $user_project_asset, $action) {
   if ($action == 'delete') {
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $user_project_asset['project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $user_project_asset['project_id'] . '/project/manage');
 
     db_delete('pheno_project_user')
       ->condition('project_user_id', $user_project_asset['project_user_id'])
@@ -1681,7 +1681,7 @@ function rawpheno_admin_project_envdata($form, $form_state, $envdata_project_ass
     }
 
     // Redirect user.
-    $path = url('../../admin/tripal/extension/rawphenotypes/all_projects/' . $envdata_project_asset['project_id'] . '/project/manage');
+    $path = url($GLOBALS['base_url'] . '/admin/tripal/extension/rawphenotypes/all_projects/' . $envdata_project_asset['project_id'] . '/project/manage');
     drupal_goto($path);
   }
 }
@@ -1774,11 +1774,16 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   $unit = chado_query($sql)
     ->fetchAllKeyed();
 
+  // Default to text unit.
+  $unit_keys = array_keys($unit);
+  $textunit = array_search('text', $unit_keys);
+  $textunit_id = $unit_keys[$textunit];
+
   $form['fieldset_trait']['sel_trait_unit'] = array(
     '#type' => 'select',
     '#title' => t('Unit:'),
     '#options' => $unit,
-    '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : reset($unit),
+    '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : $textunit_id,
     '#disabled' => $disabled,
   );
 

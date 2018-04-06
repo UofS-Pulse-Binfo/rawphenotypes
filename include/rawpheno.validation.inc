@@ -112,7 +112,11 @@ function validator_is_excel_validate_file($file) {
 
   // First test extension.
   $xls_extension = pathinfo($file->filename, PATHINFO_EXTENSION);
-  if ($xls_extension == 'xlsx' OR $xls_extension == 'xls') {
+  $xls_mime = $file->filemime;
+
+  if (($xls_extension == 'xlsx' OR $xls_extension == 'xls') &&
+      ($xls_mime == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+       OR $xls_mime == 'application/vnd.ms-excel')) {
 
     // Then test that the file can be opened.
     // This checks against PDFs masquerading as XLS ;-).

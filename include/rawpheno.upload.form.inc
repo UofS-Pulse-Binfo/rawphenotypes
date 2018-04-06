@@ -364,7 +364,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
         );
 
         // Clean up the current header.
-        $name = rawpheno_function_delformat($k);
+        $name = trim(strtolower(preg_replace('!\s+!', ' ', $k)));
         $arr_checked_header[] = $name;
 
         // Test if the header has a unit component and set the variable accordingly.
@@ -454,7 +454,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             '#description' => t('A human-readable text definition'),
           );
 
-           if (isset($cvterm_info)) {
+           if (isset($cvterm_info) && isset($cvterm_info->definition)) {
              $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i]['#value'] = $cvterm_info->definition;
              $form['xls_review_fldset']['fldset_' . $i]['txt_def_' . $i]['#disabled'] = TRUE;
            }
@@ -1028,6 +1028,8 @@ function rawpheno_submit_review($form, &$form_state) {
       // For each new header store information provided in the interface.
       // Indicates if user has check this header for saving.
       $header = trim(str_replace(array("\n", "\r", "  "), ' ', $header));
+      $header = preg_replace('/\s+/', ' ', $header);
+
       $arr_newheaders[$header]['flag'] = ($form_state['values']['chk_' . $i] == 1) ? 1 : 0;
 
       // Determine if the form in review traits has been filled out and checkbox

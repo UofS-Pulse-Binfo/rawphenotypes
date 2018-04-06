@@ -899,6 +899,7 @@ function rawpheno_indicate_new_headers($file, $project_id) {
       // Determine if column header exists in the expected column headers.
       if (!in_array($temp_value, $expected_headers) && !empty($value)) {
         // Not in expected column headers, save it as new header.
+        $value = preg_replace('/\s+/', ' ', $value);
         $new_headers[] = $value;
       }
     }
@@ -969,7 +970,10 @@ function rawpheno_count_rows($xls_obj) {
  *   The cvterm_id for the trait.
  */
 function rawpheno_get_trait_id($header) {
-  $header = str_replace(array("\n", "\r", "  "), ' ', $header);
+  // New lines.
+  $header = str_replace(array("\n", "\r"), ' ', $header);
+  // Extra spaces.
+  $header = preg_replace('!\s+!', ' ', $header);
 
   // Query trait. Module stores unit in lowercase but user can use any case
   // in the spreadsheet. eg Planting Date (date) and Planting Date (Date).
