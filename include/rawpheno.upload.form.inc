@@ -218,6 +218,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
 
   // The project id number the spreadsheet and column headers are specific to.
   $project_id = $form_state['values']['sel_project'];
+  $project_name = rawpheno_function_getproject($project_id);
 
   // FIND NEW HEADERS.
   // First step, determine which headers/traits need to be described.
@@ -230,6 +231,10 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     // when no project id is selected, user will be stopped and is requested to retry the process.
     if ($file AND !empty($project_id)) {
       $new_header = rawpheno_indicate_new_headers($file, $project_id);
+
+      // Calling all modules implementing hook_rawpheno_AGILE_stock_name_alter():
+      drupal_alter('rawpheno_ignorecols_newcolumn', $new_header, $project_name);
+
       $form_state['multistep_values']['new_headers'] = $new_header;
     }
     else {

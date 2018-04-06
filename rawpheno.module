@@ -326,6 +326,10 @@ function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
   $variables['rel_url'] = url('phenotypes/raw/instructions');
   // Page Title
   $variables['page_title'] = variable_get('rawpheno_upload_title');
+  // Support Email.
+  $support_email = '';
+  drupal_alter('rawpheno_support_email', $support_email);
+  $variables['support_email'] = $support_email;
 
   // Needs url in help window and links in stage 3.
   $variables['page_url'] =
@@ -334,7 +338,8 @@ function rawpheno_preprocess_rawpheno_upload_form_master(&$variables, $hook) {
       'rawpheno_download'     => url('phenotypes/raw/download'),
       'rawpheno_instructions' => url('phenotypes/raw/instructions'),
       'rawpheno_upload'       => url('phenotypes/raw/upload'),
-      'rawpheno_backup'       => url('phenotypes/raw/backup')
+      'rawpheno_backup'       => url('phenotypes/raw/backup'),
+      'rawpheno_demo'         => url('phenotypes/raw/videos'),
     );
 
   // Stages in upload page.
@@ -1106,11 +1111,15 @@ function rawpheno_block_view($delta = '') {
       $u = explode('.', $url);
       $hostname = (empty($u[0])) ? $url : ucfirst($u[0]);
 
+      $support_email = '';
+      drupal_alter('rawpheno_support_email', $support_email);
+
       $content = theme('rawpheno_notification_block', array(
         'alert' => $alert,
         'username' => $user,
         'hostname' => $hostname,
         'file_count' => $file_count,
+        'support_email' => $support_email,
         'path_module' => base_path() . $path . '/',
         'path_phenotypes_raw' => $GLOBALS['base_url'] . '/phenotypes/raw/',
         'path_phenotypes_video' => file_create_url('public://') . 'tutorial_files/rawpheno_videos/',

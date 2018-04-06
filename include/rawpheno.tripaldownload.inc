@@ -380,7 +380,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     foreach ($rows as $row) {
       // To file... to screen...
-      $percent = round(($cur_line / $total_lines) * 100);
+      $percent = (($cur_line / $total_lines) * 100);
       if ($percent % 10 == 0 && $past_percent != $percent) {
         drush_print($percent . '% complete...');
       }

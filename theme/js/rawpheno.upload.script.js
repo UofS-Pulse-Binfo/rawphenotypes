@@ -26,6 +26,12 @@
       collapseLink.once(function() {
         $(this).click(function(event) {
           event.preventDefault();
+
+          // Check if select project message is on.
+          if (!$('#float-text').is(':hidden')) {
+            $('#float-text').hide();
+          }
+
           if (helpWindow.is(':hidden')) {
             helpWindow.slideDown(speed, function() {
               collapseLink.text('Close window');
