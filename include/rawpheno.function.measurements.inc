@@ -1160,7 +1160,7 @@ function rawpheno_function_plot_exists($plot, $project_id) {
       AND t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Plot' AND cv.name = 'phenotype_plant_property_types')
       AND t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types')
       AND t4.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
-      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
+      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
       AND
         t1.stock_id || '-' ||
         t2.value    || '-' ||

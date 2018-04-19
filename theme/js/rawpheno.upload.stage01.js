@@ -17,7 +17,7 @@
       }
 
      if ($('#float-text').length) {
-       $('#rawpheno-select-project-field').click(function(e) {
+       $('#rawpheno-select-project-field').mousedown(function(e) {
          $('#float-text').remove();
        });
      }

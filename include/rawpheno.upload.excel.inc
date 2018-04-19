@@ -330,7 +330,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           // THE REST OF THE COLUMN HEADERS
           // Everything else into pheno_measurements.
           elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
-            if (in_array($cell_colheader, $skip)) {
+            $c_h = rawpheno_function_delformat($cell_colheader);
+            if (in_array($c_h, $skip)) {
               // print 'skipping header : ' . $cell_colheader . "\n";
               continue;
             }
@@ -592,7 +593,14 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
           // based on headers in drupal_alter hook.
           $s = (in_array($without_format, $skip)) ? 1 : 0;
 
+          // Remove new lines.
+          $rem_newline = str_replace(array("\n", "\r"), ' ', $r);
+          // Remove extra spaces.
+          $rem_spaces  = preg_replace('/\s+/', ' ', $rem_newline);
+          // Remove leading and trailing spaces.
+          $r = trim($rem_spaces);
           $no_units = rawpheno_get_trait_name($r);
+
           $header[] = array(
             'no format' => $without_format,
             'original' => $r,
@@ -602,7 +610,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
           );
 
           // Store index number of Plot trait requirements.
-          if (!isset($plot_req['planting date (date)']) && $without_format == 'planting date (date)') {
+          if (!isset($plot_req['planting date (date)']) && $without_format == 'plantingdate(date)') {
             $plot_req['planting date (date)'] = $o;
           }
           elseif (!isset($plot_req['location']) && $without_format == 'location') {
