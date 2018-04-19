@@ -875,6 +875,12 @@ function rawpheno_file_validate($file) {
 
     $s = (isset($flags['status'])) ? $flags['status'] : $flags;
 
+    // If DND backup, missing measurements, skip all validator but
+    // save/backup the file anyway.
+    if ($s['tab_exists'] === FALSE) {
+      return array();
+    }
+
     // Read only the status from test listed above.
     foreach($s as $i => $v) {
       if (in_array($i, $flag_index) AND ($v === FALSE || $v === 'todo')) {

@@ -45,7 +45,7 @@ function rawpheno_rawpheno_validators() {
   $validators['tab_exists'] = array(
     'label' => 'The "Measurements" tab exists and has content.',
     'scope' => 'file',
-    'message callback' => NULL,
+    'message callback' => 'validator_tab_exists_generate_msg',
     'validation callback' => 'validator_tab_exists_validate_file',
   );
 
@@ -187,6 +187,18 @@ function validator_tab_exists_validate_file($file) {
   }
 
   return FALSE;
+}
+
+
+/**
+ * Provide a more useful message to the user when measurements tab is missing.
+ *
+ * @return
+ *   A string, human-readable message to the user telling them what might
+ *   caused the tab to fail validation.
+ */
+function validator_tab_exists_generate_msg() {
+  return array('Ensure that <em>Measurements</em> tab exists in the file is not renamed.');
 }
 
 /**
