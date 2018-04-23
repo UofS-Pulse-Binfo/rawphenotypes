@@ -375,18 +375,19 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     // already data set for that cell then we will add missing data.
     // Note: We will save the data to the file as we go.
     $cur_line = 0;
-    $past_percent = '';
+    $past_percent = 0;
     drush_print('0% complete...');
 
     foreach ($rows as $row) {
       // To file... to screen...
-      $percent = (($cur_line / $total_lines) * 100);
-      if ($percent % 10 == 0 && $past_percent != $percent) {
-        drush_print($percent . '% complete...');
-      }
+      $percent = round(($cur_line / $total_lines) * 100);
+      if ((($percent % 5) === 0) && ($past_percent != $percent)) {
 
-      db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
-        array(':percent' => $percent, ':id' => $job_id));
+        drush_print($percent . '% complete...');
+
+        db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
+          array(':percent' => $percent, ':id' => $job_id));
+      }
 
       // First, add missing data for each entry in the header that is not in the row.
       foreach ($header as $id => $title) {
