@@ -681,7 +681,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
                     $context['plot_req'] = $plot_req;
                   }
 
-                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage, $project_id);
 
                   // Note: we use tmp storage b/c passing $storage[$validator_name] directly
                   // doesn't seem to work.
