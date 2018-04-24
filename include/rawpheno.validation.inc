@@ -635,12 +635,18 @@ function validator_germplasm_present_generate_msg($error_info) {
     }
   }
 
+  // Contact support.
+  $support_email = rawpheno_function_get_support_email();
+  $contact_support_message = ($support_email)
+    ? '<a href="mailto:' . $support_email . '" title="Right click to copy email address">Please contact support.</a>'
+    : 'Please contact the administrator of this website.';
+
   $messages = array();
   if (!empty($nonexistant)) {
-    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please contact the website administrator.';
+    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '. ' . $contact_support_message;
   }
   if (!empty($nonunique)) {
-    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please contact the administrator of this duplication.';
+    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique). ' ' . $contact_support_message;
   }
 
   return $messages;
@@ -671,7 +677,7 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   0 = no matching stock.
  *   9 = too many matching stocks (not unique).
  */
-function validator_germplasm_present_validate_cell($value, $context, &$storage) {
+function validator_germplasm_present_validate_cell($value, $context, &$storage, $project_id) {
 
   // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
   if (empty($value)) {
@@ -681,7 +687,15 @@ function validator_germplasm_present_validate_cell($value, $context, &$storage) 
   $stocks = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $value))->fetchAll();
 
   if (sizeof($stocks) == 1) {
-    return TRUE;
+    // Test to see if stock with token exists.
+    // Function has hook_alter() implementation to handle germplasm name with specific token.
+    // Hook also contains defition of which project applies and token used.
+    $project_name = rawpheno_function_getproject($project_id);
+    $stocks = rawpheno_function_getstockid($value, $project_name);
+
+    return ($stocks <= 0)
+      ? array('name' => $value, 'row number' => $context['row index'], 'code' => 0)
+      : TRUE;
   }
   elseif (empty($stocks)) {
     return array('name' => $value, 'row number' => $context['row index'], 'code' => 0);
