@@ -459,10 +459,31 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
   print "Scanning logs for failed traits...\n";
   if (count($failed_newtrait) > 0) {
-    print "Failed traits sent to admin/support email. \n";
-    // @TODO: Email administrator of new traits that failed validation.
-    //        FUNCTIONALITY IN ANOTHER BRANCH PullRequest: #36 - Create a function
-    //        to fetch support email address.
+    $support_email = variable_get('rawpheno_support_email');
+
+    if ($support_email) {
+      // Send email only when there is an email set.
+
+      // New Traits/Column Headers. Convert failed new traits into a comma separated list.
+      $trait_list = implode(',', $failed_newtrait);
+      $report  = "\n" . '* Traits: ' . $trait_list;
+
+      // Project Name.
+      $project_name = rawpheno_function_getproject($project_id);
+      $report .= "\n" . '* Project: ' . $project_name;
+
+      // Data Collection Spreadsheet File (xlsx).
+      $report .= "\n" . '* XLSX FILE: ' . $xls_file;
+
+      // Username of Data Collector.
+      $report .= "\n" . '* Data Collector: ' . $GLOBALS['user']->name;
+
+      // Send information to adminstrator.
+      rawpheno_notify_supportemail($support_email, $report);
+
+      // Tell admin info sent.
+      print "Information sent to support email...\n";
+    }
   }
   else {
     print "No failed new traits. \n";
@@ -1199,3 +1220,37 @@ function rawpheno_function_cvterm_properties($cvterm_id) {
     return 'Describe the method used not available';
   }
 }
+
+
+/**
+ * Function to notify support email/administrator of a new trait that failed
+ * validation in stage 3 - Save Spreadsheet file.
+ *
+ * @param $support_email
+ *   String, support email address.
+ * @param $content
+ *   An array containing failed new traits. Information such as the Trait name,
+ *   Project, XLSX File and the username of data collector.
+ */
+function rawpheno_notify_supportemail($support_email, $content) {
+  global $base_url;
+  $site_name = variable_get('site_name');
+
+  // Set who this email is being sent from (ie: from KnowPulse)
+  $from = variable_get('site_mail', '');
+  $to = $support_email;
+
+  // Compile the body of the email to send.
+  $body[] = 'Dear Administrator, '. "\n";
+  $body[] = 'The following new traits failed validation in Raw Phenotypes Module:' . "\n";
+  $body[] = $content;
+  $body[] = "\n" . 'Website: ' . $site_name . ' (' . $base_url . ')';
+
+  $params = array(
+    'body' => $body,
+    'subject' => $site_name . ' : RawPhenotypes - New Trait Failed',
+  );
+
+  return drupal_mail('rawpheno', 'rawpheno', $to, language_default(), $params, $from, TRUE);
+}
+

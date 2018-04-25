@@ -1647,3 +1647,24 @@ function rawpheno_preprocess_block(&$vars) {
 
   return $vars;
 }
+
+/**
+ * Implements hook_mail().
+ * Used for the the drupal mail system.
+ */
+function rawpheno_mail($key, &$message, $params) {
+
+  $headers = array(
+    'MIME-Version' => '1.0',
+    'Content-Type' => 'text/plain; charset=UTF-8;',
+    'Content-Transfer-Encoding' => '8Bit',
+    'X-Mailer' => 'Drupal'
+  );
+
+  foreach ($headers as $key => $value) {
+    $message['headers'][$key] = $value;
+  }
+
+  $message['subject'] = $params['subject'];
+  $message['body'] = $params['body'];
+}
