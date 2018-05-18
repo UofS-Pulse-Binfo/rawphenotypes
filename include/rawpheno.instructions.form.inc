@@ -395,7 +395,52 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
                 'underline' => false
               ),
               'wrapText'    => false,
-              'rows'        => array('0', '1', '2', '3'),
+              'rows'        => array('0'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => 'FFFFFF',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => '305673'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('1'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => '000000',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => 'F7F7F7'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('2'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => '000000',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => '79a183'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('3'),
           )
         )
       );
