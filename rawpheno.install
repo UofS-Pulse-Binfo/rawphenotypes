@@ -541,7 +541,15 @@ function rawpheno_install() {
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
-  $cvterm_lodging = tripal_get_cvterm(array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type'])));
+
+  $cl = array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type']));
+
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm_lodging = chado_get_cvterm($cl);
+  }
+  else {
+    $cvterm_lodging = tripal_get_cvterm($cl);
+  }
 
   // Insert scale values 1 - 5
   foreach (array_values($lodging)[0] as $code => $val) {
@@ -665,7 +673,13 @@ function rawpheno_uninstall() {
   $cv = rawpheno_function_terms('vocabularies');
 
   foreach($cv as $cv_i => $cv_name) {
-    $cv = tripal_get_cv(array('name' => $cv_name));
+    if (function_exists('chado_get_cv')) {
+      $cv = chado_get_cv(array('name' => $cv_name));
+    }
+    else {
+      $cv = tripal_get_cv(array('name' => $cv_name));
+    }
+
     $args = array(':cv_id' => $cv->cv_id);
 
     // Delete relationships.
@@ -955,7 +969,12 @@ function rawpheno_update_7002() {
   // CV Method of collection.
   $cv_desc = tripal_insert_cv($voc['cv_desc'], str_replace('_', ' ', ucfirst($voc['cv_desc'])));
   // CV unit.
-  $cv_unit = tripal_get_cv(array('name' => $voc['cv_unit']));
+  if (function_exists('chado_get_cv')) {
+    $cv_unit = chado_get_cv(array('name' => $voc['cv_unit']));
+  }
+  else {
+    $cv_unit = tripal_get_cv(array('name' => $voc['cv_unit']));
+  }
 
   // Query traits.
   $sql = "SELECT t2.cvterm_id, t2.name, t1.cv_id, t2.name, t1.name AS cv_name
@@ -1008,7 +1027,13 @@ function rawpheno_update_7002() {
       $header_unit = rawpheno_function_header_unit($cvterm->name);
       // eg. Comment
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
-      $unit_cvterm_id = tripal_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+
+      if (function_exists('chado_get_cvterm')) {
+        $unit_cvterm_id = chado_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+      }
+      else {
+        $unit_cvterm_id = tripal_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+      }
 
       chado_insert_record('cvterm_relationship',
         array(

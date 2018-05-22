@@ -968,7 +968,15 @@ function rawpheno_rawdata_trait_json() {
     $trait_id   = (int)trim(strip_tags($_GET['trait_id']));
 
     // Get cvterm.
-    $cvterm = tripal_get_cvterm(array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+    $c = array('cvterm_id' => $trait_id, 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+    if (function_exists('chado_get_cvterm')) {
+      $cvterm = chado_get_cvterm($c);
+    }
+    else {
+      $cvterm = tripal_get_cvterm($c);
+    }
+
     if (!$cvterm) {
       return 0;
     }

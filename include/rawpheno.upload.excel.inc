@@ -269,7 +269,15 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             elseif ($arr_newheaders[$cell_colheader]['flag'] == 1) {
               // Get the cvterm name for this new header.
               $alt_name = $arr_newheaders[$cell_colheader]['alt_header'];
-              $name = tripal_get_cvterm(array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+              $n = array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+              if (function_exists('chado_get_cvterm')) {
+                $name = chado_get_cvterm($n);
+              }
+              else {
+                $name = tripal_get_cvterm($n);
+              }
+
               $cell_colheader = $name->name;
             }
           }
@@ -287,8 +295,15 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           // Cells containing column headers that are required.
           // Traits: plot, entry, rep, location into pheno_plantprop.
           elseif (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
+            $t = array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types'));
 
-            $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
+            if (function_exists('chado_get_cvterm')) {
+              $type = chado_get_cvterm($t);
+            }
+            else {
+              $type = tripal_get_cvterm($t);
+            }
+
             $type_id = $type->cvterm_id;
 
             // Ensure that cvterm_id is present before inserting to table
@@ -1038,7 +1053,12 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   $unit_name = rawpheno_function_unit($trait_name);
 
   // Column header does not contain unit, use text as default
-  $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm = chado_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
+  else {
+    $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
 
   if ($cvterm) {
     return array('id' => $cvterm->cvterm_id, 'name' => $cvterm->name);
@@ -1184,7 +1204,12 @@ function rawpheno_project_traits($project_id) {
  */
 function rawpheno_function_cvterm_properties($cvterm_id) {
   // Narrow the search to cvterm of type measurement units.
-  $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  if (function_exists('chado_get_cv')) {
+    $cv_unit = chado_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
+  else {
+    $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
 
   // In form state 2, describe header, user has the opportunity to describe the unit (Describe method field).
   // This information is stored in cvterm relationship together with the cvterm id of the unit as the subject_id
