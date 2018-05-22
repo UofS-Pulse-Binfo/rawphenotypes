@@ -401,8 +401,14 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
   $trait_type = rawpheno_function_trait_types();
 
   // Get Planting Date cvterm id.
-  $planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)',
-                                     'cv_id' => array('name' => 'phenotype_measurement_types')));
+  $pd = array('name' => 'Planting Date (date)', 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+  if (function_exists('chado_get_cvterm')) {
+    $planting_date = chado_get_cvterm($pd);
+  }
+  else {
+    $planting_date = tripal_get_cvterm($pd);
+  }
 
   db_insert('pheno_project_cvterm')
     ->fields(array(
@@ -1411,7 +1417,14 @@ function rawpheno_admin_project_management_validate($form, &$form_state) {
 
       if ($btn_submit == 'Add column header') {
         // Before adding the cvterm, ensure it is not present in cvterm table.
-        $found_cvterm = tripal_get_cvterm(array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+        $fc = array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+        if (function_exists('chado_get_cvterm')) {
+          $found_cvterm = chado_get_cvterm($fc);
+        }
+        else {
+          $found_cvterm = tripal_get_cvterm($fc);
+        }
 
         if (isset($found_cvterm->cvterm_id) AND $found_cvterm->cvterm_id > 0) {
           form_set_error('txt_trait_name', t('The column header name exists in the database. Please use a different name.'));

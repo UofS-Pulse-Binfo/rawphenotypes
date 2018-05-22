@@ -434,7 +434,14 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             if (isset($form_state['values']['sel_header_' . $i])) {
               if ($form_state['values']['sel_header_' . $i] > 0) {
                 $cvterm_id = $form_state['values']['sel_header_' . $i];
-                $cvterm_info = tripal_get_cvterm(array('cvterm_id' => $cvterm_id));
+
+                if (function_exists('chado_get_cvterm')) {
+                  $cvterm_info = chado_get_cvterm(array('cvterm_id' => $cvterm_id));
+                }
+                else {
+                  $cvterm_info = tripal_get_cvterm(array('cvterm_id' => $cvterm_id));
+                }
+
                 $show_form = 'yes';
               }
               elseif ($form_state['values']['sel_header_' . $i] == 0) {

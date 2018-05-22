@@ -541,7 +541,15 @@ function rawpheno_install() {
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
-  $cvterm_lodging = tripal_get_cvterm(array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type'])));
+
+  $cl = array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type']));
+
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm_lodging = chado_get_cvterm($cl);
+  }
+  else {
+    $cvterm_lodging = tripal_get_cvterm($cl);
+  }
 
   // Insert scale values 1 - 5
   foreach (array_values($lodging)[0] as $code => $val) {
