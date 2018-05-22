@@ -856,7 +856,14 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties['method'] = '';
 
   $h = chado_select_record('cvtermprop', array('value', 'type_id'), array('cvterm_id' => $arr_properties['cvterm_id']));
-  $r_version = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+
+  if (function_exists('chado_get_cv')) {
+    $r_version = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+  else {
+    $r_version = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+
   foreach($h as $c) {
     $val = isset($c->value) ? $c->value : '';
 
@@ -1118,7 +1125,12 @@ function rawpheno_download_load_traits($location, $project) {
  *  A string containing the R compatible version of the trait.
  */
 function rawpheno_download_r_compatible($cvterm_id) {
-  $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  if (function_exists('chado_get_cv')) {
+    $cv_rver = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+  else {
+    $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
 
   // @note cvtermprop cvterm_id + type_id + rank is unique (constraint).
   $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id AND rank = 0";

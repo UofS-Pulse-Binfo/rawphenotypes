@@ -1053,7 +1053,12 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   $unit_name = rawpheno_function_unit($trait_name);
 
   // Column header does not contain unit, use text as default
-  $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm = chado_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
+  else {
+    $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
 
   if ($cvterm) {
     return array('id' => $cvterm->cvterm_id, 'name' => $cvterm->name);
@@ -1199,7 +1204,12 @@ function rawpheno_project_traits($project_id) {
  */
 function rawpheno_function_cvterm_properties($cvterm_id) {
   // Narrow the search to cvterm of type measurement units.
-  $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  if (function_exists('chado_get_cv')) {
+    $cv_unit = chado_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
+  else {
+    $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
 
   // In form state 2, describe header, user has the opportunity to describe the unit (Describe method field).
   // This information is stored in cvterm relationship together with the cvterm id of the unit as the subject_id

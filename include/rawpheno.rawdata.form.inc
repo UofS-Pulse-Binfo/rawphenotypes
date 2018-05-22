@@ -45,7 +45,12 @@ function rawpheno_rawdata($form, &$form_state) {
 
   // Select trait select box.
   // Get the cv_id of phenotype_measurement_types
-  $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  if (function_exists('chado_get_cv')) {
+    $cv_id = chado_get_cv(array('name' => 'phenotype_measurement_types'));
+  }
+  else {
+    $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  }
 
   $sql = "SELECT t1.cvterm_id, t1.name
           FROM {cvterm} AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
