@@ -183,9 +183,19 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             $cell_val = trim($row[$col_index]);
 
             // If planting date - extract the year value.
+            // Support NA and YYYY in planting date. Use this value when
+            // value cannot be split by -.
             if ($plot_col == 'plantingdate(date)') {
               $y = explode('-', $cell_val);
-              $cell_val = $y[0];
+
+              if (is_array($y)) {
+                // Extract the year only from planting date.
+                $cell_val = $y[0];
+              }
+              else {
+                // Use the value if NA or YYYY.
+                $cell_val = $cell_val;
+              }
             }
 
             $plot .= '-' . $cell_val;
