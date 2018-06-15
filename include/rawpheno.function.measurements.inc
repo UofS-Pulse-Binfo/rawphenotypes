@@ -1024,8 +1024,9 @@ function rawpheno_valid_trait_format($trait) {
   if (preg_match('/[(|)]/', $trait) === 1 && $trait != 'Lodging (Scale: 1-5) upright - lodged') {
     // With these characters present, test if the format is trait name (unit).
 
-    // Pattern: first string can be any chars but ( and ) followed by 0 or more space then 1 ( then any chars and ) as the end of string.
-    $is_valid = (preg_match('/\A[^()]+\s*\({1}[^)(]+\)\z/i', $trait) === 1) ? TRUE : FALSE;
+    // Pattern: first string can be any chars but ( and ) followed by 0 or more space then 1 ( then any chars and )
+    // plus optional any chars but ( and ) as the end of string.
+    $is_valid = (preg_match('/\A[^()]+\s*\({1}[^)(]+\)[^)(]*\z/i', $trait) === 1) ? TRUE : FALSE;
   }
 
   return $is_valid;

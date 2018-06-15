@@ -493,7 +493,11 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
           }
           else {
             if ($has_unit == 'yes') {
-              $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim(strpbrk($name, '()'), '()');
+              $u = strpbrk($name, '()');
+              // Remove any parenthesis making its way to the final value.
+              $u = str_replace(array('(', ')'), '', $u);
+
+              $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim($u);
               $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#disabled'] = FALSE;
             }
           }
