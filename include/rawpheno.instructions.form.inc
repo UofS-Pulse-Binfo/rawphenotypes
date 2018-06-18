@@ -278,7 +278,22 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
 
         foreach($h as $m_i => $m) {
           $star = ($m_i == 'name') ? '*' : '';
-          array_push($instructions_data, array($star . $m . ':', $t[$m_i]));
+
+          if (strlen($t[$m_i]) < 300) {
+            // Short text, save it.
+            array_push($instructions_data, array($star . $m . ':', $t[$m_i]));
+          }
+          else {
+            // Hard-wrap long lines into shorter line and put each
+            // line into a cell/row.
+            $wrapped_string = wordwrap($t[$m_i], 100, "\n");
+            $chunks = explode("\n", $wrapped_string);
+
+            foreach($chunks as $i => $chunk) {
+              $ins_text = ($i == 0) ? array($star . $m . ':', $chunk) : array('', $chunk);
+              array_push($instructions_data, $ins_text);
+            }
+          }
         }
 
         // Add extra new line.
