@@ -545,18 +545,13 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
       }
       else {
         // Inspect date for NA and YYYY.
-        if (preg_match('/^([0-9]{4})/', $value) === 1) {
-          // 4 digit YYYY year. Make sure year is not year in some time in the unknown future.
-          if ($value < date('Y')) {
-            return TRUE;
-          }
+        if (preg_match('/^([0-9]{4})/', $value) === 1 && $value <= date('Y')) {
+          // 4 digit YYYY year. Make sure year is not year in some year in the unknown future.
+          return TRUE;
         }
-        else {
+        elseif (in_array(trim(strtolower($value)), array('na', 'n/a', 'n.a.'))) {
           // Try NA, N/A, N.A.
-          $not_applicable = array('na', 'n/a', 'n.a.');
-          if (in_array(trim(strtolower($value)), $not_applicable)) {
-            return TRUE;
-          }
+          return TRUE;
         }
       }
       break;
