@@ -183,9 +183,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             $cell_val = trim($row[$col_index]);
 
             // If planting date - extract the year value.
+            // Support NA and YYYY in planting date. Use this value when
+            // value cannot be split by -.
             if ($plot_col == 'plantingdate(date)') {
               $y = explode('-', $cell_val);
-              $cell_val = $y[0];
+
+              if (is_array($y)) {
+                // Extract the year only from planting date.
+                $cell_val = $y[0];
+              }
+
+              // Else use the NA or YYYY.
             }
 
             $plot .= '-' . $cell_val;
@@ -219,7 +227,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         }
       }
       else {
-        // Warn the admin tht germplasm is not available...
+        // Warn the admin that germplasm is not available...
         // We want to stop loading if this is the case.
         tripal_report_error(
           'rawpheno',
@@ -344,7 +352,11 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           }
           // THE REST OF THE COLUMN HEADERS
           // Everything else into pheno_measurements.
-          elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
+          elseif ((!empty($cell_colheader) && $cell_entry != 'NA')
+            || ($cell_colheader == 'Planting Date (date)' && $cell_entry == 'NA')) {
+
+            // Allow NA only when header is planting date.
+
             $c_h = rawpheno_function_delformat($cell_colheader);
             if (in_array($c_h, $skip)) {
               // print 'skipping header : ' . $cell_colheader . "\n";

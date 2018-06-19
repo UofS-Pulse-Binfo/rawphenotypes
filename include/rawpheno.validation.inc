@@ -543,6 +543,17 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
           }
         }
       }
+      else {
+        // Inspect date for NA and YYYY.
+        if (preg_match('/^([0-9]{4})/', $value) === 1 && $value <= date('Y')) {
+          // 4 digit YYYY year. Make sure year is not year in some year in the unknown future.
+          return TRUE;
+        }
+        elseif (in_array(trim(strtolower($value)), array('na', 'n/a', 'n.a.'))) {
+          // Try NA, N/A, N.A.
+          return TRUE;
+        }
+      }
       break;
 
     case 'count':
