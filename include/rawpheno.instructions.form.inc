@@ -279,7 +279,7 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
         foreach($h as $m_i => $m) {
           $star = ($m_i == 'name') ? '*' : '';
 
-          if (strlen($t[$m_i]) < 300) {
+          if (strlen($t[$m_i]) < 80) {
             // Short text, save it.
             array_push($instructions_data, array($star . $m . ':', $t[$m_i]));
           }
