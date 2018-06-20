@@ -257,6 +257,8 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
       $cell_i = array();
 
       // Assign the data type for each header based on the unit it contains.
+      $h = array('name' => 'Trait', 'definition' => 'Definition', 'method' => 'Collection Method');
+
       foreach($cvterm as $trait) {
         // Get the unit.
         $u = rawpheno_function_header_unit($trait->name);
@@ -273,7 +275,29 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
 
         // Get header method and definition information.
         $t = rawpheno_function_header_properties($trait->project_cvterm_id);
-        array_push($instructions_data, array($t['name'], $t['method'], $t['definition']));
+
+        foreach($h as $m_i => $m) {
+          $star = ($m_i == 'name') ? '*' : '';
+
+          if (strlen($t[$m_i]) < 80) {
+            // Short text, save it.
+            array_push($instructions_data, array($star . $m . ':', $t[$m_i]));
+          }
+          else {
+            // Hard-wrap long lines into shorter line and put each
+            // line into a cell/row.
+            $wrapped_string = wordwrap($t[$m_i], 100, "\n");
+            $chunks = explode("\n", $wrapped_string);
+
+            foreach($chunks as $i => $chunk) {
+              $ins_text = ($i == 0) ? array($star . $m . ':', $chunk) : array('', $chunk);
+              array_push($instructions_data, $ins_text);
+            }
+          }
+        }
+
+        // Add extra new line.
+        array_push($instructions_data, array('' , ''));
       }
 
       // Load spreadsheet writer library.
@@ -342,29 +366,30 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
 
       // Standard procedure tab.
       // Load trait definition and data collection method to this sheet.
-      $instructions_header = array('Column Header/Trait' => 'string', 'Collection Method' => 'string', 'Definition' => 'string');
+      $instructions_header = array();
       @$writer->writeSheet($instructions_data, 'Instructions', $instructions_header,
         array(
-          array(
-            'wrapText' => false,
-            'rows' => array('1')
-          ),
           array(
             'font' =>
               array(
                 'name'        => 'Arial',
-                'size'        => '12',
+                'size'        => '11',
                 'color'       => '000000',
                 'bold'        => true,
                 'italic'      => false,
                 'underline'   => false
-              ),
+            ),
             'wrapText'        => true,
-            'horizontalAlign' => 'center',
-            'fill'            => array('color' => 'EAEAEA'),
-            'border'          => array('style' => 'thin', 'color' => 'A0A0A0'),
-            'rows'            => array('0')
-          )
+            'columns'         => '0',
+          ),
+          array(
+            'font' =>
+              array(
+                'size'        => '12',
+              ),
+              'wrapText'      => false,
+              'columns'       => '1',
+          ),
         )
       );
 
@@ -395,7 +420,52 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
                 'underline' => false
               ),
               'wrapText'    => false,
-              'rows'        => array('0', '1', '2', '3'),
+              'rows'        => array('0'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => 'FFFFFF',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => '305673'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('1'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => '000000',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => 'F7F7F7'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('2'),
+          ),
+          array(
+            'font' =>
+              array(
+                'name'      => 'Arial',
+                'size'      => '11',
+                'color'     => '000000',
+                'bold'      => true,
+                'italic'    => false,
+                'underline' => false
+              ),
+              'wrapText'    => true,
+              'fill'        => array('color' => '79a183'),
+              'border'      => array('style' => 'thin', 'color' => 'A0A0A0'),
+              'rows'        => array('3'),
           )
         )
       );
