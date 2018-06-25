@@ -145,6 +145,14 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Name column header goes into pheno_plant.
       // Check if stock name exists.
       unset($stock_id);
+
+      // Prior to saving, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+      // in case user intends a space between words/values.
+      // trim() implementation below should drop unecessary leading and trailing spaces.
+      if (preg_match('/\xc2\xa0/', $row[$name_index])) {
+        $row[$name_index] = preg_replace('/\xc2\xa0/', ' ', $row[$name_index]);
+      }
+
       $stock_id = rawpheno_function_getstockid(trim($row[$name_index]), $project_name);
       // print $stock_id . ' -- ' . $row[$name_index] . "\n";
 
@@ -288,6 +296,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
               $cell_colheader = $name->name;
             }
+          }
+
+          // Prior to saving, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+          // in case user intends a space between words/values.
+          // trim() implementation below should drop unecessary leading and trailing spaces.
+          if (preg_match('/\xc2\xa0/', $cell_entry)) {
+            $cell_entry = preg_replace('/\xc2\xa0/', ' ', $cell_entry);
           }
 
           // We always want to strip flanking white space.
@@ -671,6 +686,13 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
           $column_name = $header[$column_index]['no units'];
           if (empty($column_name)) continue;
+
+          // Prior to validating, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+          // in case user intends a space between words/values.
+          // trim() implementation below should drop unecessary leading and trailing spaces.
+          if (preg_match('/\xc2\xa0/', $cell)) {
+            $cell = preg_replace('/\xc2\xa0/', ' ', $cell);
+          }
 
           // We always want to strip flanking white space.
           // FYI: This is done when the data is loaded as well.
