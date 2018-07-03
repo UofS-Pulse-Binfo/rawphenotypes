@@ -17,7 +17,6 @@ script:
   - docker run -it -d --rm --name tripal -v "$(pwd)":/modules/rawphenotypes statonlab/tripal3
   - sleep 30 # We pause here so postgres and apache complete booting up
   - docker exec -it tripal drush pm-download dragndrop_upload
-  - docker exec -it tripal drush pm-download libraries
   - docker exec -it tripal bash -c " cd /var/www/html/sites/all/libraries && git clone https://github.com/nuovo/spreadsheet-reader"
   - docker exec -it tripal bash -c " cd /var/www/html/sites/all/libraries && git clone https://github.com/SystemDevil/PHP_XLSXWriter_plus"
   - docker exec -it tripal bash -c " cd /var/www/html/sites/all/libraries && wget https://github.com/d3/d3/releases/download/v3.5.14/d3.zip && upzip d3.zip"
