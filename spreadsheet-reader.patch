@@ -26,3 +26,10 @@ index 75351b7..88c5ef4 100644
  		0x10 => "d-M",
  		0x11 => "M-Y",
  		0x12 => "h:i a",
+@@ -1734,4 +1736,4 @@ class Spreadsheet_Excel_Reader {
+ 
+ }
+ 
+-?>
+\ No newline at end of file
++?>
