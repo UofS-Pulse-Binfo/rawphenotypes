@@ -499,14 +499,17 @@ function rawpheno_install() {
 
     // R version. To be implemented to all column headers.
     $r_version = rawpheno_function_make_r_compatible($header);
-    chado_insert_record('cvtermprop',
-      array(
-        'cvterm_id' => $cvterm->cvterm_id,
-        'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
-        'value'     => $r_version,
-        'rank'      => 0
-      )
-    );
+
+    if ($cvterm) {
+      chado_insert_record('cvtermprop',
+        array(
+          'cvterm_id' => $cvterm->cvterm_id,
+          'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
+          'value'     => $r_version,
+          'rank'      => 0
+        )
+      );
+    }
 
     // Finally, map this particular header to project, again, only when default project is present.
     if (isset($project_ID) AND $project_ID > 0) {
