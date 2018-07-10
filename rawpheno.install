@@ -483,7 +483,7 @@ function rawpheno_install() {
 
     // Relate cvterm and unit.
     // No relationship when header is Plant Property Type.
-    if (!in_array($header, $arr_plantpropheader)) {
+    if (!in_array($header, $arr_plantpropheader) && $cvterm) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
       $header_unit = rawpheno_function_header_unit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
