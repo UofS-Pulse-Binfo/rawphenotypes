@@ -469,7 +469,7 @@ function rawpheno_install() {
     );
 
     // Insert the cvterm data collection method.
-    if (!empty($cvterm_info['method'])) {
+    if (!empty($cvterm_info['method']) && $cvterm) {
       // Data collection method.
       chado_insert_record('cvtermprop',
         array(
