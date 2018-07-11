@@ -356,6 +356,17 @@ function rawpheno_function_terms($type) {
  * Implements hook_install().
  */
 function rawpheno_install() {
+
+ chado_insert_record('cvterm_relationship',
+        array(
+          'subject_id' => 1,
+          'type_id'    => 1,
+          'object_id'  => 1
+        )
+      );
+
+
+  /*
   // Get variable names and default values.
   $vars = rawpheno_function_terms('variables');
   $config = rawpheno_function_terms('defaults');
@@ -498,7 +509,7 @@ function rawpheno_install() {
           'type_id'   => $arr_cvid_cvname[ $cv['cv_desc'] ],
           'value'     => $cvterm_info['method'],
           'rank'      => 0
-        )
+        ),
       );
     }
 
@@ -656,7 +667,7 @@ function rawpheno_install() {
   // Add data collection spreadsheet to public:// directory,
   // and link this file for download in instructions page.
 
-  /*
+
   $destination = file_default_scheme() . '://';
   if (file_prepare_directory($destination, FILE_MODIFY_PERMISSIONS)) {
     // Add this file if directory is writable.
