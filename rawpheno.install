@@ -371,7 +371,10 @@ function rawpheno_install() {
   foreach($cv as $cv_i => $cv_name) {
     $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
 
-    $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+    if ($tm) {
+      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+    }
+
   }
 
   // # 2. INSERT UNITS.
