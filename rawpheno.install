@@ -1182,8 +1182,8 @@ function rawpheno_update_7002() {
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
 
   // Populate view.
-  $mview_id = tripal_get_mview_id('rawpheno_rawdata_mview');
-  tripal_populate_mview($mview_id);
+  // $mview_id = tripal_get_mview_id('rawpheno_rawdata_mview');
+  // tripal_populate_mview($mview_id);
 }
 
 /**
