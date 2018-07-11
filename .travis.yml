@@ -22,5 +22,5 @@ script:
   - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && git clone https://github.com/SystemDevil/PHP_XLSXWriter_plus"
   - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && wget https://github.com/d3/d3/releases/download/v3.5.14/d3.zip && unzip d3.zip"
   - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && mkdir d3 && mv d3.js d3/ && mv d3.min.js d3/"
-  - docker exec -it tripal drush pm-enable -y rawpheno
+  - docker exec -it drush pm-enable -y rawpheno
   - docker exec -it tripal bash -c "cd /modules/rawphenotypes && composer install && DRUPAL_ROOT=/var/www/html ./vendor/bin/phpunit"
