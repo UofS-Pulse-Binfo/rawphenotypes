@@ -371,7 +371,7 @@ function rawpheno_install() {
   foreach($cv as $cv_i => $cv_name) {
     $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
 
-    if ($tm) {
+    if ($tmp) {
       $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
     }
 
@@ -398,7 +398,9 @@ function rawpheno_install() {
       )
     );
 
-    $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+    if ($tmp) {
+      $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+    }
   }
 
   // # 3. INSERT COLUMN HEADERS.
