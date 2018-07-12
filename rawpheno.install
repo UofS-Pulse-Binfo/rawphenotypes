@@ -591,7 +591,6 @@ function rawpheno_install() {
       ->execute();
   }
 
-/*
   // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
   // Using Tripal: tripal_add_mview().
@@ -648,6 +647,8 @@ function rawpheno_install() {
 
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+
+/*
 
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
