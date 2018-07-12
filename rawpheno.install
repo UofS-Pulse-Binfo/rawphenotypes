@@ -567,7 +567,7 @@ function rawpheno_install() {
     }
   }
 
-  /*
+
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
 
@@ -591,7 +591,7 @@ function rawpheno_install() {
       ->execute();
   }
 
-
+/*
   // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
   // Using Tripal: tripal_add_mview().
