@@ -414,7 +414,7 @@ function rawpheno_install() {
     }
   }
 
-  /*
+
 
 
   // # 3. INSERT COLUMN HEADERS.
@@ -567,6 +567,7 @@ function rawpheno_install() {
     }
   }
 
+  /*
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
 
