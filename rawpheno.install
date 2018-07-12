@@ -382,7 +382,6 @@ function rawpheno_install() {
 
   }
 
-  /*
 
   // # 2. INSERT UNITS.
   // Insert units and scale member used by scale.
@@ -414,6 +413,9 @@ function rawpheno_install() {
       $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
     }
   }
+
+  /*
+
 
   // # 3. INSERT COLUMN HEADERS.
   // Insert column headers.
