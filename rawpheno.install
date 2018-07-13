@@ -601,8 +601,6 @@ function rawpheno_install() {
   $mv_module = 'rawpheno';
   $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
 
-
-
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
@@ -652,7 +650,12 @@ function rawpheno_install() {
 
 
   // Create materialized view.
-  tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  if (function_exists('chado_add_mview')) {
+    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  }
+  else {
+    tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  }
 
 /*
 
