@@ -369,19 +369,10 @@ function rawpheno_install() {
   $arr_cvid_cvname = array();
 
   foreach($cv as $cv_i => $cv_name) {
-    if (function_exists('chado_insert_cv')) {
-      $tmp = chado_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
-    }
-    else {
-      $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
-    }
+    $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
 
-    if ($tmp) {
-      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
-    }
-
+    $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
   }
-
 
   // # 2. INSERT UNITS.
   // Insert units and scale member used by scale.
@@ -395,25 +386,17 @@ function rawpheno_install() {
   $arr_cvtermid_unit = array();
 
   foreach($arr_unit as $unit => $def) {
-    $param = array(
-      'id' => 'rawpheno_tripal:' . $unit,
-      'name' => $unit,
-      'definition' => $def,
-      'cv_name' => $cv['cv_unit']
+    $tmp = tripal_insert_cvterm(
+      array(
+        'id' => 'rawpheno_tripal:' . $unit,
+        'name' => $unit,
+        'definition' => $def,
+        'cv_name' => $cv['cv_unit']
+      )
     );
 
-    if (function_exists('chado_insert_cvterm')) {
-      $tmp = chado_insert_cvterm($param);
-    }
-    else {
-      $tmp = tripal_insert_cvterm($param);
-    }
-
-    if ($tmp) {
-      $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
-    }
+    $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
   }
-
 
   // # 3. INSERT COLUMN HEADERS.
   // Insert column headers.
@@ -462,7 +445,6 @@ function rawpheno_install() {
   $arr_plantpropheader = rawpheno_function_headers('plantprop');
   $arr_essentialheader = rawpheno_function_headers('essential');
 
-  unset($param);
   foreach($arr_allheaders as $header) {
     // Skip when it is Name.
     if ($header == 'Name') {
@@ -476,23 +458,18 @@ function rawpheno_install() {
     // Set the type of header.
     $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
 
-    $param = array(
-      'id'         => 'rawpheno_tripal:' . $header,
-      'name'       => $header,
-      'definition' => $cvterm_definition,
-      'cv_name'    => $cvterm_type
+    // Insert the cvterm.
+    $cvterm = tripal_insert_cvterm(
+      array(
+        'id'         => 'rawpheno_tripal:' . $header,
+        'name'       => $header,
+        'definition' => $cvterm_definition,
+        'cv_name'    => $cvterm_type
+      )
     );
 
-    // Insert the cvterm.
-    if (function_exists('chado_insert_cvterm')) {
-      $cvterm = chado_insert_cvterm($param);
-    }
-    else {
-      $cvterm = tripal_insert_cvterm($param);
-    }
-
     // Insert the cvterm data collection method.
-    if (!empty($cvterm_info['method']) && $cvterm) {
+    if (!empty($cvterm_info['method'])) {
       // Data collection method.
       chado_insert_record('cvtermprop',
         array(
@@ -506,7 +483,7 @@ function rawpheno_install() {
 
     // Relate cvterm and unit.
     // No relationship when header is Plant Property Type.
-    if (!in_array($header, $arr_plantpropheader) && $cvterm) {
+    if (!in_array($header, $arr_plantpropheader)) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
       $header_unit = rawpheno_function_header_unit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
@@ -564,7 +541,6 @@ function rawpheno_install() {
         ->execute();
     }
   }
-
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
@@ -644,14 +620,8 @@ function rawpheno_install() {
     )
   );
 
-
   // Create materialized view.
-  if (function_exists('chado_add_mview')) {
-    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
-  }
-  else {
-    tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
-  }
+  tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
 
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
@@ -664,7 +634,6 @@ function rawpheno_install() {
 
   // Add data collection spreadsheet to public:// directory,
   // and link this file for download in instructions page.
-
   $destination = file_default_scheme() . '://';
   if (file_prepare_directory($destination, FILE_MODIFY_PERMISSIONS)) {
     // Add this file if directory is writable.
