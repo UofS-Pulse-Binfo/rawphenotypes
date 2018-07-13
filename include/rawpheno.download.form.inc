@@ -252,7 +252,8 @@ function rawpheno_download_submit($form, &$form_state) {
   // Otherwise, it will be an associative array where location is both key and value.
   // Convert this to comma separated string when there's anything else set to 0 - for all locations.
   $loc = $form_state['values']['sel_location'];
-  $loc = (count($loc) > 0) ? implode(',', $loc) : 0;
+  // Location 1 + (and) Location 2 + .....
+  $loc = (count($loc) > 0) ? implode('+', $loc) : 0;
 
   // Trait select field.
   // Trait select field is an empty array - all traits.
@@ -271,7 +272,7 @@ function rawpheno_download_submit($form, &$form_state) {
   if (isset($env) && $env == 1) {
     // Ensure that project and location combination return an environment data file.
     $project = explode(',', $prj);
-    $location = explode(',', $loc);
+    $location = explode('+', $loc);
 
     $files = rawpheno_function_getenv($project, $location);
 

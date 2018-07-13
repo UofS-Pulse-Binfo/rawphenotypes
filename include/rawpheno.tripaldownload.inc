@@ -75,9 +75,9 @@ function rawpheno_trpdownload_summarize_download($vars) {
       ->fetchCol(0);
   }
   else {
-    $location = explode(',', $location);
+    $location = explode('+', $location);
   }
-  $summary .= '<li> ' . count($location) . ' LOCATIONS: <br /><em>' . implode(', ', $location) . '</em></li>';
+  $summary .= '<li> ' . count($location) . ' LOCATIONS: <br /><em>' . implode(' - ', $location) . '</em></li>';
 
   // TRAITS:
   $traits = trim(str_replace('t=', '', $traits));
@@ -228,7 +228,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       ->fetchCol(0);
   }
   else {
-    $location = explode(',', $location);
+    $location = explode('+', $location);
   }
 
   // Traits
