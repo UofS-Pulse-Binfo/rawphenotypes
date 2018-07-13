@@ -356,7 +356,6 @@ function rawpheno_function_terms($type) {
  * Implements hook_install().
  */
 function rawpheno_install() {
-  /*
   // Get variable names and default values.
   $vars = rawpheno_function_terms('variables');
   $config = rawpheno_function_terms('defaults');
@@ -414,8 +413,6 @@ function rawpheno_install() {
       $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
     }
   }
-
-
 
 
   // # 3. INSERT COLUMN HEADERS.
@@ -592,7 +589,6 @@ function rawpheno_install() {
       ->execute();
   }
 
-  */
 
   // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
@@ -657,8 +653,6 @@ function rawpheno_install() {
     tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
   }
 
-/*
-
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
   variable_set($vars[0], $config['colour']);
@@ -681,7 +675,6 @@ function rawpheno_install() {
     // If file is present, replace it with the same file.
     file_unmanaged_copy($source, $destination, FILE_EXISTS_REPLACE);
   }
-  */
 }
 
 
