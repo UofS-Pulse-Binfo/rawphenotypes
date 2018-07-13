@@ -647,11 +647,11 @@ function rawpheno_install() {
       'location' => array('location'),
     )
   );
+ /*
 
   // Create materialized view.
   tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
 
-/*
 
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
