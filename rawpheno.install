@@ -367,11 +367,21 @@ function rawpheno_install() {
   // Array to hold cv_id and cv_name.
   // This will be used when creating cvterm relationships.
   $arr_cvid_cvname = array();
-
+  
+  $chado_inscv_exists = function_exists('chado_insert_cv');
+ 
   foreach($cv as $cv_i => $cv_name) {
-    $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
-
-    $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+   $def = str_replace('_', ' ', ucfirst($cv_name));
+   $tmp = ($chado_inscv_exists) 
+     ? chado_insert_cv($cv_name, $def)
+     : tripal_insert_cv($cv_name, $def);
+    
+    if ($tmp) {
+      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+    }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cv', array(), array('print' => TRUE));
+    }
   }
 
   // # 2. INSERT UNITS.
@@ -385,17 +395,26 @@ function rawpheno_install() {
   // This will be used when creating a cvterm relationship linking a cvterm to a unit.
   $arr_cvtermid_unit = array();
 
-  foreach($arr_unit as $unit => $def) {
-    $tmp = tripal_insert_cvterm(
-      array(
-        'id' => 'rawpheno_tripal:' . $unit,
-        'name' => $unit,
-        'definition' => $def,
-        'cv_name' => $cv['cv_unit']
-      )
-    );
+  $chado_insterm_exists = function_exists('chado_insert_cvterm');
 
-    $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+  foreach($arr_unit as $unit => $def) {
+    $ins_unit = array(
+      'id' => 'rawpheno_tripal:' . $unit,
+      'name' => $unit,
+      'definition' => $def,
+      'cv_name' => $cv['cv_unit']
+    ); 
+    
+    $tmp = ($chado_insterm_exists) 
+      ? chado_insert_cvterm($ins_unit)
+      : tripal_insert_cvterm($ins_unit);
+    
+    if ($tmp) {
+      $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+    }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (trait unit)', array(), array('print' => TRUE));
+    }
   }
 
   // # 3. INSERT COLUMN HEADERS.
@@ -457,19 +476,21 @@ function rawpheno_install() {
     $cvterm_definition = (!empty($cvterm_info['define'])) ? $cvterm_info['define'] : $header;
     // Set the type of header.
     $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
-
-    // Insert the cvterm.
-    $cvterm = tripal_insert_cvterm(
-      array(
-        'id'         => 'rawpheno_tripal:' . $header,
-        'name'       => $header,
-        'definition' => $cvterm_definition,
-        'cv_name'    => $cvterm_type
-      )
+ 
+    $ins_term = array(
+      'id'         => 'rawpheno_tripal:' . $header,
+      'name'       => $header,
+      'definition' => $cvterm_definition,
+      'cv_name'    => $cvterm_type
     );
 
+    // Insert the cvterm.
+    $cvterm = ($chado_insterm_exists) 
+      ? chado_insert_cvterm($ins_term)
+      : tripal_insert_cvterm($ins_term);
+
     // Insert the cvterm data collection method.
-    if (!empty($cvterm_info['method'])) {
+    if (!empty($cvterm_info['method']) && $cvterm) {
       // Data collection method.
       chado_insert_record('cvtermprop',
         array(
@@ -480,10 +501,13 @@ function rawpheno_install() {
         )
       );
     }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (traits)', array(), array('print' => TRUE));
+    }
 
     // Relate cvterm and unit.
     // No relationship when header is Plant Property Type.
-    if (!in_array($header, $arr_plantpropheader)) {
+    if (!in_array($header, $arr_plantpropheader) && $cvterm) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
       $header_unit = rawpheno_function_header_unit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
@@ -621,8 +645,13 @@ function rawpheno_install() {
   );
 
   // Create materialized view.
-  tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
-
+  if (function_exists('chado_add_mview')) {
+    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
+  else {
+    tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
+  
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
   variable_set($vars[0], $config['colour']);
