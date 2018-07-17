@@ -1,4 +1,5 @@
-# Raw Phenotypes
+[![Build Status](https://travis-ci.org/UofS-Pulse-Binfo/rawphenotypes.svg?branch=master)](https://travis-ci.org/UofS-Pulse-Binfo/rawphenotypes)
+
 This module was designed to aid in collection and further analysis of raw phenotypic data. With this in mind it provides:
 
 1. An interface for defining projects including which traits are expected to be collected and the users collecting them;
