@@ -24,15 +24,28 @@ function rawpheno_download($form, &$form_state) {
     $project_selected = $form_state['values']['sel_project'];
   }
 
-  $sql = "SELECT DISTINCT t1.project_id, t1.name
-          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id)
-          ORDER BY t1.project_id DESC";
+  // Sort the project names according to Planting Date.
+  // Put project with recently uploaded data/ based on planting year
+  // first in the list.
+  $sql = "SELECT project_id, name
+          FROM {project} AS t1
+            RIGHT JOIN pheno_plant_project AS t2 USING (project_id)
+            LEFT JOIN pheno_measurements AS t3 USING (plant_id)
+          WHERE t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+          GROUP BY project_id, name, t3.value
+          ORDER BY t3.value DESC";
 
   $opt_project = chado_query($sql)
     ->fetchAllKeyed();
 
+  // Project options:
   if (count($opt_project) <= 0) {
+    // Module has no projects w/ data yet.
     return $form;
+  }
+  else {
+    // Remove any duplicates from the sorted list.
+    $opt_project = array_unique($opt_project, SORT_REGULAR);
   }
 
   // AJAX wrapper.
@@ -54,7 +67,7 @@ function rawpheno_download($form, &$form_state) {
   $form['ajax_container']['sel_project'] = array(
     '#type' => 'select',
     '#title' => t('Project'),
-    '#options' => array(0 => 'All Projects') + $opt_project,
+    '#options' => $opt_project,
     '#multiple' => FALSE,
     '#id' => 'download-sel-project',
     '#ajax' => array(
@@ -72,20 +85,22 @@ function rawpheno_download($form, &$form_state) {
 
   // Define the project ids required by the next field.
   if (isset($project_selected)) {
-    // When a project is selected.
-    // 0 is the first option in the select box and translates to all projects.
-    $project_id = ($project_selected == 0) ? array_keys($opt_project) : $project_selected;
+    // When a project is selected. Default to the project selected.
+    $project_id = $project_selected;
   }
   else {
-    // No project select. This is the defaul select all project.
-    $project_id = array_keys($opt_project);
+    // No project select. This is the default to the first project.
+    $p = array_keys($opt_project);
+    $project_id = reset($p);
   }
 
-  // LOCATION SELECT BOX.
+  // All Locations for the default project above. Default project is the
+  // first project in the list.
   $sql = "SELECT DISTINCT value, value AS prj_location
           FROM pheno_plantprop
           WHERE
-            type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+            type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id = cvt.cv_id
+              WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
             plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id IN (:project_id))
           ORDER BY value ASC";
 
@@ -152,7 +167,35 @@ function rawpheno_download($form, &$form_state) {
   );
 
   // Get traits given a location and project.
-  $opt_trait = rawpheno_download_load_traits($location_id, $project_id);
+  if (isset($project_selected) && isset($location)) {
+    $project_id = $project_selected;
+    $location_id = $location;
+  }
+
+  // Extract list of unique traits from rawdata summary materialized view.
+  // Filtered by location and project id number. Default to all location in the default project.
+  $sql = "SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT all_traits), ',') AS all_traits
+          FROM {rawpheno_rawdata_mview}
+          WHERE location IN(:location) AND plant_id IN
+            (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+          LIMIT 1";
+
+  $traits = chado_query($sql, array(':location' => $location_id, ':project_id' => $project_id))
+    ->fetchObject();
+
+  $temp_traits = str_getcsv($traits->all_traits, ',');
+  $traits_array = array_unique($temp_traits);
+
+  // Traits are all in cvterm_ids, we need the human-readable.
+  // Note: query above may return duplicate trait ids since multiple locations share same traits
+  //       but this query ensures that traits are unique.
+  $sql = "SELECT cvterm_id, name
+          FROM {cvterm}
+          WHERE cvterm_id in (:traits) AND name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+          GROUP BY cvterm_id, name ORDER BY name ASC";
+
+  $opt_trait = chado_query($sql, array(':traits' => $traits_array))
+    ->fetchAllKeyed();
 
   $form['ajax_container']['ajax_container_traits']['sel_trait'] = array(
     '#type' => 'select',
@@ -196,6 +239,7 @@ function rawpheno_download($form, &$form_state) {
 
   $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
 
+
   return $form;
 }
 
@@ -212,6 +256,7 @@ function rawpheno_download_get_locations_traits($form, $form_state) {
  * Function callback: AJAX update trait select box.
  */
 function rawpheno_download_get_traits($form, $form_state) {
+  /*
   $location = $form_state['values']['sel_location'];
   $project = $form_state['values']['sel_project'];
 
@@ -229,6 +274,7 @@ function rawpheno_download_get_traits($form, $form_state) {
   $form['ajax_container']['ajax_container_traits']['sel_trait']['#options'] = $opt_trait;
   // Update the title.
   $form['ajax_container']['ajax_container_traits']['sel_trait']['#title'] = t('@count_trait Traits available', array('@count_trait' => count($opt_trait)));
+*/
 
   return $form['ajax_container']['ajax_container_traits'];
 }
