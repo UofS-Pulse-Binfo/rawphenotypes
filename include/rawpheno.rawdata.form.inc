@@ -43,38 +43,37 @@ function rawpheno_rawdata($form, &$form_state) {
     '#id' => 'rawdata-sel-project',
   );
 
-  // Select trait select box.
-  // Get the cv_id of phenotype_measurement_types
-  if (function_exists('chado_get_cv')) {
-    $cv_id = chado_get_cv(array('name' => 'phenotype_measurement_types'));
-  }
-  else {
-    $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
-  }
+  // Extract list of unique traits from rawdata summary materialized view.
+  // Filtered by project id number. Default to all location in the default project.
+  $sql_cvterm_ids = "SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT all_traits), ',') AS all_traits
+          FROM {rawpheno_rawdata_mview}
+          WHERE plant_id IN
+            (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+          LIMIT 1";
 
-  $sql = "SELECT t1.cvterm_id, t1.name
-          FROM {cvterm} AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
-          WHERE
-            t2.project_id = :project_id
-            AND t1.cv_id = :cv_id
-            AND t1.name NOT IN ('Plot', 'Entry', 'Name', 'Rep', 'Location', 'Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
-          ORDER BY t1.cvterm_id ASC";
+  // Traits are all in cvterm_ids, we need the human-readable.
+  // Note: query above may return duplicate trait ids since multiple locations share same traits
+  //       but this query ensures that traits are unique.
+  $sql_cvterm_names = "SELECT cvterm_id, name
+          FROM {cvterm}
+          WHERE cvterm_id in (:traits) AND name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+          GROUP BY cvterm_id, name ORDER BY name ASC";
 
+  // Add first option as instruction to this field.
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
 
   // Create the select field and populate it with traits specific to a project.
   foreach(array_keys($project) as $p_id) {
-    $q_string = array(':project_id' => $p_id, ':cv_id' => $cv_id->cv_id);
-    $traits = chado_query($sql, $q_string)
-      ->fetchAllKeyed();
+    // Trait id numbers.
+    $trait_ids = chado_query($sql_cvterm_ids, array(':project_id' => $p_id))
+      ->fetchObject();
 
-    // List only traits that has actual data from pheno measurements table.
-    foreach($traits as $id => $val) {
-      $h = rawpheno_download_trait_has_data($id, '', $p_id);
-      if ($h === FALSE) {
-        unset($traits[$id]);
-      }
-    }
+    $temp_traits = str_getcsv($trait_ids->all_traits, ',');
+    $traits_array = array_unique($temp_traits);
+
+    // Human-readable trait names.
+    $traits = chado_query($sql_cvterm_names, array(':traits' => $traits_array))
+      ->fetchAllKeyed();
 
     $traits = $default_option + $traits;
 
