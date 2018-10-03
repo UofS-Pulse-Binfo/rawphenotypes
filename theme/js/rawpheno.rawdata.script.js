@@ -139,17 +139,27 @@
       var width, height, margin = {};
 
       // Chart margins.
+      // NOTE: THIS MARGIN IS FOR BOTH HEATMAP AND HISTOGRAM!
       margin.top = 40;
       margin.left = 90;
       margin.bottom = 80;
       margin.right = 30;
+
+      // Use this variable to increase or decrease
+      // the current margin bottom value and not affect
+      // the margin for the histogram.
+      // @see note above.
+
+      // Adjusted margin bottom to accommodate
+      // text wrapping of long location value.
+      marginAdjust = 30;
 
       // x axis scale.
       var x0, xAxis;
 
 	    // Height of the chart defined in the css rule for #container-rawdata.
       height = parseInt(divChartContainer.style('height'), 10);
-      chartDimension.height = height - margin.top - margin.bottom;
+      chartDimension.height = height - margin.top - (margin.bottom + marginAdjust);
 
       // Main svg canvas of the heat map.
       var svg;
@@ -655,7 +665,10 @@
         // Render scales
         x0.rangeRoundBands([0, chartDimension.width]);
         xAxis.scale(x0);
-        d3.select('#g-x-axis').call(xAxis);
+        d3.select('#g-x-axis')
+          .call(xAxis)
+          .selectAll('text')
+            .call(wrapWords);
       }
 
       // Render bar chart elements.
@@ -1193,6 +1206,39 @@
            .attr('class', 'win-loading')
            .html('Please wait...');
       }
+
+      // Wrap long text value and set the first line
+      // to bold and capitalized.
+      function wrapWords(text) {
+        text.each(function() {
+          // Reference text.
+          var text  = d3.select(this);
+          // Read the words in the text.
+          var words = text.text().split(',');
+
+          // Clear the text so no duplicate label shown.
+          text.text(null);
+
+          var word,
+            line = [],
+            lineNumber = 0,
+            lineHeight = 1.2 // ems
+            y = text.attr('y') - 10,
+            dy = parseFloat(text.attr('dy'));
+
+          while (word = words.pop()) {
+            text.append('tspan')
+              .attr('class', 'bp-tspan')
+              .attr('x', 0)
+              .attr('y', y)
+              .attr('dy', ++lineNumber * lineHeight + dy + 'em')
+              .text(word.trim())
+                .attr('class', function() {
+                  return (lineNumber - 1 == 0) ? 'location-text-top' : 'location-text-bottom';
+                });
+          }
+         });
+       }
     }
   };
 }(jQuery));

@@ -120,6 +120,28 @@ rect {
   width: 120px;
 }
 
+/* Wrap long location text where country information
+ * and city/region information are in separate line
+ *
+ * The top line, ideally should contain country and
+ * the bottom line is for region/city information.
+ */
+.location-text-top {
+  font-weight: bold;
+  text-transform: uppercase;
+  fill: #000000;
+}
+
+.location-text-bottom {
+  font-weight: normal;
+  text-transform: none;
+  fill: #999999;
+}
+
+.location-text-top, .location-text-bottom {
+  stroke: none;
+}
+
 
 /* No Data */
 .chart-no-data {
