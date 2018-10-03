@@ -19,6 +19,12 @@ Documentation:
 <!--- Describe your changes in detail -->
 <!--- Why is this change required? What problem does it solve? -->
 
+## Dependencies
+<!-- If this code is dependent upon another module and/or PR, 
+       state that here. -->
+<!-- Include information about other modules/PRs needed for testing,
+        which to enable/merge first, etc. -->
+
 ## Testing?
 <!--- Please describe in detail how you tested your changes. -->
 <!--- Include details of your testing environment, tests ran to see how
@@ -27,9 +33,3 @@ Documentation:
 - [ ] I tested on a generic Tripal Site
 - [ ] I tested on a KnowPulse Clone
 - [ ] This PR includes automated testing
-
-## Dependencies
-<!-- If this code is dependent upon another module and/or PR, 
-       state that here. -->
-<!-- Include information about other modules/PRs needed for testing,
-        which to enable/merge first, etc. -->
