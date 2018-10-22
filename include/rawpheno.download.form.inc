@@ -172,30 +172,29 @@ function rawpheno_download($form, &$form_state) {
     $location_id = $location;
   }
 
-  // Extract list of unique traits from rawdata summary materialized view.
-  // Filtered by location and project id number. Default to all location in the default project.
-  $sql = "SELECT ARRAY_TO_STRING(ARRAY_AGG(DISTINCT all_traits), ',') AS all_traits
+  // The summarized list of cvterm_ids from MVIEW returned by inner most query will be passed to function that converts
+  // comma separated values into individual values (cvterm_id numbers) and the result is the parameter of ANY clause
+  // that will filter cvterms to only those in the list. Final rows are in JSON object and sorted alphabetically by name
+  // that will be passed on to the select field of rawdata form.
+  $sql_cvterm = "
+    SELECT c_j.cvterm_json->>'id', c_j.cvterm_json->>'name' FROM (
+      SELECT JSON_BUILD_OBJECT('id', cvterm_id, 'name', name) AS cvterm_json FROM {cvterm} WHERE cvterm_id = ANY ((
+        SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
+          SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
           FROM {rawpheno_rawdata_mview}
-          WHERE location IN(:location) AND plant_id IN
-            (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-          LIMIT 1";
+          WHERE plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+          LIMIT 1
+        ) AS list_id
+      )::int[])
+    ) AS c_j
+    WHERE c_j.cvterm_json->>'name' NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+    ORDER BY c_j.cvterm_json->>'name' ASC
+  ";
 
-  $traits = chado_query($sql, array(':location' => $location_id, ':project_id' => $project_id))
-    ->fetchObject();
-
-  $temp_traits = str_getcsv($traits->all_traits, ',');
-  $traits_array = array_unique($temp_traits);
-
-  // Traits are all in cvterm_ids, we need the human-readable.
-  // Note: query above may return duplicate trait ids since multiple locations share same traits
-  //       but this query ensures that traits are unique.
-  $sql = "SELECT cvterm_id, name
-          FROM {cvterm}
-          WHERE cvterm_id in (:traits) AND name NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
-          GROUP BY cvterm_id, name ORDER BY name ASC";
-
-  $opt_trait = chado_query($sql, array(':traits' => $traits_array))
+  $trait_set = chado_query($sql_cvterm, array(':project_id' => $project_id))
     ->fetchAllKeyed();
+
+  $opt_trait = array_unique($trait_set);
 
   $form['ajax_container']['ajax_container_traits']['sel_trait'] = array(
     '#type' => 'select',
