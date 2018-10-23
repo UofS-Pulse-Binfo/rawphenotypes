@@ -185,7 +185,6 @@ function rawpheno_download($form, &$form_state) {
           WHERE
             location IN(:location)
             AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-          LIMIT 1
         ) AS list_id
       )::int[])
     ) AS c_j
