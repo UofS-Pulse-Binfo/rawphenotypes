@@ -182,7 +182,9 @@ function rawpheno_download($form, &$form_state) {
         SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
           SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
           FROM {rawpheno_rawdata_mview}
-          WHERE plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+          WHERE
+            location IN(:location)
+            AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
           LIMIT 1
         ) AS list_id
       )::int[])
@@ -191,7 +193,7 @@ function rawpheno_download($form, &$form_state) {
     ORDER BY c_j.cvterm_json->>'name' ASC
   ";
 
-  $trait_set = chado_query($sql_cvterm, array(':project_id' => $project_id))
+  $trait_set = chado_query($sql_cvterm, array(':location' => $location_id, ':project_id' => $project_id))
     ->fetchAllKeyed();
 
   $opt_trait = array_unique($trait_set);
