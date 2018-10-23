@@ -54,7 +54,6 @@ function rawpheno_rawdata($form, &$form_state) {
           SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
           FROM {rawpheno_rawdata_mview}
           WHERE plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-          LIMIT 1
         ) AS list_id
       )::int[])
     ) AS c_j
