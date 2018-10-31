@@ -43,40 +43,35 @@ function rawpheno_rawdata($form, &$form_state) {
     '#id' => 'rawdata-sel-project',
   );
 
-  // Select trait select box.
-  // Get the cv_id of phenotype_measurement_types
-  if (function_exists('chado_get_cv')) {
-    $cv_id = chado_get_cv(array('name' => 'phenotype_measurement_types'));
-  }
-  else {
-    $cv_id = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
-  }
+  // The summarized list of cvterm_ids from MVIEW returned by inner most query will be passed to function that converts
+  // comma separated values into individual values (cvterm_id numbers) and the result is the parameter of ANY clause
+  // that will filter cvterms to only those in the list. Final rows are in JSON object and sorted alphabetically by name
+  // that will be passed on to the select field of rawdata form.
+  $sql_cvterm = "
+    SELECT c_j.cvterm_json->>'id', c_j.cvterm_json->>'name' FROM (
+      SELECT JSON_BUILD_OBJECT('id', cvterm_id, 'name', name) AS cvterm_json FROM {cvterm} WHERE cvterm_id = ANY ((
+        SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
+          SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
+          FROM {rawpheno_rawdata_mview}
+          WHERE plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+        ) AS list_id
+      )::int[])
+    ) AS c_j
+    WHERE c_j.cvterm_json->>'name' NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+    ORDER BY c_j.cvterm_json->>'name' ASC
+  ";
 
-  $sql = "SELECT t1.cvterm_id, t1.name
-          FROM {cvterm} AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(cvterm_id)
-          WHERE
-            t2.project_id = :project_id
-            AND t1.cv_id = :cv_id
-            AND t1.name NOT IN ('Plot', 'Entry', 'Name', 'Rep', 'Location', 'Planting Date (date)', 'Disease-specific Comments', 'Comments', '# of Seeds Planted (count)')
-          ORDER BY t1.cvterm_id ASC";
-
+  // Add first option as instruction to this field.
   $default_option = array(0 => 'Select a trait to hightlight in the chart');
 
   // Create the select field and populate it with traits specific to a project.
   foreach(array_keys($project) as $p_id) {
-    $q_string = array(':project_id' => $p_id, ':cv_id' => $cv_id->cv_id);
-    $traits = chado_query($sql, $q_string)
+    // Trait id numbers.
+    $trait_ids = chado_query($sql_cvterm, array(':project_id' => $p_id))
       ->fetchAllKeyed();
 
-    // List only traits that has actual data from pheno measurements table.
-    foreach($traits as $id => $val) {
-      $h = rawpheno_download_trait_has_data($id, '', $p_id);
-      if ($h === FALSE) {
-        unset($traits[$id]);
-      }
-    }
-
-    $traits = $default_option + $traits;
+    $traits_array = array_unique($trait_ids);
+    $traits = $default_option + $traits_array;
 
     $form['sel_' . $p_id] = array(
       '#type' => 'select',
