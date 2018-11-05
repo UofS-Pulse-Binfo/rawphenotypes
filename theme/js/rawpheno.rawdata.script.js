@@ -464,7 +464,7 @@
 
         var by0 = d3.scale.linear()
           .domain([0, maxCount])
-          .range([chartDimension.height, 0])
+          .range([chartDimension.height + marginAdjust, 0])
           .nice();
 
 
@@ -545,7 +545,7 @@
             .attr('class', 'rect-each-bar')
               .attr('fill', barchartColor(title_i))
               .attr('y', h)
-              .attr('height', (chartDimension.height - h));
+              .attr('height', (chartDimension.height - h) + marginAdjust);
           });
         });
 
