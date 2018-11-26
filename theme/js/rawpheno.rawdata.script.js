@@ -892,7 +892,8 @@
         var matches = regExp.exec(traitName);
         // The unit might contain other text information.
         // In AGILE project - R1, R3, R5, R7, 1st, 2nd
-        var u = matches[0];
+        var u = (matches) ? matches[0] : 'text';
+
         var baseUnit;
         baseUnit = u.replace(/(R1|R3|R5|R7|1st|2nd);\s/i, '');
 

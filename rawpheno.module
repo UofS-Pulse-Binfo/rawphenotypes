@@ -934,7 +934,7 @@ function rawpheno_rawdata_trait_category_json() {
  *   # of Seeds Planted (count)
  */
 function rawpheno_rawdata_trait_json() {
-  // When the type of data is txt, we need to ensure that it not sooo long that it will break the chart.
+ // When the type of data is txt, we need to ensure that it not sooo long that it will break the chart.
   // To ensure that, we use this variable to check if the length is less or more and respond accordingly.
   $max_data_length = 10;
 
@@ -981,69 +981,70 @@ function rawpheno_rawdata_trait_json() {
       return 0;
     }
 
-    // Query unique values in in the column, get data type and char length of each unique entry.
-    // CASE 1 - predict the data type of the value.
-    // CASE 2 - determine the lenght of the value.
-    $sql = "SELECT
-              value AS data,
-              CHAR_LENGTH(value) AS data_length
-            FROM {pheno_measurements}
-            WHERE type_id =
-              (SELECT cvterm_id FROM {pheno_project_cvterm} WHERE project_id = :project_id AND cvterm_id = :cvterm_id LIMIT 1)
-              AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-            GROUP BY value ORDER BY value ASC";
+    // Test if trait/column has pehontype in measurements table and when no rows, return zero to indicate
+    // this trait cannot be visualize. Otherwise, guess the overall data type of the trait values either
+    // int or text value. Additional iformation such as the max length of value is sent along with the
+    // data type (bin/unique values # data type # length). Length is used to determine if value that will
+    // go into axis will cause overlapping or not, while bin is used when visualizing text.
+    $sql = "SELECT CASE
+      WHEN EXISTS(SELECT 1 FROM pheno_measurements WHERE type_id =
+        (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id AND cvterm_id = :cvterm_id LIMIT 1))
+      THEN
+        (SELECT CONCAT(STRING_AGG(DISTINCT c_j.cvterm_json->>'bin', '+'), '#', STRING_AGG(DISTINCT c_j.cvterm_json->>'type', ','), '#', MAX(c_j.cvterm_json->>'len')) AS data_type
+        FROM (SELECT JSON_BUILD_OBJECT('bin', value, 'len', CHAR_LENGTH(value), 'type',
+          CASE WHEN value ~ '^[0-9\.]+$' AND value <> '' THEN 'int' ELSE 'txt' END) AS cvterm_json
+          FROM pheno_measurements WHERE type_id = :cvterm_id)
+          AS c_j)
+      ELSE 'no phenotype'
+      END AS field_type_len
+    ";
 
     $args = array(':project_id' => $project_id, ':cvterm_id' => $trait_id);
-    $d = db_query($sql, $args);
+    $d = db_query($sql, $args)
+      ->fetchObject();
 
-    // Array to hold the data_type.
-    $arr_data_type = array();
-    // Array to hold the length of data.
-    $arr_data_length = array();
-    // Array to hold the data.
-    $arr_data = array();
-
-    foreach($d as $m) {
-      $dtype = (is_numeric($m->data)) ? 'int' : 'txt';
-      $arr_data_type[] = $dtype;
-
-      $arr_data_length[] = $m->data_length;
-      $arr_data[] = $m->data;
-    }
-
-    // Get the overall data type.
-    $data_type = array_unique($arr_data_type);
-
-    if (count($data_type) > 1 OR $d->rowCount() <= 0) {
-      // When there are too many data types or no data at all, do not visualize it.
+    if ($d->field_type_len == 'no phenotype') {
+      // No phenotype for this trait. Can't visualize.
       return 0;
     }
     else {
-      $category = trim(strip_tags($_GET['category']));
-      $option   = trim(strip_tags($_GET['option']));
+      list($bin, $data_type, $max_length) = explode('#', $d->field_type_len);
+      $all_datatype = explode(',', $data_type);
 
-      // Pass the values in categorize barchart.
-      $arr_category = array(
-        'category' => $category,
-        'option'   => $option
-      );
-
-      // Else, chart it, but before doing so, determine if text or integer type.
-      if ($data_type[0] == $int_type) {
-        // Interger data type.
-        $type = (rawpheno_function_unit($cvterm->name) == $scale_type) ? $scale_type : $int_type;
-        return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category);
+      if (count($all_datatype) > 1) {
+        // Composite type, too many data type. Can't visualize.
+        return 0;
       }
-      elseif ($data_type[0] == $txt_type) {
-        // Text data type, but, if the length of data is sooo long, don't chart it.
-        if (max($arr_data_length) > $max_data_length) {
-          // Too long.
-          return 0;
+      else {
+        // Inspect if data type is a numer or text.
+        $category = trim(strip_tags($_GET['category']));
+        $option   = trim(strip_tags($_GET['option']));
+
+        // Pass the values in categorize barchart.
+        $arr_category = array(
+          'category' => $category,
+          'option'   => $option
+        );
+
+        if ($data_type == $int_type) {
+          // Interger data type.
+          $type = (rawpheno_function_unit($cvterm->name) == $scale_type) ? $scale_type : $int_type;
+          return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category);
         }
         else {
-          // Yes, chart it!
-          $type = (rawpheno_function_unit($cvterm->name) == $ynunsure_type) ? $ynunsure_type : $txt_type;
-          return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category, $arr_data);
+          // Text data type, but, if the length of data is sooo long, don't chart it.
+          $t = rawpheno_function_unit($cvterm->name);
+
+          if ($max_length > $max_data_length || $t == 'text' || $t == 'date') {
+            // Too long. Cannot visualize.
+            return 0;
+          }
+          else {
+            // Yes, chart it!
+            $data_bin = explode('+', $bin);
+            $type = ($t == $ynunsure_type) ? $ynunsure_type : $txt_type;
+            return rawpheno_function_create_json($project_id, $trait_id, $type, $arr_category, $data_bin);
+          }
         }
       }
     }

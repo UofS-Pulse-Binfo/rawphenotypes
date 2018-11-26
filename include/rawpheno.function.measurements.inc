@@ -327,218 +327,175 @@ function rawpheno_function_user_project($user_id) {
  *   # of Seeds Planted (count)
  */
 function rawpheno_function_create_json($project_id, $trait_id, $type, $option, $data = NULL) {
-  // Array to hold the computed Bin.
+ // Array to hold the computed Bin.
   $arr_bin_json = array();
   // Array to hold the data.
   $arr_data_json = array();
 
-  // Categorize: Location or Year.
-  $category_val = $option['category'];
-  // Options: If Location (years) | If Year (location).
-  $option_val   = $option['option'];
+  // Required terms Location and Planting Date (date) used in the main query.
+  $term_planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)', 'cv_id' => array('name' => 'phenotype_measurement_types')));
+  $term_location    = tripal_get_cvterm(array('name' => 'Location', 'cv_id' => array('name' => 'phenotype_plant_property_types')));
 
-  // Array to store each location found in the data set.
-  $not_data = array();
-
-  $categorize = ($category_val == 'location')
+  // Apply filters in categorize option.
+  $categorize = ($option['category'] == 'location')
     ? 'AND SUBSTRING(t3.value, 1, 4) = :category_option'
-    : 'AND t4.value = :category_option';
+    : 'AND t4.value                = :category_option';
 
-  // NUMERIC DATA TYPE.
+  // Construct arguments array.
+  $args = array(
+    ':trait_id'  => $trait_id,
+    ':project_id'   => $project_id,
+    ':category_option' => $option['option'],
+    ':term_planting_date' => $term_planting_date->cvterm_id,
+    ':term_location'  => $term_location->cvterm_id
+  );
+
+  // Begin - bins and data to bin.
   if ($type == 'int') {
-    // Get the average of each value and in a stock, in a location.
+    // Quantitative data.
     $sql = sprintf("
-      SELECT
-        t1.stock_id AS stock,
-        ROUND(AVG(t2.value::numeric)) AS average,
-        SUBSTRING(t3.value, 1, 4) AS planting_year,
-        t4.value AS location
-      FROM
-        {pheno_plant} AS t1
-        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
-        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
-      WHERE
-        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
-        %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
-      GROUP BY t1.stock_id, t2.value, t3.value, t4.value
+      SELECT p_j.pprop_json->>'avg' AS average, p_j.pprop_json->>'p_loc' AS location, p_j.pprop_json->>'p_year' AS planting_year
+      FROM (
+        SELECT json_build_object('stock', t1.stock_id, 'avg', ROUND(AVG(t2.value::numeric)), 'p_year', SUBSTRING(t3.value, 1,4), 'p_loc', t4.value) AS pprop_json
+        FROM pheno_plant AS t1 INNER JOIN pheno_measurements AS t2 USING (plant_id) INNER JOIN pheno_measurements AS t3 USING (plant_id) INNER JOIN pheno_plantprop AS t4 USING (plant_id)
+        WHERE t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+          AND t2.type_id = :trait_id AND t3.type_id = :term_planting_date %s AND t4.type_id = :term_location
+        GROUP BY t1.stock_id, t2.value, t3.value, t4.value
+      ) AS p_j
       ORDER BY location, average ASC", $categorize);
 
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
+    $r = chado_query($sql, $args);
 
-    // Result set for averages.
-    $d = db_query($sql, $args);
-
-    // No data return 0.
-    if ($d->rowCount() < 1) {
+    if ($r->rowCount() < 1) {
+      // Nothing here to visualize.
       return 0;
-    }
-
-    // Get the min and max values from the averages.
-    $all_average = $d->fetchCol(1);
-    $max = max($all_average);
-    $min = min($all_average);
-
-    // Window size from cookie variable.
-    $win_width = $_COOKIE['rawphenoRawdataSW'];
-
-    // Total number of bins.
-    // http://www.statisticshowto.com/choose-bin-sizes-statistics/
-    // https://www.qimacros.com/histogram-excel/how-to-determine-histogram-bin-interval/
-    $data_points = $d->rowCount();
-
-    $total_bins = ($win_width <= 850) ? 10 : 20;
-
-    // Size of each bin/ interval.
-    $interval = round($max/$total_bins);
-    $stock_bin = 0;
-
-    $i = 0;
-    $to = 0;
-    // Round the number down.
-    // eg. start at 11 round it to 10.
-    $from = floor($min / 10) * 10;
-
-    while($to < $max) {
-      $from = ($i == 0) ? $from : ($to + 1);
-      $to = $from + $interval;
-
-      $arr_bin_json[$i] = $from . '-' . $to;
-      $i++;
-    }
-
-    // Assign each row with a bin.
-    $m = db_query($sql, $args);
-
-    foreach($m as $stock) {
-      $stock_avg = (int)$stock->average;
-
-      // Find the bin for this row.
-      foreach($arr_bin_json as $b) {
-        list($from, $to) = explode('-', $b);
-        if ($stock_avg >= (int)$from AND $stock_avg <= (int)$to) {
-          $stock_bin = $b;
-          break;
-        }
-      }
-
-      $title = ($category_val == 'location') ? $stock->location : $stock->planting_year;
-      $arr_data_json[] = array(
-        'title' => $title,
-        'bin' => $stock_bin
-      );
-    }
-  }
-  // TEXT DATA TYPE
-  elseif ($type == 'txt' OR $type == 'y/n/?') {
-    $sql = sprintf("
-      SELECT
-        t1.stock_id AS stock,
-        t2.value AS v,
-        SUBSTRING(t3.value, 1, 4) AS planting_year,
-        t4.value AS location
-      FROM
-        {pheno_plant} AS t1
-        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
-        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
-      WHERE
-        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
-        %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
-      ORDER BY location ASC", $categorize);
-
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
-
-    // Result set for data/values.
-    $d = db_query($sql, $args);
-
-    // No data return 0.
-    if ($d->rowCount() < 1) {
-      return 0;
-    }
-
-    // Text, list, enumeration of values.
-    $arr_bin_json = ($type == 'txt') ? $data : array('y', 'n', '?');
-
-    $bin = '';
-
-    foreach($d as $e) {
-      // Find the bin for this data.
-      foreach($arr_bin_json as $b) {
-        if ($b == $e->v)
-          $bin = $b;
-      }
-
-      $title = ($category_val == 'location') ? $e->location : $e->planting_year;
-      $arr_data_json[] = array(
-        'title' => $title,
-        'bin' => $bin
-      );
-    }
-  }
-  // SCALE DATA TYPE
-  elseif ($type == 'scale') {
-    $sql = sprintf("
-      SELECT
-        t1.stock_id AS stock,
-        t2.value AS v,
-        SUBSTRING(t3.value, 1, 4) AS planting_year,
-        t4.value AS location
-      FROM
-        {pheno_plant} AS t1
-        INNER JOIN {pheno_measurements} AS t2 USING (plant_id)
-        INNER JOIN {pheno_measurements} AS t3 USING (plant_id)
-        INNER JOIN {pheno_plantprop} AS t4 USING (plant_id)
-      WHERE
-        t1.plant_id IN (SELECT plant_id FROM {pheno_plant_project} WHERE project_id = :project_id)
-        AND t2.type_id = :trait_id
-        AND t3.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
-        %s
-        AND t4.type_id = (SELECT cvterm_id FROM chado.cvterm cvt LEFT JOIN chado.cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
-      ORDER BY location ASC", $categorize);
-
-    $args = array(':trait_id' => $trait_id, ':project_id' => $project_id, ':category_option' => $option_val);
-
-    // Result set for data/values.
-    $d = db_query($sql, $args);
-
-    // No data return 0.
-    if ($d->rowCount() < 1) {
-      return 0;
-    }
-
-    // Scale uses scale codes stored in scale memeber table.
-    // Get the scale codes and make it the default bins. The scale codes are added in the install of this module.
-    $s = db_query("SELECT code FROM {pheno_scale_member} ORDER BY code ASC");
-    if ($s->rowCount() > 0) {
-      foreach($s as $b) {
-        $arr_bin_json[] = $b->code;
-      }
     }
     else {
-      // In case the scales are not available. Do not visualize.
+      // Build bins and data to bin.
+      $result = $r->fetchAll();
+
+      $average = array_map(function($d) { return $d->average; }, $result);
+      $min = min($average);
+      $max = max($average);
+
+      if ($min < 0 || $max < 0) {
+        return 0;
+      }
+
+      // Account for the size of window to either build more or less bins.
+      // Total number of bins.
+      // http://www.statisticshowto.com/choose-bin-sizes-statistics/
+      // https://www.qimacros.com/histogram-excel/how-to-determine-histogram-bin-interval/
+      $win_width = $_COOKIE['rawphenoRawdataSW'];
+      $total_bins = ($win_width <= 850) ? 10 : 20;
+
+      // Bins:
+      $i = 0;
+      $interval = round($max / $total_bins);
+
+      $to = 0;
+      $from = floor($min / 10) * 10;
+
+      while($to < $max) {
+        $from = ($i == 0) ? $from : ($to + 1);
+        $to = $from + $interval;
+
+        // Ensure not to show construct bins like 1-1, 2-2 ...
+        $arr_bin_json[$i] = ($from == $to) ? $from : $from . '-' . $to;
+        $i++;
+      }
+
+      foreach($result as $stock) {
+        // Each average.
+        $title = ($option['category'] == 'location') ? $stock->location : $stock->planting_year;
+        $stock_avg = (int)$stock->average;
+
+        foreach($arr_bin_json as $b) {
+          // Each average assign a bin.
+          @list($from, $to) = explode('-', $b);
+
+          if (!isset($to) && $stock_avg == $b) {
+            $arr_data_json[] = array(
+              'title' => $title,
+              'bin' => $b
+            );
+
+            break;
+          }
+          elseif ($stock_avg >= (int)$from && $stock_avg <= (int)$to) {
+            $arr_data_json[] = array(
+              'title' => $title,
+              'bin' => $b
+            );
+
+            break;
+          }
+        }
+      }
+    }
+  }
+  else {
+    // Qualitative data and scale.
+    $sql = sprintf("
+      SELECT t1.stock_id AS stock, t2.value AS v, SUBSTRING(t3.value, 1, 4) AS planting_year, t4.value AS location
+      FROM pheno_plant AS t1 INNER JOIN pheno_measurements AS t2 USING (plant_id) INNER JOIN pheno_measurements AS t3 USING (plant_id) INNER JOIN pheno_plantprop AS t4 USING (plant_id)
+      WHERE t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+        AND t2.type_id = :trait_id AND t3.type_id = :term_planting_date %s AND t4.type_id = :term_location
+      ORDER BY location ASC", $categorize);
+
+    $r = chado_query($sql, $args);
+
+    if ($r->rowCount() < 1) {
+      // Nothing here to visualize.
       return 0;
     }
+    else {
+      // Build bins and data to bin.
+      if ($type == 'scale') {
+        // Scales.
+        // Use scale codes stored in scale memeber table.
+        // Get the scale codes and make it the default bins. The scale codes are added in the install of this module.
+        $s = chado_query("SELECT code FROM pheno_scale_member ORDER BY code ASC");
+        if ($s->rowCount() > 0) {
+          $arr_bin_json = $s->fetchCol();
 
-    if ($d->rowCount() > 0) {
-      foreach($d as $e) {
+          $result = $r->fetchAll();
+          foreach($result as $stock) {
+            $title = ($option['category'] == 'location') ? $stock->location : $stock->planting_year;
 
-        $title = ($category_val == 'location') ? $e->location : $e->planting_year;
-        $arr_data_json[] = array(
-          'title' => $title,
-          'bin' => $e->v
-        );
+            $arr_data_json[] = array(
+              'title' => $title,
+              'bin' => $stock->v
+            );
+          }
+        }
+        else {
+          // In case the scales are not available. Do not visualize.
+          return 0;
+        }
+      }
+      else {
+        // Text and y/n/?.
+        $arr_bin_json = ($type == 'txt') ? $data : array('y', 'n', '?');
+
+        $result = $r->fetchAll();
+        foreach($result as $stock) {
+          foreach($arr_bin_json as $b) {
+            if ($b == $stock->v) {
+              $title = ($option['category'] == 'location') ? $stock->location : $stock->planting_year;
+
+              $arr_data_json[] = array(
+                'title' => $title,
+                'bin' => $b
+              );
+            }
+          }
+        }
       }
     }
   }
 
-  // Return bin and data.
+
   return array('bin' => $arr_bin_json, 'data' => $arr_data_json);
 }
 
