@@ -107,7 +107,8 @@ function rawpheno_rawdata($form, &$form_state) {
   // Hidden field containing url to JSON (summary data).
   $form['json_url'] = array(
     '#type' => 'hidden',
-    '#value' => url('/'),
+    // Update this line if this module is in a different directory structure.
+    '#value' => '', //url('/'),
     '#attributes' => array('id' => array('rawdata-json'))
   );
 
