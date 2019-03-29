@@ -45,7 +45,7 @@
           // Start the heat map chart.
           // Read JSON data for heat map.
           var project_id = i.target.value;
-          heatmapFile = file + '/rawdata/?project_id=' + project_id;
+          heatmapFile = file + 'rawdata/?project_id=' + project_id;
           d3.json(heatmapFile, function(error, data) {
             if (error) {
               // Error reading JSON.
@@ -195,7 +195,7 @@
       // project select box.
       // Read JSON data for heat map.
       var project_id = $('#rawdata-sel-project').val();
-	    heatmapFile = file + '/rawdata/?project_id=' + project_id;
+	    heatmapFile = file + 'rawdata/?project_id=' + project_id;
 	    d3.json(heatmapFile, function(error, data) {
 		    if (error) {
           // Error reading JSON.
