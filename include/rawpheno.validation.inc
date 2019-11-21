@@ -45,7 +45,7 @@ function rawpheno_rawpheno_validators() {
   $validators['tab_exists'] = array(
     'label' => 'The "Measurements" tab exists and has content.',
     'scope' => 'file',
-    'message callback' => NULL,
+    'message callback' => 'validator_tab_exists_generate_msg',
     'validation callback' => 'validator_tab_exists_validate_file',
   );
 
@@ -189,6 +189,18 @@ function validator_tab_exists_validate_file($file) {
   return FALSE;
 }
 
+
+/**
+ * Provide a more useful message to the user when measurements tab is missing.
+ *
+ * @return
+ *   A string, human-readable message to the user telling them what might
+ *   caused the tab to fail validation.
+ */
+function validator_tab_exists_generate_msg() {
+  return array('Ensure that <em>Measurements</em> tab exists in the file is not renamed.');
+}
+
 /**
  * Provide more useful messages to the user for if validation failed.
  *
@@ -236,6 +248,8 @@ function validator_column_exists_validate_header($header, $project_id) {
   $nospace_header = array();
 
   foreach ($header as $h) {
+    if ($h['skip'] == 1) continue;
+
     $delformat_header[] = $h['no units'];
     $nospace_header[] = str_replace(' ','', $h['no format']);
   }
@@ -269,6 +283,8 @@ function validator_column_exists_validate_header($header, $project_id) {
   // or closing paren.
   $invalid_format = array();
   foreach($header as $f) {
+    if ($f['skip'] == 1) continue;
+
     $h = trim(str_replace(array("\n", "\r", "  "), ' ', $f['original']));
 
     $is_valid = rawpheno_valid_trait_format($h);
@@ -509,7 +525,7 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
 
   // Then check if it matches based on the unit.
   $column_header = $context['header'][ $context['column index'] ]['original'];
-
+  
   // Match unit to data.
   $match_unit = rawpheno_function_match_unit($value, $unit, $column_header);
   if ($match_unit) {
@@ -543,12 +559,18 @@ function validator_germplasm_present_generate_msg($error_info) {
     }
   }
 
+  // Contact support.
+  $support_email = rawpheno_function_get_support_email();
+  $contact_support_message = ($support_email)
+    ? '<a href="mailto:' . $support_email . '" title="Right click to copy email address">Please contact support.</a>'
+    : 'Please contact the administrator of this website.';
+
   $messages = array();
   if (!empty($nonexistant)) {
-    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '.' . ' Please contact the website administrator.';
+    $messages[] = 'The following germplasm does not already exist: '. implode(', ',$nonexistant) . '. ' . $contact_support_message;
   }
   if (!empty($nonunique)) {
-    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique).'. Please contact the administrator of this duplication.';
+    $messages[] = 'The following germplasm names are not unique in this resource: '. implode(', ',$nonunique). ' ' . $contact_support_message;
   }
 
   return $messages;
@@ -579,7 +601,7 @@ function validator_germplasm_present_generate_msg($error_info) {
  *   0 = no matching stock.
  *   9 = too many matching stocks (not unique).
  */
-function validator_germplasm_present_validate_cell($value, $context, &$storage) {
+function validator_germplasm_present_validate_cell($value, $context, &$storage, $project_id) {
 
   // We don't want this test to catch empty cells. There is a separate test for testing required values are resent.
   if (empty($value)) {
@@ -589,7 +611,15 @@ function validator_germplasm_present_validate_cell($value, $context, &$storage) 
   $stocks = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => $value))->fetchAll();
 
   if (sizeof($stocks) == 1) {
-    return TRUE;
+    // Test to see if stock with token exists.
+    // Function has hook_alter() implementation to handle germplasm name with specific token.
+    // Hook also contains defition of which project applies and token used.
+    $project_name = rawpheno_function_getproject($project_id);
+    $stocks = rawpheno_function_getstockid($value, $project_name);
+
+    return ($stocks <= 0)
+      ? array('name' => $value, 'row number' => $context['row index'], 'code' => 0)
+      : TRUE;
   }
   elseif (empty($stocks)) {
     return array('name' => $value, 'row number' => $context['row index'], 'code' => 0);

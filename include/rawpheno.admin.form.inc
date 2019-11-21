@@ -401,8 +401,14 @@ function rawpheno_admin_all_projects_submit($form, &$form_state) {
   $trait_type = rawpheno_function_trait_types();
 
   // Get Planting Date cvterm id.
-  $planting_date = tripal_get_cvterm(array('name' => 'Planting Date (date)',
-                                     'cv_id' => array('name' => 'phenotype_measurement_types')));
+  $pd = array('name' => 'Planting Date (date)', 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+  if (function_exists('chado_get_cvterm')) {
+    $planting_date = chado_get_cvterm($pd);
+  }
+  else {
+    $planting_date = tripal_get_cvterm($pd);
+  }
 
   db_insert('pheno_project_cvterm')
     ->fields(array(
@@ -1411,7 +1417,14 @@ function rawpheno_admin_project_management_validate($form, &$form_state) {
 
       if ($btn_submit == 'Add column header') {
         // Before adding the cvterm, ensure it is not present in cvterm table.
-        $found_cvterm = tripal_get_cvterm(array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+        $fc = array('name' => $trait_name, 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+        if (function_exists('chado_get_cvterm')) {
+          $found_cvterm = chado_get_cvterm($fc);
+        }
+        else {
+          $found_cvterm = tripal_get_cvterm($fc);
+        }
 
         if (isset($found_cvterm->cvterm_id) AND $found_cvterm->cvterm_id > 0) {
           form_set_error('txt_trait_name', t('The column header name exists in the database. Please use a different name.'));
@@ -1470,14 +1483,27 @@ function rawpheno_admin_project_management_submit($form, &$form_state) {
     $col_method = $form_state['values']['txt_trait_method'];
     $trait_type = $form_state['values']['sel_trait_type'];
 
-    $cv_type = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
-    $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
-    $cv_desc = tripal_get_cv(array('name' => 'phenotype_collection_method'));
-    $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+    //
+    if (function_exists('chado_get_cv')) {
+      $cv_type = chado_get_cv(array('name' => 'phenotype_measurement_types'));
+      $cv_rver = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+      $cv_desc = chado_get_cv(array('name' => 'phenotype_collection_method'));
+      $cv_unit = chado_get_cv(array('name' => 'phenotype_measurement_units'));
+    }
+    else {
+      $cv_type = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+      $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+      $cv_desc = tripal_get_cv(array('name' => 'phenotype_collection_method'));
+      $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+    }
 
     // Get the cvterm id of the unit selected.
-    $cvterm_unit = tripal_get_cvterm(array('name' => $unit, 'cv_id' => $cv_unit->cv_id));
-
+    if (function_exists('chado_get_cvterm')) {
+      $cvterm_unit = chado_get_cvterm(array('name' => $unit, 'cv_id' => $cv_unit->cv_id));
+    }
+    else {
+      $cvterm_unit = tripal_get_cvterm(array('name' => $unit, 'cv_id' => $cv_unit->cv_id));
+    }
 
     // ADD.
     if ($btn_submit == 'Add column header') {

@@ -843,7 +843,7 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties['type'] = $h->type;
 
   // cvterm properties.
-  $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id LIMIT 1";
+  $sql = "SELECT * FROM {cvterm} WHERE cvterm_id = :cvterm_id";
   $args = array(':cvterm_id' => $arr_properties['cvterm_id']);
 
   $h = chado_query($sql, $args)
@@ -856,7 +856,14 @@ function rawpheno_function_header_properties($asset_id, $dataset = NULL) {
   $arr_properties['method'] = '';
 
   $h = chado_select_record('cvtermprop', array('value', 'type_id'), array('cvterm_id' => $arr_properties['cvterm_id']));
-  $r_version = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+
+  if (function_exists('chado_get_cv')) {
+    $r_version = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+  else {
+    $r_version = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+
   foreach($h as $c) {
     $val = isset($c->value) ? $c->value : '';
 
@@ -1017,8 +1024,9 @@ function rawpheno_valid_trait_format($trait) {
   if (preg_match('/[(|)]/', $trait) === 1 && $trait != 'Lodging (Scale: 1-5) upright - lodged') {
     // With these characters present, test if the format is trait name (unit).
 
-    // Pattern: first string can be any chars but ( and ) followed by 0 or more space then 1 ( then any chars and ) as the end of string.
-    $is_valid = (preg_match('/\A[^()]+\s*\({1}[^)(]+\)\z/i', $trait) === 1) ? TRUE : FALSE;
+    // Pattern: first string can be any chars but ( and ) followed by 0 or more space then 1 ( then any chars and )
+    // plus optional any chars but ( and ) as the end of string.
+    $is_valid = (preg_match('/\A[^()]+\s*\({1}[^)(]+\)[^)(]*\z/i', $trait) === 1) ? TRUE : FALSE;
   }
 
   return $is_valid;
@@ -1118,9 +1126,15 @@ function rawpheno_download_load_traits($location, $project) {
  *  A string containing the R compatible version of the trait.
  */
 function rawpheno_download_r_compatible($cvterm_id) {
-  $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  if (function_exists('chado_get_cv')) {
+    $cv_rver = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
+  else {
+    $cv_rver = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+  }
 
-  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id LIMIT 1";
+  // @note cvtermprop cvterm_id + type_id + rank is unique (constraint).
+  $sql = "SELECT value FROM {cvtermprop} WHERE cvterm_id = :cvterm_id AND type_id = :cv_id AND rank = 0";
   $args = array(':cvterm_id' => $cvterm_id, ':cv_id' => $cv_rver->cv_id);
 
   $r = chado_query($sql, $args)
@@ -1156,10 +1170,10 @@ function rawpheno_function_plot_exists($plot, $project_id) {
       INNER JOIN pheno_measurements AS t5 USING(plant_id)
     WHERE
       t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Plot' LIMIT 1)
-      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Rep' LIMIT 1)
-      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1)
-      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Plot' AND cv.name = 'phenotype_plant_property_types')
+      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types')
+      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
+      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
       AND
         t1.stock_id || '-' ||
         t2.value    || '-' ||
@@ -1172,6 +1186,153 @@ function rawpheno_function_plot_exists($plot, $project_id) {
   $m = chado_query($sql, $args);
 
   return $m->fetchField(0);
+}
+
+
+/**
+ * Function to get stock_id number of a stock name in chado.stock.
+ * NOTE: AGL applies only to when saving data. Validation (germplasm exists)
+ *       is based on stock w/o this token.
+ *
+ * @param $stock_name
+ *   A string, the name of the stock.
+ * @param $project_name
+ *   A string, the name of the project.
+ *
+ * @return
+ *   An integer, the stock id number.
+ */
+function rawpheno_function_getstockid($stock_name, $project_name) {
+  // Calling all modules implementing hook_rawpheno_AGILE_stock_name_alter():
+  drupal_alter('rawpheno_AGILE_stock_name', $stock_name, $project_name);
+
+  // Limit the search to project organism.
+  $result = chado_query(
+    "SELECT stock_id FROM {stock} WHERE name = :name LIMIT 1",
+    array(':name' => $stock_name)
+  );
+
+  return ($result) ? $result->fetchField() : 0;
+}
+
+
+/**
+ * Function: get project name.
+ *
+ * @param $project_id
+ *   An integer value, the project id number.
+ *
+ * @return
+ *   A string value, the name for the project from chado.project table.
+ */
+function rawpheno_function_getproject($project_id) {
+  $result = chado_query("SELECT name FROM {project} WHERE project_id = :project_id LIMIT 1", array(
+    ':project_id' => $project_id,
+  ));
+
+  return ($result) ? $result->fetchField() : 0;
+}
+
+
+/**
+ * Function to get environment data files.
+ *
+ * @param $project
+ *   An array, the titles or names of projects.
+ * @param $location
+ *   An array of locations.
+ *
+ * @return
+ *   An array of environment data filenames.
+ */
+function rawpheno_function_getenv($project, $location) {
+  $sql = "SELECT filename FROM pheno_environment_data INNER JOIN file_managed USING (fid)
+            WHERE project_id IN (:project) AND location IN(:location)
+            ORDER BY project_id, location, year, sequence_no ASC";
+
+  $files = chado_query($sql, array(
+    ':project' => $project,
+    ':location' => $location,
+  ));
+
+  if ($files->rowCount() > 0) {
+    return $files->fetchAll();
+  }
+  else {
+    return 0;
+  }
+}
+
+
+/**
+ * Function to fetch support email address using 4 options below.
+ *
+ * 1. Using a hook_alter implementation request a support email by providing a Drupal username.
+ * 2. Using a hook_alter implementation request a support email by providing a Drupal user id #.
+ * 3. Using a hook_alter implementation set a support email by providing an email address.
+ * 4. *Default fetch email address of Drupal user id #1 or Drupal site-wide email address.
+ *
+ * @return
+ *   A string, support email address.
+ */
+function rawpheno_function_get_support_email() {
+  $support_email = variable_get('kp_rawpheno_support_email');
+
+  if (!empty($support_email)) {
+    return $support_email;
+  }
+
+  // Nothing set.
+  $support_email = '#';
+
+  // As provided by hook_alter implementation - following command#value format.
+  // example: $support_email = 'username#DrupalUsername';
+  drupal_alter('rawpheno_support_email', $support_email);
+
+  @list($command, $value) = explode('#', $support_email);
+
+  switch ($command) {
+    case 'username':
+    case 'useridno':
+      // By username or user id no.
+      $user = ($command == 'username') ? 'name' : 'uid';
+
+      $sql = sprintf("SELECT mail FROM users WHERE %s = :user LIMIT 1", $user);
+      $support_email = chado_query($sql, array(':user' => $value))
+        ->fetchField();
+
+      break;
+
+    case 'emailadd':
+      // Use the email as provided.
+      $support_email = $value;
+
+      break;
+
+    default:
+      // Get email from user id #1.
+      $support_email = chado_query("SELECT mail FROM users WHERE uid = 1")
+        ->fetchField();
+
+      if (empty($support_email)) {
+        // Or site-wide email provided when setting up a Drupal site.
+        $support_email = variable_get('site-mail');
+      }
+  }
+
+  // Set this variable to support email so this can be accessed
+  // by the entire rawphenotypes module as well as pages hosting
+  // this application (eg. video demo page)
+
+  // This will also set an email in case one is determined.
+  $cur_email = variable_get('kp_rawpheno_support_email');
+  if (empty($cur_email) || $cur_email != $support_email) {
+    // Update only when new support email and no value detected.
+    variable_set('kp_rawpheno_support_email', $support_email);
+  }
+
+
+  return $support_email;
 }
 
 

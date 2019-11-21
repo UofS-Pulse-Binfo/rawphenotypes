@@ -368,10 +368,20 @@ function rawpheno_install() {
   // This will be used when creating cvterm relationships.
   $arr_cvid_cvname = array();
 
-  foreach($cv as $cv_i => $cv_name) {
-    $tmp = tripal_insert_cv($cv_name, str_replace('_', ' ', ucfirst($cv_name)));
+  $chado_inscv_exists = function_exists('chado_insert_cv');
 
-    $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+  foreach($cv as $cv_i => $cv_name) {
+   $def = str_replace('_', ' ', ucfirst($cv_name));
+   $tmp = ($chado_inscv_exists)
+     ? chado_insert_cv($cv_name, $def)
+     : tripal_insert_cv($cv_name, $def);
+
+    if ($tmp) {
+      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+    }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cv', array(), array('print' => TRUE));
+    }
   }
 
   // # 2. INSERT UNITS.
@@ -385,17 +395,26 @@ function rawpheno_install() {
   // This will be used when creating a cvterm relationship linking a cvterm to a unit.
   $arr_cvtermid_unit = array();
 
+  $chado_insterm_exists = function_exists('chado_insert_cvterm');
+
   foreach($arr_unit as $unit => $def) {
-    $tmp = tripal_insert_cvterm(
-      array(
-        'id' => 'rawpheno_tripal:' . $unit,
-        'name' => $unit,
-        'definition' => $def,
-        'cv_name' => $cv['cv_unit']
-      )
+    $ins_unit = array(
+      'id' => 'rawpheno_tripal:' . $unit,
+      'name' => $unit,
+      'definition' => $def,
+      'cv_name' => $cv['cv_unit']
     );
 
-    $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+    $tmp = ($chado_insterm_exists)
+      ? chado_insert_cvterm($ins_unit)
+      : tripal_insert_cvterm($ins_unit);
+
+    if ($tmp) {
+      $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+    }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (trait unit)', array(), array('print' => TRUE));
+    }
   }
 
   // # 3. INSERT COLUMN HEADERS.
@@ -406,8 +425,9 @@ function rawpheno_install() {
   // Default Project.
   // This is the default project, only when such project exists, otherwise, insert the column headers
   // and make them available for use in admin control panel.
+  // @note project.name must be unique so no need to limit 1.
   $default_project = rawpheno_function_terms('project');
-  $sql = "SELECT project_id FROM {project} WHERE name = :default_project LIMIT 1";
+  $sql = "SELECT project_id FROM {project} WHERE name = :default_project";
   $args = array(':default_project' => $default_project);
   $prj_id = chado_query($sql, $args);
 
@@ -457,18 +477,20 @@ function rawpheno_install() {
     // Set the type of header.
     $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
 
-    // Insert the cvterm.
-    $cvterm = tripal_insert_cvterm(
-      array(
-        'id'         => 'rawpheno_tripal:' . $header,
-        'name'       => $header,
-        'definition' => $cvterm_definition,
-        'cv_name'    => $cvterm_type
-      )
+    $ins_term = array(
+      'id'         => 'rawpheno_tripal:' . $header,
+      'name'       => $header,
+      'definition' => $cvterm_definition,
+      'cv_name'    => $cvterm_type
     );
 
+    // Insert the cvterm.
+    $cvterm = ($chado_insterm_exists)
+      ? chado_insert_cvterm($ins_term)
+      : tripal_insert_cvterm($ins_term);
+
     // Insert the cvterm data collection method.
-    if (!empty($cvterm_info['method'])) {
+    if (!empty($cvterm_info['method']) && $cvterm) {
       // Data collection method.
       chado_insert_record('cvtermprop',
         array(
@@ -479,10 +501,13 @@ function rawpheno_install() {
         )
       );
     }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (traits)', array(), array('print' => TRUE));
+    }
 
     // Relate cvterm and unit.
     // No relationship when header is Plant Property Type.
-    if (!in_array($header, $arr_plantpropheader)) {
+    if (!in_array($header, $arr_plantpropheader) && $cvterm) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
       $header_unit = rawpheno_function_header_unit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
@@ -498,14 +523,17 @@ function rawpheno_install() {
 
     // R version. To be implemented to all column headers.
     $r_version = rawpheno_function_make_r_compatible($header);
-    chado_insert_record('cvtermprop',
-      array(
-        'cvterm_id' => $cvterm->cvterm_id,
-        'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
-        'value'     => $r_version,
-        'rank'      => 0
-      )
-    );
+
+    if ($cvterm) {
+      chado_insert_record('cvtermprop',
+        array(
+          'cvterm_id' => $cvterm->cvterm_id,
+          'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
+          'value'     => $r_version,
+          'rank'      => 0
+        )
+      );
+    }
 
     // Finally, map this particular header to project, again, only when default project is present.
     if (isset($project_ID) AND $project_ID > 0) {
@@ -540,7 +568,15 @@ function rawpheno_install() {
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = rawpheno_function_terms('scales');
-  $cvterm_lodging = tripal_get_cvterm(array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type'])));
+
+  $cl = array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type']));
+
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm_lodging = chado_get_cvterm($cl);
+  }
+  else {
+    $cvterm_lodging = tripal_get_cvterm($cl);
+  }
 
   // Insert scale values 1 - 5
   foreach (array_values($lodging)[0] as $code => $val) {
@@ -564,6 +600,7 @@ function rawpheno_install() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -571,14 +608,14 @@ function rawpheno_install() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.
@@ -608,7 +645,12 @@ function rawpheno_install() {
   );
 
   // Create materialized view.
-  tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment);
+  if (function_exists('chado_add_mview')) {
+    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
+  else {
+    tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
 
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
@@ -649,7 +691,8 @@ function rawpheno_uninstall() {
   // # 2. DROP MATERIALIZED VIEW TABLE.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
-  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
+  // @note tripal_mviews.mv_table must be unique (constraint).
+  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
     ->fetchField();
 
@@ -662,7 +705,13 @@ function rawpheno_uninstall() {
   $cv = rawpheno_function_terms('vocabularies');
 
   foreach($cv as $cv_i => $cv_name) {
-    $cv = tripal_get_cv(array('name' => $cv_name));
+    if (function_exists('chado_get_cv')) {
+      $cv = chado_get_cv(array('name' => $cv_name));
+    }
+    else {
+      $cv = tripal_get_cv(array('name' => $cv_name));
+    }
+
     $args = array(':cv_id' => $cv->cv_id);
 
     // Delete relationships.
@@ -686,6 +735,70 @@ function rawpheno_uninstall() {
     // Finally, delete the cv
     $del = "DELETE FROM {cv} WHERE cv_id = :cv_id";
     chado_query($del, $args);
+  }
+}
+
+
+/**
+ * Implements hook_update_N().
+ * Map cvterm in tripal database to rawpheno_tripal.
+ *
+ * N
+ * 7  - Drupal core compatibility.
+ * 2  - Module's major release version.
+ * 01 - Sequence count.
+ */
+function rawpheno_update_7201() {
+  // Rawphenotypes database name.
+  $rawpheno_dbname = 'rawpheno_tripal';
+  // db_id
+  $rawpheno_dbid = '';
+
+  // In db table, check to see if rawpheno_tripal exists.
+  // @note db.name must be unique (constraint).
+  $sql = "SELECT db_id FROM {db} WHERE name = :rawpheno_dbname";
+  $args = array(':rawpheno_dbname' => $rawpheno_dbname);
+
+  $db_id = chado_query($sql, $args);
+
+  if ($db_id->rowCount()) {
+    // Already created. Save the db_id
+    $rawpheno_dbid = $db_id
+      ->fetchField();
+  }
+  else {
+    // Not created. Insert a row and get the id.
+    $db_id = chado_insert_record('db', array('name' => $rawpheno_dbname));
+    $rawpheno_dbid = $db_id['db_id'];
+  }
+
+  // Get the db id of Tripal db. Use it to futher filter the rows for update
+  // since previous version use tripal as default db.
+  // @note db.name must be unique (constraint).
+  $sql = "SELECT db_id FROM {db} WHERE name = 'tripal'";
+  $tripal = chado_query($sql);
+
+  if ($tripal->rowCount()) {
+    $tripal_dbid = $tripal
+      ->fetchField();
+
+    // With the db_id, update all rawphenotypes cvterms to use this db_id in dbxref.
+    $t = rawpheno_function_terms('vocabularies');
+    unset($t['cv_rver'], $t['cv_desc']);
+    $terms = array_values($t);
+
+    // Update db_id in dbxerf table. Map all rawphenotypes cvterms to rapheno_tripal db.
+    $sql = "
+      UPDATE {dbxref} SET db_id = :rawpheno_dbid
+      WHERE
+        dbxref_id IN (SELECT t2.dbxref_id FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING (cv_id) WHERE t1.name IN (:terms))
+        AND db_id = :tripal_dbid";
+
+    $args = array(':rawpheno_dbid' => $rawpheno_dbid, // Map to rawpheno_tripal instead.
+                  ':terms' => $terms,                 // Only for terms phenotype_plant_property, phenotype_measurement_units and phenotype_measurement_type
+                  ':tripal_dbid' => $tripal_dbid);    // Where previously set to TRIPAL.
+
+    chado_query($sql, $args);
   }
 }
 
@@ -855,7 +968,8 @@ function rawpheno_update_7002() {
   // AGILE Project.
   $default_project = rawpheno_function_terms('project');
 
-  $sql = "SELECT project_id FROM {project} WHERE name = :default_project LIMIT 1";
+  // @note project.name must be unique (constraint).
+  $sql = "SELECT project_id FROM {project} WHERE name = :default_project";
   $args = array(':default_project' => $default_project);
   $prj_id = chado_query($sql, $args);
 
@@ -887,7 +1001,12 @@ function rawpheno_update_7002() {
   // CV Method of collection.
   $cv_desc = tripal_insert_cv($voc['cv_desc'], str_replace('_', ' ', ucfirst($voc['cv_desc'])));
   // CV unit.
-  $cv_unit = tripal_get_cv(array('name' => $voc['cv_unit']));
+  if (function_exists('chado_get_cv')) {
+    $cv_unit = chado_get_cv(array('name' => $voc['cv_unit']));
+  }
+  else {
+    $cv_unit = tripal_get_cv(array('name' => $voc['cv_unit']));
+  }
 
   // Query traits.
   $sql = "SELECT t2.cvterm_id, t2.name, t1.cv_id, t2.name, t1.name AS cv_name
@@ -940,7 +1059,13 @@ function rawpheno_update_7002() {
       $header_unit = rawpheno_function_header_unit($cvterm->name);
       // eg. Comment
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
-      $unit_cvterm_id = tripal_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+
+      if (function_exists('chado_get_cvterm')) {
+        $unit_cvterm_id = chado_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+      }
+      else {
+        $unit_cvterm_id = tripal_get_cvterm(array('name' => $header_unit, 'cv_id' => $cv_unit->cv_id));
+      }
 
       chado_insert_record('cvterm_relationship',
         array(
@@ -1014,7 +1139,8 @@ function rawpheno_update_7002() {
   // Replace materialized view.
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
-  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table LIMIT 1";
+  // @note tripal_mviews.mv_table must be unique (constraint).
+  $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
   $mview_id = db_query($sql, array(':mv_table' => 'rawpheno_rawdata_mview'))
     ->fetchField();
 
@@ -1032,6 +1158,7 @@ function rawpheno_update_7002() {
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
   $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -1039,14 +1166,14 @@ function rawpheno_update_7002() {
       COUNT(DISTINCT t4.type_id) AS total_count,
       ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
     FROM pheno_plant AS t1
-      INNER JOIN {pheno_plantprop} AS t2 USING(plant_id)
-      INNER JOIN {pheno_plantprop} AS t3 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t4 USING(plant_id)
-      INNER JOIN {pheno_measurements} AS t5 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
     WHERE
-      t2.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Location' LIMIT 1) AND
-      t3.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Rep' LIMIT 1) AND
-      t5.type_id = (SELECT cvterm_id FROM chado.cvterm WHERE name = 'Planting Date (date)' LIMIT 1)
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
   // Schema array.

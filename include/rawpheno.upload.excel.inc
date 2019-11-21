@@ -25,7 +25,8 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
   $plantprop_headers = unserialize($plantprop_headers);
   $arr_newheaders = unserialize($arr_newheaders);
 
-  // print_r($arr_newheaders);
+  // Project name.
+  $project_name = rawpheno_function_getproject($project_id);
 
   // First we load the file.
   $file = file_load($fid);
@@ -90,6 +91,13 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
     // print "\nNow parsing each row and saving it to the database...\nNumber of rows saved: \n";
     $i = 0;
 
+    // Skip columns.
+    $skip = array();
+    // Project name.
+    $project_name = rawpheno_function_getproject($project_id);
+    // Calling all modules implementing hook_rawpheno_ignorecols_valsave_alter():
+    drupal_alter('rawpheno_ignorecols_valsave', $skip, $project_name);
+
     // Each row in the spreadsheet.
     foreach ($xls_obj as $row) {
       // Create progress update by computing the number of rows saved in percent.
@@ -139,9 +147,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Process the name column first since we need a plant_id before we can insert any more data.
       // Name column header goes into pheno_plant.
       // Check if stock name exists.
-      $stock_id = NULL;
-      $r = chado_query('SELECT stock_id FROM {stock} WHERE name=:name', array(':name' => trim($row[$name_index])));
-      if ($r) $stock_id = $r->fetchField();
+      unset($stock_id);
+
+      // Prior to saving, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+      // in case user intends a space between words/values.
+      // trim() implementation below should drop unecessary leading and trailing spaces.
+      if (preg_match('/\xc2\xa0/', $row[$name_index])) {
+        $row[$name_index] = preg_replace('/\xc2\xa0/', ' ', $row[$name_index]);
+      }
+
+      $stock_id = rawpheno_function_getstockid(trim($row[$name_index]), $project_name);
+      // print $stock_id . ' -- ' . $row[$name_index] . "\n";
 
       // Determine if name has a stock id number.
       if (isset($stock_id) && $stock_id > 0) {
@@ -178,9 +194,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
             $cell_val = trim($row[$col_index]);
 
             // If planting date - extract the year value.
+            // Support NA and YYYY in planting date. Use this value when
+            // value cannot be split by -.
             if ($plot_col == 'plantingdate(date)') {
               $y = explode('-', $cell_val);
-              $cell_val = $y[0];
+
+              if (is_array($y)) {
+                // Extract the year only from planting date.
+                $cell_val = $y[0];
+              }
+
+              // Else use the NA or YYYY.
             }
 
             $plot .= '-' . $cell_val;
@@ -214,7 +238,7 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
         }
       }
       else {
-        // Warn the admin tht germplasm is not available...
+        // Warn the admin that germplasm is not available...
         // We want to stop loading if this is the case.
         tripal_report_error(
           'rawpheno',
@@ -231,6 +255,14 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
       // Read each row and each cell.
       // Each row will be an array where name is always the first element.
       foreach($row as $cell_index => $cell_entry) {
+        // Skip this cell when col from durpal_alter hook matches the col.
+        $h = rawpheno_function_delformat($header[$cell_index]);
+
+        if (count($skip) > 0 && in_array($h, $skip)) {
+          // print 'skipping value : ' . $h . '=' . $cell_entry . "\n";
+          continue;
+        }
+
         // For consistency, convert all variations of not applicable to NA.
         if (is_string($cell_entry) && in_array(strtolower($cell_entry), $not_applicable)) {
           $cell_entry = 'NA';
@@ -278,9 +310,24 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
 
               // Get the cvterm name for this new header.
               $alt_name = $arr_newheaders[$cell_colheader]['alt_header'];
-              $name = tripal_get_cvterm(array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types')));
+              $n = array('cvterm_id' => $alt_name, 'cv_id' => array('name' => 'phenotype_measurement_types'));
+
+              if (function_exists('chado_get_cvterm')) {
+                $name = chado_get_cvterm($n);
+              }
+              else {
+                $name = tripal_get_cvterm($n);
+              }
+
               $cell_colheader = $name->name;
             }
+          }
+
+          // Prior to saving, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+          // in case user intends a space between words/values.
+          // trim() implementation below should drop unecessary leading and trailing spaces.
+          if (preg_match('/\xc2\xa0/', $cell_entry)) {
+            $cell_entry = preg_replace('/\xc2\xa0/', ' ', $cell_entry);
           }
 
           // We always want to strip flanking white space.
@@ -296,8 +343,15 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           // Cells containing column headers that are required.
           // Traits: plot, entry, rep, location into pheno_plantprop.
           elseif (in_array($cell_colheader, $plantprop_headers) && !empty($cell_colheader)) {
+            $t = array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types'));
 
-            $type = tripal_get_cvterm(array('name' => $cell_colheader, 'cv_id' => array('name' => 'phenotype_plant_property_types')));
+            if (function_exists('chado_get_cvterm')) {
+              $type = chado_get_cvterm($t);
+            }
+            else {
+              $type = tripal_get_cvterm($t);
+            }
+
             $type_id = $type->cvterm_id;
 
             // Ensure that cvterm_id is present before inserting to table
@@ -338,7 +392,17 @@ function rawpheno_load_spreadsheet($project_id, $arr_newheaders, $fid, $plantpro
           }
           // THE REST OF THE COLUMN HEADERS
           // Everything else into pheno_measurements.
-          elseif (!empty($cell_colheader) && $cell_entry != 'NA') {
+          elseif ((!empty($cell_colheader) && $cell_entry != 'NA')
+            || ($cell_colheader == 'Planting Date (date)' && $cell_entry == 'NA')) {
+
+            // Allow NA only when header is planting date.
+
+            $c_h = rawpheno_function_delformat($cell_colheader);
+            if (in_array($c_h, $skip)) {
+              // print 'skipping header : ' . $cell_colheader . "\n";
+              continue;
+            }
+
             // Get the cvterm_id for the trait measurement.
             $type_id = rawpheno_get_trait_id($cell_colheader);
 
@@ -594,6 +658,13 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
   // Variations of Not Applicable.
   $not_applicable = array('na', 'n/a', 'n.a.');
 
+  // Skip columns.
+  $skip = array();
+  // Project name.
+  $project_name = rawpheno_function_getproject($project_id);
+  // Calling all modules implementing hook_rawpheno_ignorecols_valsave_alter():
+  drupal_alter('rawpheno_ignorecols_valsave', $skip, $project_name);
+
   // Iterate though each row.
   $num_errored_rows = 0;
   $storage = array();
@@ -616,16 +687,29 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
         $o = 0;
         foreach ($row as $r) {
           $without_format = rawpheno_function_delformat($r);
+
+          // To maintain index of both cells and header, tag either to skip or process
+          // based on headers in drupal_alter hook.
+          $s = (in_array($without_format, $skip)) ? 1 : 0;
+
+          // Remove new lines.
+          $rem_newline = str_replace(array("\n", "\r"), ' ', $r);
+          // Remove extra spaces.
+          $rem_spaces  = preg_replace('/\s+/', ' ', $rem_newline);
+          // Remove leading and trailing spaces.
+          $r = trim($rem_spaces);
           $no_units = rawpheno_get_trait_name($r);
+
           $header[] = array(
             'no format' => $without_format,
             'original' => $r,
             'units' => rawpheno_function_unit($without_format),
             'no units' => $no_units,
+            'skip' => $s,
           );
 
           // Store index number of Plot trait requirements.
-          if (!isset($plot_req['planting date (date)']) && $without_format == 'planting date (date)') {
+          if (!isset($plot_req['planting date (date)']) && $without_format == 'plantingdate(date)') {
             $plot_req['planting date (date)'] = $o;
           }
           elseif (!isset($plot_req['location']) && $without_format == 'location') {
@@ -655,9 +739,17 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
 
         $row_has_error = FALSE;
         foreach ($row as $column_index => $cell) {
+          if ($header[$column_index]['skip'] == 1) continue;
 
           $column_name = $header[$column_index]['no units'];
           if (empty($column_name)) continue;
+
+          // Prior to validating, Remove non-breaking whitespace by converting it to a blank space instead of removing it,
+          // in case user intends a space between words/values.
+          // trim() implementation below should drop unecessary leading and trailing spaces.
+          if (preg_match('/\xc2\xa0/', $cell)) {
+            $cell = preg_replace('/\xc2\xa0/', ' ', $cell);
+          }
 
           // We always want to strip flanking white space.
           // FYI: This is done when the data is loaded as well.
@@ -695,7 +787,7 @@ function rawpheno_validate_excel_file($file, $project_id, $source) {
                     $context['plot_req'] = $plot_req;
                   }
 
-                  $result = $validator['validation callback']($cell, $context, $tmp_storage);
+                  $result = $validator['validation callback']($cell, $context, $tmp_storage, $project_id);
 
                   // Note: we use tmp storage b/c passing $storage[$validator_name] directly
                   // doesn't seem to work.
@@ -999,10 +1091,10 @@ function rawpheno_get_trait_id($header) {
 
   // Query trait. Module stores unit in lowercase but user can use any case
   // in the spreadsheet. eg Planting Date (date) and Planting Date (Date).
+  // @note cvterm.name + cv.name + not obsolete combination is unique (constraints).
   $sql = "SELECT t2.cvterm_id
           FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
-          WHERE lower(t2.name) = :cvterm_name AND t1.name = :cv_name
-          LIMIT 1";
+          WHERE lower(t2.name) = :cvterm_name AND t1.name = :cv_name AND is_obsolete = 0";
 
   $args = array(':cvterm_name' => trim(strtolower($header)), ':cv_name' => 'phenotype_measurement_types');
   $type = chado_query($sql, $args)
@@ -1034,6 +1126,8 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
 
   // First we try to get the unit through relationships since that avoids making assumptions.
   // in chado.cvterm_relationship.
+  // @todo make this more specific (restrict relationship by type?)
+  // @todo rather then limit, check if there are 1+ and warn the admin.
   $sql = "SELECT cvterm_id, name FROM {cvterm} WHERE cvterm_id =
     (SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :trait LIMIT 1)";
 
@@ -1050,7 +1144,12 @@ function rawpheno_get_trait_unit($trait_name, $trait_id = NULL) {
   $unit_name = rawpheno_function_unit($trait_name);
 
   // Column header does not contain unit, use text as default
-  $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  if (function_exists('chado_get_cvterm')) {
+    $cvterm = chado_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
+  else {
+    $cvterm = tripal_get_cvterm(array('name' => $unit_name, 'cv_id' => array('name' => 'phenotype_measurement_units')));
+  }
 
   if ($cvterm) {
     return array('id' => $cvterm->cvterm_id, 'name' => $cvterm->name);
@@ -1196,19 +1295,26 @@ function rawpheno_project_traits($project_id) {
  */
 function rawpheno_function_cvterm_properties($cvterm_id) {
   // Narrow the search to cvterm of type measurement units.
-  $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  if (function_exists('chado_get_cv')) {
+    $cv_unit = chado_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
+  else {
+    $cv_unit = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
 
   // In form state 2, describe header, user has the opportunity to describe the unit (Describe method field).
   // This information is stored in cvterm relationship together with the cvterm id of the unit as the subject_id
   // and cvterm_id of the header as the object_id. Given a header cvterm id, get the subject id and use it to
   // get the information required from cvtermprop table.
+  // @todo check if there is more then one unit for a given trait and if so, warn the admin.
   $sql = "SELECT subject_id FROM {cvterm_relationship} WHERE object_id = :cvterm_id AND type_id = :cv_unit LIMIT 1";
   $args = array(':cvterm_id' => $cvterm_id, ':cv_unit' => $cv_unit->cv_id);
 
   $d = chado_query($sql, $args)
     ->fetchField();
 
-  $sql = "SELECT value FROM {cvtermprop} WHERE type_id = :cv_unit AND cvterm_id = :cvterm_id LIMIT 1";
+  // @note cvterm_id + type_id + rank is unique (constraint).
+  $sql = "SELECT value FROM {cvtermprop} WHERE type_id = :cv_unit AND cvterm_id = :cvterm_id AND rank = 0";
   $args = array(':cv_unit' => $cv_unit->cv_id, ':cvterm_id' => $d);
 
   $d = chado_query($sql, $args);

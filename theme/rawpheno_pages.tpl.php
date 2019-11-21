@@ -249,6 +249,16 @@
                   <a href="<?php print $page_url['rawpheno_download'] ?>" target="_blank">downloads</a></em>.
                 </li>
               </ul>
+
+              <br />
+              <div>
+                <h3>&bull; Still Need Help?</h3>
+                <a href="<?php print $page_url['rawpheno_demo'] ?>" title="This link opens a new window" target="_blank">Watch Raw Phenotypes Video Demonstrations</a>
+
+                <?php if (isset($support_email) && !empty($support_email)) { ?>
+                or Send Us an Email: <a href="mailto:<?php print $support_email; ?>" title="Right click to copy email address">KnowPulse Support</a></span>
+                <?php } ?>
+              </div>
             </div>
 
             <div>

@@ -196,6 +196,13 @@
   font-size: 1em;
 }
 
+#rawpheno-notification-helptopic-select {
+  font-size: 1em;
+  margin: 2px 0 10px 0;
+  padding: 5px;
+  width: 90%;
+}
+
 /* Media query - apply stype when viewport is 1500px */
 @media(max-width: 1500px) {
   #rawpheno-notification-block-wrapper {

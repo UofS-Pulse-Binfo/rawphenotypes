@@ -81,7 +81,14 @@
         checkUncheck(traits.checkbox);
       });
 
-
+      // Environment data file option.
+      // Variable settings passed on by hook_form() indicating
+      // if filter combination resulted an enivronment data file.
+      var env = Drupal.settings.rawpheno.envdata_option;
+      // Disabled by default - nothing selected.
+      // #disabled options in form api reloads the form
+      // instead of redirecting to Tripal Download.
+      $('#chk-envdata').attr('disabled', 'disabled');
 
       // Disable fields on AJAX (selectbox, checkbox, buttons and all).
       $(document).ajaxStart(function() {
@@ -91,6 +98,15 @@
         //ajax end
         resetSelect(traits.selectbox, '')
         $(':input').removeAttr('disabled');
+
+        // Make environment data available when filter combination
+        // yields environment data.
+        if (!env) {
+          $('#chk-envdata').attr({
+            'checked' : false,
+            'disabled': 'disabled'
+          });
+        }
       });
 
 

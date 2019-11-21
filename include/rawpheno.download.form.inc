@@ -24,15 +24,28 @@ function rawpheno_download($form, &$form_state) {
     $project_selected = $form_state['values']['sel_project'];
   }
 
-  $sql = "SELECT DISTINCT t1.project_id, t1.name
-          FROM {project} AS t1 RIGHT JOIN pheno_plant_project AS t2 USING(project_id)
-          ORDER BY t1.project_id DESC";
+  // Sort the project names according to Planting Date.
+  // Put project with recently uploaded data/ based on planting year
+  // first in the list.
+  $sql = "SELECT project_id, name
+          FROM {project} AS t1
+            RIGHT JOIN pheno_plant_project AS t2 USING (project_id)
+            LEFT JOIN pheno_measurements AS t3 USING (plant_id)
+          WHERE t3.type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Planting Date (date)' LIMIT 1)
+          GROUP BY project_id, name, t3.value
+          ORDER BY t3.value DESC";
 
   $opt_project = chado_query($sql)
     ->fetchAllKeyed();
 
+  // Project options:
   if (count($opt_project) <= 0) {
+    // Module has no projects w/ data yet.
     return $form;
+  }
+  else {
+    // Remove any duplicates from the sorted list.
+    $opt_project = array_unique($opt_project, SORT_REGULAR);
   }
 
   // AJAX wrapper.
@@ -54,7 +67,7 @@ function rawpheno_download($form, &$form_state) {
   $form['ajax_container']['sel_project'] = array(
     '#type' => 'select',
     '#title' => t('Project'),
-    '#options' => array(0 => 'All Projects') + $opt_project,
+    '#options' => $opt_project,
     '#multiple' => FALSE,
     '#id' => 'download-sel-project',
     '#ajax' => array(
@@ -72,20 +85,22 @@ function rawpheno_download($form, &$form_state) {
 
   // Define the project ids required by the next field.
   if (isset($project_selected)) {
-    // When a project is selected.
-    // 0 is the first option in the select box and translates to all projects.
-    $project_id = ($project_selected == 0) ? array_keys($opt_project) : $project_selected;
+    // When a project is selected. Default to the project selected.
+    $project_id = $project_selected;
   }
   else {
-    // No project select. This is the defaul select all project.
-    $project_id = array_keys($opt_project);
+    // No project select. This is the default to the first project.
+    $p = array_keys($opt_project);
+    $project_id = reset($p);
   }
 
-  // LOCATION SELECT BOX.
+  // All Locations for the default project above. Default project is the
+  // first project in the list.
   $sql = "SELECT DISTINCT value, value AS prj_location
           FROM pheno_plantprop
           WHERE
-            type_id = (SELECT cvterm_id FROM {cvterm} WHERE name = 'Location' LIMIT 1) AND
+            type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id = cvt.cv_id
+              WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
             plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id IN (:project_id))
           ORDER BY value ASC";
 
@@ -122,6 +137,27 @@ function rawpheno_download($form, &$form_state) {
 
   $location_id = $opt_location;
 
+  // Manage environment data file option.
+  // Allow option when a project is selected and project and location combination
+  // returns an environment data file.
+  $add_option = FALSE;
+
+  if (isset($project_selected) && $project_selected > 0) {
+    if (isset($form_state['values']['sel_location'])
+        && count($form_state['values']['sel_location']) > 0) {
+
+      $location = $form_state['values']['sel_location'];
+
+      $envfile = rawpheno_function_getenv($project_selected, $location);
+      if ($envfile) {
+        $add_option = TRUE;
+      }
+    }
+  }
+
+  drupal_add_js(array('rawpheno' => array('envdata_option' => $add_option)), array('type' => 'setting'));
+
+
   // TRAITS.
   // Select traits wrapper.
   $form['ajax_container']['ajax_container_traits'] = array(
@@ -131,7 +167,35 @@ function rawpheno_download($form, &$form_state) {
   );
 
   // Get traits given a location and project.
-  $opt_trait = rawpheno_download_load_traits($location_id, $project_id);
+  if (isset($project_selected) && isset($location)) {
+    $project_id = $project_selected;
+    $location_id = $location;
+  }
+
+  // The summarized list of cvterm_ids from MVIEW returned by inner most query will be passed to function that converts
+  // comma separated values into individual values (cvterm_id numbers) and the result is the parameter of ANY clause
+  // that will filter cvterms to only those in the list. Final rows are in JSON object and sorted alphabetically by name
+  // that will be passed on to the select field of rawdata form.
+  $sql_cvterm = "
+    SELECT c_j.cvterm_json->>'id', c_j.cvterm_json->>'name' FROM (
+      SELECT JSON_BUILD_OBJECT('id', cvterm_id, 'name', name) AS cvterm_json FROM {cvterm} WHERE cvterm_id = ANY ((
+        SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
+          SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
+          FROM {rawpheno_rawdata_mview}
+          WHERE
+            location IN(:location)
+            AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+        ) AS list_id
+      )::int[])
+    ) AS c_j
+    WHERE c_j.cvterm_json->>'name' NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+    ORDER BY c_j.cvterm_json->>'name' ASC
+  ";
+
+  $trait_set = chado_query($sql_cvterm, array(':location' => $location_id, ':project_id' => $project_id))
+    ->fetchAllKeyed();
+
+  $opt_trait = array_unique($trait_set);
 
   $form['ajax_container']['ajax_container_traits']['sel_trait'] = array(
     '#type' => 'select',
@@ -154,13 +218,12 @@ function rawpheno_download($form, &$form_state) {
     '#suffix' => '</div>',
   );
 
-
   $form['div_buttons']['chk_envdata'] = array(
-    '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data when available)', array('@img' => '../../' . $path . 'img/env.gif')),
+    '#title' => t('<img src="@img" alt="Include Environment Data" title="Include Environment Data" align="absmiddle" /> (Include Environment Data)', array('@img' => '../../' . $path . 'img/env.gif')),
     '#type' => 'checkbox',
     '#default_value' => 0,
+    '#id' => 'chk-envdata',
   );
-
 
   $form['div_buttons']['chk_rfriendly'] = array(
     '#title' => t('<img src="@img" alt="Make R Friendly" title="Make R Friendly" align="absmiddle" /> (Make R Friendly)', array('@img' => '../../' . $path . 'img/r.gif')),
@@ -175,6 +238,7 @@ function rawpheno_download($form, &$form_state) {
   );
 
   $form['#attached']['js']  = array($path . 'js/rawpheno.download.script.js');
+
 
   return $form;
 }
@@ -192,6 +256,7 @@ function rawpheno_download_get_locations_traits($form, $form_state) {
  * Function callback: AJAX update trait select box.
  */
 function rawpheno_download_get_traits($form, $form_state) {
+  /*
   $location = $form_state['values']['sel_location'];
   $project = $form_state['values']['sel_project'];
 
@@ -209,6 +274,7 @@ function rawpheno_download_get_traits($form, $form_state) {
   $form['ajax_container']['ajax_container_traits']['sel_trait']['#options'] = $opt_trait;
   // Update the title.
   $form['ajax_container']['ajax_container_traits']['sel_trait']['#title'] = t('@count_trait Traits available', array('@count_trait' => count($opt_trait)));
+*/
 
   return $form['ajax_container']['ajax_container_traits'];
 }
@@ -232,7 +298,8 @@ function rawpheno_download_submit($form, &$form_state) {
   // Otherwise, it will be an associative array where location is both key and value.
   // Convert this to comma separated string when there's anything else set to 0 - for all locations.
   $loc = $form_state['values']['sel_location'];
-  $loc = (count($loc) > 0) ? implode(',', $loc) : 0;
+  // Location 1 + (and) Location 2 + .....
+  $loc = (count($loc) > 0) ? implode('+', $loc) : 0;
 
   // Trait select field.
   // Trait select field is an empty array - all traits.
@@ -245,16 +312,54 @@ function rawpheno_download_submit($form, &$form_state) {
   $env = $form_state['values']['chk_envdata'];
   $rvr = $form_state['values']['chk_rfriendly'];
 
+  // Construct environment data files archive.
+  $env_filename = 0;
+
+  if (isset($env) && $env == 1) {
+    // Ensure that project and location combination return an environment data file.
+    $project = explode(',', $prj);
+    $location = explode('+', $loc);
+
+    $files = rawpheno_function_getenv($project, $location);
+
+    if (count($files) > 0) {
+      // Env file available.
+      $envs = array();
+
+      foreach($files as $file) {
+        $envs[] = $file->filename;
+      }
+
+      if (count($envs) == 1) {
+        // Single env file found. Fetch the file (xlsx usually) and submit to tripal download.
+        $env_filename = reset($envs);
+      }
+      else {
+        // Multiple env files found. Fetch all files, tar (archive) and submit to tripal download.
+        $public = drupal_realpath('public://');
+        $tar_filename = 'environment_data_' . date('ymdis') . '.tar';
+        $tar_file = $public . '/' . $tar_filename;
+
+        $tar_cmd = 'tar -cf ' . escapeshellarg($tar_file) . ' -C ' . escapeshellarg($public) . ' ';
+        $tar_cmd .= implode(' ', $envs) . ' 2>&1';
+
+        // Package everything...
+        shell_exec($tar_cmd);
+        $env_filename = $tar_filename;
+      }
+    }
+  }
+
   // Contain all query parameters/string into one string.
   // Decode first when reading this string using base64_decode() function.
-  $url = base64_encode('p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env);
+  $url = 'p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env . '&file=' . $env_filename;
 
   // Format url for redirect.
   $form_state['redirect'] = array(
     '/phenotypes/raw/csv',
     array(
       'query' => array(
-        'code' => $url,
+        'code' => base64_encode($url),
       ),
     ),
   );

@@ -218,6 +218,7 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
 
   // The project id number the spreadsheet and column headers are specific to.
   $project_id = $form_state['values']['sel_project'];
+  $project_name = rawpheno_function_getproject($project_id);
 
   // FIND NEW HEADERS.
   // First step, determine which headers/traits need to be described.
@@ -230,6 +231,10 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
     // when no project id is selected, user will be stopped and is requested to retry the process.
     if ($file AND !empty($project_id)) {
       $new_header = rawpheno_indicate_new_headers($file, $project_id);
+
+      // Calling all modules implementing hook_rawpheno_AGILE_stock_name_alter():
+      drupal_alter('rawpheno_ignorecols_newcolumn', $new_header, $project_name);
+
       $form_state['multistep_values']['new_headers'] = $new_header;
     }
     else {
@@ -295,7 +300,13 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
 
 
   // NEW HEADERS FOUND.
-  $cv = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  if (function_exists('chado_get_cv')) {
+    $cv = chado_get_cv(array('name' => 'phenotype_measurement_types'));
+  }
+  else {
+    $cv = tripal_get_cv(array('name' => 'phenotype_measurement_types'));
+  }
+
   $cv_id = $cv->cv_id;
 
   // Where clause that form part of the SQL below.
@@ -429,7 +440,14 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
             if (isset($form_state['values']['sel_header_' . $i])) {
               if ($form_state['values']['sel_header_' . $i] > 0) {
                 $cvterm_id = $form_state['values']['sel_header_' . $i];
-                $cvterm_info = tripal_get_cvterm(array('cvterm_id' => $cvterm_id));
+
+                if (function_exists('chado_get_cvterm')) {
+                  $cvterm_info = chado_get_cvterm(array('cvterm_id' => $cvterm_id));
+                }
+                else {
+                  $cvterm_info = tripal_get_cvterm(array('cvterm_id' => $cvterm_id));
+                }
+
                 $show_form = 'yes';
               }
               elseif ($form_state['values']['sel_header_' . $i] == 0) {
@@ -475,7 +493,11 @@ function rawpheno_upload_form_stage_review(&$form, &$form_state) {
           }
           else {
             if ($has_unit == 'yes') {
-              $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim(strpbrk($name, '()'), '()');
+              $u = strpbrk($name, '()');
+              // Remove any parenthesis making its way to the final value.
+              $u = str_replace(array('(', ')'), '', $u);
+
+              $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#value'] = trim($u);
               $form['xls_review_fldset']['fldset_' . $i]['txt_unit_' . $i]['#disabled'] = FALSE;
             }
           }
@@ -870,6 +892,12 @@ function rawpheno_file_validate($file) {
 
     $s = (isset($flags['status'])) ? $flags['status'] : $flags;
 
+    // If DND backup, missing measurements, skip all validator but
+    // save/backup the file anyway.
+    if ($s['tab_exists'] === FALSE) {
+      return array();
+    }
+
     // Read only the status from test listed above.
     foreach($s as $i => $v) {
       if (in_array($i, $flag_index) AND ($v === FALSE || $v === 'todo')) {
@@ -1003,7 +1031,13 @@ function rawpheno_submit_review($form, &$form_state) {
   // 2. The entire spreadsheet.
 
   // cvterm id of controlled vocabulary.
-  $cvid = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  if (function_exists('chado_get_cv')) {
+    $cvid = chado_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
+  else {
+    $cvid = tripal_get_cv(array('name' => 'phenotype_measurement_units'));
+  }
+
   $cv_measurements_unit = $cvid->cv_id;
 
   // 1. Save new headers.
@@ -1158,7 +1192,13 @@ function rawpheno_submit_review($form, &$form_state) {
 
         // Create a R Friendly version.
         $r_version = rawpheno_function_make_r_compatible($m_cvterm['name']);
-        $cv_rfriendly = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+
+        if (function_exists('chado_get_cv')) {
+          $cv_rfriendly = chado_get_cv(array('name' => 'phenotype_r_compatible_version'));
+        }
+        else {
+          $cv_rfriendly = tripal_get_cv(array('name' => 'phenotype_r_compatible_version'));
+        }
 
         $values = array(
           'cvterm_id' => $m_cvterm_id,

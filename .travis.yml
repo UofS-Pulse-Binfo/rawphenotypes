@@ -1,0 +1,26 @@
+language: php
+
+# Add php version so composer doesn't complain
+php:
+  - 7.1
+
+services:
+  - docker
+
+env:
+  - DRUPAL_ROOT=/var/www/html
+
+before_script:
+  - docker pull statonlab/tripal3
+
+script:
+  - docker run -it -d --rm --name tripal -v "$(pwd)":/modules/rawphenotypes statonlab/tripal3
+  - sleep 30 # We pause here so postgres and apache complete booting up
+  - docker exec -it tripal drush pm-download dragndrop_upload
+  - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && git clone https://github.com/nuovo/spreadsheet-reader"
+  - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries/spreadsheet-reader && git apply /modules/rawphenotypes/spreadsheet-reader.patch"
+  - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && git clone https://github.com/SystemDevil/PHP_XLSXWriter_plus"
+  - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && wget https://github.com/d3/d3/releases/download/v3.5.14/d3.zip && unzip d3.zip"
+  - docker exec -it tripal bash -c "cd /var/www/html/sites/all/libraries && mkdir d3 && mv d3.js d3/ && mv d3.min.js d3/"
+  - docker exec -it tripal drush pm-enable rawpheno -y -d
+  - docker exec -it tripal bash -c "cd /modules/rawphenotypes && composer install && DRUPAL_ROOT=/var/www/html ./vendor/bin/phpunit"
