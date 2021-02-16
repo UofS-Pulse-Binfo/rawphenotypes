@@ -128,7 +128,7 @@ jobs:
       run: |
         mkdir -p $DRUPAL_ROOT/sites/all/modules/rawphenotypes
         cp -R * $DRUPAL_ROOT/sites/all/modules/rawphenotypes
-        cd $DRUPAL_ROOT/sites/all/libraries
+        cd $DRUPAL_ROOT/sites/all/libraries/spreadsheet-reader
         git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
         cd $DRUPAL_ROOT
         $DRUSH en -y rawpheno
