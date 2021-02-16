@@ -72,8 +72,6 @@ jobs:
       run: |
         cd $DRUPAL_ROOT/sites/all/libraries
         git clone https://github.com/nuovo/spreadsheet-reader
-        cd $DRUPAL_ROOT/sites/all/libraries/spreadsheet-reader
-        git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
 
     # 4-b) Install XLS Writter Libraries
     - name: Install XLS Writer Libraries
@@ -130,6 +128,7 @@ jobs:
       run: |
         mkdir -p $DRUPAL_ROOT/sites/all/modules/rawphenotypes
         cp -R * $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+        git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
         cd $DRUPAL_ROOT
         $DRUSH en -y rawpheno
 
