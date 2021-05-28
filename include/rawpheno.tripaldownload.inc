@@ -353,7 +353,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
     $filepath = $dir['tripal_download'] . $filename;
 
-    drush_print("Generating CSV File: " . $filepath);
+    // drush_print("Generating CSV File: " . $filepath);
     $FILE = fopen($filepath, 'w') or die ('Uable to create file to write to');
     fputcsv($FILE, $header);
 
@@ -376,14 +376,14 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     // Note: We will save the data to the file as we go.
     $cur_line = 0;
     $past_percent = 0;
-    drush_print('0% complete...');
+    // drush_print('0% complete...');
 
     foreach ($rows as $row) {
       // To file... to screen...
       $percent = round(($cur_line / $total_lines) * 100);
       if ((($percent % 5) === 0) && ($past_percent != $percent)) {
 
-        drush_print($percent . '% complete...');
+        // drush_print($percent . '% complete...');
 
         db_query('UPDATE {tripal_jobs} SET progress=:percent WHERE job_id=:id',
           array(':percent' => $percent, ':id' => $job_id));
@@ -420,9 +420,9 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     fclose($FILE);
 
     if ($percent != 100) {
-      drush_print('100% complete...');
+      // drush_print('100% complete...');
     }
 
-    drush_print('Download complete');
+    // drush_print('Download complete');
   }
 }

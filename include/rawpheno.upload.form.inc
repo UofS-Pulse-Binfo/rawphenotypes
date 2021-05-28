@@ -686,7 +686,7 @@ function rawpheno_upload_form_stage_save($form, &$form_state) {
             // containing the number of rows save in percent. See file: rawpheno.module.
             $form['tripal_job_id'] = array(
               '#type' => 'hidden',
-              '#value' => base_path() . '/phenotypes/raw/upload/job_summary/' . $job->job_id,
+              '#value' => $GLOBALS['base_url'] . '/phenotypes/raw/upload/job_summary/' . $job->job_id,
               '#attributes' => array('id' => 'tripal-job-id'),
             );
 
