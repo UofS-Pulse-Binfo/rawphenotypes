@@ -207,7 +207,7 @@ function rawpheno_function_trait_types() {
  * that precedes the unit of a measurement type.
  */
 function rawpheno_function_trait_reps() {
-  return array('1st', '2nd', '3rd', 'R1', 'R3', 'R5', 'R7');
+  return array('1st', '2nd', '3rd', '4th', 'R1', 'R3', 'R5', 'R7');
 }
 
 
