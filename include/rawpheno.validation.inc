@@ -524,103 +524,16 @@ function validator_units_match_type_validate_cell($value, $context, &$storage) {
   }
 
   // Then check if it matches based on the unit.
-  switch($unit) {
-    case 'date':
-      // Date must be YYYY-MM-DD format.
-      if (preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})/', $value, $matches)) {
-
-        // Check that the month/day are in the expected range.
-        $year = $matches[1];
-        $month = $matches[2];
-        $day = $matches[3];
-        if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31 AND $year > 1900) {
-
-          // Then check that it's not in the future.
-          $today = new DateTime();
-          $date = DateTime::createFromFormat('Y-m-d', $value);
-          if ($date <= $today) {
-            return TRUE;
-          }
-        }
-      }
-      else {
-        // Inspect date for NA and YYYY.
-        if (preg_match('/^([0-9]{4})/', $value) === 1 && $value <= date('Y')) {
-          // 4 digit YYYY year. Make sure year is not year in some year in the unknown future.
-          return TRUE;
-        }
-        elseif (in_array(trim(strtolower($value)), array('na', 'n/a', 'n.a.'))) {
-          // Try NA, N/A, N.A.
-          return TRUE;
-        }
-      }
-      break;
-
-    case 'count':
-    case 'days':
-      // First check that it's a number.
-      if (is_numeric($value)) {
-        // Then check it's a positive whole number.
-        if ((int)$value == $value AND $value > 0) {
-          return TRUE;
-        }
-      }
-      // Allow 0 for count.
-      if ($unit == 'count' AND strval($value) === '0') {
-        return TRUE;
-      }
-      break;
-
-    case 'cm':
-    case 'g':
-      // Measurements - if it is numeric, then it must be greater than 0.
-      if (is_numeric($value) && $value > 0) {
-        return TRUE;
-      }
-      // Allow 0
-      if (strval($value) === '0') {
-        return TRUE;
-      }
-      break;
-
-    case 'y/n/?':
-      // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
-      if (in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
-        return TRUE;
-      }
-      break;
-
-    case 'scale':
-      // Scales are associated with the trait cvterm and each approved code is stored
-      // in pheno_scale_member.
-      // First retrieve the cvterm_id for the trait.
-      $trait = $context['header'][ $context['column index'] ]['original'];
-      $trait_id = rawpheno_get_trait_id($trait);
-      if ($trait_id) {
-        // Then check that the value is in the scale members
-        $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value',
-          array(':trait_id' => $trait_id, ':value' => $value))->fetchField();
-        if ($present) return TRUE;
-
-        // If not, make sure there are members.
-        $has_scale = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:trait_id',
-          array(':trait_id' => $trait_id))->fetchField();
-        if (!$has_scale) return TRUE;
-      }
-      // If this is a new trait/column then we don't know how to validate it, so we assume it's correct.
-      else {
-        return TRUE;
-      }
-      break;
-
-    case 'text':
-      return TRUE;
-      break;
-
-    default:
-      return TRUE;
+  $column_header = $context['header'][ $context['column index'] ]['original'];
+  
+  // Match unit to data.
+  $match_unit = rawpheno_function_match_unit($value, $unit, $column_header);
+  if ($match_unit) {
+    // If TRUE, return the value and match next data.
+    return $match_unit;
   }
 
+  // Something went wrong, data and unit do not match.
   return array('value' => $value, 'unit' => $unit);
 }
 
