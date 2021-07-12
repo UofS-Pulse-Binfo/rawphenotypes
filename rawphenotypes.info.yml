@@ -1,0 +1,11 @@
+name: Raw Phenotypes
+description: Provides generic upload, storage, backup and export of raw phenotypic data.
+package: Tripal Extension
+
+type: module
+core: 8.x
+configure: rawphenotypes.configure
+
+dependencies:
+  - libraries:libraries
+

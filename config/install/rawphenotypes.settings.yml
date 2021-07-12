@@ -1,0 +1,17 @@
+# @file
+# Raw Phenotypes Module variables/configuration.
+
+# GENERAL CONFIGURATIONS:
+
+# Colour scheme and window title text.
+rawpheno_colour_scheme:
+rawpheno_rawdata_title:
+rawpheno_download_title:
+rawpheno_instructions_title:
+rawpheno_upload_title:
+rawpheno_backup_title:
+
+# R transformation parameters.
+rawpheno_rtransform_words:
+rawpheno_rtransform_characters:
+rawpheno_rtransform_replace:
