@@ -1,2 +1,6 @@
 # @file
 # Rawphenotypes Module Services Definition.
+
+services:
+  rawphenotypes.terms_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesTermsService

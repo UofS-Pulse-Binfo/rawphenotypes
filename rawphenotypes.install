@@ -326,18 +326,22 @@ function rawphenotypes_schema() {
  * Implements hook_install().
  */
 function rawphenotypes_install() {
-  $vars = rawphenotypes_default_terms('variables');
-  $config = \Drupal::service('config.factory')
+  $terms_service = \Drupal::service('rawphenotypes.terms_service');
+
+  // Get variable names and default values.
+  $vars = $terms_service::termsDefault('variables');
+  $config = $terms_service::termsDefault('defaults');
+
+  $settings = \Drupal::service('config.factory')
     ->getEditable('rawphenotypes.settings');
 
-  $interface = rawphenotypes_default_terms('interface')
-
-  // # 1. INSERT CVs.
-  $cv = rawphenotypes_default_terms('vocabularies');
+  // # 1. INSERT CV.
+  // Insert all cvs required.
+  $cv = $terms_service::termsDefault('vocabularies');
 
   // Array to hold cv_id and cv_name.
   // This will be used when creating cvterm relationships.
-  $arr_cvid_cvname = array();
+  $arr_cvid_cvname = [];
 
   $chado_inscv_exists = function_exists('chado_insert_cv');
 
@@ -347,12 +351,12 @@ function rawphenotypes_install() {
       ? chado_insert_cv($cv_name, $def)
       : tripal_insert_cv($cv_name, $def);
 
-     if ($tmp) {
-       $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
-     }
-     else {
-       tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cv', [], ['print' => TRUE]);
-     }
+    if ($tmp) {
+      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
+    }
+    else {
+      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cv', [], ['print' => TRUE]);
+    }
   }
 
   // # 2. INSERT UNITS.
@@ -361,7 +365,7 @@ function rawphenotypes_install() {
   //       When the column header Lodging is inserted, only then we can insert the scale members.
 
   // Array to hold scale members.
-  $arr_unit = rawphenotypes_default_terms('units');
+  $arr_unit = $terms_service::termsDefault('units');
   // Array to hold cvterm_id of each inserted unit.
   // This will be used when creating a cvterm relationship linking a cvterm to a unit.
   $arr_cvtermid_unit = [];
@@ -397,8 +401,7 @@ function rawphenotypes_install() {
   // This is the default project, only when such project exists, otherwise, insert the column headers
   // and make them available for use in admin control panel.
   // @note project.name must be unique so no need to limit 1.
-  $default_project = rawphenotypes_default_terms('project');
-  
+  $default_project = $terms_service::termsDefault('project');
   $sql = "SELECT project_id FROM {project} WHERE name = :default_project";
   $args = [':default_project' => $default_project];
   $prj_id = chado_query($sql, $args);
@@ -414,7 +417,7 @@ function rawphenotypes_install() {
         'uid' => $GLOBALS['user']->uid
       ])
       ->execute();
-    
+
     // If the user is not the superadmin, add superadmin as well.
     if ($GLOBALS['user']->uid != 1) {
       \Drupal::service('database')
@@ -429,87 +432,20 @@ function rawphenotypes_install() {
 
   // Initialize R Transformation rules required in generating R version of header.
   // The default rules are the rules required in generating R version of headers default to this module.
-  $config 
-    ->set($vars[6], $interface['r-words']);
-    ->set($vars[7], $interface['r-chars']);
-    ->set($vars[8], $interface['r-replace']);
+  $settings
+    ->set($vars[6], $config['r-words'])
+    ->set($vars[7], $config['r-chars'])
+    ->set($vars[8], $config['r-replace'])
     ->save();
 
   // Array to hold header types.
-  $trait_type = [
-    'type1' => 'essential',
-    'type2' => 'optional',
-    'type3' => 'subset',
-    'type4' => 'plantproperty',
-    'type5' => 'contributed'
-  ];
+  $trait_type = $terms_service::termsType();
 
   // Array to hold all column headers, plant property headers and essential headers.
-  $arr_allheaders = [
-    'Plot',                                                       
-    'Entry',                                                      
-    'Name',                                                       
-    'Rep',                                                        
-    'Location',                                                   
-    'Planting Date (date)',                                       
-    '# of Seeds Planted (count)',                                 
-    'Days to Emergence (days)',                                   
-    '# of Emerged Plants (count)',                                
-    'Days till 10% of Plants have Elongated Tendrils (days)',     
-    'Days till 10% of Plants have One Open Flower (R1; days)',    
-    '# Nodes on Primary Stem at R1 (1st; count)',                 
-    '# Nodes on Primary Stem at R1 (2nd; count)',                 
-    'Days till 10% of Plants have Pods (R3; days)',               
-    'Days till 10% of Plants have fully Swollen Pods (R5; days)', 
-    'Days till 10% of Plants have 1/2 Pods Mature (R7; days)',    
-    'R7 Traits: Lowest Pod Height (1st; cm)',                     
-    'R7 Traits: Lowest Pod Height (2nd; cm)',                     
-    'R7 Traits: Canopy Height (1st; cm)',                         
-    'R7 Traits: Canopy Height (2nd; cm)',                         
-    'Days till Harvest (days)',                                   
-    'Diseases Present (y/n/?)',                                   
-    'Disease-specific Comments',                                  
-    'Lodging (Scale: 1-5) upright - lodged',                      
-    'Subset Traits: # Peduncles (count)',                         
-    'Subset Traits: # Pods (count)',                              
-    'Subset Traits: # Seeds (count)',                             
-    'Straw Biomass (g)',                                          
-    'Total Seed Mass (g)',                                        
-    'Total # of Seeds (count)',                                   
-    '100 Seed Mass (g)',                                          
-    'Comments'                                                    
-  ];
-
-  $arr_subsetheader = [
-    'Subset Traits: # Peduncles (count)',                         
-    'Subset Traits: # Pods (count)',                            
-    'Subset Traits: # Seeds (count)',
-  ];
-
-  $arr_plantpropheader = [
-    'Plot',                                                       
-    'Entry',                                                      
-    'Name',                                                       
-    'Rep',                                                        
-    'Location',                
-  ];
-  
-  $arr_essentialheader = [
-    'Plot',                                                       
-    'Entry',                                                      
-    'Name',                                                       
-    'Rep',                                                        
-    'Location',                                                   
-    'Planting Date (date)',                                       
-    '# of Seeds Planted (count)',                                 
-    'Days to Emergence (days)',                                   
-    '# of Emerged Plants (count)',                                
-    'Days till 10% of Plants have Elongated Tendrils (days)',     
-    'Days till 10% of Plants have One Open Flower (R1; days)', 
-    'Days till 10% of Plants have 1/2 Pods Mature (R7; days)',
-    'Days till Harvest (days)',                                   
-    'Diseases Present (y/n/?)',    
-  ];
+  $arr_allheaders = $terms_service::terms('expected');
+  $arr_subsetheader = $terms_service::terms('subset');
+  $arr_plantpropheader = $terms_service::terms('plantprop');
+  $arr_essentialheader = $terms_service::terms('essential');
 
   foreach($arr_allheaders as $header) {
     // Skip when it is Name.
@@ -518,18 +454,18 @@ function rawphenotypes_install() {
     }
 
     // Get the definition and collection method.
-    $cvterm_info = rawphenotypes_get_term_definition($header);
+    $cvterm_info = $terms_service::termsDefine($header);
     // When no information is retured, default the definition to the term itself.
     $cvterm_definition = (!empty($cvterm_info['define'])) ? $cvterm_info['define'] : $header;
     // Set the type of header.
     $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
 
-    $ins_term = array(
+    $ins_term = [
       'id'         => 'rawpheno_tripal:' . $header,
       'name'       => $header,
       'definition' => $cvterm_definition,
       'cv_name'    => $cvterm_type
-    );
+    ];
 
     // Insert the cvterm.
     $cvterm = ($chado_insterm_exists)
@@ -540,12 +476,12 @@ function rawphenotypes_install() {
     if (!empty($cvterm_info['method']) && $cvterm) {
       // Data collection method.
       chado_insert_record('cvtermprop',
-        array(
+        [
           'cvterm_id' => $cvterm->cvterm_id,
           'type_id'   => $arr_cvid_cvname[ $cv['cv_desc'] ],
           'value'     => $cvterm_info['method'],
           'rank'      => 0
-        )
+        ]
       );
     }
     else {
@@ -556,38 +492,34 @@ function rawphenotypes_install() {
     // No relationship when header is Plant Property Type.
     if (!in_array($header, $arr_plantpropheader) && $cvterm) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
-      
-      
-      
-      // @TODO --------------------------------------------------------------
-      $header_unit = rawpheno_function_header_unit($header);
+      $header_unit = $terms_service::termsGetUnit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
 
       chado_insert_record('cvterm_relationship',
-        array(
+        [
           'subject_id' => $arr_cvtermid_unit[$header_unit],
           'type_id'    => $arr_cvid_cvname[ $cv['cv_unit'] ],
           'object_id'  => $cvterm->cvterm_id
-        )
+        ]
       );
     }
 
     // R version. To be implemented to all column headers.
-    $r_version = rawpheno_function_make_r_compatible($header);
+    $r_version = $terms_service::termsRTransform($header);
 
     if ($cvterm) {
       chado_insert_record('cvtermprop',
-        array(
+        [
           'cvterm_id' => $cvterm->cvterm_id,
           'type_id'   => $arr_cvid_cvname[ $cv['cv_rver'] ],
           'value'     => $r_version,
           'rank'      => 0
-        )
+        ]
       );
     }
 
     // Finally, map this particular header to project, again, only when default project is present.
-    if (isset($project_ID) AND $project_ID > 0) {
+    if (isset($project_ID) && $project_ID > 0) {
       // Indicate the type of header.
       if (in_array($header, $arr_plantpropheader)) {
         // Type is Plant Property.
@@ -606,21 +538,21 @@ function rawphenotypes_install() {
         $type = $trait_type['type2'];
       }
 
-      db_insert('pheno_project_cvterm')
-        ->fields(array(
-            'project_id' => $project_ID,
-            'cvterm_id' => $cvterm->cvterm_id,
-            'type' => $type
-          )
-        )
+      \Drupal::service('database')
+        ->insert('pheno_project_cvterm')
+        ->fields([
+          'project_id' => $project_ID,
+          'cvterm_id' => $cvterm->cvterm_id,
+          'type' => $type
+        ])
         ->execute();
     }
   }
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
-  $lodging = rawpheno_function_terms('scales');
+  $lodging = $terms_service->termsDefault('scales');
 
-  $cl = array('name' => array_keys($lodging)[0], 'cv_id' => array('name' => $cv['cv_type']));
+  $cl = ['name' => array_keys($lodging)[0], 'cv_id' => ['name' => $cv['cv_type']]];
 
   if (function_exists('chado_get_cvterm')) {
     $cvterm_lodging = chado_get_cvterm($cl);
@@ -631,35 +563,172 @@ function rawphenotypes_install() {
 
   // Insert scale values 1 - 5
   foreach (array_values($lodging)[0] as $code => $val) {
-    db_insert('pheno_scale_member')
-      ->fields(array(
+    \Drupal::service('database')
+      ->insert('pheno_scale_member')
+      ->fields([
         'scale_id' => $cvterm_lodging->cvterm_id,
         'code' => $code,
         'value' => $val
-      ))
+      ])
       ->execute();
   }
 
+  // # 4. MATERIALIZED VIEW.
+  // Create materialized view used in phenotypes/rawdata.
+  // Using Tripal: tripal_add_mview().
+  $mv_name = 'rawpheno_rawdata_summary';
+  $mv_module = 'rawpheno';
+  $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
 
+  // Create a summary of data in the following format:
+  // Plant id, Location, Rep, Planting Date and Total traits count.
+  // NOTE: trait count includes planting date.
+  // NOTE: As a materialized view, this get's executed by chado query.
+  $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
+      t2.value AS location,
+      t3.value AS rep,
+      t5.value AS planting_year,
+      COUNT(DISTINCT t4.type_id) AS total_count,
+      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
+    FROM pheno_plant AS t1
+      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
+      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
+      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
+    WHERE
+      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
+      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
+      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
+    GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
 
+  // Schema array.
+  $mv_schema = array (
+    'table' => 'rawpheno_rawdata_mview',
+    'fields' => array (
+      'plant_id' => array (
+        'type' => 'int'),
+      'location' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'rep' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'planting_date' => array (
+        'type' => 'varchar',
+        'length' => 255),
+      'total_count' => array (
+        'type' => 'int'),
+      'all_traits' => array(
+        'type' => 'text'),
+    ),
+    'indexes' => array(
+      'plant_id' => array('plant_id'),
+      'location' => array('location'),
+    )
+  );
 
+  // Create materialized view.
+  if (function_exists('chado_add_mview')) {
+    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
+  else {
+    tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
+  }
 
-
-
-
-
-
-  
-
-  // Set interface default title and colour scheme.
-  $config 
-    ->set($vars[0], $interface['colour']);
-    ->set($vars[1], $interface['rawdata']);
-    ->set($vars[2], $interface['download']);
-    ->set($vars[3], $interface['instructions']);
-    ->set($vars[4], $interface['upload']);
-    ->set($vars[5], $interface['backup']);
+  // #5. DEFAULT SITE SETTINGS.
+  // Set default colour scheme and page titles.
+  $settings
+    ->set($vars[0], $config['colour'])
+    ->set($vars[1], $config['rawdata'])
+    ->set($vars[2], $config['download'])
+    ->set($vars[3], $config['instructions'])
+    ->set($vars[4], $config['upload'])
+    ->set($vars[5], $config['backup'])
     ->save();
+
+  // Add data collection spreadsheet to public:// directory,
+  // and link this file for download in instructions page.
+  $destination = \Drupal::config('system.file')->get('default_scheme') . '://';
+  $file_dir = \Drupal::service('file_system')
+    ->prepareDirectory($destination, \Drupal\Core\File\FileSystemInterface::FILE_MODIFY_PERMISSIONS);
+
+  if ($file_dir) {
+    // Add this file if directory is writable.
+    // File is in zip format as it is more friendly for download than xlsx.
+    $file = 'AGILE-PhenotypeDataCollection-v5.xlsx.zip';
+    $source = drupal_get_path('module', 'rawpheno') . '/theme/' . $file;
+    // Copy file without creating an entry in drupal database.
+    // If file is present, replace it with the same file.
+    \Drupal::service('file_system')
+      ->copy($source, $destination, FILE_EXISTS_REPLACE);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rawphenotypes_uninstall() {
+  $terms_service = \Drupal::service('rawphenotypes.terms_service');
+
+  // # 1. UNREGISTER PERSISTENT VARIABLES.
+  $settings = \Drupal::service('config.factory')
+    ->getEditable('rawphenotypes.settings')
+    ->delete();
+
+  // # 2. DROP MATERIALIZED VIEW TABLE.
+  // Using tripal: tripal_delete_mview().
+  // Get mview id of materilaized view created by hook_install().
+  // @note tripal_mviews.mv_table must be unique (constraint).
+
+  $schema = \Drupal::service('database')
+    ->schema();
+  
+  if ($schema->tableExists('tripal_mviews')) {
+    $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
+    $mview_id = chado_query($sql, [':mv_table' => 'rawpheno_rawdata_mview'])
+      ->fetchField();
+
+    if (isset($mview_id) AND $mview_id > 0) {
+      // Delete materialized view.
+      tripal_delete_mview($mview_id);
+    }
+  }
+
+  // # 3. DELETE CV AND CVTERM.
+  $cv = $terms_service::termsDefault('vocabularies');
+
+  foreach($cv as $cv_i => $cv_name) {
+    if (function_exists('chado_get_cv')) {
+      $cv = chado_get_cv(['name' => $cv_name]);
+    }
+    else {
+      $cv = tripal_get_cv(['name' => $cv_name]);
+    }
+
+    $args = [':cv_id' => $cv->cv_id];
+
+    // Delete relationships.
+    if ($cv_i == 'cv_unit') {
+      $del = "DELETE FROM {cvterm_relationship} WHERE type_id = :cv_id";
+      chado_query($del, $args);
+    }
+
+    // Delete R version.
+    if ($cv_i == 'cv_rver') {
+      $del = "DELETE FROM {cvtermprop} WHERE type_id = :cv_id";
+      chado_query($del, $args);
+    }
+
+    // Delete cvterms.
+    if ($cv_i == 'cv_type') {
+      $del = "DELETE FROM {cvterm} WHERE cv_id = :cv_id";
+      chado_query($del, $args);
+    }
+
+    // Finally, delete the cv
+    $del = "DELETE FROM {cv} WHERE cv_id = :cv_id";
+    chado_query($del, $args);
+  }  
 }
 
 /**
@@ -705,9 +774,9 @@ function rawphenotypes_requirements($phase) {
         $requirements[$i] = [
           'severity' => REQUIREMENT_ERROR,
           'description' =>
-            t('This module uses !library, which is missing.
+            t('This module uses @library, which is missing.
               Please download and extract the entire contents of the archive into Libraries Directory %path directory on your server.',
-              ['!library' => \Drupal::l(strtoupper(str_replace('_',' ',$i)), $link), '%path' => $path]),
+              ['@library' => \Drupal::l(strtoupper(str_replace('_',' ',$i)), $link), '%path' => $path]),
         ];
       }
 
@@ -717,12 +786,13 @@ function rawphenotypes_requirements($phase) {
         $ver = rawphenotypes_library_D3_get_version();
         $v = explode('.', $ver);
 
-        if (trim($v[0]) != '3' || (int)$v[1] < 4) {
+        if (trim($v[0]) != '3' OR (int)$v[1] < 4) {
           $link = Url::fromUri('https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+          $link_ver = Url::fromUri('https://github.com/d3/d3/releases/download/v3.5.14/d3.zip');
           $requirements['d3_version'] = [
             'severity' => REQUIREMENT_ERROR,
-            'description' => t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (!rawpheno_module) or download D3 version 3.5.14 (!download).',
-              ['!rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link), '%ver' => $ver, '!download' => \Drupal::l('D3 3.5.14', 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip')]),
+            'description' => t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (@rawpheno_module) or download D3 version 3.5.14 (@download).',
+              ['@rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link), '%ver' => $ver, '@download' => \Drupal::l('D3 3.5.14', $link_ver)]),
           ];
         }
       }
@@ -734,8 +804,8 @@ function rawphenotypes_requirements($phase) {
           $link = Url::fromUri('https://github.com/UofS-Pulse-Binfo/rawphenotypes');
           $requirements['patch'] = [
             'severity' => REQUIREMENT_ERROR,
-            'description' => t('The Spreadsheet Reader library patch was not implemented. Please review the module requirements (!rawpheno_module).',
-              ['!rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link)]
+            'description' => t('The Spreadsheet Reader library patch was not implemented. Please review the module requirements (@rawpheno_module).',
+              ['@rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link)]
             ),
           ];
         }
@@ -749,96 +819,6 @@ function rawphenotypes_requirements($phase) {
 
 // HELPER FUNCTIONS.
 
-
-/**
- * DEFAULT TERMS AND VALUES USED IN THIS MODULE.
- *
- * @return
- *   An array of string representing scale measurements, variable names,
- *   controlled vocabulary and measurement units.
- */
-function rawphenotypes_default_terms($type) {
-  $default = '';
-
-  switch($type) {
-    case 'project':
-      // Default Project.
-      $default = 'AGILE: Application of Genomic Innovation in the Lentil Economy';
-      break;
-
-    case 'interface':
-      // Default colour scheme and heading/title.
-      // Change the value to desired title and colour of interface.
-      $default = [
-        'colour'       => '#304356',
-        'rawdata'      => 'Phenotypic data available',
-        'download'     => 'Select locations and traits that you want to download',
-        'instructions' => 'Standard Phenotyping Procedure',
-        'upload'       => 'Drag and Drop phenotypic data collection spreadsheet',
-        'backup'       => 'My files',
-        // R conversion parameters.
-        'r-words'      => 'of,to,have,on,at',
-        'r-chars'      => '(,),/,-,:,;,%',
-        'r-replace'    => '# = num,/ = div,? = unsure,- = to',
-      ];
-      break;
-
-    case 'scales':
-      // Scale equivalent for scale units.
-      $default = [
-        'Lodging (Scale: 1-5) upright - lodged' => [
-          1 => 'Vertical/upright',
-          2 => 'Leaning',
-          3 => 'Most plants at 45 degrees angle',
-          4 => 'All plants 10-45 degrees from ground',
-          5 => 'Most plants flat/prostrate'
-        ]
-      ];
-      break;
-
-    case 'variables':
-      // Configuration variable names.
-      default = [
-        'rawpheno_colour_scheme',
-        'rawpheno_rawdata_title',
-        'rawpheno_download_title',
-        'rawpheno_instructions_title',
-        'rawpheno_upload_title',
-        'rawpheno_backup_title',
-        'rawpheno_rtransform_words',
-        'rawpheno_rtransform_characters',
-        'rawpheno_rtransform_replace',
-      ];
-      break;
-
-    case 'vocabularies':
-      // Controlled vocabularies.
-      $default = [
-        'cv_prop' => 'phenotype_plant_property_types',
-        'cv_unit' => 'phenotype_measurement_units',
-        'cv_type' => 'phenotype_measurement_types',
-        'cv_rver' => 'phenotype_r_compatible_version',
-        'cv_desc' => 'phenotype_collection_method',
-      ];
-      break;
-
-    case 'units':
-      // Units available in the spreadsheet.
-      default = [
-        'date'  => 'Date',
-        'count' => 'Count',
-        'days'  => 'Days',
-        'cm'    => 'Centimeters',
-        'scale' => 'Scale: 1-5',
-        'g'     => 'Grams (g)',
-        'text'  => 'Alphanumeric',
-        'y/n/?' => 'Yes, No or ? - Not sure'
-      ];
-      break;
-  }
-
-  return $default;
-}
 
 /**
  * Get the version of D3 library.
@@ -909,251 +889,4 @@ function rawphenotypes_library_reader_patch() {
   }
 
   return ($pass == 2) ? 1 : 0;
-}
-
-/**
- * Function get cvterm definitions.
- *
- * @param $cvterm
- *   A string containing the cvterm name.
- *
- * @return
- *   A string containing the cvterm name definition.
- */
-function rawphenotypes_get_term_definition($cvterm) {
-  // Array to hold definitions.
-  $definition = array();
-
-  $method = 'method';
-  $define = 'define';
-
-$definition['Planting Date (date)'] = array(
-$method =>
-'Record the date the seeds were sown.',
-$define =>
-'The date should be the same for all plots, but could be different if circumstances such as bad weather prevent the seeding of all plots on the same day. If such a situation does occur, highlight rows with a different planting date so it is obvious to the data recorder, since they will have different days after planting values to record for that particular date.'
-);
-
-$definition['Days to Emergence (days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of seeds have emerged.',
-$define =>
-'Emergence = seedling stem/leaves have become visible.'
-);
-
-$definition['# of Emerged Plants (count)'] = array(
-$method =>
-'Record the number of plants which emerged.
-When: Record values once plants begin to flower or have elongated tendrils.',
-$define =>
-'Emergence = seedling stem/leaves have become visible.'
-);
-
-$definition['Days till 10% of Plants have Elongated Tendrils (days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of plants have an elongated tendril.
-Some plants may not produce elongated tendrils but develop a rudimentary tendril only 2-3 mm long. If this applies to more than 90% of plants in the plot, the "Days till 10% have Elongated Tendril" should be left blank.',
-$define =>
-'Elongated tendril = 5 mm and longer.'
-);
-
-$definition['Days till 10% of Plants have One Open Flower (R1; days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of plants have at least one open flower.',
-$define =>
-'Open flower = flower banner (standard petal) is visible.
-R1 = One open flower at any node.'
-);
-
-$definition['# Nodes on Primary Stem at R1 (1st; count)'] = array(
-$method =>
-'Record the number of nodes on the primary stem when the first flower opens.
-Record values from 2 plants, taken from the middle of the plot.',
-$define =>
-'Node = positions on stem where leaves and buds/branches grow from.
-The first few nodes can loose their leaves and may not be readily visible. First flower may NOT be on the primary stem but we want the # of nodes on the primary stem that day.'
-);
-
-$definition['# Nodes on Primary Stem at R1 (2nd; count)'] = array(
-$method =>
-'Record the number of nodes on the primary stem when the first flower opens.
-Record values from 2 plants, taken from the middle of the plot.',
-$define =>
-'Node = positions on stem where leaves and buds/branches grow from.
-The first few nodes can loose their leaves and may not be readily visible. First flower may NOT be on the primary stem but we want the # of nodes on the primary stem that day.'
-);
-
-$definition['Days till 10% of Plants have Pods (R3; days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of plants have pods. Note: Pods can be present but still covered with flower petals, for ease of data collection, only count the plant as having a pod if you can visually see the pod without having to remove flower petals.',
-$define => ''
-);
-
-$definition['Days till 10% of Plants have fully Swollen Pods (R5; days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of plants have pods with fully swollen seeds (that fill more than half of the pod area).',
-$define =>
-'Plant with pods = pods are visible without having to remove flower petals.
-Swollen Pod = seeds have swollen to their max size and fill more than half the pod area.
-R5 = Seed in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity.
-Genotypic variation in seed size and pod structure will require the use of discretion by the data recorder, since not all genotypes have seeds which fully fill the pod cavity at maturity.
-This corresponds to physiological maturity at which point the seeds have swollen to their max size. At this stage, seed coat is formed and there is a colour change in the cotyledons (except QG1!).'
-);
-
-$definition['Days till 10% of Plants have 1/2 Pods Mature (R7; days)'] = array(
-$method =>
-'Record the number of days after planting for which 10% of plants have 1/2 of their pods mature.',
-$define =>
-'Mature pod = dry pod ready to be harvested
-Before the pods dry out they lose their green pigmentation, often looking pale, but will still contain moisture, which you can feel when you touch the pod. Pods that are considered mature will have changed colour and be dry to the touch.
-R7 = The leaves start yellowing and 50% of the pods have turned yellow.
-Pod maturity is not always accompanied by a yellowing of the pod – some pods turn white, some are pigmented and may have patterns, CDC QG2 will remain green'
-);
-
-$definition['R7 Traits: Lowest Pod Height (1st; cm)'] = array(
-$method =>
-'Record the distance (cm) from the soil to the bottom of the lower most pod.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.',
-$define => ''
-);
-
-$definition['R7 Traits: Lowest Pod Height (2nd; cm)'] = array(
-$method =>
-'Record the distance (cm) from the soil to the bottom of the lower most pod.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.',
-$define => ''
-);
-
-$definition['R7 Traits: Canopy Height (1st; cm)'] = array(
-$method =>
-'Record the distance (cm) from the soil to the highest part of the plant canopy.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.
-DO NOT stretch the plant. Leave as is.',
-$define => ''
-);
-
-$definition['R7 Traits: Canopy Height (2nd; cm)'] = array(
-$method =>
-'Record the distance (cm) from the soil to the highest part of the plant canopy.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.
-DO NOT stretch the plant. Leave as is.',
-$define => ''
-);
-
-$definition['Days till Harvest (days)'] = array(
-$method =>
-'Record the number of days from planting to harvest.',
-$define => ''
-);
-
-$definition['Diseases Present (y/n/?)'] = array(
-$method =>
-'Record the presence of any disease, and if able, describe or make notes.',
-$define =>
-'Scale: y = disease present, n = no disease present ? = unsure
-There is a "Disease-specific Comments" column for making any notes related to disease including but not limited to the observation that many or specific diseases are present.'
-);
-
-$definition['Disease-specific Comments'] = array(
-$method =>
-'Feel free to mention if multiple or specific diseases are present. Note: disease ratings for specific diseases should go in a separate column if you would like to measure them.',
-$define => ''
-);
-
-$definition['Lodging (Scale: 1-5) upright - lodged'] = array(
-$method =>
-'Record the degree of plant lodging.
-Scale:
-1 = vertical/upright
-2 = leaning
-3 = most plants at 45° angle
-4 = all plants 10-45° from ground
-5 = most plants flat/prostrate
-When: Record value when harvesting the plot.',
-$define =>
-'lodged = plant canopy is no longer vertical to the ground.'
-);
-
-$definition['Subset Traits: # Peduncles (count)'] = array(
-$method =>
-'Leave this column as is, DO NOT make any changes (unless you were unable to obtain 20 peduncles).
-This has been preset to 20, because that is how many should be collected.',
-$define =>
-'peduncle = a stalk supporting an inflorescence (group/cluster of flowers).'
-);
-
-$definition['Subset Traits: # Pods (count)'] = array(
-$method =>
-'Record the total number of pods on the 20 peduncles collected for the subset traits.',
-$define => ''
-);
-
-$definition['Subset Traits: # Seeds (count)'] = array(
-$method =>
-'Record the total number of seeds from pods counted for the previous trait ("Subset Traits: # Pods").',
-$define => ''
-);
-
-$definition['Straw Biomass (g)'] = array(
-$method =>
-'Record the mass (g) of dry, above ground plant material from each plot.',
-$define =>
-'Straw = all above ground biomass excluding the seed.'
-);
-
-$definition['Total Seed Mass (g)'] = array(
-$method =>
-'Record the total mass (g) of all seeds harvested from each plot.',
-$define => ''
-);
-
-$definition['Total # of Seeds (count)'] = array(
-$method =>
-'Record the total number of seeds harvested from each plot.',
-$define => ''
-);
-
-$definition['100 Seed Mass (g)'] = array(
-$method =>
-'Count 100 seeds and record the mass (g).
-Do not calculate this value from "Total Seed Mass" and "Total Number of Seeds".',
-$define => ''
-);
-
-$definition['Comments'] = array(
-$method => '',
-$define => ''
-);
-
-$definition['R7 Traits: Canopy Width (cm)'] = array(
-$method =>
-'Record the max canopy width (cm).
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.
-Add a column with the header "R7 Traits: Canopy Width (cm)" if you would like to record this trait.',
-$define => ''
-);
-
-$definition['R7 Traits: Plant Length (cm)'] = array(
-$method =>
-'Record the distance (cm) from the soil to the end of the longest stem.
-Record values from 2 plants, taken from the middle of the plot.
-When: Record values when 10% of plants have 1/2 pods mature (R7).
-Record values from 2 plants, taken from the middle of the plot.
-DO stretch the plant.
-Add a column with the header "R7 Traits: Plant Length (cm)" if you would like to record this trait.',
-$define => ''
-);
-
-
-  return (isset($definition[$cvterm])) ? $definition[$cvterm] : null;
 }
