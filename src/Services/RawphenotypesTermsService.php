@@ -7,10 +7,40 @@
 namespace Drupal\Rawphenotypes\Services;
 
 class RawphenotypesTermsService {
-
   /**
-   * @file
-   * Master function to managed column headers.
+   * Check if term (cvterm or cv name) exists.
+   * 
+   * @param $term_name
+   *   String, term or vocabulary term name value.
+   * @param $source
+   *   String, source table to search the term name.
+   *   Default to chado.cvterm.
+   * 
+   * @return 
+   */
+  public static function termsGetByName($term_name, $source = 'cvterm') {
+    if ($source == 'cv') {
+      // Term vocabulary source - find in chado.cv.
+      $table = 'chado.cv';
+    }
+    else {
+      // Term, cvterm source - find in chado.cvterm.
+      $table = 'chado.cvterm';
+    }
+
+    $term_name = trim($term_name);
+    $sql = sprintf('SELECT * FROM %s WHERE name = :term_name', $table);
+    $args = [':term_name' => $term_name];
+
+    $result = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchObject();
+
+    return $result ?? 0;
+  }
+   
+  /**
+   * Default column headers used by default project.
    *
    * @params $type
    *   A string containing a description of column header set required.
@@ -18,7 +48,7 @@ class RawphenotypesTermsService {
    * @return
    *   An array of column headers based on the type of set requested.
    */
-  function terms($type) {
+  public static function terms($type) {
     // List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
     // in AGILE project.
     // TRAIT/MEASUREMENT ---------------------------------------- INDEX

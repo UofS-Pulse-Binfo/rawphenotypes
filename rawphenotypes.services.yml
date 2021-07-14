@@ -4,3 +4,5 @@
 services:
   rawphenotypes.terms_service:
     class: Drupal\rawphenotypes\Services\RawphenotypesTermsService
+  rawphenotypes.mview_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesMviewService  
