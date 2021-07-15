@@ -327,34 +327,37 @@ function rawphenotypes_schema() {
  */
 function rawphenotypes_install() {
   ini_set('max_execution_time', 500);
-  $terms_service = \Drupal::service('rawphenotypes.terms_service');
 
-  // Get variable names and default values.
-  $vars = $terms_service::termsDefault('variables');
-  $config = $terms_service::termsDefault('defaults');
+  // Dependency injection: load services.
+  $default_service = \Drupal::service('rawphenotypes.default_service');
+  $term_service    = \Drupal::service('rawphenotypes.term_service');
+  $project_service = \Drupal::service('rawphenotypes.project_service');
+  $notify_service  = \Drupal::service('rawphenotypes.notify_service');
+  $mview_service   = \Drupal::service('rawphenotypes.mview_service');
 
+  // Configuration setting values.
   $settings = \Drupal::service('config.factory')
     ->getEditable('rawphenotypes.settings');
 
+  // Get variable names and default values.
+  $vars = $default_service::getDefaultValue('variables');
+  $config = $default_service::getDefaultValue('defaults');
+  
   // # 1. INSERT CV.
   // Insert all cvs required.
-  $cv = $terms_service::termsDefault('vocabularies');
+  $cv = $default_service::getDefaultValue('vocabularies');
 
   // Array to hold cv_id and cv_name.
   // This will be used when creating cvterm relationships.
   $arr_cvid_cvname = [];
-
-  $chado_inscv_exists = function_exists('chado_insert_cv');
-  $chado_insterm_exists = function_exists('chado_insert_cvterm');
+  $arr_cv_cvtermid = [];
 
   foreach($cv as $cv_i => $cv_name) {
-    $cv_exists = $terms_service::termsGetByName($cv_name, 'cv');
+    $cv_exists = $term_service::getTermByName($cv_name, 'cv');
     if ($cv_exists) continue;
 
-    $def = str_replace('_', ' ', ucfirst($cv_name));
-    $tmp = ($chado_inscv_exists)
-      ? chado_insert_cv($cv_name, $def)
-      : tripal_insert_cv($cv_name, $def);
+    $cv_def = str_replace('_', ' ', ucfirst($cv_name));
+    $tmp = $term_service::addTerm([$cv_name, $cv_def], 'cv');
 
     if ($tmp) {
       $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
@@ -367,21 +370,15 @@ function rawphenotypes_install() {
       $cv_cvterm = [
         'id' => 'rawpheno_tripal:' . $cv_name,
         'name' => $cv_name,
-        'definition' => '',
+        'definition' => $cv_def,
         'cv_name' => $cv_name
       ];
       
-      if ($chado_insterm_exists) {
-        $cvcvterm_id = chado_insert_cvterm($cv_cvterm);
-      }
-      else {
-        $cvcvterm_id = tripal_insert_cvterm($cv_cvterm);
-      }
-
-      $cv_cvterm_id[ $cv_name ] = $cvcvterm_id->cvterm_id;
+      $cvcvterm_id = $term_service::addTerm($cv_cvterm);
+      $arr_cv_cvtermid[ $cv_name ] = $cvcvterm_id->cvterm_id;
     }
     else {
-      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cv', [], ['print' => TRUE]);
+      $notify_service::postTripalReportError('Chado/Tripal failed to insert cv');
     }
   }
 
@@ -391,13 +388,13 @@ function rawphenotypes_install() {
   //       When the column header Lodging is inserted, only then we can insert the scale members.
 
   // Array to hold scale members.
-  $arr_unit = $terms_service::termsDefault('units');
+  $arr_unit = $default_service::getDefaultValue('units');
   // Array to hold cvterm_id of each inserted unit.
   // This will be used when creating a cvterm relationship linking a cvterm to a unit.
   $arr_cvtermid_unit = [];
 
   foreach($arr_unit as $unit => $def) {
-    $unit_exists = $terms_service::termsGetByName($unit);
+    $unit_exists = $term_service::getTermByName($unit);
     if ($unit_exists) continue;
 
     $ins_unit = [
@@ -407,15 +404,13 @@ function rawphenotypes_install() {
       'cv_name' => $cv['cv_unit']
     ];
 
-    $tmp = ($chado_insterm_exists)
-      ? chado_insert_cvterm($ins_unit)
-      : tripal_insert_cvterm($ins_unit);
+    $tmp = $term_service::addTerm($ins_unit);
 
     if ($tmp) {
       $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
     }
     else {
-      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (trait unit)', [], ['print' => TRUE]);
+      $notify_service::postTripalReportError('Chado/Tripal failed to insert cvterm (trait unit).');
     }
   }
 
@@ -428,35 +423,18 @@ function rawphenotypes_install() {
   // This is the default project, only when such project exists, otherwise, insert the column headers
   // and make them available for use in admin control panel.
   // @note project.name must be unique so no need to limit 1.
-  $default_project = $terms_service::termsDefault('project');
-  $sql = "SELECT project_id FROM chado.project WHERE name = :default_project";
-  $args = [':default_project' => $default_project];
-  $prj_id = \Drupal::database()
-    ->query($sql, $args);
+  $default_project = $default_service::getDefaultValue('project');
+  $project = $project_service::getProjectByName($default_project);
 
-  $prj_id->allowRowCount = TRUE;
-
-  if ($prj_id->rowCount()) {
-    $project_ID = $prj_id->fetchField();
+  if (isset($project)) {
+    $project_ID = $project->project_id;
 
     // When AGILE is present in this site, add a user to this project.
-    \Drupal::service('database')
-      ->insert('pheno_project_user')
-      ->fields([
-        'project_id' => $project_ID,
-        'uid' => \Drupal::currentUser()->id()
-      ])
-      ->execute();
+    $project_service::addUserToProject(\Drupal::currentUser()->id(), $project_ID);
 
     // If the user is not the superadmin, add superadmin as well.
     if ($GLOBALS['user']->uid != 1) {
-      \Drupal::service('database')
-        ->insert('pheno_project_user')
-        ->fields([
-          'project_id' => $project_ID,
-          'uid' => 1
-        ])
-        ->execute();
+      $project_service::addUserToProject(1, $project_ID);
     }
   }
 
@@ -469,16 +447,16 @@ function rawphenotypes_install() {
     ->save();
 
   // Array to hold header types.
-  $trait_type = $terms_service::termsType();
+  $trait_type = $default_service::getTraitTypes();
 
   // Array to hold all column headers, plant property headers and essential headers.
-  $arr_allheaders = $terms_service::terms('expected');
-  $arr_subsetheader = $terms_service::terms('subset');
-  $arr_plantpropheader = $terms_service::terms('plantprop');
-  $arr_essentialheader = $terms_service::terms('essential');
+  $arr_allheaders = $default_service::getTraits('expected');
+  $arr_subsetheader = $default_service::getTraits('subset');
+  $arr_plantpropheader = $default_service::getTraits('plantprop');
+  $arr_essentialheader = $default_service::getTraits('essential');
 
   foreach($arr_allheaders as $header) {
-    $header_exists = $terms_service::termsGetByName($header);
+    $header_exists = $term_service::getTermByName($header);
 
     // Skip when it is Name or if header was previously added.
     if ($header == 'Name' || $header_exists) {
@@ -486,7 +464,7 @@ function rawphenotypes_install() {
     }
 
     // Get the definition and collection method.
-    $cvterm_info = $terms_service::termsDefine($header);
+    $cvterm_info = $default_service::defineTrait($header);
     // When no information is retured, default the definition to the term itself.
     $cvterm_definition = (!empty($cvterm_info['define'])) ? $cvterm_info['define'] : $header;
     // Set the type of header.
@@ -500,55 +478,47 @@ function rawphenotypes_install() {
     ];
 
     // Insert the cvterm.
-    $cvterm = ($chado_insterm_exists)
-      ? chado_insert_cvterm($ins_term)
-      : tripal_insert_cvterm($ins_term);
+    $cvterm = $term_service::addTerm($ins_term);
 
     // Insert the cvterm data collection method.
     if ($cvterm) {
       $cvterm_info['method'] = $cvterm_info['method'] ?? $header; 
       // Data collection method.
-      chado_insert_record('cvtermprop',
-        [
-          'cvterm_id' => $cvterm->cvterm_id,
-          'type_id'   => $cv_cvterm_id[ $cv['cv_desc'] ],
-          'value'     => $cvterm_info['method'],
-          'rank'      => 0
-        ]
-      );
+      $term_service::saveTermProperty([
+        'cvterm_id' => $cvterm->cvterm_id,
+        'type_id'   => $arr_cv_cvtermid[ $cv['cv_desc'] ],
+        'value'     => $cvterm_info['method'],
+        'rank'      => 0
+      ]);
     }
     else {
-      tripal_report_error('Raw Phenotypes', TRIPAL_CRITICAL, 'Chado/Tripal failed to insert cvterm (traits ' . $header . $cvterm_info['method'] . $cvterm->cvterm_id . ')', [], ['print' => TRUE]);
+      $notify_service::postTripalReportError('Chado/Tripal failed to insert cvterm (trait unit).');
     }
 
     // Relate cvterm and unit.
     // No relationship when header is Plant Property Type.
     if (!in_array($header, $arr_plantpropheader) && $cvterm) {
       // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
-      $header_unit = $terms_service::termsGetUnit($header);
+      $header_unit = $term_service::getTermUnit($header);
       $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
 
-      chado_insert_record('cvterm_relationship',
-        [
-          'subject_id' => $arr_cvtermid_unit[$header_unit],
-          'type_id'    => $cv_cvterm_id[ $cv['cv_unit'] ],
-          'object_id'  => $cvterm->cvterm_id
-        ]
-      );
+      $term_service::saveTermRelationship([
+        'subject_id' => $arr_cvtermid_unit[$header_unit],
+        'type_id'    => $arr_cv_cvtermid[ $cv['cv_unit'] ],
+        'object_id'  => $cvterm->cvterm_id
+      ]);
     }
 
     // R version. To be implemented to all column headers.
-    $r_version = $terms_service::termsRTransform($header);
+    $r_version = $term_service::makeTermRCompatible($header);
 
-    if ($cvterm) {
-      chado_insert_record('cvtermprop',
-        [
-          'cvterm_id' => $cvterm->cvterm_id,
-          'type_id'   => $cv_cvterm_id[ $cv['cv_rver'] ],
-          'value'     => $r_version,
-          'rank'      => 0
-        ]
-      );
+    if ($cvterm) {      
+      $term_service::saveTermProperty([
+        'cvterm_id' => $cvterm->cvterm_id,
+        'type_id'   => $arr_cv_cvtermid[ $cv['cv_rver'] ],
+        'value'     => $r_version,
+        'rank'      => 0
+      ]);
     }
 
     // Finally, map this particular header to project, again, only when default project is present.
@@ -571,106 +541,22 @@ function rawphenotypes_install() {
         $type = $trait_type['type2'];
       }
 
-      \Drupal::service('database')
-        ->insert('pheno_project_cvterm')
-        ->fields([
-          'project_id' => $project_ID,
-          'cvterm_id' => $cvterm->cvterm_id,
-          'type' => $type
-        ])
-        ->execute();
+      $term_service::saveTermToProject($cvterm->cvterm_id, $type, $project_ID); 
     }
   }
 
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
-  $lodging = $terms_service->termsDefault('scales');
+  $lodging = $default_service::getDefaultValue('scales');
 
   $cl = ['name' => array_keys($lodging)[0], 'cv_id' => ['name' => $cv['cv_type']]];
-
-  if (function_exists('chado_get_cvterm')) {
-    $cvterm_lodging = chado_get_cvterm($cl);
-  }
-  else {
-    $cvterm_lodging = tripal_get_cvterm($cl);
-  }
+  $cvterm_lodging = $terms_service::getTerm($cl);
 
   // Insert scale values 1 - 5
-  foreach (array_values($lodging)[0] as $code => $val) {
-    \Drupal::service('database')
-      ->insert('pheno_scale_member')
-      ->fields([
-        'scale_id' => $cvterm_lodging->cvterm_id,
-        'code' => $code,
-        'value' => $val
-      ])
-      ->execute();
-  }
+  $term_service::setTermScaleValues($cvterm_lodging->cvterm_id, array_values($lodging)[0]);
 
   // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
-  // Using Tripal: tripal_add_mview().
-  $mv_name = 'rawpheno_rawdata_summary';
-  $mv_module = 'rawpheno';
-  $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
-
-  // Create a summary of data in the following format:
-  // Plant id, Location, Rep, Planting Date and Total traits count.
-  // NOTE: trait count includes planting date.
-  // NOTE: As a materialized view, this get's executed by chado query.
-  $mv_sql = "SELECT CAST(t1.plant_id AS numeric) AS plant_id,
-      t2.value AS location,
-      t3.value AS rep,
-      t5.value AS planting_year,
-      COUNT(DISTINCT t4.type_id) AS total_count,
-      ARRAY_TO_STRING(ARRAY_AGG(DISTINCT t4.type_id), ',') AS all_traits
-    FROM pheno_plant AS t1
-      INNER JOIN [pheno_plantprop] AS t2 USING(plant_id)
-      INNER JOIN [pheno_plantprop] AS t3 USING(plant_id)
-      INNER JOIN [pheno_measurements] AS t4 USING(plant_id)
-      INNER JOIN [pheno_measurements] AS t5 USING(plant_id)
-    WHERE
-      t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
-      t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types') AND
-      t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
-    GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value";
-
-  // Schema array.
-  $mv_schema = array (
-    'table' => 'rawpheno_rawdata_mview',
-    'fields' => array (
-      'plant_id' => array (
-        'type' => 'int'),
-      'location' => array (
-        'type' => 'varchar',
-        'length' => 255),
-      'rep' => array (
-        'type' => 'varchar',
-        'length' => 255),
-      'planting_date' => array (
-        'type' => 'varchar',
-        'length' => 255),
-      'total_count' => array (
-        'type' => 'int'),
-      'all_traits' => array(
-        'type' => 'text'),
-    ),
-    'indexes' => array(
-      'plant_id' => array('plant_id'),
-      'location' => array('location'),
-    )
-  );
-
-  // @TODO Mview service in recent Tripal is not ready yet
-  // This is a temporary solution.
-  $mview_service = \Drupal::service('rawphenotypes.mview_service');
-
-  // Create materialized view.
-  if (function_exists('chado_add_mview')) {
-    chado_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
-  }
-  else {
-    $mview_service::tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
-  }
+  $mview_service::createMview();
 
   // #5. DEFAULT SITE SETTINGS.
   // Set default colour scheme and page titles.
@@ -685,18 +571,26 @@ function rawphenotypes_install() {
 
   // Add data collection spreadsheet to public:// directory,
   // and link this file for download in instructions page.
-  $destination = \Drupal::config('system.file')->get('default_scheme') . '://';
-  $file_dir = \Drupal::service('file_system')
+  $destination = \Drupal::config('system.file')
+    ->get('default_scheme') . '://';
+  
+  $file_handler = \Drupal::service('file_system');
+  $file_dir = $file_handler
     ->prepareDirectory($destination, \Drupal\Core\File\FileSystemInterface::FILE_MODIFY_PERMISSIONS);
 
   if ($file_dir) {
     // Add this file if directory is writable.
     // File is in zip format as it is more friendly for download than xlsx.
     $file = 'AGILE-PhenotypeDataCollection-v5.xlsx.zip';
-    $source = drupal_get_path('module', 'rawpheno') . '/theme/' . $file;
+    
+    $source = \Drupal::service('module_handler')->getModule('rawphenotypes')
+      ->getPath();
+
+    $source .= '/theme/' . $file;
+    
     // Copy file without creating an entry in drupal database.
     // If file is present, replace it with the same file.
-    \Drupal::service('file_system')
+    $file_handler
       ->copy($source, $destination, FILE_EXISTS_REPLACE);
   }
 }
@@ -705,7 +599,9 @@ function rawphenotypes_install() {
  * Implements hook_uninstall().
  */
 function rawphenotypes_uninstall() {
-  $terms_service = \Drupal::service('rawphenotypes.terms_service');
+  $term_service = \Drupal::service('rawphenotypes.term_service');
+  $mview_service = \Drupal::service('rawphenotypes.mview_service');
+  $default_service = \Drupal::service('rawphenotypes.default_service');
 
   // # 1. UNREGISTER PERSISTENT VARIABLES.
   $settings = \Drupal::service('config.factory')
@@ -716,34 +612,13 @@ function rawphenotypes_uninstall() {
   // Using tripal: tripal_delete_mview().
   // Get mview id of materilaized view created by hook_install().
   // @note tripal_mviews.mv_table must be unique (constraint).
-
-  $schema = \Drupal::service('database')
-    ->schema();
-
-  $mview_service = \Drupal::service('rawphenotypes.mview_service');  
-  
-  if ($schema->tableExists('tripal_mviews')) {
-    $sql = "SELECT mview_id FROM {tripal_mviews} WHERE mv_table = :mv_table";
-    $mview_id = chado_query($sql, [':mv_table' => 'rawpheno_rawdata_mview'])
-      ->fetchField();
-
-    if (isset($mview_id) AND $mview_id > 0) {
-      // Delete materialized view.
-      $mview_service::tripal_delete_mview($mview_id);
-    }
-  }
+  $mview_service::dropMview();
 
   // # 3. DELETE CV AND CVTERM.
-  $cv = $terms_service::termsDefault('vocabularies');
+  $cv = $default_service::getDefaultValue('vocabularies');
 
   foreach($cv as $cv_i => $cv_name) {
-    if (function_exists('chado_get_cv')) {
-      $cv = chado_get_cv(['name' => $cv_name]);
-    }
-    else {
-      $cv = tripal_get_cv(['name' => $cv_name]);
-    }
-
+    $cv = $term_service::getTerm(['name' => $cv_name], 'cv');
     $args = [':cv_id' => $cv->cv_id];
 
     // Delete relationships.

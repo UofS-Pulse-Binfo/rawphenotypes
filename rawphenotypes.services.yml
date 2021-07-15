@@ -2,7 +2,13 @@
 # Rawphenotypes Module Services Definition.
 
 services:
-  rawphenotypes.terms_service:
-    class: Drupal\rawphenotypes\Services\RawphenotypesTermsService
+  rawphenotypes.default_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesDefaultValueService  
+  rawphenotypes.term_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesTermService
+  rawphenotypes.project_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesProjectService  
+  rawphenotypes.notify_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesNotificationService  
   rawphenotypes.mview_service:
-    class: Drupal\rawphenotypes\Services\RawphenotypesMviewService  
+    class: Drupal\rawphenotypes\Services\RawphenotypesMviewService    

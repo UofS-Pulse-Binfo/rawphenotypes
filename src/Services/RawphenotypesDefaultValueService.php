@@ -1,44 +1,102 @@
 <?php
 /**
  * @file
- * Contains class definition of RawphenotypesTermsService.
+ * Contains class definition of RawphenotypesDefaultValueService.
  */
 
 namespace Drupal\Rawphenotypes\Services;
 
-class RawphenotypesTermsService {
+class RawphenotypesDefaultValueService {
   /**
-   * Check if term (cvterm or cv name) exists.
+   * Function to manage terms used by this module.
+   *
+   * @param $type
+   *   Type of default terms/values required.
    * 
-   * @param $term_name
-   *   String, term or vocabulary term name value.
-   * @param $source
-   *   String, source table to search the term name.
-   *   Default to chado.cvterm.
-   * 
-   * @return 
+   * @return
+   *   An array of string representing scale measurements, variable names,
+   *   controlled vocabulary and measurement units.
    */
-  public static function termsGetByName($term_name, $source = 'cvterm') {
-    if ($source == 'cv') {
-      // Term vocabulary source - find in chado.cv.
-      $table = 'chado.cv';
+  public static function getDefaultValue($type) {
+    $default = '';
+
+    switch($type) {
+      case 'project':
+        $default = 'AGILE: Application of Genomic Innovation in the Lentil Economy';
+        break;
+
+      case 'defaults':
+        // Default colour scheme, heading/title and R transformation rules.
+        $default = [
+          'colour' => '#304356',
+          'rawdata' => 'Phenotypic data available',
+          'download' => 'Select locations and traits that you want to download',
+          'instructions' => 'Standard Phenotyping Procedure',
+          'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
+          'backup' => 'My files',
+          'r-words' => 'of,to,have,on,at',
+          'r-chars' => '(,),/,-,:,;,%',
+          'r-replace' => '# = num,/ = div,? = unsure,- = to',
+        ];
+        break;
+
+      case 'scales':
+        // Scale equivalent for scale units.
+        $default = [
+          'Lodging (Scale: 1-5) upright - lodged' => [
+            1 => 'Vertical/upright',
+            2 => 'Leaning',
+            3 => 'Most plants at 45 degrees angle',
+            4 => 'All plants 10-45 degrees from ground',
+            5 => 'Most plants flat/prostrate',
+          ]
+        ];
+        break;
+
+      case 'variables':
+        // Configuration variable names.
+        $default = [
+          'rawpheno_colour_scheme',
+          'rawpheno_rawdata_title',
+          'rawpheno_download_title',
+          'rawpheno_instructions_title',
+          'rawpheno_upload_title',
+          'rawpheno_backup_title',
+          'rawpheno_rtransform_words',
+          'rawpheno_rtransform_characters',
+          'rawpheno_rtransform_replace',
+        ];
+        break;
+
+      case 'vocabularies':
+        // Controlled vocabularies.
+        $default = [
+          'cv_prop' => 'phenotype_plant_property_types',
+          'cv_unit' => 'phenotype_measurement_units',
+          'cv_type' => 'phenotype_measurement_types',
+          'cv_rver' => 'phenotype_r_compatible_version',
+          'cv_desc' => 'phenotype_collection_method',
+        ];
+        break;
+
+      case 'units':
+        // Units available in the spreadsheet.
+        $default = [
+          'date'  => 'Date',
+          'count' => 'Count',
+          'days'  => 'Days',
+          'cm'    => 'Centimeters', 
+          'scale' => 'Scale: 1-5',
+          'g'     => 'Grams (g)',
+          'text'  => 'Alphanumeric',
+          'y/n/?' => 'Yes, No or ? - Not sure',
+        ];
+        break;
     }
-    else {
-      // Term, cvterm source - find in chado.cvterm.
-      $table = 'chado.cvterm';
-    }
 
-    $term_name = trim($term_name);
-    $sql = sprintf('SELECT * FROM %s WHERE name = :term_name', $table);
-    $args = [':term_name' => $term_name];
-
-    $result = \Drupal::database()
-      ->query($sql, $args)
-      ->fetchObject();
-
-    return $result ?? 0;
+    return $default;
   }
-   
+
   /**
    * Default column headers used by default project.
    *
@@ -48,7 +106,7 @@ class RawphenotypesTermsService {
    * @return
    *   An array of column headers based on the type of set requested.
    */
-  public static function terms($type) {
+  public static function getTraits($type) {
     // List of traits/measurements from AGILE-PhenotypeDataCollection-v5.xlsx.
     // in AGILE project.
     // TRAIT/MEASUREMENT ---------------------------------------- INDEX
@@ -165,7 +223,7 @@ class RawphenotypesTermsService {
    * as an option when adding traits. Plant Property is used to indicate
    * column headers in the pheno_plantprop.
    */
-  public static function termsType() {
+  public static function getTraitTypes() {
     return [
       'type1' => 'essential',
       'type2' => 'optional',
@@ -176,192 +234,15 @@ class RawphenotypesTermsService {
   }
 
   /**
-   * Function to manage terms used by this module.
-   *
-   * @param $type
-   *   Type of default terms/values required.
-   * 
-   * @return
-   *   An array of string representing scale measurements, variable names,
-   *   controlled vocabulary and measurement units.
-   */
-  public static function termsDefault($type) {
-    $default = '';
-
-    switch($type) {
-      case 'project':
-        $default = 'AGILE: Application of Genomic Innovation in the Lentil Economy';
-        break;
-
-      case 'defaults':
-        // Default colour scheme, heading/title and R transformation rules.
-        $default = [
-          'colour' => '#304356',
-          'rawdata' => 'Phenotypic data available',
-          'download' => 'Select locations and traits that you want to download',
-          'instructions' => 'Standard Phenotyping Procedure',
-          'upload' => 'Drag and Drop phenotypic data collection spreadsheet',
-          'backup' => 'My files',
-          'r-words' => 'of,to,have,on,at',
-          'r-chars' => '(,),/,-,:,;,%',
-          'r-replace' => '# = num,/ = div,? = unsure,- = to',
-        ];
-        break;
-
-      case 'scales':
-        // Scale equivalent for scale units.
-        $default = [
-          'Lodging (Scale: 1-5) upright - lodged' => [
-            1 => 'Vertical/upright',
-            2 => 'Leaning',
-            3 => 'Most plants at 45 degrees angle',
-            4 => 'All plants 10-45 degrees from ground',
-            5 => 'Most plants flat/prostrate',
-          ]
-        ];
-        break;
-
-      case 'variables':
-        // Configuration variable names.
-        $default = [
-          'rawpheno_colour_scheme',
-          'rawpheno_rawdata_title',
-          'rawpheno_download_title',
-          'rawpheno_instructions_title',
-          'rawpheno_upload_title',
-          'rawpheno_backup_title',
-          'rawpheno_rtransform_words',
-          'rawpheno_rtransform_characters',
-          'rawpheno_rtransform_replace',
-        ];
-        break;
-
-      case 'vocabularies':
-        // Controlled vocabularies.
-        $default = [
-          'cv_prop' => 'phenotype_plant_property_types',
-          'cv_unit' => 'phenotype_measurement_units',
-          'cv_type' => 'phenotype_measurement_types',
-          'cv_rver' => 'phenotype_r_compatible_version',
-          'cv_desc' => 'phenotype_collection_method',
-        ];
-        break;
-
-      case 'units':
-        // Units available in the spreadsheet.
-        $default = [
-          'date'  => 'Date',
-          'count' => 'Count',
-          'days'  => 'Days',
-          'cm'    => 'Centimeters', 
-          'scale' => 'Scale: 1-5',
-          'g'     => 'Grams (g)',
-          'text'  => 'Alphanumeric',
-          'y/n/?' => 'Yes, No or ? - Not sure',
-        ];
-        break;
-    }
-
-    return $default;
-  }
-
-  /**
-   * Function to transform a column header to R compatible version.
-   *
-   * @params $column_header
-   *   A string containing the column header to transform.
-   * @return
-   *   A string containing the R compatible column header.
-   */
-  public static function termsRTransform($column_header) {
-    $settings = \Drupal::service('config.factory')
-      ->getEditable('rawphenotypes.settings');
-
-    // Get R transformation rules set in the admin control panel.
-    $word_rules = $settings->get('rawpheno_rtransform_words');
-    $char_rules = $settings->get('rawpheno_rtransform_characters');
-    $replace_rules = $settings->get('rawpheno_rtransform_replace');
-
-    $arr_match = [];
-    $arr_replace = [];
-    $r = explode(',', $replace_rules);
-
-    // Convert the rule to key and value pair. The key is the matching character/word and
-    // the values is the replacement value when key is found in a string.
-    foreach($r as $g) {
-      list($match, $replace) = explode('=', $g);
-      $arr_match[] = trim($match);
-      $arr_replace[] = trim($replace);
-    }
-
-    // Convert special characters transformation rules in string to array.
-    $char_rules = explode(',', $char_rules);
-
-    // Convert words transformation rules in string to array.
-    $word_rules = explode(',', $word_rules);
-
-    // Remove leading and trailing spaces from the selected trait.
-    // Convert string to lowercase.
-    $selected_trait = trim(strtolower($column_header));
-    // 1. Break the column header in string to individual words,
-    //    and remove all words that matches an entry in the words transfomation rules.
-    $w = explode(' ', $selected_trait);
-    foreach($w as $c) {
-      $c = trim($c);
-
-      // Skip the words in the traits that are present in the
-      // words transformation rules.
-      if (!in_array($c, $word_rules)) {
-        // Do match and replace, as well as, removal of special characters
-        // only when the current word is not in the words transformation rules.
-        // 2. Match and replace based on match and replace rule.
-        $c = str_replace($arr_match, $arr_replace, $c);
-        // 3. Remove all special characters listed in remove chars rule.
-        $c = str_replace($char_rules, '', $c);
-
-        // All transformation rules applied, make sure that
-        // the result is not a blank space.
-        if (!empty($c)) {
-          $rfriendly[] = trim($c);
-        }
-      }
-    }
-
-    // Final transformation is replacing all spaces to dots/period (.)
-    return ucfirst(implode('.', $rfriendly));
-  }
-
-  /**
-   * Function extract the unit from a column header.
-   *
-   * @param $header
-   *   A string containing the header.
-   *
-   * @return
-   *   A string containing the unit of the header.
-   */
-  public static function termsGetUnit($header) {
-    preg_match("/.*\(([^)]*)\)/", $header, $match);
-    $u = (isset($match[1])) ? $match[1] : 'text';
-
-    $chars = self::termsReps();
-    array_push($chars, ';', ': 1-5');
-
-    $unit = str_ireplace($chars, '', $u);
-
-    return trim(strtolower($unit));
-  }
-
-  /**
    * Function that lists trait reps or number of trials or R value/number
    * that precedes the unit of a measurement type.
    */
-  public static function termsReps() {
+  public static function getTraitReps() {
     return ['1st', '2nd', '3rd', '4th', 'R1', 'R3', 'R5', 'R7'];
   }
 
   /**
-   * Function get cvterm definitions.
+   * Default terms/trait with definition and method information.
    *
    * @param $cvterm
    *   A string containing the cvterm name.
@@ -369,7 +250,7 @@ class RawphenotypesTermsService {
    * @return
    *   A string containing the cvterm name definition.
    */
-  public static function termsDefine($cvterm) {
+  public static function defineTrait($cvterm) {
     // Array to hold definitions.
     $definition = [];
 
@@ -605,5 +486,4 @@ $define => ''
 
     return (isset($definition[$cvterm])) ? $definition[$cvterm] : null;
   }
-
 }
