@@ -1,0 +1,10 @@
+# Configure Raw Phenotypes module.
+rawphenotypes.configure:
+  path: 'admin/tripal/extension/rawphenotypes'
+  defaults:
+    _title: 'Configure Raw Phenotypes Module'
+  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigureForm'
+  requirements:
+    _permission: 'administer tripal'
+
+
