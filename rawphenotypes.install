@@ -327,18 +327,17 @@ function rawphenotypes_schema() {
  */
 function rawphenotypes_install() {
   ini_set('max_execution_time', 500);
-
-  // Dependency injection: load services.
-  $default_service = \Drupal::service('rawphenotypes.default_service');
+  
   $term_service    = \Drupal::service('rawphenotypes.term_service');
-  $project_service = \Drupal::service('rawphenotypes.project_service');
-  $notify_service  = \Drupal::service('rawphenotypes.notify_service');
   $mview_service   = \Drupal::service('rawphenotypes.mview_service');
+  $notify_service  = \Drupal::service('rawphenotypes.notify_service');
+  $project_service = \Drupal::service('rawphenotypes.project_service');
+  $default_service = \Drupal::service('rawphenotypes.default_service');
 
   // Configuration setting values.
   $settings = \Drupal::service('config.factory')
     ->getEditable('rawphenotypes.settings');
-
+  
   // Get variable names and default values.
   $vars = $default_service::getDefaultValue('variables');
   $config = $default_service::getDefaultValue('defaults');
@@ -348,14 +347,17 @@ function rawphenotypes_install() {
   $cv = $default_service::getDefaultValue('vocabularies');
 
   // Array to hold cv_id and cv_name.
-  // This will be used when creating cvterm relationships.
+  // This will be used when creating cvterm relationships
+  // and add corresponding cvterm.
   $arr_cvid_cvname = [];
-  $arr_cv_cvtermid = [];
+  // cv - cvterm mapping array.
+  $arr_map_cv_cvterm = [];
 
   foreach($cv as $cv_i => $cv_name) {
     $cv_exists = $term_service::getTermByName($cv_name, 'cv');
     if ($cv_exists) continue;
-
+    
+    // Insert CV.
     $cv_def = str_replace('_', ' ', ucfirst($cv_name));
     $tmp = $term_service::addTerm([$cv_name, $cv_def], 'cv');
 
@@ -364,7 +366,8 @@ function rawphenotypes_install() {
 
       // A constraint in relation cvtermprop requires that
       // cvtermprop.type_id is a row in chado.cvterm.
-
+      
+      // Insert CV name as CVTERM.
       // In each cv, an identical name will be inserted into 
       // cvterm under each cv and will be used when relating in cvtermprop.
       $cv_cvterm = [
@@ -375,13 +378,14 @@ function rawphenotypes_install() {
       ];
       
       $cvcvterm_id = $term_service::addTerm($cv_cvterm);
-      $arr_cv_cvtermid[ $cv_name ] = $cvcvterm_id->cvterm_id;
+      $arr_map_cv_cvterm[ $cv_name ] = $cvcvterm_id->cvterm_id;
     }
     else {
-      $notify_service::postTripalReportError('Chado/Tripal failed to insert cv');
+      $msg = 'Chado/Tripal failed to insert cv.';
+      $notify_service::postTripalReportError($msg);
     }
   }
-
+  
   // # 2. INSERT UNITS.
   // Insert units and scale member used by scale.
   // NOTE: Scale memeber is link to the column header Lodging (scale 1-5) and not to scale unit.
@@ -410,7 +414,8 @@ function rawphenotypes_install() {
       $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
     }
     else {
-      $notify_service::postTripalReportError('Chado/Tripal failed to insert cvterm (trait unit).');
+      $msg = 'Chado/Tripal failed to insert cvterm (trait unit).';
+      $notify_service::postTripalReportError($msg);
     }
   }
 
@@ -433,7 +438,7 @@ function rawphenotypes_install() {
     $project_service::addUserToProject(\Drupal::currentUser()->id(), $project_ID);
 
     // If the user is not the superadmin, add superadmin as well.
-    if ($GLOBALS['user']->uid != 1) {
+    if (\Drupal::currentUser()->id() != 1) {
       $project_service::addUserToProject(1, $project_ID);
     }
   }
@@ -453,7 +458,7 @@ function rawphenotypes_install() {
   $arr_allheaders = $default_service::getTraits('expected');
   $arr_subsetheader = $default_service::getTraits('subset');
   $arr_plantpropheader = $default_service::getTraits('plantprop');
-  $arr_essentialheader = $default_service::getTraits('essential');
+  $arr_essentialheader   = $default_service::getTraits('essential');
 
   foreach($arr_allheaders as $header) {
     $header_exists = $term_service::getTermByName($header);
@@ -486,13 +491,15 @@ function rawphenotypes_install() {
       // Data collection method.
       $term_service::saveTermProperty([
         'cvterm_id' => $cvterm->cvterm_id,
-        'type_id'   => $arr_cv_cvtermid[ $cv['cv_desc'] ],
+        // Refer to cv - cvterm mapping array.
+        'type_id'   => $arr_map_cv_cvterm[ $cv['cv_desc'] ],
         'value'     => $cvterm_info['method'],
         'rank'      => 0
       ]);
     }
     else {
-      $notify_service::postTripalReportError('Chado/Tripal failed to insert cvterm (trait unit).');
+      $msg = 'Chado/Tripal failed to insert cvterm (trait unit).';
+      $notify_service::postTripalReportError($msg);
     }
 
     // Relate cvterm and unit.
@@ -504,7 +511,8 @@ function rawphenotypes_install() {
 
       $term_service::saveTermRelationship([
         'subject_id' => $arr_cvtermid_unit[$header_unit],
-        'type_id'    => $arr_cv_cvtermid[ $cv['cv_unit'] ],
+        // Refer to cv - cvterm mapping array.
+        'type_id'    => $arr_map_cv_cvterm[ $cv['cv_unit'] ],
         'object_id'  => $cvterm->cvterm_id
       ]);
     }
@@ -515,7 +523,8 @@ function rawphenotypes_install() {
     if ($cvterm) {      
       $term_service::saveTermProperty([
         'cvterm_id' => $cvterm->cvterm_id,
-        'type_id'   => $arr_cv_cvtermid[ $cv['cv_rver'] ],
+        // Refer to the cv - cvterm mapping array.
+        'type_id'   => $arr_map_cv_cvterm[ $cv['cv_rver'] ],
         'value'     => $r_version,
         'rank'      => 0
       ]);
@@ -549,10 +558,10 @@ function rawphenotypes_install() {
   $lodging = $default_service::getDefaultValue('scales');
 
   $cl = ['name' => array_keys($lodging)[0], 'cv_id' => ['name' => $cv['cv_type']]];
-  $cvterm_lodging = $terms_service::getTerm($cl);
+  $cvterm_lodging = $term_service::getTerm($cl);
 
   // Insert scale values 1 - 5
-  $term_service::setTermScaleValues($cvterm_lodging->cvterm_id, array_values($lodging)[0]);
+  $term_service::setTermScaleValues($cvterm_lodging->cvterm_id, array_values($lodging)[0]);  
 
   // # 4. MATERIALIZED VIEW.
   // Create materialized view used in phenotypes/rawdata.
@@ -576,7 +585,7 @@ function rawphenotypes_install() {
   
   $file_handler = \Drupal::service('file_system');
   $file_dir = $file_handler
-    ->prepareDirectory($destination, \Drupal\Core\File\FileSystemInterface::FILE_MODIFY_PERMISSIONS);
+    ->prepareDirectory($destination, FILE_MODIFY_PERMISSIONS);
 
   if ($file_dir) {
     // Add this file if directory is writable.
@@ -599,10 +608,10 @@ function rawphenotypes_install() {
  * Implements hook_uninstall().
  */
 function rawphenotypes_uninstall() {
-  $term_service = \Drupal::service('rawphenotypes.term_service');
-  $mview_service = \Drupal::service('rawphenotypes.mview_service');
+  $term_service    = \Drupal::service('rawphenotypes.term_service');
+  $mview_service   = \Drupal::service('rawphenotypes.mview_service');
   $default_service = \Drupal::service('rawphenotypes.default_service');
-
+  
   // # 1. UNREGISTER PERSISTENT VARIABLES.
   $settings = \Drupal::service('config.factory')
     ->getEditable('rawphenotypes.settings')

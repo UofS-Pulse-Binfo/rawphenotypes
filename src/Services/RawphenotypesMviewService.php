@@ -8,17 +8,17 @@ namespace Drupal\Rawphenotypes\Services;
 
 class RawphenotypesMviewService {
   // The name of the materialized view.
-  public $mv_name = 'rawpheno_rawdata_summary';
+  private static $mv_name = 'rawpheno_rawdata_summary';
   // Module name.
-  public $mv_module = 'rawphenotypes';
+  private static $mv_module = 'rawphenotypes';
   // Materialized view comment.
-  public $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
+  private static $mv_comment = 'Materialized view used by rawpheno module to generate summary of traits per location, rep and year.';
   // SQL.
   // Create a summary of data in the following format:
   // Plant id, Location, Rep, Planting Date and Total traits count.
   // NOTE: trait count includes planting date.
   // NOTE: As a materialized view, this get's executed by chado query.
-  public $mv_sql = "
+  private static $mv_sql = "
     SELECT CAST(t1.plant_id AS numeric) AS plant_id,
       t2.value AS location,
       t3.value AS rep,
@@ -37,9 +37,9 @@ class RawphenotypesMviewService {
     GROUP BY t1.plant_id, t4.plant_id, t2.value, t3.value, t5.value
   ";
   // Materialized view table name.
-  public $mv_table = 'rawpheno_rawdata_mview';
+  private static $mv_table = 'rawpheno_rawdata_mview';
   // Schema.
-  public $mv_schema = [
+  private static $mv_schema = [
     'table' => 'rawpheno_rawdata_mview',
     'fields' => [
       'plant_id' => ['type' => 'int'],

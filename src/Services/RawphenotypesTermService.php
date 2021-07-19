@@ -61,11 +61,12 @@ class RawphenotypesTermService {
     $sql = sprintf('SELECT * FROM %s WHERE name = :term_name', $table);
     $args = [':term_name' => $term_name];
 
-    $result = \Drupal::database()
-      ->query($sql, $args)
-      ->fetchObject();
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
 
-    return $result ?? 0;
+    return ($query->rowCount()) ? $query->fetchObject() : null;
   }
 
   /**
@@ -79,7 +80,7 @@ class RawphenotypesTermService {
    * @return object
    *   CV term row object.
    */
-  public static function getTerm($details, $source) {
+  public static function getTerm($details, $source = 'cvterm') {
     if ($source == 'cv') {
       return (function_exists('chado_get_cv')) 
         ? chado_get_cv($details)
@@ -200,7 +201,7 @@ class RawphenotypesTermService {
    *   Associative array, where key corresponds to field in chado.cvterm_relationship table.
    */
   public static function saveTermRelationship($details) {
-    $table = 'chado.cvterm_relationship';
+    $table = 'cvterm_relationship';
     chado_insert_record($table, $details);
   }
 
