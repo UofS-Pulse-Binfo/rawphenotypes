@@ -1,2 +1,9 @@
 # @file
 # Rawphenotypes Module libraries.
+
+# Style Rawphenotypes configuration pages.
+style-admin:
+  version: v1.x
+  css:
+    theme:
+      css/style-admin.css: {}

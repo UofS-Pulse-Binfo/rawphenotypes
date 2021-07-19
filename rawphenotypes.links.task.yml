@@ -1,0 +1,24 @@
+# Tabs/task items below point to routes defined in
+# @see rawphenotypes.routing.yml.
+# Order is as they appear in the configuration page (weight).
+
+# General Configuration Tab.
+rawphenotypes.tab1:
+  title: 'Page Configurations'
+  route_name: rawphenotypes.configure
+  base_route: rawphenotypes.configure
+  weight: 0
+
+# Configure R Transformation Rules.
+rawphenotypes.tab2:
+  title: 'Define R Transformation Rules'
+  route_name: rawphenotypes.rtransform
+  base_route: rawphenotypes.configure
+  weight: 1
+
+# Manage Phenotyping Experiments.
+rawphenotypes.tab3:
+  title: 'Manage Project'
+  route_name: rawphenotypes.projects
+  base_route: rawphenotypes.configure
+  weight: 2

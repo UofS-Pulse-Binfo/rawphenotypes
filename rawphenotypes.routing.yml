@@ -1,10 +1,28 @@
+# Routes for managing Rawphenotypes module (laid out in tabs).
+# @see rawphenotypes.links.task.yml
+
 # Configure Raw Phenotypes module.
 rawphenotypes.configure:
   path: 'admin/tripal/extension/rawphenotypes'
   defaults:
     _title: 'Configure Raw Phenotypes Module'
-  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigureForm'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
   requirements:
     _permission: 'administer tripal'
 
+rawphenotypes.rtransform:
+  path: 'admin/tripal/extension/rawphenotypes/rtransform'
+  defaults:
+    _title: 'Configure R Tranformation Rules'
+  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
+  requirements:
+    _permission: 'administer tripal'
+
+rawphenotypes.projects:
+  path: 'admin/tripal/extension/rawphenotypes/projects'
+  defaults:
+    _title: 'Manage Phenotyping Experiments'
+  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
+  requirements:
+    _permission: 'administer tripal'
 
