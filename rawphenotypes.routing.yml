@@ -14,7 +14,7 @@ rawphenotypes.rtransform:
   path: 'admin/tripal/extension/rawphenotypes/rtransform'
   defaults:
     _title: 'Configure R Tranformation Rules'
-  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesRTransformForm'
   requirements:
     _permission: 'administer tripal'
 

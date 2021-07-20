@@ -445,11 +445,18 @@ function rawphenotypes_install() {
 
   // Initialize R Transformation rules required in generating R version of header.
   // The default rules are the rules required in generating R version of headers default to this module.
-  $settings
-    ->set($vars[6], $config['r-words'])
-    ->set($vars[7], $config['r-chars'])
-    ->set($vars[8], $config['r-replace'])
-    ->save();
+  // Set default configurations.
+    $settings
+      ->set($vars[0], $config['colour'])
+      ->set($vars[1], $config['rawdata'])
+      ->set($vars[2], $config['download'])
+      ->set($vars[3], $config['instructions'])
+      ->set($vars[4], $config['upload'])
+      ->set($vars[5], $config['backup'])
+      ->set($vars[6], $config['r-words'])
+      ->set($vars[7], $config['r-chars'])
+      ->set($vars[8], $config['r-replace'])
+      ->save();
 
   // Array to hold header types.
   $trait_type = $default_service::getTraitTypes();
@@ -567,16 +574,9 @@ function rawphenotypes_install() {
   // Create materialized view used in phenotypes/rawdata.
   $mview_service::createMview();
 
-  // #5. DEFAULT SITE SETTINGS.
+  // #5. ADD DEFAULT SAMPLE SPREADSHEET
   // Set default colour scheme and page titles.
-  $settings
-    ->set($vars[0], $config['colour'])
-    ->set($vars[1], $config['rawdata'])
-    ->set($vars[2], $config['download'])
-    ->set($vars[3], $config['instructions'])
-    ->set($vars[4], $config['upload'])
-    ->set($vars[5], $config['backup'])
-    ->save();
+
 
   // Add data collection spreadsheet to public:// directory,
   // and link this file for download in instructions page.
