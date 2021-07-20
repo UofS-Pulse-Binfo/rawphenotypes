@@ -22,7 +22,18 @@ rawphenotypes.projects:
   path: 'admin/tripal/extension/rawphenotypes/projects'
   defaults:
     _title: 'Manage Phenotyping Experiments'
-  #  _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesManageProjectForm'
   requirements:
     _permission: 'administer tripal'
 
+# Project assets management and operation.   
+rawphenotypes.manage_project:
+  path: 'admin/tripal/extension/rawphenotypes/projects/{id}/{entity}/{operation}'
+  defaults:
+    _title: 'Manage Phenotyping Experiments'
+    #_form: '\Drupal\rawphenotypes\Form\RawphenotypesManageProjectForm'
+  requirements:
+    _permission: 'administer tripal'
+    id: '[0-9]+'
+    entity: 'project'
+    operation: 'manage'

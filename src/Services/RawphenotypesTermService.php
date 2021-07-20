@@ -221,7 +221,7 @@ class RawphenotypesTermService {
     $type  = trim($type);
     $project_id = trim($project_id);
 
-    \Drupal::service('database')
+    \Drupal::database()
       ->insert($table)
       ->fields([        
         'cvterm_id' => $term_id,
@@ -242,7 +242,7 @@ class RawphenotypesTermService {
   public static function setTermScaleValues($term_id, $scales) {
     $table = 'pheno_scale_member';
     
-    $query = \Drupal::service('database')
+    $query = \Drupal::database()
       ->insert($table)
       ->fields(['scale_id', 'code', 'value']);
       
@@ -255,5 +255,24 @@ class RawphenotypesTermService {
     }
 
     $query->execute();    
+  }
+
+  /**
+   * Get all plant property type column headers.
+   */
+  public static function getPlantPropertyTerm() {
+    $sql = "
+      SELECT cvterm_id
+      FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING(cv_id)
+      WHERE t1.name = 'phenotype_plant_property_types'
+      ORDER BY cvterm_id ASC
+    ";
+
+    $query = \Drupal::database()
+      ->query($sql);
+
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount()) ? $query : [];  
   }
 }

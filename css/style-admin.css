@@ -143,7 +143,8 @@ input[type=submit] {
 
 /* Select a project in main project management control panel */
 #admin-sel-project {
-  width: 100%;
+  width: 80%;
+  height: 28px;
 }
 
 /* Add project button */

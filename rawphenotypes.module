@@ -6,6 +6,23 @@
  */
 
 /**
+ * Implements hook_theme().
+ *
+ * @see templates in /templates
+ */
+function rawphenotypes_theme($existing, $type, $theme, $path) {  
+  $variables = [
+     // Messages - error, warning and status.
+    'theme-rawphenotypes-message' => [
+      'variables' => ['data' => []],
+      'template' => 'template-rawphenotypes-message'
+    ],
+  ];
+
+  return $variables;
+}
+
+/**
  * Implements hook_libraries_info().
  *
  * Define external libraries: Spreadsheet Reader and D3JS
