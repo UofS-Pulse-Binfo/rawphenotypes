@@ -86,7 +86,7 @@ class RawphenotypesManageProjectForm extends FormBase {
 
     $empty_table_title = "";
     
-    $projects = $project_service::getProjectProfile();
+    $projects = $project_service::getActiveProjects();
 
     // Page title.
     $form['all_project_info'] = array(
@@ -98,7 +98,7 @@ class RawphenotypesManageProjectForm extends FormBase {
       $i = 0;
 
       foreach($projects as $p) {
-        $link = Url::fromRoute('rawphenotypes.manage_project', ['id' => $p->project_id, 'entity' => 'project', 'operation' => 'manage']);
+        $link = Url::fromRoute('rawphenotypes.manage_project', ['asset_id' => $p->project_id, 'asset_type' => 'project', 'action' => 'manage']);
         $view_cell = \Drupal::l($this->t('View'), $link);
         $name_cell = \Drupal::l($this->t($p->name), $link);
   

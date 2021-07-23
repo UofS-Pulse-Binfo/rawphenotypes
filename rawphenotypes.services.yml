@@ -12,3 +12,5 @@ services:
     class: Drupal\rawphenotypes\Services\RawphenotypesNotificationService  
   rawphenotypes.mview_service:
     class: Drupal\rawphenotypes\Services\RawphenotypesMviewService    
+  rawphenotypes.user_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesUserService    

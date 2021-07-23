@@ -275,4 +275,160 @@ class RawphenotypesTermService {
 
     return ($query->rowCount()) ? $query : [];  
   }
+
+  /**
+   * Get all terms by type.
+   * 
+   * @param $type
+   *   Type of term that corresponds to the cv_id of the cvterm row.
+   *   One of the following:
+   *     phenotype_plant_property_types
+   *     phenotype_measurement_units
+   *     phenotype_measurement_types
+   *     phenotype_r_compatible_version
+   *     phenotype_collection_method
+   * 
+   * @param return 
+   *   Array, rows matching the type (cv_id) in cvterm table.
+   */
+  public static function getTermsByType($type) {
+    $sql = "
+      SELECT t2.name, t2.name || ' : ' || t2.definition
+      FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING (cv_id)
+      WHERE t1.name = :type AND t2.name != :type_name
+      ORDER BY t2.name ASC
+    ";
+    $args = [':type' => $type, ':type_name' => $type];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount()) ? $query->fetchAllKeyed() : [];
+  }
+
+  /**
+   * Get terms that are not listed as among the traits in a project.
+   * 
+   * @param $project_id
+   *   Integer, Project id number terms should not be registered to.
+   * 
+   * @return array
+   *   Term rows in chado.cvterm.
+   */
+  public static function getTermsNotInProject($project_id) {
+    $sql = "
+      SELECT t2.cvterm_id, t2.name
+      FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING(cv_id)
+      WHERE t1.name = 'phenotype_measurement_types'
+        AND t2.cvterm_id NOT IN (SELECT cvterm_id FROM pheno_project_cvterm WHERE project_id = :project_id)
+      ORDER BY t2.cvterm_id ASC
+    ";
+    $args = [':project_id' => $project_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount()) ? $query : [];
+  }
+
+  /**
+   * Get term properties.
+   * 
+   * @param $term_id
+   *   Integer, term or cvterm id number.
+   * @param $dataset
+   *   An string indicating whether to include data count.
+   *
+   * @return
+   *   An array containing all properties (project, name, data, etc.) of a column header.
+   */
+  public static function getTermProperties($term_id, $dataset = null) {
+    // Array to hold properties.
+    $arr_properties = [];
+
+    // Get project information and header type.
+    $sql = "
+      SELECT t1.project_id, t1.name, t2.cvterm_id, t2.type
+      FROM chado.project AS t1 INNER JOIN pheno_project_cvterm AS t2 USING(project_id)
+      WHERE t2.project_cvterm_id = :record_id LIMIT 1
+    ";
+    $args = [':record_id' => $term_id];
+    
+    $h = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchObject();
+
+    $arr_properties['in_project_id'] = $h->project_id;
+    $arr_properties['in_project_name'] = $h->name;
+    $arr_properties['cvterm_id'] = $h->cvterm_id;
+    $arr_properties['type'] = $h->type;
+      
+    $h = self::getTerm(['cvterm_id' => $arr_properties['cvterm_id']]);
+    $arr_properties['name'] = $h->name;
+    $arr_properties['definition'] = empty($h->definition) ? '' : $h->definition;
+
+    // cvterm R Version and Collection Method.
+    $arr_properties['method'] = '';
+    
+    $sql = "
+      SELECT value, type_id FROM chado.cvtermprop
+      WHERE cvterm_id = :record_id
+    ";
+    $h = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchAll();
+    
+    $rversion_prop = self::getTermByName('phenotype_r_compatible_version');
+    $method_prop = self::getTermByName('phenotype_collection_method');
+    
+    // From the query which will return both properties (method and r version),
+    // Identify which is method from r version and tag accordingly using 
+    // corresponding property id numbers.
+    foreach($h as $c) {
+      $val = isset($c->value) ? $c->value : '';
+
+      if ($c->type_id == $rversion_prop->cvterm_id) {
+        $arr_properties['r_version'] = $val;
+      }
+      elseif ($c->type_id == $method_prop->cvterm_id) {
+        $arr_properties['method'] = $val;
+      }
+    }
+
+    // Request full dataset including basic stats about the header.
+    if ($dataset == 'full') {
+      // Count data associated to column header.
+      $sql = "
+        SELECT COUNT(type_id) AS data_count FROM pheno_measurements
+        WHERE type_id = :record_id 
+          AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+      ";
+      $args = [':record_id' => $term_id, ':project_id' => $arr_properties['in_project_id']];
+
+      $h = \Drupal::database() 
+        ->query($sql, $args)
+        ->fetchObject();
+
+      $arr_properties['count_data'] = $h->data_count;
+
+      // Count the projects this same column header is being used.
+      $sql = "
+        SELECT COUNT(project_id) AS project_count
+        FROM pheno_project_cvterm 
+        WHERE project_id <> :project_id AND cvterm_id = :record_id
+      ";
+
+      $h = \Drupal::database() 
+        ->query($sql, $args)
+        ->fetchObject();
+
+      $arr_properties['count_project'] = $h->project_count;
+    }
+
+    return $arr_properties;
+  }
 }

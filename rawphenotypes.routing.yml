@@ -28,12 +28,23 @@ rawphenotypes.projects:
 
 # Project assets management and operation.   
 rawphenotypes.manage_project:
-  path: 'admin/tripal/extension/rawphenotypes/projects/{id}/{entity}/{operation}'
+  path: 'admin/tripal/extension/rawphenotypes/projects/{asset_id}/{asset_type}/{action}'
   defaults:
     _title: 'Manage Phenotyping Experiments'
-    #_form: '\Drupal\rawphenotypes\Form\RawphenotypesManageProjectForm'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesManageAssetForm'
   requirements:
     _permission: 'administer tripal'
-    id: '[0-9]+'
-    entity: 'project'
-    operation: 'manage'
+    asset_id: '[0-9]+'
+    asset_type: 'project|header'
+    action: 'manage|edit|delete'
+
+
+# Autocomplete routes.
+rawphenotypes.autocomplete.user:
+  path: 'admin/tripal/extension/rawphenotypes/user'
+  defaults:
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesAutocompleteUserController::result'
+    _format: json
+  requirements:
+    _permission: 'administer tripal'
+    

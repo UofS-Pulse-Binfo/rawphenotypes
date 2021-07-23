@@ -8,7 +8,7 @@ namespace Drupal\Rawphenotypes\Services;
 
 class RawphenotypesProjectService {
   /**
-   * Get project.
+   * Get project profile by project name.
    * 
    * @param $project_name
    *   String, project name or title to search.
@@ -22,6 +22,30 @@ class RawphenotypesProjectService {
 
     $sql = "SELECT * FROM chado.project WHERE name = :project_name";
     $args = [':project_name' => $project_name];
+
+    $project = \Drupal::database()
+      ->query($sql, $args);
+    
+    $project->allowRowCount = TRUE;
+    
+    return ($project->rowCount()) ? $project->fetchObject() : null;
+  }
+
+  /**
+   * Get project profile by project_id.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * 
+   * @return object
+   *   Project row object.
+   */
+  public static function getProject($project_id) {
+    // project_id, name and description.
+    $project_id = (int) trim($project_id);
+
+    $sql = "SELECT * FROM chado.project WHERE project_id = :project_id";
+    $args = [':project_id' => $project_id];
 
     $project = \Drupal::database()
       ->query($sql, $args);
@@ -88,7 +112,7 @@ class RawphenotypesProjectService {
    * 
    * @return array
    */
-  public static function getProjectProfile() {
+  public static function getActiveProjects() {
     $sql = "
       SELECT
         t1.name,
@@ -117,5 +141,158 @@ class RawphenotypesProjectService {
     $project->allowRowCount = TRUE;
     
     return ($project->rowCount()) ? $project : [];
+  }
+
+  /**
+   * Get all locations in a project.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * 
+   * @return array
+   *   All locations identified in a project.
+   */
+  public static function getProjectLocations($project_id) {
+    $sql = "
+      SELECT location
+      FROM chado.rawpheno_rawdata_mview INNER JOIN pheno_plant_project USING(plant_id)
+      WHERE project_id = :project_id
+      GROUP BY location
+      ORDER BY location ASC
+    ";
+    $args = [':project_id' => $project_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount() > 0) ? $query->fetchAllKeyed(0, 0) : [];
+  }
+
+  /**
+   * Get all planting year in a project.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * @param $location
+   *   String, a filter to return only years in a project 
+   *   and location combination.
+   * 
+   * @return $array
+   *   All years identified in a project.
+   */
+  public static function getProjectYears($project_id, $location = null) {
+    $sql = "
+      SELECT SUBSTRING(planting_date, 1, 4) AS year
+      FROM chado.rawpheno_rawdata_mview
+      WHERE location = :location
+        AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+      ORDER BY year DESC
+    ";
+    $args = [':project_id' => $project_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount() > 0) ? $query->fetchAllKeyed(0, 0) : [];
+  }
+
+  /**
+   * Get column headers of a project.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * 
+   * @return array
+   *   An array of all column headers (cvterms and type) in a project.
+   */
+  public static function getProjectTerms($project_id) {
+    $exclude = [
+      'phenotype_plant_property_types',
+      'phenotype_measurement_units',
+      'phenotype_measurement_types',
+      'phenotype_r_compatible_version',
+      'phenotype_collection_method'
+    ];
+
+    $sql = "
+      SELECT project_cvterm_id, pheno_project_cvterm.type
+      FROM chado.cvterm RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
+      WHERE project_id = :project_id AND name NOT IN(:exclude[])
+      ORDER BY type, name ASC
+    ";
+    $args = [':project_id' => $project_id, ':exclude[]' => $exclude];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount() > 0) ? $query->fetchAll() : [];
+  }
+  
+  /**
+   * Get active user of a project.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * 
+   * @return array
+   *   Drupal user object - name, uid, mail, created, status and last login information.
+   */
+  public static function getProjectActiveUsers($project_id) {
+    $sql = "
+      SELECT project_user_id, uid FROM pheno_project_user
+      WHERE project_id = :project_id
+      ORDER BY uid DESC
+    ";
+    $args = [':project_id' => $project_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    $users = [];
+    $cols = ['uid', 'name', 'mail', 'created', 'status', 'login'];
+    if ($query->rowCount() > 0) {
+      $user_service = \Drupal::service('rawphenotypes.user_service');
+
+      foreach($query as $user) {
+        $user_profile = $user_service::getUser((int)$user->uid, $cols);
+        $users[ $user->project_user_id ] = $user_profile;
+      }
+    }
+
+    return $users;
+  }
+  
+  /**
+   * Get project environment data files.
+   * 
+   * @param $project_id
+   *   Integer, project id number.
+   * 
+   * @return array
+   *   Environment data and file information (filename, uri and file timestamp).
+   */
+  public static function getProjectEnvDataFiles($project_id) {
+    $sql = "
+      SELECT environment_data_id, location, year, sequence_no, filename, uri, created as timestamp
+      FROM pheno_environment_data INNER JOIN file_managed USING(fid)
+      WHERE project_id = :project_id
+      ORDER BY location, year, sequence_no ASC
+    ";
+    $args = [':project_id' => $project_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    return ($query->rowCount() > 0) ? $query->fetchAll() : [];
   }
 }

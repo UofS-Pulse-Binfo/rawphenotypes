@@ -325,9 +325,7 @@ function rawphenotypes_schema() {
 /**
  * Implements hook_install().
  */
-function rawphenotypes_install() {
-  ini_set('max_execution_time', 500);
-  
+function rawphenotypes_install() {  
   $term_service    = \Drupal::service('rawphenotypes.term_service');
   $mview_service   = \Drupal::service('rawphenotypes.mview_service');
   $notify_service  = \Drupal::service('rawphenotypes.notify_service');
