@@ -326,6 +326,7 @@ function rawphenotypes_schema() {
  * Implements hook_install().
  */
 function rawphenotypes_install() {  
+  // Add services.
   $term_service    = \Drupal::service('rawphenotypes.term_service');
   $mview_service   = \Drupal::service('rawphenotypes.mview_service');
   $notify_service  = \Drupal::service('rawphenotypes.notify_service');
@@ -350,32 +351,37 @@ function rawphenotypes_install() {
   $arr_cvid_cvname = [];
   // cv - cvterm mapping array.
   $arr_map_cv_cvterm = [];
+  // CV to hold terms used to create relationships.
+  // term - unit, term - method, term - R.
+  $rawphenotypes_cv = $cv['cv_phenotypes'];
 
   foreach($cv as $cv_i => $cv_name) {
     $cv_exists = $term_service::getTermByName($cv_name, 'cv');
     if ($cv_exists) continue;
     
-    // Insert CV.
+    // A constraint in relation cvtermprop requires that
+    // cvtermprop.type_id is a row in chado.cvterm.
+
+    // First cv (rawphenotypes_terms) will be created that will hold cvterm.
+    // Each cv will become a cvterm and stored in this initial cv.
+    // This will be used in creating relationships (type_id) in relations
+    // cvtermprop and cvterm_relationships.
     $cv_def = str_replace('_', ' ', ucfirst($cv_name));
     $tmp = $term_service::addTerm([$cv_name, $cv_def], 'cv');
-
-    if ($tmp) {
-      $arr_cvid_cvname[$cv_name] = $tmp->cv_id;
-
-      // A constraint in relation cvtermprop requires that
-      // cvtermprop.type_id is a row in chado.cvterm.
+    
+    if($tmp) { 
+      if ($cv_name == $rawphenotypes_cv) continue; // Dont add as cvterm.
       
-      // Insert CV name as CVTERM.
-      // In each cv, an identical name will be inserted into 
-      // cvterm under each cv and will be used when relating in cvtermprop.
       $cv_cvterm = [
         'id' => 'rawpheno_tripal:' . $cv_name,
         'name' => $cv_name,
         'definition' => $cv_def,
-        'cv_name' => $cv_name
+        'cv_name' => $rawphenotypes_cv
       ];
       
       $cvcvterm_id = $term_service::addTerm($cv_cvterm);
+      // Save the cvterm id based on the cv name for later when
+      // creating relationships.
       $arr_map_cv_cvterm[ $cv_name ] = $cvcvterm_id->cvterm_id;
     }
     else {
@@ -383,7 +389,7 @@ function rawphenotypes_install() {
       $notify_service::postTripalReportError($msg);
     }
   }
-  
+
   // # 2. INSERT UNITS.
   // Insert units and scale member used by scale.
   // NOTE: Scale memeber is link to the column header Lodging (scale 1-5) and not to scale unit.
@@ -409,7 +415,7 @@ function rawphenotypes_install() {
     $tmp = $term_service::addTerm($ins_unit);
 
     if ($tmp) {
-      $arr_cvtermid_unit[$unit] = $tmp->cvterm_id;
+      $arr_cvtermid_unit[ $unit ] = $tmp->cvterm_id;
     }
     else {
       $msg = 'Chado/Tripal failed to insert cvterm (trait unit).';
@@ -417,7 +423,7 @@ function rawphenotypes_install() {
     }
   }
 
-  // # 3. INSERT COLUMN HEADERS.
+  // # 3. INSERT COLUMN HEADERS/TRAITS.
   // Insert column headers.
   // When inserting column headers, generate the R Version, add collection method
   // and map it to a AGILE (only when this project is available).
@@ -459,7 +465,8 @@ function rawphenotypes_install() {
   // Array to hold header types.
   $trait_type = $default_service::getTraitTypes();
 
-  // Array to hold all column headers, plant property headers and essential headers.
+  
+ // Array to hold all column headers, plant property headers and essential headers.
   $arr_allheaders = $default_service::getTraits('expected');
   $arr_subsetheader = $default_service::getTraits('subset');
   $arr_plantpropheader = $default_service::getTraits('plantprop');
@@ -521,7 +528,7 @@ function rawphenotypes_install() {
         'object_id'  => $cvterm->cvterm_id
       ]);
     }
-
+    
     // R version. To be implemented to all column headers.
     $r_version = $term_service::makeTermRCompatible($header);
 
@@ -558,7 +565,7 @@ function rawphenotypes_install() {
       $term_service::saveTermToProject($cvterm->cvterm_id, $type, $project_ID); 
     }
   }
-
+  
   // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
   $lodging = $default_service::getDefaultValue('scales');
 
@@ -569,13 +576,11 @@ function rawphenotypes_install() {
   $term_service::setTermScaleValues($cvterm_lodging->cvterm_id, array_values($lodging)[0]);  
 
   // # 4. MATERIALIZED VIEW.
+  // @TODO: CURRENLTY NOT SUPPORTED IN T4.
   // Create materialized view used in phenotypes/rawdata.
   $mview_service::createMview();
 
   // #5. ADD DEFAULT SAMPLE SPREADSHEET
-  // Set default colour scheme and page titles.
-
-
   // Add data collection spreadsheet to public:// directory,
   // and link this file for download in instructions page.
   $destination = \Drupal::config('system.file')

@@ -210,21 +210,12 @@ class RawphenotypesProjectService {
    *   An array of all column headers (cvterms and type) in a project.
    */
   public static function getProjectTerms($project_id) {
-    $exclude = [
-      'phenotype_plant_property_types',
-      'phenotype_measurement_units',
-      'phenotype_measurement_types',
-      'phenotype_r_compatible_version',
-      'phenotype_collection_method'
-    ];
-
     $sql = "
       SELECT project_cvterm_id, pheno_project_cvterm.type
       FROM chado.cvterm RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
-      WHERE project_id = :project_id AND name NOT IN(:exclude[])
-      ORDER BY type, name ASC
+      WHERE project_id = :project_id ORDER BY type, name ASC
     ";
-    $args = [':project_id' => $project_id, ':exclude[]' => $exclude];
+    $args = [':project_id' => $project_id];
 
     $query = \Drupal::database()
       ->query($sql, $args);
@@ -263,7 +254,7 @@ class RawphenotypesProjectService {
 
       foreach($query as $user) {
         $user_profile = $user_service::getUser((int)$user->uid, $cols);
-        $users[ $user->project_user_id ] = $user_profile;
+        $users[ $user->project_user_id ] = (object) $user_profile;
       }
     }
 

@@ -378,13 +378,14 @@ class RawphenotypesTermService {
       SELECT value, type_id FROM chado.cvtermprop
       WHERE cvterm_id = :record_id
     ";
+    
+    $args = [':record_id' => $arr_properties['cvterm_id']];
     $h = \Drupal::database()
-      ->query($sql, $args)
-      ->fetchAll();
+      ->query($sql, $args);
     
     $rversion_prop = self::getTermByName('phenotype_r_compatible_version');
     $method_prop = self::getTermByName('phenotype_collection_method');
-    
+
     // From the query which will return both properties (method and r version),
     // Identify which is method from r version and tag accordingly using 
     // corresponding property id numbers.
@@ -404,10 +405,10 @@ class RawphenotypesTermService {
       // Count data associated to column header.
       $sql = "
         SELECT COUNT(type_id) AS data_count FROM pheno_measurements
-        WHERE type_id = :record_id 
+        WHERE type_id = :cvterm_id 
           AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
       ";
-      $args = [':record_id' => $term_id, ':project_id' => $arr_properties['in_project_id']];
+      $args = [':project_id' => $arr_properties['in_project_id'], ':cvterm_id' => $arr_properties['cvterm_id']];
 
       $h = \Drupal::database() 
         ->query($sql, $args)
@@ -419,7 +420,7 @@ class RawphenotypesTermService {
       $sql = "
         SELECT COUNT(project_id) AS project_count
         FROM pheno_project_cvterm 
-        WHERE project_id <> :project_id AND cvterm_id = :record_id
+        WHERE project_id <> :project_id AND cvterm_id = :cvterm_id
       ";
 
       $h = \Drupal::database() 

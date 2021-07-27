@@ -7,3 +7,12 @@ style-admin:
   css:
     theme:
       css/style-admin.css: {}
+
+# Sript use in administration/configuration pages.
+script-admin:
+  version: v1.x
+  js:
+    js/script-admin.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once

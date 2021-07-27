@@ -8,8 +8,9 @@ namespace Drupal\rawphenotypes\Form;
 
 use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Component\Render\FormattableMarkup;
+
 
 /**
  * Defines RawphenotypesManageAssetForm class.
@@ -162,9 +163,11 @@ class RawphenotypesManageAssetForm extends FormBase {
     $term_service    = \Drupal::service('rawphenotypes.term_service');
     $default_service = \Drupal::service('rawphenotypes.default_service');
     $project_service = \Drupal::service('rawphenotypes.project_service');
+    $user_service    = \Drupal::service('rawphenotypes.user_service');
     
     // Attach library.
     $form['#attached']['library'][] = 'rawphenotypes/style-admin';
+    $form['#attached']['library'][] = 'rawphenotypes/script-admin';
 
     $project = $project_service::getProject($project_id);
 
@@ -207,7 +210,7 @@ class RawphenotypesManageAssetForm extends FormBase {
 
       // Get the values and use it as both key and value.
       $t = array_values($a);
-      $trait_type = array_combine($t, array_map('strtoupper', $t));
+      $option_trait_type = array_combine($t, array_map('strtoupper', $t));
 
       // Determine if the header has data or is used in another project.
       if ($default['count_data'] > 0 OR $default['count_project'] > 0) {
@@ -348,8 +351,8 @@ class RawphenotypesManageAssetForm extends FormBase {
         '#type' => 'select',
         '#title' => $this->t('Type:'),
         '#description' => $this->t('Set the type to <span class="essential-trait">ESSENTIAL</span> to ensure this header must exists in the spreadsheet file'),
-        '#options' => $trait_type,
-        '#default_value' => isset($default['sel_trait_type']) ? $default['sel_trait_type'] : reset($trait_type),
+        '#options' => $option_trait_type,
+        '#default_value' => isset($default['sel_trait_type']) ? $default['sel_trait_type'] : reset($option_trait_type),
         '#disabled' => FALSE,
       ];
 
@@ -591,8 +594,8 @@ class RawphenotypesManageAssetForm extends FormBase {
           $definition_cell = '<p><strong>DEFINITION:</strong><br /> ' . @self::markEmpty($header_asset['definition']) .  '</p>' .
                              '<p><strong>COLLECTION METHOD:</strong><br />' . @self::markEmpty($header_asset['method']) . '</p>';
           
-          $header_cell = new FormattableMarkup($header_cell, []);
-          $definition_cell = new FormattableMarkup($definition_cell, []);
+          $header_cell = Markup::create($header_cell);
+          $definition_cell = Markup::create($definition_cell);
         }
 
         // Register a row.
@@ -610,10 +613,33 @@ class RawphenotypesManageAssetForm extends FormBase {
 
         $i++;
 
-
-
       }
     }
+
+    // Warn admin that project has no essential trait
+   if ($count_essential < 1) {
+      $form['message_no_essential'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          'message' => $this->t('Project has no Essential Column Header.'),
+          'type' => 'warning'
+        ]
+      ];
+    }
+
+    // Warn admin that project has no assigned user.
+    if (count($users) < 1) {
+      $form['message_no_user'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          'message' => $this->t('Project has no active users.'),
+          'type' => 'warning'
+        ]
+      ];
+    }
+
 
     // Tabs to show either the project column headers table or project active users table.
     // Add 1 to account for Name column header.
@@ -630,6 +656,7 @@ class RawphenotypesManageAssetForm extends FormBase {
       '
     ];
 
+    // TABLE HEADERS:
     array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Remove'));
     $empty_table_title = $this->t('No column headers in this project');
     $form['tbl_project_headers'] = [
@@ -642,8 +669,133 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#suffix' => '</div>',
       '#attributes' => ['id' => 'tbl-project-headers']
     ];
+    
+    // TABLE USERS:
+    // Construct table that lists all active users to a project along with files
+    // associated to a user in a given project.
+    // Options to delete items give admin record management functionality.
+    // NOTE: Delete option will not physically delete a record in users table.
+    //       When a user is deleted, it is removed from the project only.
 
+    $arr_rows = $arr_headers = [];
+    if (count($users) > 0) {
+      $i = 0;
+      
+      foreach($users as $p_uid => $u) {
+        if (empty($u->name)) continue;
 
+        // Delete link.
+        $link = Url::fromRoute('rawphenotypes.manage_project', ['asset_id' => $p_uid, 'asset_type' => 'user', 'action' => 'delete']);
+        $del_cell = \Drupal::l($this->t('Remove'), $link);
+
+        // Create a row of user with other relevant user info.
+        $cell_user_name = Markup::create('<div class="tag-name">' . $u->name . '</div>');
+        $cell_last_login = Markup::create('<em>' . format_date($u->login) . '</em>'); 
+
+        $arr_rows[] = [
+          ($i+1),            // Row number.
+          $cell_user_name,   // Name of user.
+          $u->mail,          // Email address.
+          $cell_last_login,  // Date of last login.
+          $del_cell          // Link to remove user from a project.
+        ];
+        
+        $result_F = $user_service::getUserFiles($p_uid);
+        $my_files_count = count($result_F);
+
+        $arr_header_F = ['File', 'Version', 'Archive', 'Notes', 'Validation Result'];
+        $arr_rows_F = [];
+
+        if ($my_files_count > 0) {
+          foreach($result_F as $f) {
+            // File.
+            $link = Url::fromUri($f->uri);
+            $cell_file = \Drupal::l($f->filename . ' (' . format_size($f->filesize) . ')', $link, ['attributes' => ['target' => '_blank']]);
+            $cell_file .= Markup::create('<br /><small>Uploaded: ' . \Drupal::service('date.formatter')->format($f->timestamp) . '</small>');
+
+            // Is archive?
+            $cell_is_archive = ($f->archive == 'y') ? 'Yes' : 'No';
+
+            // Notes.
+            $cell_notes = (empty($f->notes))
+              ? '&nbsp;'
+              : Markup::create('<div class="container-cell" title="Click to expand or collapse" id="vn-file-' . $f->file_id . '">' . $f->notes . '</div>');
+
+            $vr_tmp = str_replace(['#item: (passed)', '#item: (failed)'],
+              ['<p class="pass"> (PASSED)', '<p class="fail"> * (FAILED)'],
+              $f->validation_result) . '</p>';
+            
+            $vr_tmp = Markup::create($vr_tmp);
+
+            $alert = '';
+            if (($n = substr_count($vr_tmp, 'FAILED')) > 0) {
+              $alert = Markup::create('<span class="alert-error" title="File has failed validation notices...">' . $n . ' Validation errors</span>');
+            }
+
+            $cell_validation = $alert . '<div class="container-cell" id="vr-file-' . $f->file_id . '" title="Click to expand or collapse">'. $vr_tmp .'</div>';
+            $cell_validation = Markup::create($cell_validation);
+
+            // Create row showing backed up file with file description.
+            $arr_rows_F[] = [
+              $cell_file,        // Filename.
+              '#' . $f->version, // File version.
+              $cell_is_archive,  // Indicate if file is archived or not.
+              $cell_notes,       // Notes, comments to file.
+              $cell_validation   // Validation result performed to the file.
+            ];
+          }
+        }
+        
+        $file_table = [
+          '#type' => 'table',
+          '#title' => 'Files',
+          '#header' => $arr_header_F,
+          '#rows' => $arr_rows_F,
+          '#empty' => $this->t('0 Files'),
+          '#attributes' => ['id' => 'tbl-my-files']
+        ];
+
+        $link_show_folder = ($my_files_count > 0)
+        ? Markup::create('<a href="#" id="folder-' . $p_uid . '" class="link-show-folder">[Show]</a>')
+        : '';
+
+        // Account status.
+        $acc_status = ($u->status == 1) ? 'Active' : 'Suspended';
+
+        $markup = sprintf('
+          <span><strong>[ACCOUNT]</strong> Status: %s | Created: %s - %d Files uploaded %s</span>
+          <div id="show-folder-'. $p_uid .'" class="div-my-folder">
+            <div class="container-my-folder">%s</div>
+          </div>', $acc_status, \Drupal::service('date.formatter')->format($u->created), $my_files_count, $link_show_folder, $file_table);
+     
+        // Create markup (container for table of files) to show user backed up files.
+        $arr_rows[] = [
+          'data' => [
+            [
+              'data' => Markup::create($markup),
+              'colspan' => 5,
+              'class' => 'row-user-my-folder',
+            ]
+          ]
+        ];
+        
+        $i++;
+      }
+    }
+    
+    // Table headers.
+    array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Last Login'), t('Remove'));
+    $empty_table_title = $this->t('No users in this project');
+    $form['tbl_project_users'] = [
+      '#type' => 'table',
+      '#title' => $this->t('User'),
+      '#header' => $arr_headers,
+      '#rows' => $arr_rows,
+      '#empty' => $empty_table_title,
+      '#prefix' => '<div id="container-prj-usr" class="container-table-data tab-data">',
+      '#suffix' => '</div>',
+      '#attributes' => ['id' => 'tbl-project-users']
+    ];
 
 
     return $form;

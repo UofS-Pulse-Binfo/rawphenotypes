@@ -71,11 +71,14 @@ class RawphenotypesDefaultValueService {
       case 'vocabularies':
         // Controlled vocabularies.
         $default = [
+          // Use this cv to create relationships
+          // ie. term-unit, unit-method.
+          'cv_phenotypes' => 'rawphenotypes_terms',
           'cv_prop' => 'phenotype_plant_property_types',
           'cv_unit' => 'phenotype_measurement_units',
           'cv_type' => 'phenotype_measurement_types',
           'cv_rver' => 'phenotype_r_compatible_version',
-          'cv_desc' => 'phenotype_collection_method',
+          'cv_desc' => 'phenotype_collection_method'
         ];
         break;
 
@@ -459,8 +462,8 @@ $define => ''
 ];
 
 $definition['Comments'] = [
-$method => '',
-$define => ''
+$method => 'Feel free to mention any remarks or observations.',
+$define => 'Comments'
 ];
 
 $definition['R7 Traits: Canopy Width (cm)'] = [
