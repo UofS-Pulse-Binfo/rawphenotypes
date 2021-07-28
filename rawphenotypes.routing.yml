@@ -35,7 +35,7 @@ rawphenotypes.manage_project:
   requirements:
     _permission: 'administer tripal'
     asset_id: '[0-9]+'
-    asset_type: 'project|header|user'
+    asset_type: 'project|header|user|envdata'
     action: 'manage|edit|delete'
 
 

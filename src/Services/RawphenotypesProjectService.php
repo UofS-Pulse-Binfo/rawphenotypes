@@ -272,10 +272,10 @@ class RawphenotypesProjectService {
    */
   public static function getProjectEnvDataFiles($project_id) {
     $sql = "
-      SELECT environment_data_id, location, year, sequence_no, filename, uri, created as timestamp
+      SELECT environment_data_id, location, year, sequence_no, filename, uri, created, filesize
       FROM pheno_environment_data INNER JOIN file_managed USING(fid)
       WHERE project_id = :project_id
-      ORDER BY location, year, sequence_no ASC
+      ORDER BY location, year, sequence_no DESC
     ";
     $args = [':project_id' => $project_id];
 

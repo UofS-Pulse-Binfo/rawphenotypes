@@ -135,6 +135,10 @@ div.form-item-txt-trait-rfriendly input[type=text] {
   width: 370px;
 }
 
+div.form-item-txt-trait-rfriendly {
+  padding-top: 10px;
+}
+
 /* All submit buttons */
 input[type=submit] {
   margin-top: 20px;
@@ -176,7 +180,7 @@ a.link-view {
 
 /* R version icon */
 p.r-ver {
-  background: url('../img/r.gif') no-repeat;
+  background: url('../images/r.gif') no-repeat;
   background-size: 16px 14px;
   font-size: 0.9em;
   padding: 0 20px;

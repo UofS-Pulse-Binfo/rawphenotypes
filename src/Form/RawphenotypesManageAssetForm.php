@@ -16,6 +16,25 @@ use Drupal\Core\Form\FormStateInterface;
  * Defines RawphenotypesManageAssetForm class.
  */
 class RawphenotypesManageAssetForm extends FormBase {
+  // All default values for trait types.
+  private $trait_types;
+  // All default values for trait reps.
+  private $trait_reps;
+  // All units.
+  private $trait_units;
+
+  /**
+   * Set default values ie. traits types and trait reps etc.
+   */
+  public function __construct() {
+    $term_service    = \Drupal::service('rawphenotypes.term_service');
+    $default_service = \Drupal::service('rawphenotypes.default_service');
+      
+    $this->trait_types = $default_service::getTraitTypes();
+    $this->trait_reps  = $default_service::getTraitReps();
+    $this->trait_units = $term_service::getTermsByType('phenotype_measurement_units');
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -31,10 +50,6 @@ class RawphenotypesManageAssetForm extends FormBase {
     // Attach library.
     $form['#attached']['library'][] = 'rawphenotypes/style-admin';
     
-    // Load services.
-    $project_service = \Drupal::service('rawphenotypes.project_service');
-    $default_service = \Drupal::service('rawphenotypes.default_service');
-
     // Define valid action/command/operation per asset type.
     $arr_valid = [];
     $arr_valid['project']['command'] = ['manage'];
@@ -70,9 +85,8 @@ class RawphenotypesManageAssetForm extends FormBase {
         // exists in the database before peforming any command.
         $sql = sprintf("SELECT FROM {%s} WHERE %s = :asset_id LIMIT 1",
           $arr_valid[ $asset_type ]['table'], $arr_valid[ $asset_type ]['id']);
-
+        
         $args = [':asset_id' => (int)$asset_id];
-    
         $prj_asset = \Drupal::database()
           ->query($sql, $args);
 
@@ -88,7 +102,7 @@ class RawphenotypesManageAssetForm extends FormBase {
               $form = $this->projectAssetForm($asset_id);
             }
             elseif ($asset_type == 'header') {
-             
+
             }
             else if($asset_type == 'user') {
               
@@ -136,11 +150,104 @@ class RawphenotypesManageAssetForm extends FormBase {
     return $form;
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   /**
    * {@inheritdoc}
    * Save configuration.
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    $term_service = \Drupal::service('rawphenotypes.term_service');
+
+    // Get the submit button that triggered the submit action. Since this is a general hook_validate()
+    // of the entire form, limit the proces only to submit button in from add column header and save column header.
+    // When the submit action is determined, perform basic check of ensuring that user is not using cvterm name
+    // that is in the database already.
+    $btn_submit = $form_state->getTriggeringElement();
+    $action = $btn_submit['#name'];
+
+    // Submit buttons has property #name which will be used to determine which among the submit buttons
+    // was click and load corresponding action.
+    if ($action == 'add-column-header' || $action == 'save') {
+      $fld_name_trait_name = 'txt_trait_name';
+      $fld_value_trait_name = trim($form_state->getValue($fld_name_trait_name));
+
+      if (strpbrk($fld_value_trait_name, '()')) {
+        // Test if user added parenthesis in the name.
+        $form_state->setErrorByName($fld_name_trait_name, 
+          $this->t('Characters "(" and/or ")" found in column header name. Please remove these characters and try again.'));
+      }
+      else {
+        $asset_id = $form_state->getValue('txt_id');
+
+        $trait_name = $term_service::constructTerm(
+          [
+            'name' => $fld_value_trait_name,
+            'rep'  => trim($form_state->getValue('sel_trait_rep')),
+            'unit' => trim($form_state->getValue('sel_trait_unit'))
+          ]
+        );
+
+        if ($action == 'add-column-header') {
+          // Add:
+          // Before adding the cvterm, ensure it is not present in cvterm table.
+          $fc = ['name' => $trait_name, 'cv_id' => ['name' => 'phenotype_measurement_types']];
+          $found_cvterm = $term_service::getTerm($fc);
+
+          if (isset($found_cvterm->cvterm_id) AND $found_cvterm->cvterm_id > 0) {
+            $form_state->setErrorByName($fld_name_trait_name, 
+              $this->t('The column header name exists in the database. Please use a different name.'));
+            
+            $form_state->setErrorByName('sel_trait_rep');
+            $form_state->setErrorByName('sel_trait_unit');
+          }
+        }
+        else {
+          // Edit: 
+          // When renaming a field in edit header, ensure that the new or modified name does not exist in cvterm table.
+          $sql = "
+            SELECT cvterm_id FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
+            WHERE t1.name = 'phenotype_measurement_types' AND t2.name = :name AND t2.cvterm_id <> :this_cvterm_id
+          ";
+          $args = [':name' => $trait_name, ':this_cvterm_id' => $asset_id];
+          $found = \Drupal::database()
+            ->query($sql, $args);
+          
+          $found->allowRowCount = TRUE;
+
+          if ($found->rowCount() > 0) {
+            $form_state->setErrorByName($fld_name_trait_name, 
+              $this->t('The column header name exists in the database. Please use a different name.'));
+          
+            $form_state->setErrorByName('sel_trait_rep');
+            $form_state->setErrorByName('sel_trait_unit');
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -148,9 +255,121 @@ class RawphenotypesManageAssetForm extends FormBase {
    * Save configuration.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $term_service = \Drupal::service('rawphenotypes.term_service');
+
+    // Get the submit button that triggered the submit action. Since this is a general hook_submit()
+    // of the entire form, limit the proces only to submit button in from add column header and save column header.
+    $btn_submit = $form_state->getTriggeringElement();
+    $action = $btn_submit['#name'];
+    
+    if ($action == 'add-column-header' || $action == 'Save') {
+      // Holds the record id number.
+      $asset_id = $form_state->getValue('txt_id');
+
+      // Get field values.
+      $unit = $form_state->getValue('sel_trait_unit');
+      
+      // Construct the trait name based on given name, rep and unit.
+      $trait_name = $term_service::constructTerm(
+        [
+          'name' => trim($form_state->getValue('txt_trait_name')),
+          'rep'  => trim($form_state->getValue('sel_trait_rep')),
+          'unit' => trim($form_state->getValue('sel_trait_unit'))
+        ]
+      );
+      
+      // R Friendly version of the Header name.
+      // When supplied, use it, otherwise transform the name to R friendly.
+      $rver = empty($form_state->getValue('txt_trait_rfriendly'))
+        ? $term_service::makeTermRCompatible($trait_name)
+        : $form_state->getValue('txt_trait_rfriendly');
+    
+      $trait_def  = trim($form_state->getValue('txt_trait_def'));
+      $col_method = trim($form_state->getValue('txt_trait_method'));
+      $trait_type = trim($form_state->getValue('sel_trait_type'));  
+
+      $cv_type = $term_service::getTerm(['name' => 'phenotype_measurement_types'],    'cv');
+      $cv_rver = $term_service::getTerm(['name' => 'phenotype_r_compatible_version']);
+      $cv_desc = $term_service::getTerm(['name' => 'phenotype_collection_method']);
+      $cv_unit = $term_service::getTerm(['name' => 'phenotype_measurement_units']);
+
+      // Get the cvterm id of the unit selected.
+      $cvterm_unit = $term_service::getTerm(['name' => $unit, 'cv_id' => $cv_unit->cv_id]);
+
+      if ($action == 'add-column-header') {
+        // Add:
+        // Uses project id.
+        // Insert cvterm.
+        $cvterm = $term_service::addTerm(
+          [
+            'id' => 'rawpheno_tripal:' . $trait_name,
+            'name' => $trait_name,
+            'cv_name' => 'phenotype_measurement_types',
+            'definition' => $trait_def
+          ]
+        );
+
+        // Add a cvterm prop to store the R friendly version.
+        $term_service::saveTermProperty(
+          [
+            'cvterm_id' => $cvterm->cvterm_id,
+            'type_id' => $cv_rver->cvterm_id,
+            'value' => $rver,
+            'rank' => 0
+          ]
+        );
+
+        // Add a cvter prop to store the collection method.
+        $term_service::saveTermProperty(
+          [
+            'cvterm_id' => $cvterm->cvterm_id,
+            'type_id' => $cv_desc->cvterm_id,
+            'value' => $col_method,
+            'rank' => 0
+          ]
+        );
+
+        // Relate the cvterm to unit.
+        $term_service::saveTermRelationship(
+          [
+            'type_id' => $cv_unit->cvterm_id,
+            'object_id' => $cvterm->cvterm_id,
+            'subject_id' => $cvterm_unit->cvterm_id,
+          ]
+        ); 
+        
+        // Add entry to project cvterm table - add trait to project.
+        $term_service::saveTermToProject($cvterm->cvterm_id, $trait_type, $asset_id);
+      }
+      else {
+        // Update:
+
+      }
+    }
   }
   
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   // FORMS:
 
 
@@ -181,7 +400,7 @@ class RawphenotypesManageAssetForm extends FormBase {
     // This form will allow admin to add new column header to a project.
 
     // Get trait types array.
-    $trait_type = $default_service::getTraitTypes();
+    $trait_type = $this->trait_types;
 
     // Fieldset add column header form.
     $form['fieldset_trait'] = [
@@ -190,179 +409,18 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#open' => FALSE,
     ];
     
+      // Call function to construct add column headers.
+      // This form render array is re-used when updating a column header.
       $default = [
         'count_project'    => 0,
         'count_data'       => 0,
         'txt_id'           => $project_id,
         'btn_trait_submit' => 'Add column header'
       ];
+
+      $new_header_elements = $this->newHeaderForm($default);
+      $form['fieldset_trait'][] = $new_header_elements;
       
-      $a = $trait_type;
-      // In this trait types array, remove the plant property option.
-      // Allow only to add essential, optional, contributed or subset column header types.
-      unset($a['type4']);
-
-      // Type is no user contributed. Do not suggest contributed so user will have not option to add contributed
-      // trait using admin since contributed traits are traits derived from submitted spreadsheet in stage 01 : Describe New Trait.
-      if (!isset($default['sel_trait_type']) || $default['sel_trait_type'] != $a['type5']) {
-        unset($a['type5']);
-      }
-
-      // Get the values and use it as both key and value.
-      $t = array_values($a);
-      $option_trait_type = array_combine($t, array_map('strtoupper', $t));
-
-      // Determine if the header has data or is used in another project.
-      if ($default['count_data'] > 0 OR $default['count_project'] > 0) {
-        $form['fieldset_trait']['warning'] = [
-          '#type' => 'inline_template',
-          '#theme' => 'theme-rawphenotypes-message',
-          '#data' => [
-            'message' => $this->t('This column header has data associated to it or is used in another project.'),
-            'type' => 'warning'
-          ]
-        ];
-
-        $disabled = TRUE;
-      }
-      else {
-        $disabled = FALSE;
-      }
-
-      // Project id the trait is in or the trait id number.
-      $form['fieldset_trait']['txt_id'] = [
-        '#type' => 'hidden',
-        '#value' => $default['txt_id'],
-      ];
-
-      // Exclusive to modifying trait, include the project id the trait is registered.
-      if (isset($default['prj_id']) && $default['prj_id'] > 0) {
-        $form['fieldset_trait']['prj_id'] = [
-          '#type' => 'hidden',
-          '#value' => $default['prj_id'],
-        ];
-      }
-
-      // Trait name field.
-      $form['fieldset_trait']['txt_trait_name'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Name:'),
-        '#description' => $this->t('A Concise human-readable name or label for the column header'),
-        '#default_value' => isset($default['txt_trait_name']) ? $default['txt_trait_name'] : '',
-        '#disabled' => $disabled,
-        '#required' => TRUE,
-        '#theme_wrappers' => []
-      ];
-
-      // Trait rep field. Default to none.
-      // Note: Trait Rep to call 1st, 2nd in unit is not final.
-      // Note: The list might change in the future.
-      $reps = $default_service::getTraitReps();
-      $reps_val = [];
-      foreach($reps as $r) {
-        $reps_val[] = $r . ';';
-      }
-      $trait_rep = ['' => 'None'] + array_combine($reps_val, $reps);
-      
-      $form['fieldset_trait']['sel_trait_rep'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Trait Rep/Stages:'),
-        '#options' => $trait_rep,
-        '#default_value' => isset($default['sel_trait_rep']) ? $default['sel_trait_rep'] : reset($trait_rep),
-        '#disabled' => $disabled,
-        '#theme_wrappers' => []
-      ];
-
-      // Trait unit field. Default to none.
-      // Query available units in chado cvterm of type phenotype_measurement_unit.
-      $unit = $term_service::getTermsByType('phenotype_measurement_units');
-
-      // Default to text unit.
-      $unit_keys = array_keys($unit);
-      $textunit = array_search('text', $unit_keys);
-      $textunit_id = $unit_keys[$textunit];
-
-      $form['fieldset_trait']['sel_trait_unit'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Unit:'),
-        '#options' => $unit,
-        '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : $textunit_id,
-        '#disabled' => $disabled,
-        '#theme_wrappers' => []
-      ];
-
-      // R Friendly field.
-      $r_version = isset($default['txt_trait_rfriendly']) ? ' (' . $default['txt_trait_rfriendly'] . ')' : '';
-
-      $form['fieldset_trait']['txt_trait_rfriendly'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('R Friendly:@r_version', ['@r_version' => $r_version]),
-        '#description' => $this->t('Leave this field blank to let system generate R Friendly version'),
-        '#default_value' => '',
-        '#disabled' => FALSE,
-      ];
-
-      if (isset($default['txt_trait_rfriendly']) && !empty($default['txt_trait_rfriendly'])) {
-        // When editing header, add this hidden field containing the original R version value prior to saving.
-        // When user decides to provide an alternative r version then save it, otherwise save the value of this
-        // hidden field.
-        $form['fieldset_trait']['txt_trait_rfriendly_val'] = [
-          '#type' => 'hidden',
-          '#default_value' => $default['txt_trait_rfriendly'],
-        ];
-      }
-
-      // Trait definition field.
-      $form['fieldset_trait']['txt_trait_def'] = [
-        '#type' => 'textarea',
-        '#title' => $this->t('Definition:'),
-        '#description' => $this->t('A human-readable text definition'),
-        '#required' => TRUE,
-        '#default_value' => isset($default['txt_trait_definition']) ? $default['txt_trait_definition'] : '',
-        '#disabled' => $disabled,
-      ];
-
-      // Describe method of collection field.
-      $form['fieldset_trait']['txt_trait_method'] = [
-        '#type' => 'textarea',
-        '#title' => $this->t('Describe Method:'),
-        '#description' => $this->t('Describe the method used to collect this data if you used a scale, be specific'),
-        '#required' => TRUE,
-        '#default_value' => isset($default['txt_trait_method']) ? $default['txt_trait_method'] : '',
-        '#disabled' => $disabled,
-      ];
-
-      // Tell user about contributed trait when detected. Such trait is not included when generating data collection
-      // spreadsheet file - to incorporate it, please set the trait type to either essential or optional.
-      if (isset($a['type5']) && isset($default['sel_trait_type']) && $default['sel_trait_type'] == $a['type5']) {
-        // The header is contributed. Indicate to user as such.
-        $form['fieldset_trait']['warning_contributed'] = [
-          '#type' => 'inline_template',
-          '#theme' => 'theme-rawphenotypes-message',
-          '#data' => [
-            '#message' => $this->t('This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Project. To include this trait, set the trait type to Essential or Optional.'),
-            '#type' => 'warning'
-          ]
-        ];
-      }
-
-      // Trait is essential field. Default to unchecked.
-      $form['fieldset_trait']['sel_trait_type'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Type:'),
-        '#description' => $this->t('Set the type to <span class="essential-trait">ESSENTIAL</span> to ensure this header must exists in the spreadsheet file'),
-        '#options' => $option_trait_type,
-        '#default_value' => isset($default['sel_trait_type']) ? $default['sel_trait_type'] : reset($option_trait_type),
-        '#disabled' => FALSE,
-      ];
-
-      // Save trait button.
-      $form['fieldset_trait']['btn_trait_subtmit'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('@save_or_add', ['@save_or_add' => $default['btn_trait_submit']]),
-        '#suffix' => '<span>&nbsp;* means field is required</span>',
-      ];
-
     // FORM
     // Construct add/user existing column headers form.
     // This form will allow admin to add multiple column headers that are predefined in this module.
@@ -373,71 +431,11 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#title' => $this->t('Add existing column headers'),
       '#open' => FALSE,
     ];
+
+      $existing_header_elements = $this->existingHeaderForm();
+      $form['fieldset_existing_trait'][] = $existing_header_elements;
     
-      // Table rows.
-      $arr_tblchkbox_rows = [];
-      $headers = $term_service::getTermsNotInProject($project_id);
-
-      if (count($headers) > 0) {
-        foreach($headers as $h) {
-          $arr_tblchkbox_rows[$h->cvterm_id] =
-            [
-              'name' => $h->name,
-              // Add select box.
-              'traittype' =>
-                ['data' =>
-                  [
-                    '#type' => 'checkbox',
-                    '#title' => 'Yes',
-                    '#options' => [0, 1],
-                    '#default_value' => 0,
-                    '#name' => 'traittype-' . $h->cvterm_id
-                  ]
-                ]                                        
-            ];
-        }
-      }
-
-      // Table headers.
-      $arr_tblchkbox_headers = ['traittype' => $this->t('Is Essential?'), 'name' => $this->t('Name')];
-
-      // Checkboxes and table.
-      $form['fieldset_existing_trait']['tbl_existing_headers'] = [
-        '#type' => 'tableselect',
-        '#header' => $arr_tblchkbox_headers,
-        '#options' => $arr_tblchkbox_rows,
-        '#js_select' => FALSE,
-        '#prefix' => '<p>' .
-          $this->t('The table below lists all column headers available in this module.
-          Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
-          <div class="container-table-data table-data">',
-        '#suffix' => '</div><p>' .
-          $this->t('Check <span class="essential-trait">IS ESSENTIAL?</span> to ensure the header must exists in the spreadsheet file')
-          . '</p>',
-        '#empty' => t('No column headers available'),
-        '#attributes' => [
-          'id' => 'tbl-existing-headers',
-          'class' => [
-            'tableheader-processed'
-          ],
-        ],
-        '#theme_wrappers' => []
-      ];
-
-      // Add submit button only there is any options available.
-      if (count($arr_tblchkbox_rows) > 0) {
-        $form['fieldset_existing_trait']['add_selected_trait'] = [
-          '#type' => 'submit',
-          '#value' => $this->t('Add selected headers'),
-          '#validate' => ['rawpheno_admin_validate_add_existing'],
-          '#submit' => ['rawpheno_admin_submit_add_existing'],
-          '#limit_validation_errors' => [
-            ['tbl_existing_headers'],
-            ['txt_id']
-          ],
-        ];
-      }
-    
+      
     //FORM
     // Construct assign user to a project form.
     // This form will allow admin to assign an active user to a project. User will then be restricted
@@ -449,27 +447,10 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#title' => $this->t('Add users'),
       '#open' => FALSE,
     ];  
-
-      // Add seach field to filter the list of name.
-      $form['fieldset_users']['txt_autocomplete_user'] = [
-        '#title' => $this->t('Name :'),
-        '#type' => 'textfield',
-        '#maxlength' => 50,
-        '#size' => 130,
-        '#autocomplete_route_name' => 'rawphenotypes.autocomplete.user',
-        '#description' => $this->t('Type the name or username of the user')
-      ];
-
-      $form['fieldset_users']['add_selected_user'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Add user'),
-        '#validate' => ['rawpheno_admin_validate_add_user'],
-        '#submit' => ['rawpheno_admin_submit_add_user'],
-        '#limit_validation_errors' => [
-          ['txt_autocomplete_user'],
-          ['txt_id']
-        ],
-      ];
+      
+      $user_elements = $this->userForm();
+      $form['fieldset_users'][] = $user_elements;
+      
 
     // FORM  
     // Construct form to manage Environment data.
@@ -479,38 +460,20 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#open' => FALSE,
     ];
 
-      // Environement Data File Upload.
-      $inline_wraper = [
-        '#prefix' => '<div class="envdata-field-wrapper">',
-        '#suffix' => '</div>',
-      ];
+      $env_elements = $this->environmentDataForm();
+      $form['fieldset_envdata'][] = $env_elements;
 
-      // Add seach field to filter the list of name.
-      $form['fieldset_envdata']['file'] = [
-        '#title' => $this->t('File :'),
-        '#type' => 'file',
-      ];
       
-      //$location_options = $project_service::getProjectLocations($project_id);
 
-      $form['fieldset_envdata']['select_location'] = [
-        '#title' => $this->t('Location :'),
-        '#type' => 'select',
-        //'#options' => $location_options,
-        '#empty_option' => $this->t('- Select -'),
-      ];
-    
-      $form['fieldset_envdata']['select_year'] = [
-        '#title' => $this->t('Year :'),
-        '#type' => 'select',
-        #'#options' => $year_options,
-        '#empty_option' => $this->t('- Select -'),
-      ];
-      
-      $form['fieldset_envdata']['upload_env_file'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Upload file')
-      ];
+
+
+
+
+
+
+
+
+
 
 
     // DISPLAY SUMMARY OR PROJECT ASSETS.
@@ -573,7 +536,8 @@ class RawphenotypesManageAssetForm extends FormBase {
         if ($header_asset['type'] == $trait_type['type4'] || $header_asset['name'] == 'Planting Date (date)') {
           // Add Name column header to the row array.
           if ($has_name == 0 AND $header_asset['name'] != 'Planting Date (date)') {
-            array_push($arr_rows, array((count($arr_rows) + 1), '<h4>Name</h4>', 'Name', 'PLANTPROPERTY', '-', '-'));
+            $markup_name = Markup::create('<h4>Name</h4>');
+            array_push($arr_rows, array((count($arr_rows) + 1), $markup_name, 'Name', 'PLANTPROPERTY', '-', '-'));
             $has_name += 1;
             $i++;
           }
@@ -594,21 +558,21 @@ class RawphenotypesManageAssetForm extends FormBase {
           $definition_cell = '<p><strong>DEFINITION:</strong><br /> ' . @self::markEmpty($header_asset['definition']) .  '</p>' .
                              '<p><strong>COLLECTION METHOD:</strong><br />' . @self::markEmpty($header_asset['method']) . '</p>';
           
-          $header_cell = Markup::create($header_cell);
-          $definition_cell = Markup::create($definition_cell);
+          $header_cell = $header_cell;
+          $definition_cell = $definition_cell;
         }
 
         // Register a row.
         $arr_rows[] = [
-          ($i+1),           // Row counter.
-          $header_cell,     // Trait/header name.
-          $definition_cell, // Trait/header definition.
+          ($i+1),                            // Row counter.
+          Markup::create($header_cell),      // Trait/header name.
+          Markup::create($definition_cell),  // Trait/header definition.
           [
             'data' => strtoupper($header_asset['type']),
             'class' => [$class]
-          ],                // Add class to cell to highlight text when trait is essential trait.
-          $edit_cell,       // A link to edit a trait.
-          $del_cell         // A link to delete a trait.
+          ],                                 // Add class to cell to highlight text when trait is essential trait.
+          Markup::create($edit_cell),        // A link to edit a trait.
+          Markup::create($del_cell)          // A link to delete a trait.
         ];
 
         $i++;
@@ -648,7 +612,7 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#template' => '
         <div id="nav-tabs">
           <ul>
-            <li class="active-tab">' . count($headers) . ' Column Headers</li>
+            <li class="active-tab">' . ((int)count($headers) + 1) . ' Column Headers</li>
             <li>' . count($users) . ' Active Users</li>
             <li>' . count($envdata) . ' Environment Data File</li>
           </ul>
@@ -797,6 +761,36 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#attributes' => ['id' => 'tbl-project-users']
     ];
 
+    // TABLE ENVIRONMENT DATA:
+    $arr_rows = $arr_headers = [];
+
+    if (count($envdata) > 0) {
+      array_push($arr_headers, '-', t('File'), t('Location'), t('Year'), t('Sequence No.'), t('Delete'));
+
+      foreach($envdata as $i => $env) {
+        $link = Url::fromUri($env->uri);
+        $cell_file = \Drupal::l($env->filename . ' (' . format_size($env->filesize) . ')', $link, ['attributes' => ['target' => '_blank']]);
+        
+        $cell_file .= Markup::create('<br /><small>Uploaded: ' . \Drupal::service('date.formatter')->format($env->timestamp) . '</small>');
+
+        $link = Url::fromRoute('rawphenotypes.manage_project', ['asset_id' => $env->environment_data_id, 'asset_type' => 'envdata', 'action' => 'delete']);
+        $cell_del = \Drupal::l($this->t('Delete'), $link);
+
+        $arr_rows[] = array($i+1, $cell_file, $env->location, $env->year, '#' . $env->sequence_no, $cell_del);
+      }
+    }
+
+    $empty_table_title = $this->t('No environment data in this project.');
+    $form['tbl_project_envdata'] = [
+      '#type' => 'table',
+      '#title' => $this->t('Environment Data'),
+      '#header' => $arr_headers,
+      '#rows' => $arr_rows,
+      '#empty' => $empty_table_title,
+      '#prefix' => '<div id="container-prj-env" class="container-table-data tab-data">',
+      '#suffix' => '</div>',
+      '#attributes' => ['id' => 'tbl-project-envdata']
+    ];
 
     return $form;
   }
@@ -816,22 +810,312 @@ class RawphenotypesManageAssetForm extends FormBase {
   /**
    * Manage header asset form.
    */
-  public function headerForm() {
+  public function newHeaderForm($default) {
+    $a = $this->trait_types;
 
+    // In this trait types array, remove the plant property option.
+    // Allow only to add essential, optional, contributed or subset column header types.
+    unset($a['type4']);
+
+    // Type is no user contributed. Do not suggest contributed so user will have not option to add contributed
+    // trait using admin since contributed traits are traits derived from submitted spreadsheet in stage 01 : Describe New Trait.
+    if (!isset($default['sel_trait_type']) || $default['sel_trait_type'] != $a['type5']) {
+      unset($a['type5']);
+    }
+
+    // Get the values and use it as both key and value.
+    $t = array_values($a);
+    $option_trait_type = array_combine($t, array_map('strtoupper', $t));
+
+    // Determine if the header has data or is used in another project.
+    if ($default['count_data'] > 0 OR $default['count_project'] > 0) {
+      $form['fieldset_trait']['warning'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          'message' => $this->t('This column header has data associated to it or is used in another project.'),
+          'type' => 'warning'
+        ]
+      ];
+
+      $disabled = TRUE;
+    }
+    else {
+      $disabled = FALSE;
+    }
+
+    // Project id the trait is in or the trait id number.
+    $form['fieldset_trait']['txt_id'] = [
+      '#type' => 'hidden',
+      '#value' => $default['txt_id'],
+    ];
+
+    // Exclusive to modifying trait, include the project id the trait is registered.
+    if (isset($default['prj_id']) && $default['prj_id'] > 0) {
+      $form['fieldset_trait']['prj_id'] = [
+        '#type' => 'hidden',
+        '#value' => $default['prj_id'],
+      ];
+    }
+
+    // Trait name field.
+    $form['fieldset_trait']['txt_trait_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Name:'),
+      '#description' => $this->t('A Concise human-readable name or label for the column header'),
+      '#default_value' => isset($default['txt_trait_name']) ? $default['txt_trait_name'] : '',
+      '#disabled' => $disabled,
+      '#required' => TRUE,
+    ];
+
+    // Trait rep field. Default to none.
+    // Note: Trait Rep to call 1st, 2nd in unit is not final.
+    // Note: The list might change in the future.
+    $reps = $this->trait_reps;
+    $reps_val = [];
+    foreach($reps as $r) {
+      $reps_val[] = $r . ';';
+    }
+    $trait_rep = ['' => 'None'] + array_combine($reps_val, $reps);
+    
+    $form['fieldset_trait']['sel_trait_rep'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Trait Rep/Stages:'),
+      '#options' => $trait_rep,
+      '#default_value' => isset($default['sel_trait_rep']) ? $default['sel_trait_rep'] : reset($trait_rep),
+      '#disabled' => $disabled,
+    ];
+
+    // Trait unit field. Default to none.
+    // Query available units in chado cvterm of type phenotype_measurement_unit.
+    $unit = $this->trait_units;
+
+    // Default to text unit.
+    $unit_keys = array_keys($unit);
+    $textunit = array_search('text', $unit_keys);
+    $textunit_id = $unit_keys[$textunit];
+
+    $form['fieldset_trait']['sel_trait_unit'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Unit:'),
+      '#options' => $unit,
+      '#default_value' => isset($default['sel_trait_unit']) ? $default['sel_trait_unit'] : $textunit_id,
+      '#disabled' => $disabled,
+    ];
+
+    // R Friendly field.
+    $r_version = isset($default['txt_trait_rfriendly']) ? ' (' . $default['txt_trait_rfriendly'] . ')' : '';
+
+    $form['fieldset_trait']['txt_trait_rfriendly'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('R Friendly:@r_version', ['@r_version' => $r_version]),
+      '#description' => $this->t('Leave this field blank to let system generate R Friendly version'),
+      '#default_value' => '',
+      '#disabled' => FALSE,
+    ];
+
+    if (isset($default['txt_trait_rfriendly']) && !empty($default['txt_trait_rfriendly'])) {
+      // When editing header, add this hidden field containing the original R version value prior to saving.
+      // When user decides to provide an alternative r version then save it, otherwise save the value of this
+      // hidden field.
+      $form['fieldset_trait']['txt_trait_rfriendly_val'] = [
+        '#type' => 'hidden',
+        '#default_value' => $default['txt_trait_rfriendly'],
+      ];
+    }
+
+    // Trait definition field.
+    $form['fieldset_trait']['txt_trait_def'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Definition:'),
+      '#description' => $this->t('A human-readable text definition'),
+      '#required' => TRUE,
+      '#default_value' => isset($default['txt_trait_definition']) ? $default['txt_trait_definition'] : '',
+      '#disabled' => $disabled,
+    ];
+
+    // Describe method of collection field.
+    $form['fieldset_trait']['txt_trait_method'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Describe Method:'),
+      '#description' => $this->t('Describe the method used to collect this data if you used a scale, be specific'),
+      '#required' => TRUE,
+      '#default_value' => isset($default['txt_trait_method']) ? $default['txt_trait_method'] : '',
+      '#disabled' => $disabled,
+    ];
+
+    // Tell user about contributed trait when detected. Such trait is not included when generating data collection
+    // spreadsheet file - to incorporate it, please set the trait type to either essential or optional.
+    if (isset($a['type5']) && isset($default['sel_trait_type']) && $default['sel_trait_type'] == $a['type5']) {
+      // The header is contributed. Indicate to user as such.
+      $form['fieldset_trait']['warning_contributed'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          '#message' => $this->t('This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Project. To include this trait, set the trait type to Essential or Optional.'),
+          '#type' => 'warning'
+        ]
+      ];
+    }
+
+    // Trait is essential field. Default to unchecked.
+    $form['sel_trait_type'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Type:'),
+      '#description' => $this->t('Set the type to <span class="essential-trait">ESSENTIAL</span> to ensure this header must exists in the spreadsheet file'),
+      '#options' => $option_trait_type,
+      '#default_value' => isset($default['sel_trait_type']) ? $default['sel_trait_type'] : reset($option_trait_type),
+      '#disabled' => FALSE,
+    ];
+
+    // Save trait button.
+    $btn_name = str_replace(' ', '-', strtolower($default['btn_trait_submit']));
+    $form['btn_trait_subtmit'] = [
+      '#type' => 'submit',
+      '#name' => $btn_name,
+      '#value' => $this->t('@save_or_add', ['@save_or_add' => $default['btn_trait_submit']]),
+      '#suffix' => '<span>&nbsp;* means field is required</span>',
+    ];
+    
+    return $form;
   }
 
   /**
-   * Manage user asset form.
+   * 
+   */
+  public function existingHeaderForm() {
+    /*
+    // Table rows.
+    $arr_tblchkbox_rows = [];
+    $headers = $term_service::getTermsNotInProject($project_id);
+
+    if (count($headers) > 0) {
+      foreach($headers as $h) {
+        $arr_tblchkbox_rows[$h->cvterm_id] =
+          [
+            'name' => $h->name,
+            // Add select box.
+            'traittype' =>
+              ['data' =>
+                [
+                  '#type' => 'checkbox',
+                  '#title' => 'Yes',
+                  '#options' => [0, 1],
+                  '#default_value' => 0,
+                  '#name' => 'traittype-' . $h->cvterm_id
+                ]
+              ]                                        
+          ];
+      }
+    }
+
+    // Table headers.
+    $arr_tblchkbox_headers = ['traittype' => $this->t('Is Essential?'), 'name' => $this->t('Name')];
+
+    // Checkboxes and table.
+    $form['fieldset_existing_trait']['tbl_existing_headers'] = [
+      '#type' => 'tableselect',
+      '#header' => $arr_tblchkbox_headers,
+      '#options' => $arr_tblchkbox_rows,
+      '#js_select' => FALSE,
+      '#prefix' => '<p>' .
+        $this->t('The table below lists all column headers available in this module.
+        Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
+        <div class="container-table-data table-data">',
+      '#suffix' => '</div><p>' .
+        $this->t('Check <span class="essential-trait">IS ESSENTIAL?</span> to ensure the header must exists in the spreadsheet file')
+        . '</p>',
+      '#empty' => t('No column headers available'),
+      '#attributes' => [
+        'id' => 'tbl-existing-headers',
+        'class' => [
+          'tableheader-processed'
+        ],
+      ],
+      '#theme_wrappers' => []
+    ];
+
+    // Add submit button only there is any options available.
+    if (count($arr_tblchkbox_rows) > 0) {
+      $form['fieldset_existing_trait']['add_selected_trait'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Add selected headers'),
+        '#validate' => ['rawpheno_admin_validate_add_existing'],
+        '#submit' => ['rawpheno_admin_submit_add_existing'],
+        '#limit_validation_errors' => [
+          ['tbl_existing_headers'],
+          ['txt_id']
+        ],
+      ];
+    }
+   */
+  }
+
+  /**
+   * 
    */
   public function userForm() {
+    /*
+    // Add seach field to filter the list of name.
+    $form['fieldset_users']['txt_autocomplete_user'] = [
+      '#title' => $this->t('Name :'),
+      '#type' => 'textfield',
+      '#maxlength' => 50,
+      '#size' => 130,
+      '#autocomplete_route_name' => 'rawphenotypes.autocomplete.user',
+      '#description' => $this->t('Type the name or username of the user')
+    ];
 
+    $form['fieldset_users']['add_selected_user'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Add user'),
+      '#validate' => ['rawpheno_admin_validate_add_user'],
+      '#submit' => ['rawpheno_admin_submit_add_user'],
+      '#limit_validation_errors' => [
+        ['txt_autocomplete_user'],
+        ['txt_id']
+      ],
+    ]; */
   }
 
   /**
    * Manage environment data asset form.
    */
   public function environmentDataForm() {
+    /*
+    // Environement Data File Upload.
+    $inline_wraper = [
+      '#prefix' => '<div class="envdata-field-wrapper">',
+      '#suffix' => '</div>',
+    ];
 
+    // Add seach field to filter the list of name.
+    $form['fieldset_envdata']['file'] = [
+      '#title' => $this->t('File :'),
+      '#type' => 'file',
+    ];
+
+    //$location_options = $project_service::getProjectLocations($project_id);
+
+    $form['fieldset_envdata']['select_location'] = [
+      '#title' => $this->t('Location :'),
+      '#type' => 'select',
+      //'#options' => $location_options,
+      '#empty_option' => $this->t('- Select -'),
+    ];
+
+    $form['fieldset_envdata']['select_year'] = [
+      '#title' => $this->t('Year :'),
+      '#type' => 'select',
+      #'#options' => $year_options,
+      '#empty_option' => $this->t('- Select -'),
+    ];
+
+    $form['fieldset_envdata']['upload_env_file'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Upload file')
+    ];
+    */
   }
 
   /**

@@ -79,20 +79,19 @@ class RawphenotypesManageProjectForm extends FormBase {
     $trait_type = $default_service::getTraitTypes();
 
     // Array to hold table headers.
-    $arr_headers = array();
+    $arr_headers = [];
 
     // Array to hold table rows.
-    $arr_rows = array();
-
-    $empty_table_title = "";
+    $arr_rows = [];
     
+    // Get all active projects - projects added to this module.
     $projects = $project_service::getActiveProjects();
 
     // Page title.
-    $form['all_project_info'] = array(
+    $form['all_project_info'] = [
       '#type' => 'inline_template',
       '#template' => '<h2>' . count($projects) . ' Project(s)</h2>'
-    );
+    ];
 
     if (count($projects) > 0) {
       $i = 0;
@@ -114,12 +113,9 @@ class RawphenotypesManageProjectForm extends FormBase {
   
   
         // + 1 to account for Name column header.
-        array_push($arr_rows, array(($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell));
+        array_push($arr_rows, [($i+1), $name_cell, ($p->header_count + 1), $p->essential_count . $warn_header, $p->user_count . $warn_user, $view_cell]);
         $i++;
       }
-    }
-    else {
-      $empty_table_title = $this->t('No project available');
     }
 
     array_push($arr_headers, '-', $this->t('Project Name'), $this->t('Column Headers'), $this->t('Essential Headers'), $this->t('Active User'), $this->t('View'));
@@ -129,7 +125,7 @@ class RawphenotypesManageProjectForm extends FormBase {
       '#title' => $this->t('Projects'),
       '#header' => $arr_headers,
       '#rows' => $arr_rows,
-      '#empty' => $empty_table_title,
+      '#empty' => $this->t('No project available')
     ];
 
     return $form;

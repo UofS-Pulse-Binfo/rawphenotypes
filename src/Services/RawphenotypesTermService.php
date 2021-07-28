@@ -432,4 +432,30 @@ class RawphenotypesTermService {
 
     return $arr_properties;
   }
+
+ /**
+  * Construct a trait given a name, trait rep and unit.
+  *
+  * @param $trait
+  *   An array containing name, trait and unit.
+  *
+  * @return
+  *   A string containing containing the column header in name (trait rep; unit) format.
+  */
+  public static function constructTerm($trait) {
+    $unit = '';
+
+    if (!empty($trait['unit']) OR !empty($trait['rep'])) {
+      $u = (empty($trait['rep'])) ? '' : $trait['rep'] . ' ';
+      if (empty($trait['unit'])) {
+        $u = trim($u);
+      }
+
+      $unit = '(' . $u . $trait['unit'] . ')';
+    }
+
+    $name = ucfirst($trait['name'] . ' ' . rtrim($unit));
+
+    return trim($name);
+  }
 }
