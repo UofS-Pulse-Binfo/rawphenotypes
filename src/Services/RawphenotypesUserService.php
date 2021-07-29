@@ -10,6 +10,31 @@ use Drupal\user\Entity\User;
 
 class RawphenotypesUserService {
   /**
+   * Get user by username
+   * 
+   * @param $username
+   *   String, name/username of user account.
+   * 
+   * @return integer
+   *   Id/uid number of user account.
+   */
+  public static function getUserIdByUsername($username) {
+    $username = trim($username);
+    $user_id = null;
+
+    $user = \Drupal::entityTypeManager()
+      ->getStorage('user')
+      ->loadByProperties(['name' => $username]);
+  
+    if ($user) {
+      $user = reset($user);
+      $user_id = $user->get('uid')->value;
+    }
+  
+    return $user_id;
+  }
+
+  /**
    * Get list of users.
    * 
    * @param $key

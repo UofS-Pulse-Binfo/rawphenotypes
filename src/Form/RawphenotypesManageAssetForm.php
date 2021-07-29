@@ -22,6 +22,10 @@ class RawphenotypesManageAssetForm extends FormBase {
   private $trait_reps;
   // All units.
   private $trait_units;
+  // Controlled vocabularies - types and relationships.
+  private $vocabularies;
+  // When asset type is project.
+  private $project_id;
 
   /**
    * Set default values ie. traits types and trait reps etc.
@@ -30,9 +34,10 @@ class RawphenotypesManageAssetForm extends FormBase {
     $term_service    = \Drupal::service('rawphenotypes.term_service');
     $default_service = \Drupal::service('rawphenotypes.default_service');
       
-    $this->trait_types = $default_service::getTraitTypes();
-    $this->trait_reps  = $default_service::getTraitReps();
-    $this->trait_units = $term_service::getTermsByType('phenotype_measurement_units');
+    $this->vocabularies = $default_service::getDefaultValue('vocabularies');
+    $this->trait_types  = $default_service::getTraitTypes();
+    $this->trait_reps   = $default_service::getTraitReps();
+    $this->trait_units  = $term_service::getTermsByType('phenotype_measurement_units');
   }
 
   /**
@@ -47,9 +52,8 @@ class RawphenotypesManageAssetForm extends FormBase {
    * Build form.
    */
   public function buildForm(array $form, FormStateInterface $form_state, $asset_id = NULL, $asset_type = NULL, $action = NULL) {
-    // Attach library.
-    $form['#attached']['library'][] = 'rawphenotypes/style-admin';
-    
+    $term_service = \Drupal::service('rawphenotypes.term_service');
+
     // Define valid action/command/operation per asset type.
     $arr_valid = [];
     $arr_valid['project']['command'] = ['manage'];
@@ -99,10 +103,26 @@ class RawphenotypesManageAssetForm extends FormBase {
             // Command is valid. Call function that will execute the command.
             if ($asset_type == 'project') {
               // Call project function.
-              $form = $this->projectAssetForm($asset_id);
+              $this->project_id = $asset_id;
+              $form = $this->projectAssetForm();
             }
             elseif ($asset_type == 'header') {
+              // Before admin can modify or delete a column header, ensure that a header
+              // is not a plant property type header, not used by another project and the header has no data associated to it.
+              // In addition, Loding (scale 1-5) header is not editable.
+              $plant_property = $this->trait_types['type4'];
+              // Get header properties.
+              $header_asset = $term_service::getTermProperties($ass_id, 'full');
 
+              if ($header_asset['count_data'] > 0 AND $action == 'delete') {
+                // Header has data.
+                $msg = $this->t('Cannot @action this entry. Column header has data associated to it.', ['@action' => $action]);
+                \Drupal::messenger()->addMessage($msg, 'error');
+              }
+              else {
+                // Call header function.
+                // $form = rawpheno_admin_project_headers($form, $form_state, $header_asset, $action);
+              }
             }
             else if($asset_type == 'user') {
               
@@ -147,6 +167,15 @@ class RawphenotypesManageAssetForm extends FormBase {
 
     }
 
+
+
+
+
+
+    // Attach library.
+    $form['#attached']['library'][] = 'rawphenotypes/style-admin';
+    $form['#attached']['library'][] = 'rawphenotypes/script-admin';
+  
     return $form;
   }
 
@@ -177,7 +206,8 @@ class RawphenotypesManageAssetForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   * Save configuration.
+   * Validate headers - this method is only for Add/Edit column headers only.
+   * Other form in this page uses a custom validate routine.
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $term_service = \Drupal::service('rawphenotypes.term_service');
@@ -192,6 +222,7 @@ class RawphenotypesManageAssetForm extends FormBase {
     // Submit buttons has property #name which will be used to determine which among the submit buttons
     // was click and load corresponding action.
     if ($action == 'add-column-header' || $action == 'save') {
+      // ADD AND SAVE NEW COLUMN HEADER.
       $fld_name_trait_name = 'txt_trait_name';
       $fld_value_trait_name = trim($form_state->getValue($fld_name_trait_name));
 
@@ -252,11 +283,13 @@ class RawphenotypesManageAssetForm extends FormBase {
 
   /**
    * {@inheritdoc}
-   * Save configuration.
+   * Submit headers - this method is only for Add/Edit column headers only.
+   * Other form in this page uses a custom submit routine.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $term_service = \Drupal::service('rawphenotypes.term_service');
-
+    $vocabularies = $this->vocabularies;
+    
     // Get the submit button that triggered the submit action. Since this is a general hook_submit()
     // of the entire form, limit the proces only to submit button in from add column header and save column header.
     $btn_submit = $form_state->getTriggeringElement();
@@ -287,12 +320,26 @@ class RawphenotypesManageAssetForm extends FormBase {
       $trait_def  = trim($form_state->getValue('txt_trait_def'));
       $col_method = trim($form_state->getValue('txt_trait_method'));
       $trait_type = trim($form_state->getValue('sel_trait_type'));  
+      
+      // These vocabulary terms are for relationship and property.
+      $cv_rver = $term_service::getTerm([
+        'name' => $vocabularies['cv_rver'], 
+        'cv_id' => ['name' => $vocabularies['cv_phenotypes']]
+      ]);
+      
+      $cv_desc = $term_service::getTerm([
+        'name' => $vocabularies['cv_desc'], 
+        'cv_id' => ['name' => $vocabularies['cv_phenotypes']]
+      ]);
 
-      $cv_type = $term_service::getTerm(['name' => 'phenotype_measurement_types'],    'cv');
-      $cv_rver = $term_service::getTerm(['name' => 'phenotype_r_compatible_version']);
-      $cv_desc = $term_service::getTerm(['name' => 'phenotype_collection_method']);
-      $cv_unit = $term_service::getTerm(['name' => 'phenotype_measurement_units']);
+      $cv_unit_rel = $term_service::getTerm([
+        'name' => $vocabularies['cv_unit'], 
+        'cv_id' => ['name' => $vocabularies['cv_phenotypes']]
+      ]);
 
+      // This vocabulary term is for type.
+      $cv_unit = $term_service::getTerm(['name' => $vocabularies['cv_unit']], 'cv');
+      
       // Get the cvterm id of the unit selected.
       $cvterm_unit = $term_service::getTerm(['name' => $unit, 'cv_id' => $cv_unit->cv_id]);
 
@@ -332,7 +379,7 @@ class RawphenotypesManageAssetForm extends FormBase {
         // Relate the cvterm to unit.
         $term_service::saveTermRelationship(
           [
-            'type_id' => $cv_unit->cvterm_id,
+            'type_id' => $cv_unit_rel->cvterm_id,
             'object_id' => $cvterm->cvterm_id,
             'subject_id' => $cvterm_unit->cvterm_id,
           ]
@@ -347,8 +394,111 @@ class RawphenotypesManageAssetForm extends FormBase {
       }
     }
   }
-  
 
+  /////////
+  /**
+   * Custom validate - validate selected column headers in Form fieldset #2 - Add existing 
+   * column headers.
+   */
+  public function validateSelectedHeaders(array &$form, FormStateInterface $form_state) {
+    // ADD/REUSE EXISTING COLUMN HEADER.
+    $btn_submit = $form_state->getTriggeringElement();
+    $action = $btn_submit['#name'];
+  
+    if ($action == 'add-selected-headers') {
+      $selected_headers = $form_state->getValue('tbl_existing_headers'); 
+  
+      if (count(array_filter($selected_headers)) <= 0) {
+        $form_state->setErrorByName('tbl_existing_headers', $this->t('No column headers selected.'));
+      }
+    }
+  }
+
+  /**
+   * Custom submit - submit selected column headers form in Form fieldset #2 - Add existing 
+   * column headers.
+   */  
+  public function submitSelectedHeaders(array &$form, FormStateInterface $form_state) {
+    // ADD/REUSE EXISTING COLUMN HEADER.
+    $term_service = \Drupal::service('rawphenotypes.term_service');
+
+    // Uses project id.
+    $project_id = $form_state->getValue('txt_id');
+    // All Types.
+    $types = $this->trait_types;
+
+    // All the headers option - this will be filtered to just
+    // the items that were selected.
+    $selected_headers = $form_state->getValue('tbl_existing_headers'); 
+    // Is essential option - this will contain all the option to
+    // set header as essential or not.
+    $selected_headers_type = $form_state->getUserInput();
+
+    // Only headers that were selected then inspect the is essential
+    // field to determine the type.
+    foreach(array_filter($selected_headers) as $m) {
+      $key = 'traittype-' . $m;
+      $trait_type = ($selected_headers_type[ $key ]) ? $types['type1'] : $types['type2'];      
+      
+      $cvterm_id = (int)$m;
+      $term_service::saveTermToProject($cvterm_id, $trait_type, $project_id);
+    }
+    
+    // Inform user of the newly added headers.
+    \Drupal::messenger()->addStatus($this->t('You have successfully added a column header to this project.'));
+  }
+  
+  /**
+   * Custom validate - validate add user to project.
+   */
+  public function validateUser(array &$form, FormStateInterface $form_state) {
+    $user_service = \Drupal::service('rawphenotypes.user_service');
+    $project_service = \Drupal::service('rawphenotypes.project_service');
+
+    $project_id = $form_state->getValue('txt_id');
+    $user = $form_state->getValue('txt_autocomplete_user');
+  
+    if (empty($user)) {
+      $form_state->setErrorByName('txt_autocomplete_user', $this->t('No user name supplied in the field.'));
+    }
+    else {
+      // Search user
+      $user_id = $user_service::getUserIdByUsername($user);
+
+      if (empty($user_id)) {
+        $form_state->setErrorByName('txt_autocomplete_user', $this->t('User does not exist.'));
+      }
+      else {
+        // Test if user was added twice in the same project.
+        $project_users = $project_service::getProjectActiveUsers($project_id);
+        
+        foreach($project_users as $u) {
+          if ($u->uid == $user_id) {
+            $form_state->setErrorByName('txt_autocomplete_user', 
+              $this->t('User is already active in this project and cannot be added again.'));
+            
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Custom submit - submit add user form.
+   */
+  public function submitUser(array &$form, FormStateInterface $form_state) {
+    $user_service = \Drupal::service('rawphenotypes.user_service');
+    $project_service = \Drupal::service('rawphenotypes.project_service');
+
+    // Uses project id
+    $project_id = $form_state->getValue('txt_id');
+    $user = $form_state->getValue('txt_autocomplete_user');
+    $user_id = $user_service::getUserIdByUsername($user);
+
+    $project_service::addUserToProject($user_id, $project_id);
+    \Drupal::messenger()->addStatus($this->t('You have successfully added a user to this project.'));
+  }
 
 
 
@@ -374,43 +524,54 @@ class RawphenotypesManageAssetForm extends FormBase {
 
 
   /**
-   * Main project asset page.
+   * Main project asset page. Show all assets in tabs namely
+   * column headers, users and environment data.
+   * 
+   * This page will also give user to add new items to individual
+   * project asset types.
+   * 
+   * Property - project_id is set in the switch and will be used
+   * in this method.
    */
-  public function projectAssetForm($project_id) {
+  public function projectAssetForm() {
     $form = [];
     // Load services.
     $term_service    = \Drupal::service('rawphenotypes.term_service');
-    $default_service = \Drupal::service('rawphenotypes.default_service');
-    $project_service = \Drupal::service('rawphenotypes.project_service');
     $user_service    = \Drupal::service('rawphenotypes.user_service');
+    $project_service = \Drupal::service('rawphenotypes.project_service');
     
-    // Attach library.
-    $form['#attached']['library'][] = 'rawphenotypes/style-admin';
-    $form['#attached']['library'][] = 'rawphenotypes/script-admin';
-
+    // Get project.
+    $project_id = $this->project_id;
     $project = $project_service::getProject($project_id);
+
+    // Trait Types.
+    $trait_types = $this->trait_types;
 
     $form['project_name'] = [
       '#type' => 'inline_template',
       '#template' => '<h2>PROJECT: ' . $project->name . '</h2>'
     ];
+    
+    // Save project id for later use in validation or submit.
+    $form['txt_id'] = [
+      '#type' => 'hidden',
+      '#value' => $project_id,
+    ];
 
-    // FORM
-    // Construct add column header form.
-    // This form will allow admin to add new column header to a project.
+    // Construct page. Layout will be forms (add headers, user and env. data) followed
+    // by summary (in tables) of all assets organized into tabs.
+    
+    // FORMS:
+    // Layout forms.
 
-    // Get trait types array.
-    $trait_type = $this->trait_types;
-
+    // Add new column headers.
     // Fieldset add column header form.
     $form['fieldset_trait'] = [
       '#type' => 'details',
       '#title' => $this->t('Add column header'),
       '#open' => FALSE,
     ];
-    
-      // Call function to construct add column headers.
-      // This form render array is re-used when updating a column header.
+      
       $default = [
         'count_project'    => 0,
         'count_data'       => 0,
@@ -420,11 +581,8 @@ class RawphenotypesManageAssetForm extends FormBase {
 
       $new_header_elements = $this->newHeaderForm($default);
       $form['fieldset_trait'][] = $new_header_elements;
-      
-    // FORM
-    // Construct add/user existing column headers form.
-    // This form will allow admin to add multiple column headers that are predefined in this module.
-
+    
+    // Add/Reuse headers.
     // Fieldset suggest existing column headers.
     $form['fieldset_existing_trait'] = [
       '#type' => 'details',
@@ -432,15 +590,14 @@ class RawphenotypesManageAssetForm extends FormBase {
       '#open' => FALSE,
     ];
 
-      $existing_header_elements = $this->existingHeaderForm();
-      $form['fieldset_existing_trait'][] = $existing_header_elements;
-    
-      
-    //FORM
-    // Construct assign user to a project form.
-    // This form will allow admin to assign an active user to a project. User will then be restricted
-    // to upload data to project(s) he is assigned to.
+        $default = [
+          'txt_id' => $project_id,
+        ];
 
+        $existing_header_elements = $this->existingHeaderForm($default);
+        $form['fieldset_existing_trait'][] = $existing_header_elements;
+
+    // Add users (data collector accounts) to the project.
     // Fieldset to suggest user to a project.
     $form['fieldset_users'] = [
       '#type' => 'details',
@@ -450,33 +607,22 @@ class RawphenotypesManageAssetForm extends FormBase {
       
       $user_elements = $this->userForm();
       $form['fieldset_users'][] = $user_elements;
-      
 
-    // FORM  
+    // Manage environment data.  
     // Construct form to manage Environment data.
     $form['fieldset_envdata'] = [
       '#type' => 'details',
       '#title' => $this->t('Upload Environment Data File'),
       '#open' => FALSE,
     ];
-
+  
       $env_elements = $this->environmentDataForm();
-      $form['fieldset_envdata'][] = $env_elements;
-
-      
+      $form['fieldset_envdata'][] = $env_elements;  
 
 
-
-
-
-
-
-
-
-
-
-
-    // DISPLAY SUMMARY OR PROJECT ASSETS.
+    // TABLES:
+    // Layout summary tables.
+    
     // List column headers in a project.
     // Given a project id, select all column headers belonging to that project.
     // Note the loding (scale 1-5) upright-lodged header is the only header using this
@@ -486,39 +632,68 @@ class RawphenotypesManageAssetForm extends FormBase {
     $headers = $project_service::getProjectTerms($project_id);
     $users   = $project_service::getProjectActiveUsers($project_id);
     $envdata = $project_service::getProjectEnvDataFiles($project_id);
-    
+
     // Array to hold table headers.
     $arr_headers = [];
 
     // Array to hold table rows.
     $arr_rows = [];
 
-    // Array to hold table properties.
-    $arr_tbl_args = [
-      'header' => '',
-      'rows' => '',
-      'empty' => '',
-      'attributes' => ['id' => ''],
-    ];
+    // Warn admin that project has no essential trait
+    foreach($headers as $h) {
+      if ($h->type == $trait_types['type1']) $count_essential++;
+    }
 
-    // TABLE
+    if ($count_essential < 1) {
+      $form['message_no_essential'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          'message' => $this->t('Project has no Essential Column Header.'),
+          'type' => 'warning'
+        ]
+      ];
+    }
+
+    // Warn admin that project has no assigned user.
+    if (count($users) < 1) {
+      $form['message_no_user'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'theme-rawphenotypes-message',
+        '#data' => [
+          'message' => $this->t('Project has no active users.'),
+          'type' => 'warning'
+        ]
+      ];
+    }
+
+    // Tabs to show either the project column headers table or project active users table.
+    // Add 1 to account for Name column header.
+    $form['nav_tabs'] = [
+      '#type' => 'inline_template',
+      '#template' => '
+        <div id="nav-tabs">
+          <ul>
+            <li class="active-tab">' . ((int)count($headers) + 1). ' Column Headers</li>
+            <li>' . count($users) . ' Active Users</li>
+            <li>' . count($envdata) . ' Environment Data File</li>
+          </ul>
+        </div>
+      '
+    ];
+    
+
+    // Table column headers.
     // Construct table that lists all column headers specific to a project.
     // Options to edit and delete items give admin record management functionality.
     // NOTE: Delete option will not physically delete a record in cvterm table.
     //       When a header is deleted, it is removed from the project only.
 
-    // Table rows.
     $has_name = 0;
-    $count_essential = 0;
-
     if (count($headers) > 0) {
       $i = 0;
 
       foreach($headers as $h) {
-        if ($h->type == $trait_type['type1']) {
-          $count_essential++;
-        }
-
         // Get header information.
         $header_asset = $term_service::getTermProperties($h->project_cvterm_id); 
         
@@ -533,7 +708,7 @@ class RawphenotypesManageAssetForm extends FormBase {
         $del_cell = \Drupal::l($this->t('Remove'), $link);
 
         // No edit and delete when column header is of type plantproperty.
-        if ($header_asset['type'] == $trait_type['type4'] || $header_asset['name'] == 'Planting Date (date)') {
+        if ($header_asset['type'] == $trait_types['type4'] || $header_asset['name'] == 'Planting Date (date)') {
           // Add Name column header to the row array.
           if ($has_name == 0 AND $header_asset['name'] != 'Planting Date (date)') {
             $markup_name = Markup::create('<h4>Name</h4>');
@@ -545,9 +720,9 @@ class RawphenotypesManageAssetForm extends FormBase {
           $edit_cell = $del_cell = '-';
         }
         
-        $class = ($header_asset['type'] == $trait_type['type1']) ? 'essential-trait' : 'non-essentialtrait';
+        $class = ($header_asset['type'] == $trait_types['type1']) ? 'essential-trait' : 'non-essentialtrait';
 
-        if ($header_asset['type'] == $trait_type['type4']) {
+        if ($header_asset['type'] == $trait_types['type4']) {
           // Row where trait is plantproperty.
           $header_cell = '<h4>' . $header_asset['name'] . '</h4>';
           $definition_cell = $header_asset['name'];
@@ -576,65 +751,22 @@ class RawphenotypesManageAssetForm extends FormBase {
         ];
 
         $i++;
-
       }
     }
-
-    // Warn admin that project has no essential trait
-   if ($count_essential < 1) {
-      $form['message_no_essential'] = [
-        '#type' => 'inline_template',
-        '#theme' => 'theme-rawphenotypes-message',
-        '#data' => [
-          'message' => $this->t('Project has no Essential Column Header.'),
-          'type' => 'warning'
-        ]
-      ];
-    }
-
-    // Warn admin that project has no assigned user.
-    if (count($users) < 1) {
-      $form['message_no_user'] = [
-        '#type' => 'inline_template',
-        '#theme' => 'theme-rawphenotypes-message',
-        '#data' => [
-          'message' => $this->t('Project has no active users.'),
-          'type' => 'warning'
-        ]
-      ];
-    }
-
-
-    // Tabs to show either the project column headers table or project active users table.
-    // Add 1 to account for Name column header.
-    $form['nav_tabs'] = [
-      '#type' => 'inline_template',
-      '#template' => '
-        <div id="nav-tabs">
-          <ul>
-            <li class="active-tab">' . ((int)count($headers) + 1) . ' Column Headers</li>
-            <li>' . count($users) . ' Active Users</li>
-            <li>' . count($envdata) . ' Environment Data File</li>
-          </ul>
-        </div>
-      '
-    ];
-
-    // TABLE HEADERS:
-    array_push($arr_headers, '-', t('Column Header <small>(unit)</small>'), t('Definition/Collection Method'), t('Type'), t('Edit'), t('Remove'));
-    $empty_table_title = $this->t('No column headers in this project');
+    
+    array_push($arr_headers, '-', $this->t('Column Header <small>(unit)</small>'), $this->t('Definition/Collection Method'), $this->t('Type'), $this->t('Edit'), $this->t('Remove'));
     $form['tbl_project_headers'] = [
       '#type' => 'table',
       '#title' => $this->t('Projects'),
       '#header' => $arr_headers,
       '#rows' => $arr_rows,
-      '#empty' => $empty_table_title,
+      '#empty' => $this->t('No column headers in this project'),
       '#prefix' => '<div id="container-prj-hdr" class="container-table-data tab-data">',
       '#suffix' => '</div>',
       '#attributes' => ['id' => 'tbl-project-headers']
     ];
     
-    // TABLE USERS:
+    // Table active users.
     // Construct table that lists all active users to a project along with files
     // associated to a user in a given project.
     // Options to delete items give admin record management functionality.
@@ -747,21 +879,19 @@ class RawphenotypesManageAssetForm extends FormBase {
       }
     }
     
-    // Table headers.
-    array_push($arr_headers, '-', t('Name'), t('Email Address'), t('Last Login'), t('Remove'));
-    $empty_table_title = $this->t('No users in this project');
+    array_push($arr_headers, '-', $this->t('Name'), $this->t('Email Address'), $this->t('Last Login'), $this->t('Remove'));
     $form['tbl_project_users'] = [
       '#type' => 'table',
       '#title' => $this->t('User'),
       '#header' => $arr_headers,
       '#rows' => $arr_rows,
-      '#empty' => $empty_table_title,
+      '#empty' => $this->t('No users in this project'),
       '#prefix' => '<div id="container-prj-usr" class="container-table-data tab-data">',
       '#suffix' => '</div>',
       '#attributes' => ['id' => 'tbl-project-users']
     ];
 
-    // TABLE ENVIRONMENT DATA:
+    // Table environment data.
     $arr_rows = $arr_headers = [];
 
     if (count($envdata) > 0) {
@@ -808,7 +938,7 @@ class RawphenotypesManageAssetForm extends FormBase {
   /////////////////////////////////
 
   /**
-   * Manage header asset form.
+   * Add or update new header form.
    */
   public function newHeaderForm($default) {
     $a = $this->trait_types;
@@ -843,12 +973,6 @@ class RawphenotypesManageAssetForm extends FormBase {
     else {
       $disabled = FALSE;
     }
-
-    // Project id the trait is in or the trait id number.
-    $form['fieldset_trait']['txt_id'] = [
-      '#type' => 'hidden',
-      '#value' => $default['txt_id'],
-    ];
 
     // Exclusive to modifying trait, include the project id the trait is registered.
     if (isset($default['prj_id']) && $default['prj_id'] > 0) {
@@ -952,7 +1076,9 @@ class RawphenotypesManageAssetForm extends FormBase {
         '#type' => 'inline_template',
         '#theme' => 'theme-rawphenotypes-message',
         '#data' => [
-          '#message' => $this->t('This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Project. To include this trait, set the trait type to Essential or Optional.'),
+          '#message' => $this->t('This column header is a user contributed trait and is not incorporated in 
+            generating Data Collection Spreadsheet file for this Project. To include this trait, 
+            set the trait type to Essential or Optional.'),
           '#type' => 'warning'
         ]
       ];
@@ -969,6 +1095,7 @@ class RawphenotypesManageAssetForm extends FormBase {
     ];
 
     // Save trait button.
+    // #name key property is used to refer to later as a triggering element.
     $btn_name = str_replace(' ', '-', strtolower($default['btn_trait_submit']));
     $form['btn_trait_subtmit'] = [
       '#type' => 'submit',
@@ -981,13 +1108,14 @@ class RawphenotypesManageAssetForm extends FormBase {
   }
 
   /**
-   * 
+   * Add or reuse existing header form.
    */
-  public function existingHeaderForm() {
-    /*
+  public function existingHeaderForm($default) {
+    $term_service    = \Drupal::service('rawphenotypes.term_service');
+
     // Table rows.
     $arr_tblchkbox_rows = [];
-    $headers = $term_service::getTermsNotInProject($project_id);
+    $headers = $term_service::getTermsNotInProject($default['txt_id']);
 
     if (count($headers) > 0) {
       foreach($headers as $h) {
@@ -1013,14 +1141,14 @@ class RawphenotypesManageAssetForm extends FormBase {
     $arr_tblchkbox_headers = ['traittype' => $this->t('Is Essential?'), 'name' => $this->t('Name')];
 
     // Checkboxes and table.
-    $form['fieldset_existing_trait']['tbl_existing_headers'] = [
+    $form['tbl_existing_headers'] = [
       '#type' => 'tableselect',
       '#header' => $arr_tblchkbox_headers,
       '#options' => $arr_tblchkbox_rows,
       '#js_select' => FALSE,
       '#prefix' => '<p>' .
         $this->t('The table below lists all column headers available in this module.
-        Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
+        Please check the header(s) that you want to add to this project and click Add Selected Headers button.') . '</p>
         <div class="container-table-data table-data">',
       '#suffix' => '</div><p>' .
         $this->t('Check <span class="essential-trait">IS ESSENTIAL?</span> to ensure the header must exists in the spreadsheet file')
@@ -1036,46 +1164,51 @@ class RawphenotypesManageAssetForm extends FormBase {
     ];
 
     // Add submit button only there is any options available.
+    // #name key property is used to refer to later as a triggering element.
     if (count($arr_tblchkbox_rows) > 0) {
-      $form['fieldset_existing_trait']['add_selected_trait'] = [
+      $form['add_selected_trait'] = [
         '#type' => 'submit',
         '#value' => $this->t('Add selected headers'),
-        '#validate' => ['rawpheno_admin_validate_add_existing'],
-        '#submit' => ['rawpheno_admin_submit_add_existing'],
+        '#name' => 'add-selected-headers',
+        '#submit' => ['::submitSelectedHeaders'],
+        '#validate' => ['::validateSelectedHeaders'],
         '#limit_validation_errors' => [
           ['tbl_existing_headers'],
           ['txt_id']
         ],
       ];
     }
-   */
+
+    return $form;
   }
 
   /**
-   * 
+   * Add data collector user to project.
    */
   public function userForm() {
-    /*
+    // Autocomplet search field.
     // Add seach field to filter the list of name.
-    $form['fieldset_users']['txt_autocomplete_user'] = [
+    $form['txt_autocomplete_user'] = [
       '#title' => $this->t('Name :'),
       '#type' => 'textfield',
       '#maxlength' => 50,
       '#size' => 130,
       '#autocomplete_route_name' => 'rawphenotypes.autocomplete.user',
-      '#description' => $this->t('Type the name or username of the user')
+      '#description' => $this->t('Type the name or username of the user'),
     ];
 
-    $form['fieldset_users']['add_selected_user'] = [
+    $form['add_selected_user'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Add user'),
-      '#validate' => ['rawpheno_admin_validate_add_user'],
-      '#submit' => ['rawpheno_admin_submit_add_user'],
+      '#value' => $this->t('Add user'),      
+      '#submit' => ['::submitUser'],
+      '#validate' => ['::validateUser'],
       '#limit_validation_errors' => [
         ['txt_autocomplete_user'],
         ['txt_id']
       ],
-    ]; */
+    ]; 
+
+    return $form;
   }
 
   /**
