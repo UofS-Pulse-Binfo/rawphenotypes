@@ -232,6 +232,77 @@ class RawphenotypesTermService {
   }
 
   /**
+   * Removes a term from project.
+   * Deassociate the term from a project and not physical deletion of the 
+   * trait record.
+   * 
+   * @param $term_id
+   *   Integer, term id number that corresponds to cvterm_id (trait/header id).
+   * @param $project_id
+   *   Integer, project id number the term is part of.
+   */
+  public static function removeTermFromProject($term_id, $project_id) {
+    \Drupal::database()
+      ->delete('pheno_project_cvterm')
+      ->condition('cvterm_id', $term_id)
+      ->condition('project_id', $project_id)
+      ->execute();
+  }
+
+  /**
+   * Update term (cvterm).
+   */
+  public static function updateTerm($term_id, $details) {
+    /*
+    $match = ['cvterm_id' => $term_id];
+    
+    $func = (function_exists('chado_update_record')) 
+      ? 'chado_update_record' : 'tripal_update_record';
+    
+    // Update cvterm record (name and definition).
+    call_user_func($func, 'cvterm', $match, [
+      'name' => $details['trait_name'],
+      'definition' => $details['definition']
+    ]);
+  
+    // Update rfriendly version.
+    call_user_func($func, 'cvtermprop', $match, [
+      'value' => $details['rver']
+    ]);
+
+    // Update method of collection information.
+    // When updating, make sure term has a collection method entry in cvtermprop.
+    // If none, add an entry.
+    $has_method = self::getTerm([
+      'cvterm_id' => $term_id,
+      'cv_id' => ['name' => 'phenotype_measurement_types']
+    ]);
+    
+    if ($has_method) {
+      // Has method, update the record.
+      call_user_func($func, 'cvtermprop', $match, [
+        'value' => $details['method']
+      ]);
+    }
+    else {
+      // None found, insert a record.
+      $method_type = self::getTerm(['name' => 'phenotype_collection_method'], ['cv_id' => ['name' => 'rawphenotypes_terms']]);
+      self::saveTermProperty([
+        'cvterm_id' => $term_id,
+        'type_id' => $method_type->cvterm_id,
+        'value' => $details['method'],
+        'rank' => 0
+      ]);
+    }
+
+    // Update term-unit relationship.
+    call_user_func($func, 'cvterm_relationship', )
+    */
+
+
+  }
+
+  /**
    * For types using scale as unit, create each scale item.
    * 
    * @param $term_id

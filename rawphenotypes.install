@@ -319,6 +319,45 @@ function rawphenotypes_schema() {
     'primary key' => ['environment_data_id'],
   ];
 
+  // Create materialized view
+  // @TODO - remove when Tripal mview api is supported.
+  $schema['rawpheno_rawdata_mview'] = [
+    'description' => 'Temporary table while Tripal Mview is not available',
+    'fields' => [
+      'plant_id' => [
+        'description' => 'Plant id',
+        'type' => 'int'
+      ],
+      'location' => [
+        'description' => 'Location',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'rep' => [
+        'description' => 'Replicate',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'planting_date' => [
+        'description' => 'Planting date',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'total_count' => [
+        'description' => 'Total count',
+        'type' => 'int'
+      ],
+      'all_traits' => [
+        'description' => 'All traits',
+        'type' => 'text'
+      ],
+    ],
+    'indexes' => [
+      'plant_id' => ['plant_id'],
+      'location' => ['location'],
+    ]
+  ];
+
   return $schema;
 }
 

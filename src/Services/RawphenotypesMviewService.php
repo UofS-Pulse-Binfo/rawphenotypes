@@ -88,6 +88,9 @@ class RawphenotypesMviewService {
     else {
       // tripal_add_mview($mv_name, $mv_module, $mv_schema, $mv_sql, $mv_comment, FALSE);
       // CREATE MATERIALIZED VIEWS.
+
+      // CREATE MVIEW with sample data.
+      
     }
   }
 

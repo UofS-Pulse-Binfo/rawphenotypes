@@ -10,6 +10,7 @@ use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 
 /**
@@ -112,16 +113,16 @@ class RawphenotypesManageAssetForm extends FormBase {
               // In addition, Loding (scale 1-5) header is not editable.
               $plant_property = $this->trait_types['type4'];
               // Get header properties.
-              $header_asset = $term_service::getTermProperties($ass_id, 'full');
+              $header_asset = $term_service::getTermProperties($asset_id, 'full');
 
-              if ($header_asset['count_data'] > 0 AND $action == 'delete') {
+              if ($header_asset['count_data'] > 0 && $action == 'delete') {
                 // Header has data.
                 $msg = $this->t('Cannot @action this entry. Column header has data associated to it.', ['@action' => $action]);
                 \Drupal::messenger()->addMessage($msg, 'error');
               }
               else {
                 // Call header function.
-                // $form = rawpheno_admin_project_headers($form, $form_state, $header_asset, $action);
+                $form = $this->manageHeaders($header_asset, $action);
               }
             }
             else if($asset_type == 'user') {
@@ -390,6 +391,19 @@ class RawphenotypesManageAssetForm extends FormBase {
       }
       else {
         // Update:
+        // Project id the trait is in.
+        $prj_id = $form_state->getValue('prj_id');
+
+        // Uses cvterm id number.
+        // Update cvterm record (name and definition).
+        $term_service::updateTerm($asset_id, [
+          'name' => $trait_name,
+          'definition' => $trait_def
+        ]);
+
+
+
+
 
       }
     }
@@ -936,6 +950,145 @@ class RawphenotypesManageAssetForm extends FormBase {
 
 
   /////////////////////////////////
+
+  /**
+   * Manage update and delete of column headers.
+   */
+  public function manageHeaders($header_asset, $action) {
+    $term_service = \Drupal::service('rawphenotypes.term_service');
+
+    $form['project_name'] = [
+      '#type' => 'inline_template',
+      '#template' => '<h2>Manage Project Assets / Update Header</h2>'
+    ];
+    
+    if ($action == 'edit') {
+      if ($header_asset['name'] == 'Lodging (Scale: 1-5) upright - lodged' || $header_asset['name'] == 'Comments') {
+        // Is lodging header.
+        $goback = Markup::create('&nbsp;<a href="javascript:history.back();">Go back</a>');
+        drupal_set_message($this->t('Cannot edit @name.', array('@name' => $header_asset['name'])) . $goback, 'error');
+      }
+      else {
+        // Other headers.
+        // CONSTRUCT EDIT FORM.
+
+        // FORM
+        // Add a link to allow administrator to go back to the list of traits in a project.
+        $link = Url::fromRoute('rawphenotypes.projects', []);
+        $link_project = \Drupal::l($this->t('Go back to projects tables'), $link);
+
+        $link = Url::fromRoute('rawphenotypes.manage_project', ['asset_id' => $header_asset['in_project_id'], 'asset_type' => 'project', 'action' => 'manage']);
+        $link_manage_asset = \Drupal::l($this->t('Go back to project column headers table'), $link);
+        
+        $form['back_link'] = [
+          '#type' => 'inline_template',
+          '#template' => Markup::create($link_project . ' | ' . $link_manage_asset),
+        ];
+
+        $form['fieldset_trait'] = [
+          '#type' => 'details',
+          '#title' => $this->t('Eidt Column Header:'),
+          '#open' => TRUE,
+        ];
+
+        // Trait name field.
+        // Extract the trait rep value, trait unit and the trait name.
+        // NOTE: this can only process header following the format: trait name (trait rep; unit)
+        $trait_rep = $trait_unit = '';
+        // Extract the text value inside the parenthesis (unit part).
+        $t = preg_match("/.*\(([^)]*)\)/", $header_asset['name'], $match);
+        $u = (isset($match[1])) ? $match[1] : '';
+
+        // Extract information in a unit only when there is a unit in the first place.
+        // Get the Trait rep (eg R1, R7, 1st) and measurement unit (eg cm, days) values.
+        $reps = $this->trait_reps;
+
+        if ($t) {
+          // Split the information and see if either trait rep or unit is present.
+          $p = explode(' ', $u);
+          if (count($p) > 1) {
+            // Has trait rep and unit.
+            list($trait_rep, $trait_unit) = $p;
+          }
+          else {
+            if (in_array(trim($u, ';'), $reps)) {
+              // Just the rep no unit.
+              $trait_rep = $u;
+              $trait_unit = '';
+            }
+            else {
+              // Just the unit no trait rep.
+              $trait_rep = '';
+              $trait_unit = $u;
+            }
+          }
+        }
+
+        // When niether is present, use the default value of the trait rep and unit (null).
+        // Trait name without the unit part.
+        $trait_name = preg_replace('/\(.*/', ' ', $header_asset['name']);
+
+        // Add form elements.
+        // Include the project id when modifying a trait header.
+        $default_values = [
+          'count_project'        => $header_asset['count_project'],
+          'count_data'           => $header_asset['count_data'],
+          'txt_id'               => $header_asset['cvterm_id'],
+          'prj_id'               => $header_asset['in_project_id'],
+          'txt_trait_name'       => trim($trait_name),
+          'sel_trait_rep'        => trim($trait_rep),
+          'sel_trait_unit'       => trim($trait_unit),
+          'txt_trait_definition' => $header_asset['definition'],
+          'txt_trait_method'     => $header_asset['method'],
+          'txt_trait_rfriendly'  => $header_asset['r_version'],
+          'sel_trait_type'       => $header_asset['type'],
+          'btn_trait_submit'     => 'Save'
+        ];
+
+        $form['fieldset_trait'][] = $this->newHeaderForm($default_values);
+
+        // TABLE
+        // Construct a table, as a summary, showing information about the header.
+        $markup = '<h2>SUMMARY: ' . $header_asset['name'] . ' : PROJECT: ' . $header_asset['in_project_name'] . '</h2>';
+        $form['header'] = [
+          '#type' => 'inline_template',
+          '#template' => $markup
+        ];
+
+        $header_cell = Markup::create($header_asset['name'] . '<p class="r-ver">' . self::markEmpty($header_asset['r_version']) . '</p>');        
+        $arr_headers = ['-', $this->t('Column Header <small>(unit)</small>'), $this->t('Collection Method'), $this->t('Definition'), $this->t('Type')];
+        $arr_rows[] = [
+          1,
+          Markup::create($header_cell),
+          $header_asset['method'],
+          $header_asset['definition'],
+          strtoupper($header_asset['type'])
+        ];
+        
+        $form['tbl_project_headers'] = [
+          '#type' => 'table',
+          '#title' => $this->t('Header summary'),
+          '#header' => $arr_headers,
+          '#rows' => $arr_rows,
+          '#empty' => $this->t('Header summary not found'),
+          '#attributes' => ['id' => 'tbl_header_summary']
+        ];
+      }
+    }
+    elseif ($action == 'delete') {
+      $term_service::removeTermFromProject($header_asset['cvterm_id'], $header_asset['in_project_id']); 
+
+      $link = Url::fromRoute('rawphenotypes.manage_project', 
+        ['asset_id' => $header_asset['in_project_id'], 'asset_type' => 'project', 'action' => 'manage']);
+      
+      $redirect = new RedirectResponse($link->toString());
+      $redirect->send();
+
+      return null;
+    }
+
+    return $form;
+  } 
 
   /**
    * Add or update new header form.
