@@ -10,6 +10,69 @@ use Drupal\user\Entity\User;
 
 class RawphenotypesUserService {
   /**
+   * 
+   */
+  public static function removeUserFromProject($project_user_id) {
+    $table = 'pheno_project_user';
+
+    \Drupal::database()
+      ->delete('pheno_project_user')
+      ->condition('project_user_id', $project_user_id)
+      ->execute();
+  }
+
+  /**
+   * 
+   */
+  public static function getUserAssets($project_user_id) {
+    // Array to hold user assets.
+    $arr_project_assets = [];
+
+    $sql = "
+      SELECT project_id, uid, project_user_id
+      FROM pheno_project_user 
+      WHERE project_user_id = :project_user_id LIMIT 1
+    ";
+
+    $args = [':project_user_id' => $project_user_id];
+    
+    $user = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchObject();
+
+    $arr_project_assets['user_id'] = $user->uid;
+    $arr_project_assets['project_id'] = $user->project_id;
+    $arr_project_assets['project_user_id'] = $user->project_user_id;
+
+    // Given the project id this user is assigned, test if it has any backup files.
+    $sql = "
+      SELECT COUNT(file_id) 
+      FROM pheno_backup_file
+      WHERE project_user_id = :project_user_id
+    ";
+
+    $file_count = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchField();
+
+    $arr_project_assets['project_file_count'] = $file_count;
+
+    // Given the project id this user is assigned, test if it has data.
+    $sql = "
+      SELECT COUNT(plant_id) FROM pheno_plant_project
+      WHERE project_id = (SELECT project_id FROM pheno_project_user WHERE project_id = :project_id AND uid = :user_id)";
+
+    $args = [':project_id' => $user->project_id, ':user_id' => $user->uid];
+    $data_count = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchField();
+
+    $arr_project_assets['project_data_count'] = $data_count;
+
+    return $arr_project_assets;
+  }
+
+  /**
    * Get user by username
    * 
    * @param $username

@@ -27,6 +27,8 @@ class RawphenotypesManageAssetForm extends FormBase {
   private $vocabularies;
   // When asset type is project.
   private $project_id;
+  // When asset is type trait.
+  private $trait_id;
 
   /**
    * Set default values ie. traits types and trait reps etc.
@@ -54,6 +56,7 @@ class RawphenotypesManageAssetForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $asset_id = NULL, $asset_type = NULL, $action = NULL) {
     $term_service = \Drupal::service('rawphenotypes.term_service');
+    $user_service = \Drupal::service('rawphenotypes.user_service');
 
     // Define valid action/command/operation per asset type.
     $arr_valid = [];
@@ -122,14 +125,49 @@ class RawphenotypesManageAssetForm extends FormBase {
               }
               else {
                 // Call header function.
+                $this->trait_id = $asset_id;
                 $form = $this->manageHeaders($header_asset, $action);
               }
             }
             else if($asset_type == 'user') {
-              
+              // Ensure that user is not deleted when there is data and backup files associated.
+              $user_project_asset = $user_service::getUserAssets($asset_id);
+
+              if ($user_project_asset['project_file_count'] > 0) {
+                // User is assigned to a project has backup files.
+                $msg = $this->t('Cannot @action this user. User has backed up files.', ['@action' => $action]);
+                  \Drupal::messenger()->addMessage($msg, 'error');  
+              }
+              elseif ($user_project_asset['project_data_count'] > 0) {
+                // User is assigned to a project has has data.
+                $msg = $this->t('Cannot @action this user. User is assigned to a project that has data.', ['@action' => $action]);
+                \Drupal::messenger()->addMessage($msg, 'error');
+              }
+              elseif ($user_project_asset['user_id'] < 2) {
+                // User is administrator.
+                $msg = $this->t('Cannot @action this user. User is the administrator of thi site.', ['@action' => $action]);
+                \Drupal::messenger()->addMessage($msg, 'error');  
+              }
+              else {
+                // Call user function.
+                $form = $this->manageUsers($user_project_asset, $action);
+              }              
             }
             else if($asset_type == 'envdata') {
-              
+              if ($asset_id > 0 && $action == 'delete') {
+                // Locate file. Ensure that file to be deleted exists.
+                $envdata_project_asset = $project_service::getGetEnvDataAssets($asset_id);
+  
+                if ($envdata_project_asset) {
+                  // Call user function.
+                  $form = self::manageEnvData($envdata_project_asset, $action);
+                }
+                else {
+                  // User is administrator.
+                  $msg = $this->t('Cannot @action Environment Data File. File does not exist.', ['@action' => $action]);
+                  \Drupal::messenger()->addMessage($msg, 'error');    
+                }
+              }
             }
           }
           else {
@@ -149,23 +187,6 @@ class RawphenotypesManageAssetForm extends FormBase {
         $msg = $this->t('Not a valid project request.');
         \Drupal::messenger()->addMessage($msg, 'error');
       }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 
 
@@ -261,7 +282,7 @@ class RawphenotypesManageAssetForm extends FormBase {
           // Edit: 
           // When renaming a field in edit header, ensure that the new or modified name does not exist in cvterm table.
           $sql = "
-            SELECT cvterm_id FROM {cv} AS t1 INNER JOIN {cvterm} AS t2 USING(cv_id)
+            SELECT cvterm_id FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING(cv_id)
             WHERE t1.name = 'phenotype_measurement_types' AND t2.name = :name AND t2.cvterm_id <> :this_cvterm_id
           ";
           $args = [':name' => $trait_name, ':this_cvterm_id' => $asset_id];
@@ -295,8 +316,8 @@ class RawphenotypesManageAssetForm extends FormBase {
     // of the entire form, limit the proces only to submit button in from add column header and save column header.
     $btn_submit = $form_state->getTriggeringElement();
     $action = $btn_submit['#name'];
-    
-    if ($action == 'add-column-header' || $action == 'Save') {
+
+    if ($action == 'add-column-header' || $action == 'save') {
       // Holds the record id number.
       $asset_id = $form_state->getValue('txt_id');
 
@@ -391,20 +412,63 @@ class RawphenotypesManageAssetForm extends FormBase {
       }
       else {
         // Update:
+        $term_service::updateTerm($asset_id, $trait_name, $trait_def);
+        
+        
+        // Update rfriendly version in cvtermprop.
+        $type_rversion = $term_service::getTerm(
+          ['name' => 'phenotype_r_compatible_version'], 
+          ['cv_id' => ['name' => 'rawphenotypes_terms']]
+        );
+
+        $term_service::updateTermProperty($asset_id, $type_rversion->cvterm_id, $rver);
+        
+        // Update method of collection.
+        // When updating, make sure term has a collection method entry in cvtermprop.
+        // If none, add an entry.
+        $has_method = $term_service::getTermProperty($asset_id);
+
+        $type_method = $term_service::getTerm(
+          ['name' => 'phenotype_collection_method'], 
+          ['cv_id' => ['name' => 'rawphenotypes_terms']]
+        );
+
+        if (empty($has_method)) {
+          // None property for method found, create one.
+          $term_service::saveTermProperty(
+            [
+              'cvterm_id' => $asset_id,
+              'type_id' => $type_method->cvterm_id,
+              'value' => $col_method,
+              'rank' => 0
+            ]
+          );
+        }
+        else {
+          // Has method property, update record.
+          $term_service::updateTermProperty($asset_id, $type_method->cvterm_id, $col_method);          
+        }
+
+        // Update relationship term - unit.
+        $type_unit = $term_service::getTermByName('phenotype_measurement_units', 'cv');
+        
+        // Get the unit id.
+        $unit_cvterm = $term_service::getTerm(
+          [
+            'name' => $unit,
+            'cv_id' => $type_unit->cv_id
+          ]
+        );
+
+        $term_service::updateTermRelationship($asset_id, $unit_cvterm->cvterm_id);
+        
+        // Update trait type.
         // Project id the trait is in.
-        $prj_id = $form_state->getValue('prj_id');
+        $project_id = $form_state->getValue('prj_id');
+        $term_service::updateTermProperty($asset_id, 0, $trait_type, $project_id, FALSE);
 
-        // Uses cvterm id number.
-        // Update cvterm record (name and definition).
-        $term_service::updateTerm($asset_id, [
-          'name' => $trait_name,
-          'definition' => $trait_def
-        ]);
-
-
-
-
-
+        // Inform user of the updated header.
+        \Drupal::messenger()->addStatus($this->t('You have successfully updated a column header in this project.'));
       }
     }
   }
@@ -514,6 +578,35 @@ class RawphenotypesManageAssetForm extends FormBase {
     \Drupal::messenger()->addStatus($this->t('You have successfully added a user to this project.'));
   }
 
+   
+  /**
+   * 
+   */
+  public function submitEnvData(array &$form, FormStateInterface $form_state) {
+
+  }
+
+  /**
+   * 
+   */
+  public function validateEnvData(array &$form, FormStateInterface $form_state) {
+    // Environment Data File:
+    $field_value = $this->getRequest()->files->get('files', []);
+
+    if (empty($field_value['file']) || $field_value['file'] == NULL) {
+      $form_state->setErrorByName('file', $this->t('Environment Data File is empty. Please select a file and try again.'));
+    }
+
+    // Location:
+    if (empty($form_state->getValue('select_location'))) {
+      $form_state->setErrorByName('select_location', $this->t('Location field is empty. Please select an option and try again.'));
+    }
+
+    // Year:
+    if (empty($form_state->getValue('select_year'))) {
+      $form_state->setErrorByName('select_year', $this->t('Year field is empty. Please select an option and try again.'));
+    }    
+  }
 
 
 
@@ -564,12 +657,6 @@ class RawphenotypesManageAssetForm extends FormBase {
     $form['project_name'] = [
       '#type' => 'inline_template',
       '#template' => '<h2>PROJECT: ' . $project->name . '</h2>'
-    ];
-    
-    // Save project id for later use in validation or submit.
-    $form['txt_id'] = [
-      '#type' => 'hidden',
-      '#value' => $project_id,
     ];
 
     // Construct page. Layout will be forms (add headers, user and env. data) followed
@@ -941,18 +1028,40 @@ class RawphenotypesManageAssetForm extends FormBase {
 
 
 
-
-
-
-
-
-
-
-
   /////////////////////////////////
+  /**
+   * 
+   */
+  public function manageEnvData($envdata_project_asset, $action) {
+    if ($action == 'delete') {
+
+    }
+  }
+
+  /**
+   * 
+   */
+  public function manageUsers($user_assets, $action) {
+     $user_service = \Drupal::service('rawphenotypes.user_service');
+
+     if ($action == 'delete') {
+      $user_service::removeUserFromProject($user_asset['project_user_id']); 
+
+      $link = Url::fromRoute('rawphenotypes.manage_project', 
+        ['asset_id' => $user_asset['project_id'], 'asset_type' => 'project', 'action' => 'manage']);
+      
+      $redirect = new RedirectResponse($link->toString());
+      $redirect->send();
+
+      return null;
+     }
+  }
 
   /**
    * Manage update and delete of column headers.
+   * 
+   * Property - trait id is set in the switch and will be used
+   * in this method.
    */
   public function manageHeaders($header_asset, $action) {
     $term_service = \Drupal::service('rawphenotypes.term_service');
@@ -1126,6 +1235,12 @@ class RawphenotypesManageAssetForm extends FormBase {
     else {
       $disabled = FALSE;
     }
+
+    // Project id the trait is in or the trait id number.
+    $form['txt_id'] = [
+      '#type' => 'hidden',
+      '#value' => $default['txt_id'],
+    ];
 
     // Exclusive to modifying trait, include the project id the trait is registered.
     if (isset($default['prj_id']) && $default['prj_id'] > 0) {
@@ -1368,7 +1483,6 @@ class RawphenotypesManageAssetForm extends FormBase {
    * Manage environment data asset form.
    */
   public function environmentDataForm() {
-    /*
     // Environement Data File Upload.
     $inline_wraper = [
       '#prefix' => '<div class="envdata-field-wrapper">',
@@ -1379,6 +1493,7 @@ class RawphenotypesManageAssetForm extends FormBase {
     $form['fieldset_envdata']['file'] = [
       '#title' => $this->t('File :'),
       '#type' => 'file',
+      '#name' => 'file'
     ];
 
     //$location_options = $project_service::getProjectLocations($project_id);
@@ -1399,9 +1514,17 @@ class RawphenotypesManageAssetForm extends FormBase {
 
     $form['fieldset_envdata']['upload_env_file'] = [
       '#type' => 'submit',
+      '#submit' => ['::submitEnvData'],
+      '#validate' => ['::validateEnvData'],
+      '#limit_validation_errors' => [
+        ['filefield_file'],
+        ['select_location'],
+        ['select_year'],
+      ],
       '#value' => $this->t('Upload file')
     ];
-    */
+
+    return $form;
   }
 
   /**

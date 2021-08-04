@@ -286,4 +286,34 @@ class RawphenotypesProjectService {
 
     return ($query->rowCount() > 0) ? $query->fetchAll() : [];
   }
+
+  /**
+   * 
+   */
+  public static function getProjectEnvDataAssets($asset_id) {
+    $sql = "
+      SELECT environment_data_id, project_id, location, year, fid
+      FROM pheno_environment_data 
+      WHERE environment_data_id = :envdata_id
+      LIMIT 1
+    ";
+    $args = [':envdata_id' => $asset_id];
+    $envdata = \Drupal::database()
+      ->query($sql, $args);
+
+    if ($envdata) {
+      $e = $envdata->fetchObject();
+
+      return array(
+        'envdata_id' => $e->environment_data_id,
+        'project_id' => $e->project_id,
+        'location' => $e->location,
+        'year' => $e->year,
+        'fid' => $e->fid,
+      );
+    }
+    else {
+      return 0;
+    }
+  }
 }

@@ -37,6 +37,29 @@ class RawphenotypesTermService {
   }
 
   /**
+   * Update term - name and definition.
+   * 
+   * @param $term_id
+   *   Integer, term id/cvterm id number to be updated.
+   * @param $name
+   *   New term name to replace existing term name.
+   * @param $definition
+   *   New term definition to replace existing term definition.
+   */
+  public static function updateTerm($term_id, $name, $definition) {
+    $table = 'cvterm';
+    chado_update_record($table, 
+      [
+        'cvterm_id' => $term_id
+      ],
+      [
+        'name' => $name,
+        'definition' => $definition
+      ]
+    );
+  }
+
+  /**
    * Get cvterm or cv by name.
    * 
    * @param $term_name
@@ -195,6 +218,80 @@ class RawphenotypesTermService {
   }
 
   /**
+   * Update a term property.
+   * 
+   * @param $term_id 
+   *   Integer, term id/cvterm id number to be updated.
+   * @param $type_id
+   *   Integer, type id number corresponding to which property type to be updated.
+   * @param $value
+   *   New value to replace.
+   * @param $project
+   *   Integer, project id number used for property that requires project specific constraints.
+   *   Default to null.
+   * @param $chadoprop
+   *   Boolean, True if property is from a chado table and False if from custom table.
+   *   Default to TRUE - updates to chado table.
+   */
+  public static function updateTermProperty($term_id, $type_id, $value, $project = null, $chadoprop = TRUE) {    
+    if ($chadoprop) {
+      $table = 'cvtermprop';
+      chado_update_record($table, 
+        [
+          'cvterm_id' => $term_id,
+          'type_id' => $type_id
+        ],
+        [
+          'value' => $value
+        ]
+      );
+    }
+    else {
+      $table = 'pheno_project_cvterm';
+      \Drupal::database()
+        ->update($table)
+        ->fields(['type' => $value])
+        ->condition('cvterm_id', $term_id, '=')
+        ->condition('project_id', $project, '=')
+        ->execute();
+    }
+  }
+
+  /**
+   * Get term R version or Method property.
+   * 
+   * @param $term_id
+   *   Integer, term id/cvterm id number to be updated.
+   * @param $property
+   *   String, method or rversion property of a term.
+   *   [method or rversion], default to method property.
+   * 
+   * @return string
+   *   Method or Rversion information of a term.
+   */
+  public static function getTermProperty($term_id, $property = 'method') {
+    $default_service = \Drupal::service('rawphenotypes.default_service');
+    $properties = [];
+    $default_vocabularies = $default_service::getDefaultValue('vocabularies'); 
+    $properties['method'] = $default_vocabularies['cv_desc'];
+    $properties['rversion'] = $default_vocabularies['cv_rver'];
+
+    $property = $properties[ $property ];
+    $type = self::getTerm(['name' => $property], ['cv_id' => ['name' => $default_vocabularies['cv_phenotypes']]]);
+
+    $sql = "SELECT value FROM chado.cvtermprop WHERE cvterm_id = :term_id AND type_id = :cv_id";
+    $args = [':term_id' => $term_id, ':cv_id' => $type->cvterm_id];
+    
+    $property_value = \Drupal::database()
+      ->query($sql, $args)
+      ->fetchField();
+    
+    return $property_value ?? null;
+  }
+
+
+
+  /**
    * Set trait relationship ie. trait-unit relationship.
    * 
    * @param $details
@@ -205,6 +302,28 @@ class RawphenotypesTermService {
     chado_insert_record($table, $details);
   }
 
+  /**
+   * Update term relationship.
+   * 
+   * @param $term_id
+   *   Integer, term id/cvterm id number to be updated.
+   * @param $value
+   *   New value to replace the existing relationship.
+   *   Value will be the subject in the relationship.
+   */
+  public static function updateTermRelationship($term_id, $value) {
+    $table = 'cvterm_relationship';
+    chado_update_record($table, 
+      [
+        'object_id' => $term_id
+      ],
+      [
+        'subject_id' => $value
+      ]
+    );
+  }
+
+  
   /**
    * Assign term to a project.
    * 
@@ -252,7 +371,7 @@ class RawphenotypesTermService {
   /**
    * Update term (cvterm).
    */
-  public static function updateTerm($term_id, $details) {
+  //public static function updateTerm($term_id, $details) {
     /*
     $match = ['cvterm_id' => $term_id];
     
@@ -300,7 +419,7 @@ class RawphenotypesTermService {
     */
 
 
-  }
+  //}
 
   /**
    * For types using scale as unit, create each scale item.
