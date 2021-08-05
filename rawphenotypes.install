@@ -505,7 +505,7 @@ function rawphenotypes_install() {
   $trait_type = $default_service::getTraitTypes();
 
   
- // Array to hold all column headers, plant property headers and essential headers.
+  // Array to hold all column headers, plant property headers and essential headers.
   $arr_allheaders = $default_service::getTraits('expected');
   $arr_subsetheader = $default_service::getTraits('subset');
   $arr_plantpropheader = $default_service::getTraits('plantprop');

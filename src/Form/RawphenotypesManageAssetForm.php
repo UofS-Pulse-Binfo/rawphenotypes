@@ -7,6 +7,7 @@
 namespace Drupal\rawphenotypes\Form;
 
 use Drupal\Core\Url;
+use Drupal\file\Entity\File;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
@@ -583,7 +584,56 @@ class RawphenotypesManageAssetForm extends FormBase {
    * 
    */
   public function submitEnvData(array &$form, FormStateInterface $form_state) {
+    $envdata_service = \Drupal::service('rawphenotypes.envdata_service');
+    
+    $project_id = $form_state->getValue('txt_id');
+    $location   = $form_state->getValue('select_location');
+    $year       = $form_state->getValue('select_year');
 
+    if ($project_id && $location && $year) {
+      $get_field = $this->getRequest()->files->get('files', []);
+      $file_field = $get_field['file_env_file'];
+
+      $destination = \Drupal::config('system.file')
+        ->get('default_scheme') . '://rawphenotypes_env_data';
+      
+      \Drupal::service('file_system')
+        ->prepareDirectory($destination, FILE_MODIFY_PERMISSIONS);
+      
+      $env_filename = $file_field->getClientOriginalName();
+      $env_file_ext = $file_field->getClientOriginalExtension();
+
+      $seq_no = $envdata_service::getSequenceNumber($project_id, $location, $year);
+      $u_no = date('ymdis');
+
+      $new_filename = str_replace(array(' ', '-', ','), '_', $location) . '_' . $year . '_' . $u_no . '_environment_data.' . $env_file_ext;
+      $new_filename = strtolower($new_filename);
+      
+      $file_field->move($destination, $new_filename);
+      
+      // Create a Drupal 8 file entity.
+      $file_create = File::create([
+        'filename' => $new_filename,
+        'uri' => $destination . '/' . $new_filename,
+        'status' => 1
+      ]);
+      
+      $file_create->save();
+
+      $fid = $file_create->id();
+
+      $envdata_service::saveEnvData(
+        [
+          'project_id' => $project_id,
+          'fid'       => $fid,
+          'location' => $location,
+          'year'    => $year,
+          'sequence_no' => $seq_no
+        ]
+      );
+          
+      \Drupal::messenger()->addStatus($this->t('You have successfully uploaded environment data file to this project.'));  
+    }
   }
 
   /**
@@ -593,8 +643,9 @@ class RawphenotypesManageAssetForm extends FormBase {
     // Environment Data File:
     $field_value = $this->getRequest()->files->get('files', []);
 
-    if (empty($field_value['file']) || $field_value['file'] == NULL) {
-      $form_state->setErrorByName('file', $this->t('Environment Data File is empty. Please select a file and try again.'));
+    // File field:
+    if ($field_value['file_env_file'] == NULL) {
+      $form_state->setErrorByName('file_env_file', $this->t('Environment Data File is empty. Please select a file and try again.'));
     }
 
     // Location:
@@ -1490,36 +1541,36 @@ class RawphenotypesManageAssetForm extends FormBase {
     ];
 
     // Add seach field to filter the list of name.
-    $form['fieldset_envdata']['file'] = [
+    $form['file_env_file'] = [
       '#title' => $this->t('File :'),
       '#type' => 'file',
-      '#name' => 'file'
     ];
 
     //$location_options = $project_service::getProjectLocations($project_id);
 
-    $form['fieldset_envdata']['select_location'] = [
+    $form['select_location'] = [
       '#title' => $this->t('Location :'),
       '#type' => 'select',
-      //'#options' => $location_options,
+      '#options' => ['canada' => 'Canada'],
       '#empty_option' => $this->t('- Select -'),
     ];
 
-    $form['fieldset_envdata']['select_year'] = [
+    $form['select_year'] = [
       '#title' => $this->t('Year :'),
       '#type' => 'select',
-      #'#options' => $year_options,
+      '#options' => ['2001' => '2001'],
       '#empty_option' => $this->t('- Select -'),
     ];
 
-    $form['fieldset_envdata']['upload_env_file'] = [
+    $form['upload_env_file'] = [
       '#type' => 'submit',
       '#submit' => ['::submitEnvData'],
       '#validate' => ['::validateEnvData'],
       '#limit_validation_errors' => [
-        ['filefield_file'],
+        ['file_env_file'],
         ['select_location'],
         ['select_year'],
+        ['txt_id']
       ],
       '#value' => $this->t('Upload file')
     ];

@@ -13,4 +13,6 @@ services:
   rawphenotypes.mview_service:
     class: Drupal\rawphenotypes\Services\RawphenotypesMviewService    
   rawphenotypes.user_service:
-    class: Drupal\rawphenotypes\Services\RawphenotypesUserService    
+    class: Drupal\rawphenotypes\Services\RawphenotypesUserService 
+  rawphenotypes.envdata_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesEnvironmentDataService   
