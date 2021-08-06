@@ -6,6 +6,10 @@
 
 namespace Drupal\Rawphenotypes\Services;
 
+use Drupal\file\Entity\File;
+use Drupal\Core\Entity\EntityStorageException;
+
+
 class RawphenotypesEnvironmentDataService {
   /**
    * 
@@ -47,6 +51,53 @@ class RawphenotypesEnvironmentDataService {
     
     $result->allowRowCount = TRUE;
     
-    return ($result->rowCount()) ? $result->fetchField() : 1;
+    return ($result->rowCount()) ? $result->fetchField() + 1 : 1;
+  }
+
+  /**
+   * 
+   */
+  public static function deleteEnvData($envdata) {
+    $table = 'pheno_environment_data';
+
+    \Drupal::database()
+      ->delete($table)
+      ->condition('environment_data_id', $envdata['envdata_id'])
+      ->execute();
+
+    $file_entity = File::load($envdata['fid']);
+    file_delete($file_entity->id());
+
+    $sql = "
+      SELECT environment_data_id, sequence_no 
+      FROM pheno_environment_data
+      WHERE location = :location AND year = :year AND project_id = :project_id
+      ORDER BY sequence_no ASC
+    ";
+    $args = [
+      ':project_id' => $envdata['project_id'],
+      ':location' => $envdata['location'],
+      ':year' => $envdata['year'],
+    ];
+
+    $result = \Drupal::database()
+      ->query($sql, $args);
+    
+    $result->allowRowCount = TRUE;
+    
+    if ($result->rowCount()) {
+      $seq = 1;
+      foreach($result as $id => $seq_no) {
+        \Drupal::database()
+          ->update($table)
+          ->fields([
+            'sequence_no' => $seq + 1
+          ])
+          ->condition('environment_data_id', $id, '=')
+          ->execute();
+
+        $sql++;
+      }
+    }
   }
 }

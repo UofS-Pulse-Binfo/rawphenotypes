@@ -58,6 +58,8 @@ class RawphenotypesManageAssetForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, $asset_id = NULL, $asset_type = NULL, $action = NULL) {
     $term_service = \Drupal::service('rawphenotypes.term_service');
     $user_service = \Drupal::service('rawphenotypes.user_service');
+    $project_service = \Drupal::service('rawphenotypes.project_service');
+
 
     // Define valid action/command/operation per asset type.
     $arr_valid = [];
@@ -157,7 +159,7 @@ class RawphenotypesManageAssetForm extends FormBase {
             else if($asset_type == 'envdata') {
               if ($asset_id > 0 && $action == 'delete') {
                 // Locate file. Ensure that file to be deleted exists.
-                $envdata_project_asset = $project_service::getGetEnvDataAssets($asset_id);
+                $envdata_project_asset = $project_service::getProjectEnvDataAssets($asset_id);
   
                 if ($envdata_project_asset) {
                   // Call user function.
@@ -1047,18 +1049,19 @@ class RawphenotypesManageAssetForm extends FormBase {
     $arr_rows = $arr_headers = [];
 
     if (count($envdata) > 0) {
-      array_push($arr_headers, '-', t('File'), t('Location'), t('Year'), t('Sequence No.'), t('Delete'));
+      array_push($arr_headers, '-', $this->t('File'), $this->t('Location'), $this->t('Year'), $this->t('Sequence No.'), $this->t('Delete'));
 
       foreach($envdata as $i => $env) {
-        $link = Url::fromUri($env->uri);
-        $cell_file = \Drupal::l($env->filename . ' (' . format_size($env->filesize) . ')', $link, ['attributes' => ['target' => '_blank']]);
         
-        $cell_file .= Markup::create('<br /><small>Uploaded: ' . \Drupal::service('date.formatter')->format($env->timestamp) . '</small>');
+        $link = Url::fromUri($env->uri);
+        $cell_file = \Drupal::l($env->filename . ' (' . $env->filesize . ')', $link, ['attributes' => ['target' => '_blank']]);        
+        $cell_file .= '<br /><small>Uploaded: ' . $env->created . '</small>';
+        $cell_file = Markup::create($cell_file);
 
         $link = Url::fromRoute('rawphenotypes.manage_project', ['asset_id' => $env->environment_data_id, 'asset_type' => 'envdata', 'action' => 'delete']);
         $cell_del = \Drupal::l($this->t('Delete'), $link);
 
-        $arr_rows[] = array($i+1, $cell_file, $env->location, $env->year, '#' . $env->sequence_no, $cell_del);
+        $arr_rows[] = array($i+1, $cell_file, $env->location, $env->year, '#' . $env->sequence_no, $cell_del);        
       }
     }
 
@@ -1085,7 +1088,16 @@ class RawphenotypesManageAssetForm extends FormBase {
    */
   public function manageEnvData($envdata_project_asset, $action) {
     if ($action == 'delete') {
+      $envdata_service = \Drupal::service('rawphenotypes.envdata_service');
+      $envdata_service::deleteEnvData($envdata_project_asset); 
 
+      $link = Url::fromRoute('rawphenotypes.manage_project', 
+        ['asset_id' => $envdata_project_asset['project_id'], 'asset_type' => 'project', 'action' => 'manage']);
+      
+      $redirect = new RedirectResponse($link->toString());
+      $redirect->send();
+
+      return null;
     }
   }
 

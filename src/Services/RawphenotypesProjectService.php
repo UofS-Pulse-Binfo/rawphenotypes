@@ -6,6 +6,10 @@
 
 namespace Drupal\Rawphenotypes\Services;
 
+use Drupal\file\Entity\File;
+use Drupal\Core\Url;
+
+
 class RawphenotypesProjectService {
   /**
    * Get project profile by project name.
@@ -271,9 +275,11 @@ class RawphenotypesProjectService {
    *   Environment data and file information (filename, uri and file timestamp).
    */
   public static function getProjectEnvDataFiles($project_id) {
+    $files = [];
+
     $sql = "
-      SELECT environment_data_id, location, year, sequence_no, filename, uri, created, filesize
-      FROM pheno_environment_data INNER JOIN file_managed USING(fid)
+      SELECT environment_data_id, location, year, sequence_no, fid
+      FROM pheno_environment_data
       WHERE project_id = :project_id
       ORDER BY location, year, sequence_no DESC
     ";
@@ -282,9 +288,30 @@ class RawphenotypesProjectService {
     $query = \Drupal::database()
       ->query($sql, $args);
     
-    $query->allowRowCount = TRUE;
+    $query->allowRowCount = TRUE;  
 
-    return ($query->rowCount() > 0) ? $query->fetchAll() : [];
+    if ($query->rowCount() > 0) {
+      foreach($query as $i => $env) {
+        $f = new \stdClass();
+        $f->environment_data_id = $env->environment_data_id;
+        $f->location = $env->location;
+        $f->year = $env->year;
+        $f->sequence_no = $env->sequence_no;
+
+        $file_entity = File::load($env->fid);
+        $f->filename = $file_entity->getFilename();
+        $f->uri = file_create_url($file_entity->getFileUri());
+        $timestamp = \Drupal::service('date.formatter')
+          ->format($file_entity->getCreatedTime());
+        $f->created = $timestamp;
+        $f->filesize = format_size($file_entity->getSize())
+          ->render();
+
+        $files[ $i ] = $f;
+      }
+    } 
+    
+    return $files;
   }
 
   /**
