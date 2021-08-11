@@ -34,7 +34,7 @@
       });
 
       // Confirm if user wants to proceed with the command.
-      $('.link-del').click(function(event) {
+      $('.link-del').once('.link-del').click(function(event) {
         var r = confirm("Are you sure you want to delete?");
         if (!r)  return false;
       });

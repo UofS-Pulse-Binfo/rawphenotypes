@@ -2,6 +2,7 @@
 /**
  * @file
  * Contains class definition of RawphenotypesUserService
+ * Class to manage user working on a project.
  */
 
 namespace Drupal\Rawphenotypes\Services;
@@ -10,19 +11,15 @@ use Drupal\user\Entity\User;
 
 class RawphenotypesUserService {
   /**
+   * Get a user assets - backed up file count, id, active projects
    * 
-   */
-  public static function removeUserFromProject($project_user_id) {
-    $table = 'pheno_project_user';
-
-    \Drupal::database()
-      ->delete('pheno_project_user')
-      ->condition('project_user_id', $project_user_id)
-      ->execute();
-  }
-
-  /**
+   * @param $project_user_id
+   *   Integer, project user id assigned by module to a user.
    * 
+   * @return array
+   *   Associative array with the following information
+   *   user id, project id (user is assigned), project user id (id assigned by module)
+   *   file count (backed up files) and project data count (data uploaded).
    */
   public static function getUserAssets($project_user_id) {
     // Array to hold user assets.
@@ -73,7 +70,7 @@ class RawphenotypesUserService {
   }
 
   /**
-   * Get user by username
+   * Get user by username.
    * 
    * @param $username
    *   String, name/username of user account.
@@ -180,5 +177,18 @@ class RawphenotypesUserService {
     $query->allowRowCount = TRUE;
 
     return ($query->rowCount()) ? $query->fetchAll() : [];
+  }
+
+  /**
+   * Dissociate a user from a project.
+   * NOTE: This will not delete user from your Drupal system.
+   */
+  public static function removeUserFromProject($project_user_id) {
+    $table = 'pheno_project_user';
+
+    \Drupal::database()
+      ->delete('pheno_project_user')
+      ->condition('project_user_id', $project_user_id)
+      ->execute();
   }
 }

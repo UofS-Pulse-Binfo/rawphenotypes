@@ -2,65 +2,109 @@
 /**
  * @file
  * Contains class definition of RawphenotypesTermsService.
+ * This class will provide management of CV and Terms used by this module
+ * by using core Tripal vocabulary and term management service.
+ * 
+ * All vocabulary terms used by this module fall under the following
+ * controlled vocabulary terms.
+ * 
+ * - rawphenotypes_terms - each cv following will be a term under this cv.
+ * - phenotype_plant_property_types - plant properties terms (name, entry).
+ * - phenotype_measurement_units - measurement units (cm, g).
+ * - phenotype_measurement_types - traits terms (plant height(cm)).
+ * - phenotype_r_compatible_version - R compatible version of trait.
+ * - phenotype_collection_method - collection method (descriptions).
+ * 
+ * NOTE: terms in rawphenotypes_terms cv will be used to create
+ * relationships in cvtermprop and cvterm_relationship as value
+ * to the field type_id.
+ * 
+ * @see tripal\Services\TripalVocabManager
+ * @see tripal\Services\TripalTermManager
  */
 
 namespace Drupal\Rawphenotypes\Services;
 
 class RawphenotypesTermService {
+  // Hold all controlled vocabulary terms/names listed in the comment.
+  private $vocabularies;
+  // R-transformation rules set by configuration.
+  private $rtransform_rules;
+  // Table to store term properties (method information, r-version);
+  private $table_property = 'cvtermprop';
+  // Table to store term relationships (term-unit).
+  private $table_relationship = 'cvterm_relationship';
+  // Term/trait replicates (r1, r2...)
+  private $replicates;
+
+  public function __construct() {
+    $default_service = \Drupal::service('rawphenotypes.default_service');
+    $this->vocabularies = $default_service::getDefaultValue('vocabularies');
+
+    $settings = \Drupal::service('config.factory')
+      ->getEditable('rawphenotypes.settings');
+
+    $this->rtransform_rules = [
+      'word_rules' => $settings->get('rawpheno_rtransform_words'),
+      'char_rules' => $settings->get('rawpheno_rtransform_characters'),
+      'replace_rules' => $settings->get('rawpheno_rtransform_replace'),
+    ];
+
+    $this->replicates = $default_service::getTraitReps();
+  }
+
   /**
-   * Add terms cv or cvterms.
+   * Create or add controlled vocabulary terms.
    * 
    * @param $details
    *   Associative array where key corresponds to fields in cv or cvterm.
-   * @param $table
-   *   Table - cv or cvterm to insert. Default to cvterm.
+   *   Fields/Key:
+   *   - name
+   *   - definition
+   *   - cv_name/cv_id
    * 
    * @return object
    *   Inserted term row object.
    * 
-   * @TODO: Update to comply with Tripal 4 terms and vocab services.
+   * @TODO: Update to comply with Tripal 4 terms and vocab services only
+   * when term service used for non-content type become available.
    */
-  public static function addTerm($details, $table = 'cvterm') {
-    if ($table == 'cv') {
-      list($cv_name, $cv_description) = $details;
-      $term = (function_exists('chado_insert_cv')) 
-        ? chado_insert_cv($cv_name, $cv_description)
-        : tripal_insert_cv($cv_name, $cv_description);
-    }
-    else {
-      $term = (function_exists('chado_insert_cvterm'))
-        ? chado_insert_cvterm($details)
-        : chado_insert_cvterm($details);
-    }    
-
+  public function addTerm($details) {
+    $term = (function_exists('chado_insert_cvterm'))
+      ? chado_insert_cvterm($details)
+      : chado_insert_cvterm($details);
+  
     return $term ?? null;
   }
 
   /**
-   * Update term - name and definition.
+   * Update values name and definition values of a term.
    * 
    * @param $term_id
    *   Integer, term id/cvterm id number to be updated.
-   * @param $name
+   * @param $new_name
    *   New term name to replace existing term name.
-   * @param $definition
+   * @param $new_definition
    *   New term definition to replace existing term definition.
+   * 
+   * @TODO: Update to comply with Tripal 4 terms and vocab services only
+   * when term service used for non-content type become available.
    */
-  public static function updateTerm($term_id, $name, $definition) {
+  public function updateTerm($term_id, $new_name, $new_definition): void {
     $table = 'cvterm';
+    $match = ['cvterm_id' => $term_id];
+
     chado_update_record($table, 
+      $match,
       [
-        'cvterm_id' => $term_id
-      ],
-      [
-        'name' => $name,
-        'definition' => $definition
+        'name' => $new_name,
+        'definition' => $new_definition
       ]
     );
   }
 
   /**
-   * Get cvterm or cv by name.
+   * Get controlled vocabulary term or cv terms using name field.
    * 
    * @param $term_name
    *   String, term or vocabulary term name value.
@@ -68,28 +112,33 @@ class RawphenotypesTermService {
    *   String, source table to search the term name.
    *   Default to chado.cvterm.
    * 
-   * @return 
+   * @return object
+   *   Term row matching the name (cv.name or cvterm.name) as an object.
    */
-  public static function getTermByName($term_name, $source = 'cvterm') {
+  public function getTermByName($term_name, $source = 'cvterm') {
     if ($source == 'cv') {
       // Term vocabulary source - find in chado.cv.
       $table = 'chado.cv';
+      $primary_key = 'cv_id';
     }
     else {
       // Term, cvterm source - find in chado.cvterm.
       $table = 'chado.cvterm';
+      $primary_key = 'cvterm_id';
     }
 
     $term_name = trim($term_name);
-    $sql = sprintf('SELECT * FROM %s WHERE name = :term_name', $table);
+
+    // This is a case-sensitive search so terms Null and null are considered
+    // two difference terms.
+    $sql = 'SELECT %s, name, definition FROM %s WHERE name = :term_name';
+    $sql = sprintf($sql, $primary_key, $table);
     $args = [':term_name' => $term_name];
 
     $query = \Drupal::database()
       ->query($sql, $args);
     
-    $query->allowRowCount = TRUE;
-
-    return ($query->rowCount()) ? $query->fetchObject() : null;
+    return $query->fetchObject() ?? null;
   }
 
   /**
@@ -103,7 +152,7 @@ class RawphenotypesTermService {
    * @return object
    *   CV term row object.
    */
-  public static function getTerm($details, $source = 'cvterm') {
+  public function getTerm($details, $source = 'cvterm') {
     if ($source == 'cv') {
       return (function_exists('chado_get_cv')) 
         ? chado_get_cv($details)
@@ -117,21 +166,23 @@ class RawphenotypesTermService {
   }
 
   /**
-   * Function to transform a column header to R compatible version.
+   * Base on R transformation rules, convert a term into 
+   * R-compatible version. This version can be reference using
+   * the relationship between a term and r-version in cvtermprop table.
+   * 
+   * Transformation rules can be set in the control panel of this module.
    *
-   * @params $column_header
+   * @param $column_header
    *   A string containing the column header to transform.
+   * 
    * @return
    *   A string containing the R compatible column header.
    */
-  public static function makeTermRCompatible($column_header) {
-    $settings = \Drupal::service('config.factory')
-      ->getEditable('rawphenotypes.settings');
-
+  public function makeTermRCompatible($column_header) {
     // Get R transformation rules set in the admin control panel.
-    $word_rules = $settings->get('rawpheno_rtransform_words');
-    $char_rules = $settings->get('rawpheno_rtransform_characters');
-    $replace_rules = $settings->get('rawpheno_rtransform_replace');
+    $word_rules = $this->rtransform_rules['word_rules'];
+    $char_rules = $this->rtransform_rules['char_rules'];
+    $replace_rules = $this->rtransform_rules['replace_rules'];
 
     $arr_match = [];
     $arr_replace = [];
@@ -183,23 +234,26 @@ class RawphenotypesTermService {
   }
 
   /**
-   * Function extract the unit from a column header.
+   * Parse a line of text which is a term/column header to find and
+   * extract the unit part present in the string.
    *
    * @param $header
-   *   A string containing the header.
+   *   A string containing the header. Usually following
+   *   the Trait name (unit) format.
    *
    * @return
    *   A string containing the unit of the header.
    */
-  public static function getTermUnit($header) {
-    $default_service = \Drupal::service('rawphenotypes.default_service');
-
+  public function getTermUnit($header) {
+    // Find the unit part in the string (unit).
+    // Not found return text.
     preg_match("/.*\(([^)]*)\)/", $header, $match);
     $u = (isset($match[1])) ? $match[1] : 'text';
 
-    $chars = $default_service::getTraitReps();
+    // Unit can contain replicates, fetch all replicates
+    // used and remove it from the unit.
+    $chars = $this->replicates;
     array_push($chars, ';', ': 1-5');
-
     $unit = str_ireplace($chars, '', $u);
 
     return trim(strtolower($unit));
@@ -209,16 +263,25 @@ class RawphenotypesTermService {
    * Set data collection method of a trait.
    * Example: trait method and trait R version.
    * 
+   * Key and value expected.
+   * - cvterm_id: term id number.
+   * - type_id: describes the property created, it is the cvterm_id value
+   *   corresponding to phenotype_collection_method and phenotype_r_compatible_version.
+   * - value: method description or the r transformed value.
+   * - rank: default and set to 0.
+   * 
    * @param $details
    *   Associative array, where key corresponds to field in chado.cvtermprop table.
    */
-  public static function saveTermProperty($details) {
-    $table = 'cvtermprop';
-    chado_insert_record($table, $details);
+  public function saveTermProperty($details): void {
+    if ($details) {
+      chado_insert_record($this->table_property, $details);
+    }
   }
 
   /**
-   * Update a term property.
+   * Update a term property whether in chado specific database
+   * and module specific table.
    * 
    * @param $term_id 
    *   Integer, term id/cvterm id number to be updated.
@@ -233,20 +296,21 @@ class RawphenotypesTermService {
    *   Boolean, True if property is from a chado table and False if from custom table.
    *   Default to TRUE - updates to chado table.
    */
-  public static function updateTermProperty($term_id, $type_id, $value, $project = null, $chadoprop = TRUE) {    
+  public function updateTermProperty($term_id, $type_id, $value, $project = null, $chadoprop = TRUE) {    
     if ($chadoprop) {
-      $table = 'cvtermprop';
+      // Update term method or r-version value from a 
+      // chado table.
+      $table = $this->table_property;
+      $match = ['cvterm_id' => $term_id, 'type_id' => $type_id];
+
       chado_update_record($table, 
-        [
-          'cvterm_id' => $term_id,
-          'type_id' => $type_id
-        ],
-        [
-          'value' => $value
-        ]
+        $match,
+        ['value' => $value]
       );
     }
     else {
+      // Update term type whether essential, optional or custom type.
+      // Source table is custom table.
       $table = 'pheno_project_cvterm';
       \Drupal::database()
         ->update($table)
@@ -269,15 +333,14 @@ class RawphenotypesTermService {
    * @return string
    *   Method or Rversion information of a term.
    */
-  public static function getTermProperty($term_id, $property = 'method') {
-    $default_service = \Drupal::service('rawphenotypes.default_service');
+  public function getTermProperty($term_id, $property = 'method') {    
     $properties = [];
-    $default_vocabularies = $default_service::getDefaultValue('vocabularies'); 
-    $properties['method'] = $default_vocabularies['cv_desc'];
-    $properties['rversion'] = $default_vocabularies['cv_rver'];
+    $properties['method'] = $this->vocabularies['cv_desc'];
+    $properties['rversion'] = $this->vocabularies['cv_rver'];
 
     $property = $properties[ $property ];
-    $type = self::getTerm(['name' => $property], ['cv_id' => ['name' => $default_vocabularies['cv_phenotypes']]]);
+    // Get the cvterm equivalent of a cv used in tagging a property (type_id).
+    $type = self::getTerm(['name' => $property], ['cv_id' => ['name' => $this->vocabularies['cv_phenotypes']]]);
 
     $sql = "SELECT value FROM chado.cvtermprop WHERE cvterm_id = :term_id AND type_id = :cv_id";
     $args = [':term_id' => $term_id, ':cv_id' => $type->cvterm_id];
@@ -289,17 +352,21 @@ class RawphenotypesTermService {
     return $property_value ?? null;
   }
 
-
-
   /**
-   * Set trait relationship ie. trait-unit relationship.
+   * Create trait relationship ie. trait-unit relationship.
+   * 
+   * Key and value expected.
+   * - subject_id: the term id - the unit cvterm id.
+   * - type_id: cvterm id for term phenotype_measurement_units.
+   * - object_id: term id - the trait/header cvterm id.
    * 
    * @param $details
    *   Associative array, where key corresponds to field in chado.cvterm_relationship table.
    */
-  public static function saveTermRelationship($details) {
-    $table = 'cvterm_relationship';
-    chado_insert_record($table, $details);
+  public function saveTermRelationship($details): void {
+    if ($details) {
+      chado_insert_record($this->table_relationship, $details);
+    }
   }
 
   /**
@@ -311,16 +378,16 @@ class RawphenotypesTermService {
    *   New value to replace the existing relationship.
    *   Value will be the subject in the relationship.
    */
-  public static function updateTermRelationship($term_id, $value) {
-    $table = 'cvterm_relationship';
-    chado_update_record($table, 
-      [
-        'object_id' => $term_id
-      ],
-      [
-        'subject_id' => $value
-      ]
-    );
+  public function updateTermRelationship($term_id, $value): void {
+    if ($value) {
+      $match = ['object_id' => $term_id];
+      chado_update_record($this->table_relationship, 
+        $match,
+        [
+          'subject_id' => $value
+        ]
+      );
+    }
   }
 
   
@@ -334,9 +401,8 @@ class RawphenotypesTermService {
    * @param $project_id
    *   Integer, project id to where a term is to be assigned.
    */
-  public static function saveTermToProject($term_id, $type, $project_id) {
+  public function saveTermToProject($term_id, $type, $project_id): void {
     $table = 'pheno_project_cvterm';
-    $term  = trim($term);
     $type  = trim($type);
     $project_id = trim($project_id);
 
@@ -351,77 +417,6 @@ class RawphenotypesTermService {
   }
 
   /**
-   * Removes a term from project.
-   * Deassociate the term from a project and not physical deletion of the 
-   * trait record.
-   * 
-   * @param $term_id
-   *   Integer, term id number that corresponds to cvterm_id (trait/header id).
-   * @param $project_id
-   *   Integer, project id number the term is part of.
-   */
-  public static function removeTermFromProject($term_id, $project_id) {
-    \Drupal::database()
-      ->delete('pheno_project_cvterm')
-      ->condition('cvterm_id', $term_id)
-      ->condition('project_id', $project_id)
-      ->execute();
-  }
-
-  /**
-   * Update term (cvterm).
-   */
-  //public static function updateTerm($term_id, $details) {
-    /*
-    $match = ['cvterm_id' => $term_id];
-    
-    $func = (function_exists('chado_update_record')) 
-      ? 'chado_update_record' : 'tripal_update_record';
-    
-    // Update cvterm record (name and definition).
-    call_user_func($func, 'cvterm', $match, [
-      'name' => $details['trait_name'],
-      'definition' => $details['definition']
-    ]);
-  
-    // Update rfriendly version.
-    call_user_func($func, 'cvtermprop', $match, [
-      'value' => $details['rver']
-    ]);
-
-    // Update method of collection information.
-    // When updating, make sure term has a collection method entry in cvtermprop.
-    // If none, add an entry.
-    $has_method = self::getTerm([
-      'cvterm_id' => $term_id,
-      'cv_id' => ['name' => 'phenotype_measurement_types']
-    ]);
-    
-    if ($has_method) {
-      // Has method, update the record.
-      call_user_func($func, 'cvtermprop', $match, [
-        'value' => $details['method']
-      ]);
-    }
-    else {
-      // None found, insert a record.
-      $method_type = self::getTerm(['name' => 'phenotype_collection_method'], ['cv_id' => ['name' => 'rawphenotypes_terms']]);
-      self::saveTermProperty([
-        'cvterm_id' => $term_id,
-        'type_id' => $method_type->cvterm_id,
-        'value' => $details['method'],
-        'rank' => 0
-      ]);
-    }
-
-    // Update term-unit relationship.
-    call_user_func($func, 'cvterm_relationship', )
-    */
-
-
-  //}
-
-  /**
    * For types using scale as unit, create each scale item.
    * 
    * @param $term_id
@@ -429,7 +424,7 @@ class RawphenotypesTermService {
    * @param $scales
    *   Scale items or range of values.
    */
-  public static function setTermScaleValues($term_id, $scales) {
+  public function setTermScaleValues($term_id, $scales) {
     $table = 'pheno_scale_member';
     
     $query = \Drupal::database()
@@ -450,16 +445,17 @@ class RawphenotypesTermService {
   /**
    * Get all plant property type column headers.
    */
-  public static function getPlantPropertyTerm() {
+  public function getPlantPropertyTerm() {
     $sql = "
       SELECT cvterm_id
       FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING(cv_id)
-      WHERE t1.name = 'phenotype_plant_property_types'
+      WHERE t1.name = :plantprop_type
       ORDER BY cvterm_id ASC
     ";
+    $args = [':plantprop_type' => $this->vocabularies['cv_prop']];
 
     $query = \Drupal::database()
-      ->query($sql);
+      ->query($sql, $args);
 
     $query->allowRowCount = TRUE;
 
@@ -481,14 +477,14 @@ class RawphenotypesTermService {
    * @param return 
    *   Array, rows matching the type (cv_id) in cvterm table.
    */
-  public static function getTermsByType($type) {
+  public function getTermsByType($type) {
     $sql = "
-      SELECT t2.name, t2.name || ' : ' || t2.definition
+      SELECT t2.name, t2.definition
       FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING (cv_id)
-      WHERE t1.name = :type AND t2.name != :type_name
+      WHERE t1.name = :type
       ORDER BY t2.name ASC
     ";
-    $args = [':type' => $type, ':type_name' => $type];
+    $args = [':type' => $type];
 
     $query = \Drupal::database()
       ->query($sql, $args);
@@ -507,7 +503,7 @@ class RawphenotypesTermService {
    * @return array
    *   Term rows in chado.cvterm.
    */
-  public static function getTermsNotInProject($project_id) {
+  public function getTermsNotInProject($project_id) {
     $sql = "
       SELECT t2.cvterm_id, t2.name
       FROM chado.cv AS t1 INNER JOIN chado.cvterm AS t2 USING(cv_id)
@@ -536,7 +532,7 @@ class RawphenotypesTermService {
    * @return
    *   An array containing all properties (project, name, data, etc.) of a column header.
    */
-  public static function getTermProperties($term_id, $dataset = null) {
+  public function getTermProperties($term_id, $dataset = null) {
     // Array to hold properties.
     $arr_properties = [];
 
@@ -573,8 +569,8 @@ class RawphenotypesTermService {
     $h = \Drupal::database()
       ->query($sql, $args);
     
-    $rversion_prop = self::getTermByName('phenotype_r_compatible_version');
-    $method_prop = self::getTermByName('phenotype_collection_method');
+    $rversion_prop = self::getTermByName($this->vocabularies['cv_rver']);
+    $method_prop = self::getTermByName($this->vocabularies['cv_desc']);
 
     // From the query which will return both properties (method and r version),
     // Identify which is method from r version and tag accordingly using 
@@ -632,7 +628,7 @@ class RawphenotypesTermService {
   * @return
   *   A string containing containing the column header in name (trait rep; unit) format.
   */
-  public static function constructTerm($trait) {
+  public function constructTerm($trait) {
     $unit = '';
 
     if (!empty($trait['unit']) OR !empty($trait['rep'])) {
@@ -647,5 +643,24 @@ class RawphenotypesTermService {
     $name = ucfirst($trait['name'] . ' ' . rtrim($unit));
 
     return trim($name);
+  }
+
+  /**
+   * Removes a term from project.
+   * Deassociate the term from a project and not physical deletion of the 
+   * trait record.
+   * 
+   * @param $term_id
+   *   Integer, term id number that corresponds to cvterm_id (trait/header id).
+   * @param $project_id
+   *   Integer, project id number the term is part of.
+   */
+  public function removeTermFromProject($term_id, $project_id): void {
+    $table = 'pheno_project_cvterm';
+    \Drupal::database()
+      ->delete($table)
+      ->condition('cvterm_id', $term_id)
+      ->condition('project_id', $project_id)
+      ->execute();
   }
 }

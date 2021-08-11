@@ -2,6 +2,14 @@
 /**
  * @file
  * Contains class definition of RawphenotypesProjectService.
+ * This class will provide management of resources or assests per project.
+ * 
+ * Default project of this module is set to 
+ * AGILE: Application of Genomic Innovation in Lentil Economy.
+ * If this project is present in your system, a set of headers will be
+ * assigned. This set is an AGILE-project-specific headers.
+ * 
+ * @see rawphenotypes\Services\RawphenotypesDefaultValueService
  */
 
 namespace Drupal\Rawphenotypes\Services;
@@ -9,13 +17,13 @@ namespace Drupal\Rawphenotypes\Services;
 use Drupal\file\Entity\File;
 use Drupal\Core\Url;
 
-
 class RawphenotypesProjectService {
   /**
-   * Get project profile by project name.
+   * Get project project records project_id, name and description by
+   * using project name as search key.
    * 
    * @param $project_name
-   *   String, project name or title to search.
+   *   String, project name or title (search key).
    * 
    * @return object
    *   Project row object.
@@ -24,20 +32,19 @@ class RawphenotypesProjectService {
     // project_id, name and description.
     $project_name = trim($project_name);
 
-    $sql = "SELECT * FROM chado.project WHERE name = :project_name";
+    $sql = "SELECT * FROM chado.project WHERE name = :project_name LIMIT 1";
     $args = [':project_name' => $project_name];
 
     $project = \Drupal::database()
       ->query($sql, $args);
     
-    $project->allowRowCount = TRUE;
-    
-    return ($project->rowCount()) ? $project->fetchObject() : null;
+    return $project->fetchObject() ?? null;
   }
 
   /**
-   * Get project profile by project_id.
-   * 
+   * Get project project records project_id, name and description by
+   * using project id number as search key.
+   *   
    * @param $project_id
    *   Integer, project id number.
    * 
@@ -48,19 +55,22 @@ class RawphenotypesProjectService {
     // project_id, name and description.
     $project_id = (int) trim($project_id);
 
-    $sql = "SELECT * FROM chado.project WHERE project_id = :project_id";
+    $sql = "SELECT * FROM chado.project WHERE project_id = :project_id LIMIT 1";
     $args = [':project_id' => $project_id];
 
     $project = \Drupal::database()
       ->query($sql, $args);
     
-    $project->allowRowCount = TRUE;
-    
-    return ($project->rowCount()) ? $project->fetchObject() : null;
+    return $project->fetchObject() ?? null;
   }
 
   /**
-   * Add user to a project.
+   * Delegate a user (registered Drupal user) to a project.
+   * This will give user the priviledge to among others upload data.
+   * 
+   * In custom table pheno_project_user
+   * - uid: Drupal user id.
+   * - project_id: project the user is assigned to.
    * 
    * @param $user_id
    *   Integer, Drupal user user id.
@@ -68,9 +78,10 @@ class RawphenotypesProjectService {
    *   Integer, project id number.
    */
   public static function addUserToProject($user_id, $project_id) {
-    $table = 'pheno_project_user';
-
-    $sql = sprintf("SELECT project_user_id FROM %s WHERE uid = :user AND project_id = :project", $table);
+    $sql = "
+      SELECT project_user_id FROM pheno_project_user 
+      WHERE uid = :user AND project_id = :project
+    ";
     $args = [':user' => $user_id, ':project' => $project_id];
 
     $query = \Drupal::database()
@@ -79,9 +90,10 @@ class RawphenotypesProjectService {
     $query->allowRowCount = TRUE;
 
     if ($query->rowCount() <= 0) { 
-      // Only when user and project does not exist.
+      // Check to ensure that user is assigned to a project once.
+      // User is not in this project yet.
       \Drupal::service('database')
-        ->insert($table)
+        ->insert('pheno_project_user')
         ->fields([
           'uid' => $user_id,
           'project_id' => $project_id
@@ -91,7 +103,9 @@ class RawphenotypesProjectService {
   }
 
   /**
-   * Get all projects that don't have column headers or new projects.
+   * Get a list of project from chado.project table.
+   * The list will provide administrators a selection for
+   * phenotyping experiment using this module.
    * 
    * @return array
    *   Project rows from chado.project table.
@@ -112,7 +126,10 @@ class RawphenotypesProjectService {
   }
 
   /**
-   * Get project assets (headers and users) count.
+   * Get all active project and provide a basic summary of project assets.
+   * - Header count: number of column header a project is measuring.
+   * - Essential header count: number of essential header (important header/ must exists).
+   * - User count: number of user assigned to a project.
    * 
    * @return array
    */
@@ -144,7 +161,7 @@ class RawphenotypesProjectService {
     
     $project->allowRowCount = TRUE;
     
-    return ($project->rowCount()) ? $project : [];
+    return ($project->rowCount()) ? $project->fetchAll() : [];
   }
 
   /**
@@ -175,7 +192,8 @@ class RawphenotypesProjectService {
   }
 
   /**
-   * Get all planting year in a project.
+   * Get all planting year project has carried an experiment and filtered
+   * by a corresponding location.
    * 
    * @param $project_id
    *   Integer, project id number.
@@ -205,7 +223,7 @@ class RawphenotypesProjectService {
   }
 
   /**
-   * Get column headers of a project.
+   * Get all column header asset of a project.
    * 
    * @param $project_id
    *   Integer, project id number.
@@ -315,7 +333,13 @@ class RawphenotypesProjectService {
   }
 
   /**
+   *  Get project environment data assets - year, location and file.
    * 
+   * @param $asset_id
+   *   Integer, environemnt data asset id. 
+   * 
+   * @return array
+   *   Evironment data assets location, year and file.
    */
   public static function getProjectEnvDataAssets($asset_id) {
     $sql = "

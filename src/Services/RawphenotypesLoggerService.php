@@ -6,7 +6,7 @@
 
 namespace Drupal\Rawphenotypes\Services;
 
-class RawphenotypesNotificationService {
+class RawphenotypesLoggerService {
   /**
    * Post a TRIPAL CRITICAL report error message.
    * 

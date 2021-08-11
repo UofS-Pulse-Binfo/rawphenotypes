@@ -2,6 +2,7 @@
 /**
  * @file 
  * Construct configuration form to manage phenotyping experiments.
+ * Construcs form to list active project and summarizes asset count (header, user and evironment data).
  */
 
 namespace Drupal\rawphenotypes\Form;
@@ -14,6 +15,18 @@ use Drupal\Core\Form\FormStateInterface;
  * Defines RawphenotypesRTransformForm class.
  */
 class RawphenotypesManageProjectForm extends FormBase {
+  // Services.
+  private $project_service;
+  private $default_service;
+  private $term_service;
+
+  public function __construct() {
+    // Load services.
+    $this->term_service    = \Drupal::service('rawphenotypes.term_service');
+    $this->project_service = \Drupal::service('rawphenotypes.project_service');
+    $this->default_service = \Drupal::service('rawphenotypes.default_service');
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -28,12 +41,7 @@ class RawphenotypesManageProjectForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Attach library.
     $form['#attached']['library'][] = 'rawphenotypes/style-admin';
-    
-    // Load services.
-    $project_service = \Drupal::service('rawphenotypes.project_service');
-    $default_service = \Drupal::service('rawphenotypes.default_service');
-
-    $new_projects = $project_service::getNewProjects();
+    $new_projects = $this->project_service::getNewProjects();
 
     $form['fieldset_sel_project'] = [
       '#type' => 'details',
@@ -76,7 +84,7 @@ class RawphenotypesManageProjectForm extends FormBase {
     // The table data consists of project name and summary of column headers and active users.
 
     // Get trait types array.
-    $trait_type = $default_service::getTraitTypes();
+    $trait_type = $this->default_service::getTraitTypes();
 
     // Array to hold table headers.
     $arr_headers = [];
@@ -85,7 +93,7 @@ class RawphenotypesManageProjectForm extends FormBase {
     $arr_rows = [];
     
     // Get all active projects - projects added to this module.
-    $projects = $project_service::getActiveProjects();
+    $projects = $this->project_service::getActiveProjects();
 
     // Page title.
     $form['all_project_info'] = [
@@ -148,11 +156,6 @@ class RawphenotypesManageProjectForm extends FormBase {
    * Save configuration.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Load services.
-    $term_service    = \Drupal::service('rawphenotypes.term_service');
-    $project_service = \Drupal::service('rawphenotypes.project_service');
-    $default_service = \Drupal::service('rawphenotypes.default_service');
-
     // When a new project is created, Plant property column headers are
     // added to a project by default. The following are the plant property headers:
     // Location, Plot Rep and Entry.
@@ -162,24 +165,24 @@ class RawphenotypesManageProjectForm extends FormBase {
     $project_id = $form_state->getValue('sel_project');
 
     // Get trait types array.
-    $trait_type = $default_service::getTraitTypes();
+    $trait_type = $this->default_service::getTraitTypes();
 
     // Get Planting Date cvterm id.
     $pd = ['name' => 'Planting Date (date)', 'cv_id' => ['name' => 'phenotype_measurement_types']];
-    $planting_date = $term_service::getTerm($pd);
-    $term_service::saveTermToProject($planting_date->cvterm_id, $trait_type['type1'], $project_id);
+    $planting_date = $this->term_service->getTerm($pd);
+    $this->term_service->saveTermToProject($planting_date->cvterm_id, $trait_type['type1'], $project_id);
     
     // Query all plant property types column headers in chado.cvterm table.
     // Insert to project.
-    $plantprop = $term_service::getPlantPropertyTerm();
+    $plantprop = $this->term_service->getPlantPropertyTerm();
     foreach($plantprop as $prop) {
-      $term_service::saveTermToProject($prop->cvterm_id, $trait_type['type4'], $project_id);
+      $this->term_service->saveTermToProject($prop->cvterm_id, $trait_type['type4'], $project_id);
     }    
 
-    $project_service::addUserToProject(\Drupal::currentUser()->id(), $project_id);
+    $this->project_service::addUserToProject(\Drupal::currentUser()->id(), $project_id);
     // If the user is not the superadmin, add superadmin as well.
     if (\Drupal::currentUser()->id() != 1) {
-      $project_service::addUserToProject(1, $project_id);
+      $this->project_service::addUserToProject(1, $project_id);
     }    
   }
 }

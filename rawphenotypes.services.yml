@@ -8,8 +8,8 @@ services:
     class: Drupal\rawphenotypes\Services\RawphenotypesTermService
   rawphenotypes.project_service:
     class: Drupal\rawphenotypes\Services\RawphenotypesProjectService  
-  rawphenotypes.notify_service:
-    class: Drupal\rawphenotypes\Services\RawphenotypesNotificationService  
+  rawphenotypes.logger_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesLoggerService  
   rawphenotypes.mview_service:
     class: Drupal\rawphenotypes\Services\RawphenotypesMviewService    
   rawphenotypes.user_service:

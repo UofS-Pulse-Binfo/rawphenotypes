@@ -2,6 +2,10 @@
 /**
  * @file 
  * Construct configuration form to manage Rawphenotypes R transformation rules.
+ * Rules:
+ * - Words to remove: list of words to remove such as of or til.
+ * - Special characters to remove: list of special characters to remove such as : or ;.
+ * - Match and replace: match a character and proved a replacement of it.
  */
 
 namespace Drupal\rawphenotypes\Form;

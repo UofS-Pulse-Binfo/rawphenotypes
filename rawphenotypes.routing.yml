@@ -43,7 +43,7 @@ rawphenotypes.manage_project:
 rawphenotypes.autocomplete.user:
   path: 'admin/tripal/extension/rawphenotypes/user'
   defaults:
-    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesAutocompleteUserController::result'
+    #_controller: '\Drupal\rawphenotypes\Controller\RawphenotypesAutocompleteUserController::result'
     _format: json
   requirements:
     _permission: 'administer tripal'

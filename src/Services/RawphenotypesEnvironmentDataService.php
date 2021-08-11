@@ -7,12 +7,20 @@
 namespace Drupal\Rawphenotypes\Services;
 
 use Drupal\file\Entity\File;
-use Drupal\Core\Entity\EntityStorageException;
-
 
 class RawphenotypesEnvironmentDataService {
   /**
+   * Create a record of an environment data file.
+   * Keys:
+   * - project_id: project to which a file belongs to.
+   * - fid: file id number (Drupal file entity).
+   * - location: location consistent with the data in the file.
+   * - year: year indicated in the data file.
+   * - sequence_no: multiple files can be uploaded give a project-location-year
+   * combinateion. This field will number in sequence order each entry.
    * 
+   * @param $details
+   *   Array, with the key corresponding to field in pheno_environement_data table.
    */
   public static function saveEnvData($details) {
     $table = 'pheno_environment_data';
@@ -30,7 +38,18 @@ class RawphenotypesEnvironmentDataService {
   }
 
   /**
+   * Calculate the next sequence order of a file given a
+   * project-location-year combination.
    * 
+   * @param $project_id
+   *   Integer, project id number.
+   * @param $location
+   *   String, location information the file is specific to.
+   * @param $year
+   *   Year value, in relation to location and project, the year data was collected.
+   * 
+   * @return integer
+   *   Next sequence number or 1 to indicate the first sequence when none was uploaded.
    */
   public static function getSequenceNumber($project_id, $location, $year) {
     // Rename file to include location, year, sequence no.
@@ -55,7 +74,11 @@ class RawphenotypesEnvironmentDataService {
   }
 
   /**
+   * Remove environment data file entry from pheno_environment_data table.
+   * Physical file is still available in the Drupal public:// file system.
    * 
+   * @param $envdata
+   *   Array, containing the record id, location, year and project_id.
    */
   public static function deleteEnvData($envdata) {
     $table = 'pheno_environment_data';

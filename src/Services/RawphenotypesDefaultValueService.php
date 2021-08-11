@@ -2,16 +2,34 @@
 /**
  * @file
  * Contains class definition of RawphenotypesDefaultValueService.
+ * This class provides all default configuration values of this module.
+ * - Colour scheme
+ * - Window title
+ * - R transformation rules
+ * - Default project name
+ * - Default project-specific headers
+ * - Unit of measurements and scales
+ * - Replicates
+ * - Trait types
+ * - Vocabulary terms
+ * - Collection method and definition
  */
 
 namespace Drupal\Rawphenotypes\Services;
 
 class RawphenotypesDefaultValueService {
   /**
-   * Function to manage terms used by this module.
+   * Default values organized based (keys) on how it is used in the module.
+   * Keys:
+   * - project: request the default project.
+   * - defaults: request default values used in configuration page.
+   * - scales: request default scale used for lodging trait (range 1 - 5).
+   * - variables: request system variables.
+   * - vocabularies: request controlled vocabulary terms.
+   * - units: request commonly used unit of measurements.
    *
    * @param $type
-   *   Type of default terms/values required.
+   *   Type of default terms/values required. Listed above.
    * 
    * @return
    *   An array of string representing scale measurements, variable names,
@@ -101,10 +119,20 @@ class RawphenotypesDefaultValueService {
   }
 
   /**
-   * Default column headers used by default project.
+   * Default column headers used by default project. The whole set is defined
+   * in the array below and a subset can be requested.
+   * Subset keys:
+   * - phenotyping: request standard phenotyping headers.
+   * - required: request headers that must contain a value.
+   * - expected: request headers expected to be measured.
+   * - plantprop: request plant property headers (name, entry).
+   * - milti-trial: request headers that require multiple (1st and 2nd) trials.
+   * - essential: request essential headers (must exists).
+   * - plot: request plot specific headers (plot, location)
+   * - subset: request subset headers.
    *
-   * @params $type
-   *   A string containing a description of column header set required.
+   * @param $type
+   *   A string containing a description of column header set required. Listed above.
    *
    * @return
    *   An array of column headers based on the type of set requested.
@@ -151,6 +179,7 @@ class RawphenotypesDefaultValueService {
       'Comments'                                                    //31
     ];
 
+    // GET SUBSET.
     // Determine the type of request.
     switch($type) {
       case 'phenotyping':
@@ -241,7 +270,16 @@ class RawphenotypesDefaultValueService {
    * that precedes the unit of a measurement type.
    */
   public static function getTraitReps() {
-    return ['1st', '2nd', '3rd', '4th', 'R1', 'R3', 'R5', 'R7'];
+    return [
+      '1st', 
+      '2nd', 
+      '3rd', 
+      '4th', 
+      'R1', 
+      'R3', 
+      'R5', 
+      'R7'
+    ];
   }
 
   /**

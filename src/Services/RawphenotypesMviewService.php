@@ -2,6 +2,17 @@
 /**
  * @file
  * Contains class definition of RawphenotypesMviewService.
+ * This module employs materialized view to create a summary
+ * of all raw phenotypic datapoints available.
+ * The calss contains table/view definition and the corresponding
+ * custom SQL query used to populate the view.
+ * 
+ * @TODO: Update when T4 service on materialized view becomes
+ * available. Please note the it is not doing anything at the moment.
+ * 
+ * @TODO: For this module not to throw an error, a table
+ * matching the name of this view is created.
+ * @see hook_schema().
  */
 
 namespace Drupal\Rawphenotypes\Services;
@@ -67,7 +78,6 @@ class RawphenotypesMviewService {
       'location' => ['location'],
     ]
   ];
-
 
   /**
    * Create materialized view required by this modules.

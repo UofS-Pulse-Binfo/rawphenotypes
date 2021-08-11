@@ -2,6 +2,11 @@
 /**
  * @file 
  * Construct configuration form to manage Rawphenotypes module settings.
+ * This is the configuration form that handles the colour scheme
+ * and window title of this module.
+ * 
+ * - Colour scheme
+ * - Window title of each page in this module
  */
 
 namespace Drupal\rawphenotypes\Form;
@@ -19,7 +24,7 @@ class RawphenotypesConfigurationForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'rawphenotypes_settings';
+    return 'rawphenotypes_configuration_form';
   }
 
   /**
