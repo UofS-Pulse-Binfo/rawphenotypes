@@ -11,16 +11,43 @@
  * @see templates in /templates
  */
 function rawphenotypes_theme($existing, $type, $theme, $path) {  
+  $variables = [];
+  $config = \Drupal::config('rawphenotypes.settings');
+
+  // Colour scheme.
+  $variables['theme_colour'] = $config->get('rawpheno_colour_scheme');
+  // Window Title.
+  
+
   $variables = [
      // Messages - error, warning and status.
     'theme-rawphenotypes-message' => [
       'variables' => ['data' => []],
       'template' => 'template-rawphenotypes-message'
     ],
+    // Instructions page.
+    'rawphenotypes_page_instructions_template' => [
+      'variables' => ['search_form' => NULL, 'page' => $variables],
+      'template' => 'template-rawphenotypes-page-instructions',
+      'render element' => 'form'
+    ],
   ];
 
   return $variables;
 }
+
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Instuctions Page.
+ */
+function rawphenotypes_preprocess_rawphenotypes_page_instructions_template(&$variables, $hook) {
+  $config = \Drupal::config('rawphenotypes.settings');
+  $variables['title'] = $config->get('rawpheno_instructions_title');
+}
+
+
+
+
 
 /**
  * Implements hook_libraries_info().

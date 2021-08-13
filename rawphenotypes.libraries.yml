@@ -8,11 +8,25 @@ style-admin:
     theme:
       css/style-admin.css: {}
 
-# Sript use in administration/configuration pages.
+# Script use in administration/configuration pages.
 script-admin:
   version: v1.x
   js:
     js/script-admin.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+
+# Library used in instructions page.
+page-instructions:
+  version: v1.x
+  js:
+    js/jquery-tabs.js: {}
+    js/script-page-instructions.js: {}
+  css:
+    theme:
+      css/style-page-instructions.css: {}
+      css/jquery-ui.min.css: {}
   dependencies:
     - core/jquery
     - core/jquery.once

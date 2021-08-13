@@ -1,0 +1,106 @@
+
+{#
+/**
+ * @file
+ * Theme instructions page.
+ */
+#}
+{{ form.form_build_id }}
+{{ form.form_token }}
+{{ form.form_id }}
+
+<div class="container-header" style="background-color: {{ page.theme_colour }}">
+  {{ title }}
+</div>
+
+<div class="container-page" style="border-color: {{ page.theme_colour }}">
+  <div class="content-wrapper">
+    <div class="container-subtitle">
+      <div class="subtitle-left">
+        {{ search_form.txt_search }}
+        <input type="button" id="btn_submit" name="btn_search" class="form-submit" value=" ">
+      </div>
+      <div class="subtitle-right">
+        <a href="" style="background-color: {{ page.theme_colour }}">Upload Data &#10095;</a>
+      </div>
+    </div>
+
+    <div id="container-project-panel">
+      <div style="text-align: left; float: left">AGILE: Application of Genomic Innovation in Lentil Economy</div>
+      <span><a href="#">Change Project</a></span>
+      <div style="clear: both"></div>
+    </div>
+
+    <div id="container-sel-project">
+      {{ search_form.sel_project }}
+    </div>
+
+    <div id="container-instructions">
+      <div id="phenotype-page">
+        <div id="container-search-result"></div>
+          <div id="tabs">
+            <ul id="instructions-tab">
+              <li><a href="#fragment-1">Standard Procedure</a></li>
+              <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
+              <li><a href="#fragment-3">Optional Traits</a></li>
+              <li><a href="#fragment-4">Subset Traits</a></li>
+              <li><a href="#fragment-5">Contributed</a></li>
+              <li id="photo-appendix"><a href="#fragment-6">Photo Appendix</a></li>
+            </ul>
+
+            <div id="fragment-1">
+              <h3>Spreadsheet Tips</h3>
+              <ul>
+                <li><p>Comments with instructions, tips and scales are included with the header for each trait. Simply click the speech bubble icon beside the header.</p></li>
+                <li><p>Essential Traits have green headers; all other traits are optional.</p></li>
+                <li><p>You should hide optional traits you are not taking data for by long pressing a column header then selecting “hide”.</p></li>
+                <li><p>We’ve included an easy calculator to determine “Days from Planting” in a separate tab.</p></li>
+                <li><p>Special Interest Traits: <br />Add a column on the spreadsheet for any other trait you are interested in collecting data for. When uploading you will be asked to provide a description including units or scale used to take the measurement.</p></li>
+              </ul>
+
+              <div id="container-resource-links">
+                <div>
+                  <h3>&raquo; To Collect Data:</h3>
+                </div>
+
+                <div>
+                  <h3>&raquo; To Backup File:</h3>
+                </div>
+
+                <div>
+                  <h3>&raquo; To Submit Data:</h3>
+                </div>
+              </div>
+
+              <div class="clear-float">&nbsp;</div>
+            </div>
+
+            <div id="fragment-6">
+              <h3>Topic: <select>
+                <option value="0">Tendrils</option>
+                <option value="1">Pods</option>
+              </select></h3>
+
+              <div id="photo-container">
+                <div id="gallery-container">
+                  <div class="side-nav nav-go-left"><a href="javascript:void();" class="a-left">&lang;</a></div>
+                  <div class="gallery-img">
+                    
+                    
+                    <br /><em>No elongation</em>
+                  </div>
+                  <div class="side-nav nav-go-right"><a href="javascript:void();" class="a-right">&rang;</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
+  </div>
+</div>

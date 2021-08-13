@@ -39,6 +39,18 @@ rawphenotypes.manage_project:
     action: 'manage|edit|delete'
 
 
+# Page routes.
+
+# Instructions page.
+rawphenotypes.page_instructions:
+  path: 'rawphenotypes/instructions'
+  defaults:
+    _title: 'Instructions'
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+  requirements:
+    _permission: 'admister tripal'
+
+
 # Autocomplete routes.
 rawphenotypes.autocomplete.user:
   path: 'admin/tripal/extension/rawphenotypes/user'
