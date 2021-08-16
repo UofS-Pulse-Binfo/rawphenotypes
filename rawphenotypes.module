@@ -18,7 +18,6 @@ function rawphenotypes_theme($existing, $type, $theme, $path) {
   $variables['theme_colour'] = $config->get('rawpheno_colour_scheme');
   // Window Title.
   
-
   $variables = [
      // Messages - error, warning and status.
     'theme-rawphenotypes-message' => [

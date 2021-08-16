@@ -9,6 +9,8 @@
 {{ form.form_token }}
 {{ form.form_id }}
 
+{{ search_form.message_invalid_project }}
+
 <div class="container-header" style="background-color: {{ page.theme_colour }}">
   {{ title }}
 </div>
@@ -24,11 +26,12 @@
         <a href="" style="background-color: {{ page.theme_colour }}">Upload Data &#10095;</a>
       </div>
     </div>
+    
+    <div class="clear-float">&nbsp;</div>
 
     <div id="container-project-panel">
-      <div style="text-align: left; float: left">AGILE: Application of Genomic Innovation in Lentil Economy</div>
+      {{ search_form.active_project }}
       <span><a href="#">Change Project</a></span>
-      <div style="clear: both"></div>
     </div>
 
     <div id="container-sel-project">
@@ -42,9 +45,19 @@
             <ul id="instructions-tab">
               <li><a href="#fragment-1">Standard Procedure</a></li>
               <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
-              <li><a href="#fragment-3">Optional Traits</a></li>
+
+              {% if search_form.tbl_project_headers_optional %}              
+              <li><a href="#fragment-3">Optional Traits</a></li>              
+              {% endif %}
+              
+              {% if search_form.tbl_project_headers_subset %}              
               <li><a href="#fragment-4">Subset Traits</a></li>
+              {% endif %}
+
+              {% if search_form.tbl_project_headers_contributed %}              
               <li><a href="#fragment-5">Contributed</a></li>
+              {% endif %}
+              
               <li id="photo-appendix"><a href="#fragment-6">Photo Appendix</a></li>
             </ul>
 
@@ -74,6 +87,50 @@
 
               <div class="clear-float">&nbsp;</div>
             </div>
+            
+
+
+            <div id="fragment-2">
+              <h3>These traits are essential to this project and data should be collected for all genotypes sent to you.</h3>
+
+            </div>
+
+            <div id="fragment-3">
+              
+              
+              <h3>
+              {% set projectname = 'a' %}
+              >>{{ projectname }}<<
+              {% if projectname == "a" %}
+              These traits are optional. Please contact the Project Manager if you are interested in these traits.
+              {% else %}
+              These traits are optional. We will be taking them in our location and have thus provided 
+              our procedure in case you interested in taking these data in your location as well. 
+              Feel free to record ANY data you are interested in (including traits not listed below 
+              –just add a column to the accompanying data spreadsheet for traits not listed below).
+              {% endif %}
+
+              </h3>
+
+            </div>
+
+            <div id="fragment-4">
+              <h3>These traits are optional. We will be taking them in our location and have thus provided 
+              our procedure in case you interested in taking these data in your location as well. 
+              Feel free to record ANY data you are interested in (including traits not listed below 
+              –just add a column to the accompanying data spreadsheet for traits not listed below).</h3>
+
+
+            
+            </div>
+
+            <div id="fragment-5">
+            contributed
+            </div>
+
+
+
+
 
             <div id="fragment-6">
               <h3>Topic: <select>

@@ -191,4 +191,47 @@ class RawphenotypesUserService {
       ->condition('project_user_id', $project_user_id)
       ->execute();
   }
+
+  /**
+   * Get all the projects a registered user is assigned to.
+   * All projects retured are those that have at least
+   * 1 essential trait.
+   * 
+   * @param $user_id
+   *   Drupal user id number of the currently logged user.
+   * 
+   * @return array
+   *   List projects.
+   */
+  public static function getUserProjects($user_id) {
+    $trait_type = \Drupal::service('rawphenotypes.default_service')::getTraitTypes();
+    $user_project = [];
+
+    $sql = "
+      SELECT
+        t1.name, t1.project_id,
+        COUNT(CASE WHEN t2.type = :essential_trait THEN 1 END) AS essential_count
+      FROM chado.project AS t1
+        INNER JOIN pheno_project_cvterm AS t2 USING (project_id)
+        LEFT JOIN pheno_project_user AS t3 USING (project_id)
+      WHERE t3.uid = :user_id
+      GROUP BY t1.project_id ORDER BY t1.project_id DESC
+    ";
+    $args = [':essential_trait' => $trait_type['type1'], ':user_id' => $user_id];
+
+    $query = \Drupal::database()
+      ->query($sql, $args);
+    
+    $query->allowRowCount = TRUE;
+
+    if ($query->rowCount() > 0) {
+      foreach($query as $project) {
+        if ($project->essential_count > 0) {
+          $user_project[ $project->project_id ] = $project->name;
+        }
+      }
+    }
+
+    return $user_project;
+  }
 }

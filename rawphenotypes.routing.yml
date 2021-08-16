@@ -43,12 +43,14 @@ rawphenotypes.manage_project:
 
 # Instructions page.
 rawphenotypes.page_instructions:
-  path: 'rawphenotypes/instructions'
+  path: 'rawphenotypes/instructions/{project_id}'
   defaults:
     _title: 'Instructions'
     _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+    project_id: '0'
   requirements:
     _permission: 'admister tripal'
+    project_id: '[0-9]+'
 
 
 # Autocomplete routes.

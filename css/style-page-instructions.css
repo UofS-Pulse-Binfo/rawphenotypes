@@ -303,6 +303,7 @@ th {
 
 /* Change project panels */
 #container-project-panel {
+  position: relative;
   font-size: 1.7em;
   margin: 0 0 20px 0;
   text-align: left;
@@ -326,7 +327,7 @@ th {
   box-shadow:         0 5px 7px -9px #333333;
 }
 
-#container-sel-project select {
+#rawpheno-ins-sel-project {
   background: #FCFDFD url('../images/chrome-selectbox-down-arrow.gif') no-repeat;
   background-position: 99.3% 50%;
   border: 1px solid #AAAAAA;

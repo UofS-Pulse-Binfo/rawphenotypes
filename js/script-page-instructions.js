@@ -5,6 +5,16 @@
  (function($) {
   Drupal.behaviors.rawphenoInstructionsTab = {
     attach: function (context, settings) {
+      // Make the project select box into a jump menu and add the project id number to the url.
+      var instructionsRoute = drupalSettings.rawphenotypes.vars.instructions_route;
+      $('#rawpheno-ins-sel-project')
+        .once('#rawpheno-ins-sel-project')
+        .change(function() {              
+          if ($(this).val() > 0) {
+            window.location.href = instructionsRoute + '/' + $(this).val();
+          }          
+        });
+
       // Maintain search box width to prevent autocomplete search suggestions
       // from being cut off. When width becomes less, remove context button.
       // Alternative button is provided in Standard Procedure Tab.
