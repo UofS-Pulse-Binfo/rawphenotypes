@@ -5,6 +5,9 @@
  * The main functionality for this module.
  */
 
+use Drupal\Core\Url;
+use Drupal\Core\Routing;
+
 /**
  * Implements hook_theme().
  *
@@ -16,7 +19,11 @@ function rawphenotypes_theme($existing, $type, $theme, $path) {
 
   // Colour scheme.
   $variables['theme_colour'] = $config->get('rawpheno_colour_scheme');
-  // Window Title.
+  // Path to module.
+  $module = \Drupal::service('extension.list.module')
+    ->getPath('rawphenotypes');
+  global $base_url;  
+  $path_module = $base_url. base_path() . $module;
   
   $variables = [
      // Messages - error, warning and status.
@@ -26,7 +33,7 @@ function rawphenotypes_theme($existing, $type, $theme, $path) {
     ],
     // Instructions page.
     'rawphenotypes_page_instructions_template' => [
-      'variables' => ['search_form' => NULL, 'page' => $variables],
+      'variables' => ['search_form' => NULL, 'page' => $variables, 'path' => $path_module],
       'template' => 'template-rawphenotypes-page-instructions',
       'render element' => 'form'
     ],
@@ -42,6 +49,13 @@ function rawphenotypes_theme($existing, $type, $theme, $path) {
 function rawphenotypes_preprocess_rawphenotypes_page_instructions_template(&$variables, $hook) {
   $config = \Drupal::config('rawphenotypes.settings');
   $variables['title'] = $config->get('rawpheno_instructions_title');
+
+  $value = \Drupal::routeMatch()->getParameter('project_id');
+
+  // Links to other pages.
+  $variables['to_upload'] = Url::fromRoute('rawphenotypes.page_upload', [], ['absolute' => TRUE]);
+  $variables['to_backup'] = Url::fromRoute('rawphenotypes.page_backup', [], ['absolute' => TRUE]);
+  $variables['to_collect'] = Url::fromRoute('rawphenotypes.callback.generate_spreadsheet', ['project_id' => $value], ['absolute' => TRUE]);
 }
 
 

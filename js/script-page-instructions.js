@@ -61,7 +61,7 @@
                     'Sample of the pod variation'];
 
       // Path to appendix folder.
-      var imgPath = $('#path').val();
+      var imgPath = drupalSettings.rawphenotypes.vars.image_gallery_path;
 
       // Attach behavior to Photo Appendix.
       $('#fragment-6 a').click(function(){

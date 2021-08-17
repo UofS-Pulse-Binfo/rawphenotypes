@@ -31,6 +31,12 @@ class RawphenotypesPageInstructionsController extends ControllerBase {
     $instructions_route = Url::fromRoute('rawphenotypes.page_instructions', [], ['absolute' => TRUE])
       ->toString();
     $to_Drupalsettings['rawphenotypes']['vars']['instructions_route'] = $instructions_route;
+
+    // Image gallery path to photo appendix.
+    $gallery_path = \Drupal::service('extension.list.module')
+      ->getPath('rawphenotypes');
+    global $base_url;  
+    $to_Drupalsettings['rawphenotypes']['vars']['image_gallery_path'] = $base_url. base_path() . $gallery_path . '/images/appendix/';
       
     return [
       '#theme' => 'rawphenotypes_page_instructions_template',

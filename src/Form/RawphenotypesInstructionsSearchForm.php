@@ -9,6 +9,7 @@
 namespace Drupal\rawphenotypes\Form;
 
 use Drupal\Core\Form\FormBase;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
@@ -60,6 +61,8 @@ class RawphenotypesInstructionsSearchForm extends FormBase {
       '#maxlength' => 65,
       '#size' => 65,
       '#default_value' => $this->t('Search Trait'),
+      '#autocomplete_route_name' => 'rawphenotypes.autocomplete.user',
+      '#autocomplete_route_parameters' => ['project_id' => $project_id],
       '#theme_wrappers' => [],
     ];
 
@@ -111,7 +114,7 @@ class RawphenotypesInstructionsSearchForm extends FormBase {
         // of traits of the project.
         $cvterm = $this->term_service->getTermProperties($term->project_cvterm_id);
         $arr_cvterm[ $cvterm['type'] ][] = [
-          '<div class="data-cells">' . $cvterm['name'] . '</div>',
+          Markup::create('<div class="data-cells">' . $cvterm['name'] . '</div>'),
           $cvterm['method'],
           $cvterm['definition']
         ];

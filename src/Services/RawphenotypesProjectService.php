@@ -233,7 +233,7 @@ class RawphenotypesProjectService {
    */
   public static function getProjectTerms($project_id) {
     $sql = "
-      SELECT project_cvterm_id, pheno_project_cvterm.type
+      SELECT project_cvterm_id, pheno_project_cvterm.type, name, cvterm_id
       FROM chado.cvterm RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
       WHERE project_id = :project_id ORDER BY type, name ASC
     ";

@@ -113,6 +113,16 @@ em {
   padding: 0;
 }
 
+#tabs div {
+  text-align: left;
+}
+
+#tabs .link-back-to-top {
+  margin-top: 10px;
+  display: inline-block;
+  text-align: right;
+}
+
 #tabs .ui-tabs-nav li {
   border-radius: 0;
   background: #FCFDFD;
@@ -236,7 +246,7 @@ a.button:hover {
   background-color: #EAEAEA;
   padding: 30px 5px;
   margin-top: 20px;
-  text-align: center;
+  text-align: center !important;
   width: 98%;
   margin: 0 auto;
 }

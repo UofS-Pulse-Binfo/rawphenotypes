@@ -389,7 +389,6 @@ class RawphenotypesTermService {
       );
     }
   }
-
   
   /**
    * Assign term to a project.
@@ -662,5 +661,28 @@ class RawphenotypesTermService {
       ->condition('cvterm_id', $term_id)
       ->condition('project_id', $project_id)
       ->execute();
+  }
+
+  /**
+   * Function that list default/initial units available to this module.
+   *
+   * @param $set
+   *   A string indicating the type of set to return.
+   *   def - unit and definition.
+   *   type - unit and data type.
+   */
+  public function getUnitDataType($set) {
+    // Type is required when programmatically generating data collection spreadsheet file
+    // in instructions page.
+    return [
+      'date'  => ($set == 'def') ? 'Date'  : 'date',
+      'count' => ($set == 'def') ? 'Count' : 'integer',
+      'days'  => ($set == 'def') ? 'Days'  : 'integer',
+      'cm'    => ($set == 'def') ? 'Centimeters'  : 'integer',
+      'scale' => ($set == 'def') ? 'Scale: 1-5'   : 'integer',
+      'g'     => ($set == 'def') ? 'Grams (g)'    : 'integer',
+      'text'  => ($set == 'def') ? 'Alphanumeric' : 'string',
+      'y/n/?' => ($set == 'def') ? 'Yes, No or ? - Not sure' : 'string'
+    ];
   }
 }
