@@ -115,7 +115,7 @@ class RawphenotypesCreateProjectSpreadsheet extends ControllerBase {
           // Add extra new line.
           array_push($instructions_data, ['' , '']);
         }
-
+        
         // Load spreadsheet writer library.
         $xlsx_writer = libraries_load('spreadsheet_writer');        
         include_once $xlsx_writer['library path'] . '/'. $xlsx_writer['files'][0];
@@ -294,7 +294,7 @@ class RawphenotypesCreateProjectSpreadsheet extends ControllerBase {
 
         $filename = 'datacollection_' . $project_id . '_' . str_replace(' ', '_', $user['name']) .'_'. date('YMd') .'_'. time() . '.xlsx';
         $file = file_save_data($writer->writeToString(), 'public://' . $filename);
-
+        
         // Launch save file window and ask user to save file.
         $http_headers = array(
           'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -308,18 +308,11 @@ class RawphenotypesCreateProjectSpreadsheet extends ControllerBase {
         else {
           $http_headers['Pragma'] = 'no-cache';
         }
-
-        //  file_transfer($file->uri, $http_headers);
-        return new BinaryFileResponse($file->uri, 200, $http_headers);        
+        
+        return [
+          '#markup' => '<a href="' . $file->createFileUrl() . '">Download Data Collection Spreadsheet File</a>'
+        ];
       }
-      else {
-        // Here project not found.
-        print 'Project not found.';
-      }
-    }
-    else {
-      // Project id is not valid.
-      print 'Project ID number is invalid.';
     }
   }
 }

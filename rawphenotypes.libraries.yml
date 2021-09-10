@@ -30,3 +30,15 @@ page-instructions:
   dependencies:
     - core/jquery
     - core/jquery.once
+
+# Library used in backup page.
+page-backup:
+  version: v1.x
+  js:
+    js/script-page-backup.js: {}
+  css:
+    theme:
+      css/style-page-backup.css: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once

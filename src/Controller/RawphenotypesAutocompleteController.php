@@ -7,6 +7,8 @@
 namespace Drupal\rawphenotypes\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * Defines RawphenotypesAutocompleteController class.
@@ -39,7 +41,7 @@ class RawphenotypesAutocompleteController extends ControllerBase {
 
     $sql = "
       SELECT name
-      FROM {cvterm} RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
+      FROM chado.cvterm RIGHT JOIN pheno_project_cvterm USING(cvterm_id)
       WHERE project_id = :project_id AND type <> :plantprop
     ";
     $args = [':project_id' => $project_id, ':plantprop' => $trait_type['type4']];
@@ -58,7 +60,7 @@ class RawphenotypesAutocompleteController extends ControllerBase {
     }
     else {
       foreach($result as $n) {
-        if (stristr($n->name, $request)) {
+        if (str_contains(strtolower($n->name), strtolower($request->query->get('q')))) {
           $arr_headers[ $n->name ] = $n->name;
         }
       }

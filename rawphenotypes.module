@@ -37,6 +37,12 @@ function rawphenotypes_theme($existing, $type, $theme, $path) {
       'template' => 'template-rawphenotypes-page-instructions',
       'render element' => 'form'
     ],
+    // Backup page.
+    'rawphenotypes_page_backup_template' => [
+      'variables' => ['upload_form' => NULL, 'page' => $variables, 'path' => $path_module],
+      'template' => 'template-rawphenotypes-page-backup',
+      'render element' => 'form'
+    ],
   ];
 
   return $variables;
@@ -50,14 +56,34 @@ function rawphenotypes_preprocess_rawphenotypes_page_instructions_template(&$var
   $config = \Drupal::config('rawphenotypes.settings');
   $variables['title'] = $config->get('rawpheno_instructions_title');
 
-  $value = \Drupal::routeMatch()->getParameter('project_id');
-
   // Links to other pages.
   $variables['to_upload'] = Url::fromRoute('rawphenotypes.page_upload', [], ['absolute' => TRUE]);
   $variables['to_backup'] = Url::fromRoute('rawphenotypes.page_backup', [], ['absolute' => TRUE]);
-  $variables['to_collect'] = Url::fromRoute('rawphenotypes.callback.generate_spreadsheet', ['project_id' => $value], ['absolute' => TRUE]);
+  // Parameter project_id is appended in the template.
+  $variables['to_collect'] = Url::fromRoute('rawphenotypes.callback.generate_spreadsheet', [], ['absolute' => TRUE]);
 }
 
+/**
+ * Implements a hook_preprocess_HOOK().
+ * This function prepares variables for Raw Phenotypes Backup Page.
+ */
+function rawphenotypes_preprocess_rawphenotypes_page_backup_template(&$variables, $hook) {
+  $config = \Drupal::config('rawphenotypes.settings');
+  $variables['title'] = $config->get('rawpheno_backup_title');
+  
+  // Links to other pages.
+  $variables['to_instructions'] = Url::fromRoute('rawphenotypes.page_instructions', [], ['absolute' => TRUE]);
+  
+  // Currently logged in user. Show the name of the user.
+  $user_id = \Drupal::currentUser()->id();
+  $user = \Drupal::service('rawphenotypes.user_service')::getUser((int)$user_id, ['name']);
+  $variables['current_user'] = $user['name'];
+  /*
+  $variables['to_backup'] = Url::fromRoute('rawphenotypes.page_backup', [], ['absolute' => TRUE]);
+  // Parameter project_id is appended in the template.
+  $variables['to_collect'] = Url::fromRoute('rawphenotypes.callback.generate_spreadsheet', [], ['absolute' => TRUE]);
+  */
+}
 
 
 

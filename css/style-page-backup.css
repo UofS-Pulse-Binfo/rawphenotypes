@@ -1,0 +1,581 @@
+/**
+ * @file
+ * Style phenotypes/download page.
+ */
+
+/* Import global css */
+@import 'style-page.css';
+
+
+/* Page icon */
+.container-subtitle {
+  background: url('../images/icon-backup.gif') no-repeat left top;
+  background-position: 0 5px;
+}
+
+
+.container-contents {
+  background-color: #FFFFFF;
+  padding: 0;
+  position: relative;
+}
+
+#container-backup, #container-add-file {
+  position: relative;
+}
+
+/* Upper left text */
+div.subtitle-left {
+  font-size: 2.2em;
+  line-height: 35px;
+}
+
+
+/* Submit form */
+#backup-submit-form {
+  position: absolute;
+  right: 7%;
+}
+
+
+
+
+
+
+
+/* File input */
+#field-file {
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+
+/* File input label */
+.drop-zone label {
+  color: #666666;
+  font-size: 1em;
+  font-weight: 300;
+  display: block;
+  line-height: normal;
+  margin: 0 auto;
+  position: relative;
+  text-align: center;
+  top: 140px;
+  width: 480px;
+}
+
+.drop-zone label strong {
+  font-weight: 300;
+}
+
+.drop-zone label span {
+  font-weight: 300;
+  display: block;
+  text-decoration: underline;
+}
+
+
+/* Drop zone actions */
+.drop-zone.is-dragover {
+  border-style: dashed;
+}
+
+.drop-zone.has-dragdrop-upload {
+  background-color: #FCFDFD;
+}
+
+.dragdrop-text {
+  display: none;
+}
+
+.drop-zone.has-dragdrop-upload .dragdrop-text {
+  display: block;
+}
+
+.drop-zone #drop-zone-file {
+  text-align: center;
+  width: inherit;
+  top: 20px;
+  position: absolute;
+}
+
+.drop-zone #drop-zone-remove-file {
+  margin: 0 5px;
+}
+
+/* Drop Zone */
+.drop-zone {
+  background: url('../images/icon-excel.gif') no-repeat top center;
+  background-position: 50% 90px;
+  background-color: #FFFFFF;
+  border: 2px double #AAAAAA;
+
+  -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 3px #EAEAEA;
+
+  height: 250px;
+  margin: 0 0 15px 0;
+  padding: 0;
+  position: relative;
+  width: 99.7%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Add File */
+#container-add-file {
+  background-color: #FCFDFD;
+  margin-bottom: 20px;
+  padding: 25px 65px 55px 65px;
+  text-align: left;
+}
+
+
+/* (DnD) File dropzone */
+#droppable-bdnd {
+  background: url('../images/icon-excel.gif') no-repeat top center;
+  background-position: 50% 100px;
+  background-color: #FCFDFD;
+  border: 2px double #AAAAAA;
+
+  -moz-box-shadow:    1px 1px 5px 3px #EAEAEA;
+  -webkit-box-shadow: 1px 1px 5px 3px #EAEAEA;
+  box-shadow:         inset 1px 1px 5px 3px #EAEAEA;
+
+  height: 300px;
+  margin: 0 0 15px 0;
+  padding: 0;
+  width: 99.7%;
+}
+
+#backup_dropzone-upload {
+  height: 300px;
+  margin: 0 0 15px 0;
+  padding: 0;
+  width: 99.7%;
+}
+
+
+/* (DnD) Drag file here message and link container */
+.droppable-message {
+  height: 85%;
+  margin: 20px;
+  padding: 0;
+}
+
+.droppable-message > span {
+  color: #666666;
+  font-size: 1.3em;
+  display: block;
+  line-height: normal;
+  margin: 0 auto;
+  position: relative;
+  text-align: center;
+  top: 140px;
+  width: 480px;
+}
+
+.droppable-message span.text-drag {
+  width: 480px !important;
+}
+
+
+/* (DnD) Choose file link */
+div.droppable-standard-upload {
+  color: #666666;
+  font-family: inherit;
+  font-size: 1.1em;
+  line-height: normal;
+  margin: 7px auto 0 auto;
+  min-height: 20px;
+  padding: 0;
+  position: relative;
+  top: 135px;
+  width: 165px;
+}
+
+#droppable-bdnd a,
+#droppable-bdnd a:link {
+  background: none;
+  border: none;
+  color: #118324;
+  font-family: inherit;
+  font-weight: 300;
+  left: 0;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  text-decoration: underline;
+}
+
+
+/* (DnD) Preview the file to be uploaded. */
+div.droppable-preview-file {
+  background-color: #FFFFFF;
+  padding: 5px 15px;
+  position: absolute;
+}
+
+div.preview-remove {
+  display: block;
+}
+
+div.droppable-controls{
+  margin-top: 440px;
+  position: absolute;
+  right: 120px;
+}
+
+.droppable-controls input,
+.form-managed-file .droppable-controls input.progress-disabled {
+  display: block !important;
+  margin: 0 !important;
+}
+
+
+/* AJAX wait animation */
+.droppable-controls div {
+  display: inline;
+  margin: 0 auto;
+  padding: 0 12px 0 0 !important;
+}
+
+/* Remove file button */
+#edit-bdnd-remove-button {
+  display: none;
+}
+
+span.file {
+  background-color: #FFFFFF;
+  border: 1px solid #ccc;
+  height: 20px;
+  line-height: 20px;
+  margin: 1px;
+  padding: 5px 15px;
+  position: absolute;
+}
+
+span.file img {
+  display: none;
+}
+
+span.file a:link {
+  color: #000000;
+}
+
+/* Preview Remove */
+div.preview-remove {
+  margin: 0 10px;
+}
+
+span.preview-filesize {
+  visibility: hidden;
+}
+
+/*
+Add/Backup file form
+Add file select project
+*/
+#backup_sel_project {
+  padding: 7px;
+  font-size: 0.9em;
+  width: 100%;
+}
+
+/* Upload button */
+#edit-bdnd-upload-button{
+  float: right;
+  margin-top: 20px;
+}
+
+#link-success-upload-file  {
+  float: right;
+}
+
+
+/* Description field */
+div.description {
+  margin-bottom: 25px;
+}
+
+
+/* Project and file table */
+table tr:last-child td{
+  border-bottom: 1px solid #d0d0d0 !important;
+}
+
+table td, table th {
+  padding: 10px !important;
+}
+
+table td {
+  vertical-align: top;
+}
+
+table tr:hover {
+  background-color: #F7F7F7 !important;
+}
+
+/* User project table */
+#tbl-user-project tr td:first-child {
+  background: url('../../theme/img/icon-folder.gif') no-repeat top left;
+  background-position: 10px 10px;
+  line-height: 35px;
+  padding: 0 0 0 40px !important;
+  width: 90%;
+}
+
+/* User project file table */
+#tbl_project_archive_file tr td:first-child,
+#tbl-user-project-file tr td:first-child {
+  background: url('../../theme/img/icon-excel-file.gif') no-repeat top left;
+  background-position: 15px 15px;
+  padding-left: 40px !important;
+}
+
+#tbl_project_archive_file th:first-child,
+#tbl-user-project-file th:first-child {
+  width: 40%;
+}
+
+#tbl_project_archive_file th:nth-child(2),
+#tbl-user-project-file th:nth-child(2) {
+  width: 5%;
+}
+
+#tbl_project_archive_file td:nth-child(2),
+#tbl-user-project-file td:nth-child(2) {
+  font-size: 1.3em !important;
+}
+
+
+#tbl_project_archive_file tr td:nth-child(2),
+#tbl-user-project-file tr td:nth-child(2) {
+  font-size: 1.2em;
+}
+
+#tbl_project_archive_file th:nth-child(3),
+#tbl-user-project-file th:nth-child(3) {
+  width: 25%;
+}
+
+#tbl_project_archive_file th:nth-child(4),
+#tbl-user-project-file th:nth-child(4) {
+  width: 25%;
+}
+
+#tbl_project_archive_file th:nth-child(5),
+#tbl-user-project-file th:nth-child(5) {
+  text-align: center;
+}
+
+#tbl_project_archive_file th:last-child,
+#tbl-user-project-file th:last-child {
+  text-align: center;
+}
+
+
+/* Empty table */
+td.empty, td.message {
+  background: none !important;
+  height: 40px;
+}
+
+
+/* Title add project */
+#container-backup h2 {
+  border-top: 1px solid #CCCCCC;
+  font-size: 1.5em !important;
+  margin: 10px 0 0 0 !important;
+  padding: 10px 0 0 0 !important;
+  text-align: left;
+}
+
+#container-backup h2 a {
+  float: right;
+  font-size: 0.7em;
+  padding: 7px 0 0 0;
+}
+
+
+/* Textarea backup file */
+#edit-backup-txt-description {
+  resize: none;
+}
+
+/* Validation result */
+div.rawpheno-validate-progress {
+  padding: 0;
+  margin: 0 !important;
+  border: none !important;
+}
+
+div.messages {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Failed and success */
+.success {
+  background: url('../img/icon-success.jpg') no-repeat;
+  background-position: 5px 0;
+}
+
+.failed {
+  background: url('../img/icon-failed.jpg') no-repeat;
+  background-position: 5px 0;
+}
+
+.error-main {
+ list-style-type: none;
+ margin: 0 !important;
+ padding: 0 !important;
+}
+
+ul.error-main > li {
+  padding: 0 0 10px 15px;
+}
+
+ul.error-main > li em {
+  margin-left: 18px;
+}
+
+ul.error-main {
+  padding: 15px;
+  margin: 0 15px 0 0;
+}
+
+.error-detail {
+  background-color: #F7F7F7;
+  margin: 0 20px 0 0 !important;
+  padding: 10px !important;
+}
+
+li.error-item {
+  margin-left: 20px;
+}
+
+li em {
+  font-weight: bold;
+}
+
+/* File validation result cell */
+div.container-cell {
+  cursor: pointer;
+  height: 65px;
+  overflow: auto;
+}
+
+div.fade-out {
+  background-color: #EAEAEA;
+}
+
+div.container-cell p {
+  border-bottom: 1px solid #CCCCCC;
+  margin: 0 0 5px 0;
+  padding: 0 0 5px 0;
+}
+
+div.container-cell p:last-child {
+  border-bottom: none;
+}
+
+
+/* Link to archive file */
+a.link-archive {
+  background: url('../img/icon-trash.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-delete {
+  background: url('../img/icon-delete-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-download {
+  background: url('../img/icon-download-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+a.link-restore {
+  background: url('../img/icon-restore-file.png') no-repeat;
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+}
+
+#container-archive-files {
+  text-align: right;
+}
+
+#container-archive-files a {
+  width: 70px;
+}
+
+#tbl_project_archive_file {
+  display: none;
+}
+
+/* Failed validation result */
+p.fail {
+  color: red;
+}
+
+/* alert when failed found */
+span.alert-error {
+  background: url('../../theme/img/message-16-warning.png') no-repeat top left;
+  padding: 0 7px 0 20px !important;
+}
+
+.todo {
+  background: url('../img/icon-todo.jpg') no-repeat;
+  background-position: 5px 0;
+  opacity: 0.2;
+}

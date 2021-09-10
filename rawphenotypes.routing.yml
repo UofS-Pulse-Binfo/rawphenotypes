@@ -57,7 +57,7 @@ rawphenotypes.page_backup:
   path: 'rawphenotypes/backup'
   defaults:
     _title: 'Backup'
-    # _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageBackupController:loadPage'
   requirements:
     _permission: 'admister tripal'
 
@@ -115,10 +115,11 @@ rawphenotypes.autocomplete.term:
 
 # Generate project-specific data collection spreadsheet file.
 rawphenotypes.callback.generate_spreadsheet:
-  path: 'rawphenotypes/{project_id}/spreadsheet'
+  path: 'rawphenotypes/spreadsheet/{project_id}'
   defaults:
     _title: 'Data Collection Spreadsheet File'
     _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesCreateProjectSpreadsheet::createFile'
+    project_id: '0'
   requirements:
     _permission: 'administer tripal'
     project_id: '[0-9]+'
