@@ -1,181 +1,185 @@
 /**
  * @file
  * Manage behavior in backup page
+ * credits to: https://css-tricks.com/drag-and-drop-file-uploading/.
  */
  (function($) {
   Drupal.behaviors.rawphenoBackupBehaviours = {
-    attach: function (context, settings) {
+    attach: function (context, settings) {      
+      var dragdropFile = drupalSettings.rawphenotypes.vars.dragdropfile;
+      // Reference form element.
+      var rawphenotypesForm = $('#rawphenotypes-form');
+      // Reference to the main drop zone area element.
+      var dropZone = $('.drop-zone');
+      // Variable to hold filename picked up by the drop zone.
+      var dropFilename = false;
+      // File uploaded through the drag and drop.
+      var dropFile = false;
+
+      // Reference container for filename.
+      var dropFileContainer = $('#drop-zone-file');
+      // Reference file field.
+      var inputFileField = $('#field-file');
+      
+
+      // Establish if browser can support drag and drop.
+      var isAdvancedUpload = function() {
+        var div = document.createElement('div');
+        return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
+      }();
 
       
-var isAdvancedUpload = function() {
-  var div = document.createElement('div');
-  return (('draggable' in div) || ('ondragstart' in div && 'ondrop' in div)) && 'FormData' in window && 'FileReader' in window;
-}();
+      // The browser supports drag and drop. A conventional way of
+      // selecting file (choose file link) will be available if it were unsupported.
+      if (isAdvancedUpload) {
+        // Add class to indicate that the drop zone can support drag and drop.
+        // This is white container element when unsupported, matching other field elements.
+        dropZone.addClass('has-dragdrop-upload');
+        
+        // Listen for events.
+        dropZone.once()
+          .on('drag dragstart dragend dragover dragenter dragleave drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setMessage('');
+          })
+          .on('dragover dragenter', function() {
+            // Activate drop zone to indicate that drag and drop
+            // is active and the element can take the file dragged into it.
+            dropZone.addClass('is-dragover')
+          })
+          .on('dragleave dragend drop', function() {
+            // Revert back to the original state.
+            dropZone.removeClass('is-dragover')
+          })
+          .on('drop', function(e) {
+            // Set the filename to indicate drop zone has a file.
+            // Only when the thing drag and drop is a file.
+            if (e.originalEvent.dataTransfer.items[0].kind === 'file') {             
+              dropFilename = e.originalEvent.dataTransfer.files[0].name;
+              markupDropzoneFile(dropFilename);
 
-var $form = $('.drop-zone');
-
-if (isAdvancedUpload) {
-
-  var droppedFiles = false;
-  $form.addClass('has-dragdrop-upload');
-
-  $form.on('drag dragstart dragend dragover dragenter dragleave drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  })
-  .on('dragover dragenter', function() {
-    $form.addClass('is-dragover')
-  })
-  .on('dragleave dragend drop', function() {
-     $form.removeClass('is-dragover')
-  })
-  .on('drop', function(e) {
-    droppedFiles = e.originalEvent.dataTransfer.files;
-  });
-}
-
-
-var input = document.querySelector('#field-file');
-var removeFile = '<a href="#" id="drop-zone-remove-file"><small>[remove]</small></a>' 
-
-input.addEventListener('change', function( e ) {
-  var fileName = '';
-
-		if( this.files && this.files.length > 1 ) {
-			fileName = ( this.getAttribute( 'data-multiple-caption' ) || '' ).replace( '{count}', this.files.length );
-    }
-    else {
-      fileName = e.target.value.split( '\\' ).pop();
-    }
-
-    if( fileName ) {
-			document.querySelector('#drop-zone-file').innerHTML = fileName + removeFile;
-    }
-
-});
-
-
-
-
-
+              // File to upload using the drag and drop.
+              dropFile = e.originalEvent.dataTransfer.files;
+              rawphenotypesForm.trigger('submit');
+            }            
+          });
+      }
       
-      /*
-      $('.droppable-browse-button').text('choose your file');
+      var submitForm = 0;
+      $('#backup-submit-form').once().click(function() {
+        submitForm = 1;
+      });
 
-      // Drop area element.
-	    var dropZone = document.getElementById('droppable-bdnd');
-	    // Initial/default meassage of the drop area.
-	    var dropMessage = $('.droppable-message');
+      // Handle submit.
+      rawphenotypesForm.once()
+        .on('submit', function(e) {        
+          // Submit when there is file upload.
+          if (isAdvancedUpload && dropFile.length > 0) {
+            if (submitForm == 0) { 
+              e.preventDefault();   
+              e.stopPropagation();
 
-	    // Add corresponding message on mouse event.
-	    if (dropZone) {
-	      // User drags file into the drop area.
-		    dropZone.addEventListener('dragover', function() {
-		      dropMessage.css('border','3px dashed #AAAAAA');
-          // Create a new instruction to user.
-          dropMessage.children().hide();
-          $('.droppable-message span').eq(0).show().text('Drop to backup your spreadsheet');
-	  	  });
-
-		    // User cancels file drop.
-		    dropZone.addEventListener('dragleave', function() {
-		      dropMessage.css('border','none');
-          // Create a new instruction to user.
-          $('.droppable-message span').eq(0).text('Drag your Microsoft Excel Spreadsheet file here');
-          dropMessage.children().show();
-		    });
-
-		    // User drops file.
-		    dropZone.addEventListener('drop', function() {
-		      dropMessage.css('border','none');
-          // Create a new instruction to user.
-          $('.droppable-message span').eq(0).text('Drag your Microsoft Excel Spreadsheet file here');
-          dropMessage.children().show();
-          // AJAX dies or is frozen after an error.
-          if ($('div.messages').length) {
-            alert();
-
-            // Remove validation result and drupal error message.
-            $('div.messages').remove();
+              // File data container.
+              var ajaxData = new FormData();
+              
+              if (dropFile) {
+                // Append file data container with the file.
+                ajaxData.append('file', dropFile[0]);    
+                setFileId();       
+                ajaxData.append('fileId', getFileId());    
+              }
+              
+              $.ajax({
+                url: dragdropFile,
+                type: rawphenotypesForm.attr('method'),
+                data: ajaxData,
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                complete: function() {
+                  // $form.removeClass('is-uploading');
+                },
+                success: function(data) {
+                  if (data.error) {
+                    setMessage(data.response);
+                  }
+                },
+                error: function() {}
+              });
+            } else {
+              // ajax for legacy browsers
+            }
           }
-		    });
-	    }
+        });
 
-      // Remove validation result and error messages as soon
-      // as DND receives a file. This is for both drag and drop and
-      // using the choose a file link (file browser).
-      $(document).ajaxStart(function() {
-        // AJAX start.
-        if ($('div.messages').length) {
-          $('div.messages').remove();
-        }
-      });
-
-      // Reveal validation result text.
-      $('div.container-cell').click(function() {
-        // Examine the height. When height is 50px, user wants to disclose the entire cell contents
-        // else, restore it to initial state.
-        var id = $(this).attr('id');
-        var i = id.replace(/vn-file-|vr-file-/, '');
-
-        var h = $(this).css('height');
-        if (h == '65px') {
-          $('#vr-file-' + i).css('height', '100%');
-
-          if ($('#vn-file-' + i)) {
-            $('#vn-file-' + i).css('height', '100%');
+      // Whether or not drag and drop is supported, manual upload
+      // will be available to user.
+      inputFileField.once()
+        .on('change', function(e) {
+          setMessage('');
+          
+          if(this.files && this.files.length == 1) {
+            dropFilename = e.target.value.split('\\').pop();
           }
-        }
-        else {
-          $('#vr-file-' + i).css('height', '65px');
 
-          if ($('#vn-file-' + i)) {
-            $('#vn-file-' + i).css('height', '65px');
+          if(dropFilename) {
+            markupDropzoneFile(dropFilename);
+            dropFile = [ $('#field-file')[0].files[0] ];
+            rawphenotypesForm.trigger('submit');
           }
-        }
-      });
+        });
 
+      // When drop zone has file - a remove link is available.
+      // Listen to when this link is clicked.
+      var hasFile = dropFileContainer.has('a');
+      if (hasFile) {
+        dropFileContainer.on('click', function(e) {
+          e.preventDefault();
+          
+          setMessage('');
+          markupDropzoneFile();
+          $('#field-file').val('');
+        }); 
+      }
 
-      // Confirm action.
-      $('table a.link-archive, table a.link-delete').click(function(i) {
-        var title = i.target.title;
+      /**
+       * Create a markup for the file set in the drop zone element.
+       * Markup will include remove link to remove file from the drop zone.
+       * @param filename 
+       *   Filename picked up by the drop zone element.
+       */
+      function markupDropzoneFile(filename = null) {
+        // Markup that will show the filename provided in the drop zone or using
+        // the conventional way to add file plus this markup to remove the file.
+        var removeFile = '&nbsp;<a href="#"><small>[remove]</small></a>';
+        
+        var markup = (filename) ? filename.trim() + removeFile : '';
+        dropFileContainer.html(markup);
+      }
 
-        var r = confirm('Are you sure want to ' + title + '?');
-        if (!r) return false;
-      });
+      /**
+       * Create a file id.
+       */
+      function setFileId() {
+         var id = Date.now();
+         $('#field-file-id').val(id.toString());
+      }
+      
+      /**
+       * Get file id.
+       */
+      function getFileId() {
+        return $('#field-file-id').val();
+      }
 
-      // Show/hide archive table.
-      $('#container-archive-files a.link-archive').click(function(event) {
-        event.preventDefault();
-        var archiveTable = $('#tbl_project_archive_file');
-        if (archiveTable.is(':hidden')) {
-          archiveTable.show();
-        }
-        else {
-          archiveTable.hide();
-        }
-      })
-
-      // Reload the page when file has no error.
-      $(document).ajaxComplete(function() {
-        //ajax end
-        if ($('.rawpheno-validate-progress').length <= 0 && $('.messages').length <= 0) {
-          var link = '../raw/backup/up';
-          location.assign(link);
-        }
-      });
-
-
-      // For security, suppress any alert message showing snippet of code or
-	    // module settings to the user.
-	    alert = function(e) {
-        // Create an error message.
-        $('div.droppable-preview-file').hide();
-        $('<div class="messages error">The specified file is not a valid Microsoft Excel File and could not be uploaded.</div>').insertAfter('select');
-
-        return false;
-      };
-      */
+      /**
+       * Set status (error) message.
+       */
+      function setMessage(message = '') {
+        $('.dragdrop-message').html(message);
+      }
     }
   };
 }(jQuery));

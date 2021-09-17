@@ -123,3 +123,13 @@ rawphenotypes.callback.generate_spreadsheet:
   requirements:
     _permission: 'administer tripal'
     project_id: '[0-9]+'
+
+# Handle drag and drop file upload.
+rawphenotypes.callback.dragdropfile:
+  path: 'rawphenotypes/dragdropfile'
+  defaults:
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesDragdropFileController::upload'
+    _format: json
+  methods: [POST]
+  requirements:
+    _permission: 'administer tripal'
