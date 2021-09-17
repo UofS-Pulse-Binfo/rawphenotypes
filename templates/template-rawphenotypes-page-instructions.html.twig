@@ -1,0 +1,178 @@
+
+{#
+/**
+ * @file
+ * Theme instructions page.
+ */
+#}
+{{ form.form_build_id }}
+{{ form.form_token }}
+{{ form.form_id }}
+
+{{ search_form.message_invalid_project }}
+
+<div class="container-header" style="background-color: {{ page.theme_colour }}">
+  {{ title }} <a name="project-panel"></a>
+</div>
+
+<div class="container-page" style="border-color: {{ page.theme_colour }}">
+  <div class="content-wrapper">
+    <div class="container-subtitle">
+      <div class="subtitle-left">
+        {{ search_form.txt_search }}
+        <input type="button" id="btn_submit" name="btn_search" class="form-submit" value=" ">
+      </div>
+      <div class="subtitle-right">
+        <a href="{{ to_upload }}" style="background-color: {{ page.theme_colour }}">Upload Data &#10095;</a>
+      </div>
+    </div>
+    
+    <div class="clear-float">&nbsp;</div>
+
+    <div id="container-project-panel">
+      {{ search_form.active_project }}
+      <span><a href="#">Change Project</a></span>
+    </div>
+
+    <div id="container-sel-project">
+      {{ search_form.sel_project }}
+    </div>
+
+    <div id="container-instructions">
+      <div id="phenotype-page">
+        <div id="container-search-result"></div>
+          <div id="tabs">
+            <ul id="instructions-tab">
+              <li><a href="#fragment-1">Standard Procedure</a></li>
+              <li id="essential"><a href="#fragment-2">Essential Traits</a></li>
+
+              {% if search_form.tbl_project_headers_optional %}              
+              <li><a href="#fragment-3">Optional Traits</a></li>              
+              {% endif %}
+              
+              {% if search_form.tbl_project_headers_subset %}              
+              <li><a href="#fragment-4">Subset Traits</a></li>
+              {% endif %}
+
+              {% if search_form.tbl_project_headers_contributed %}              
+              <li><a href="#fragment-5">Contributed</a></li>
+              {% endif %}
+              
+              <li id="photo-appendix"><a href="#fragment-6">Photo Appendix</a></li>
+            </ul>
+
+            <div id="fragment-1">
+              <h3>Spreadsheet Tips</h3>
+              <ul>
+                <li>
+                   <p>Comments with instructions, tips and scales are included with the header for each trait. <br />
+                   Simply click the speech bubble icon beside the header.</p>
+                </li>
+                <li><p>Essential Traits have green headers; all other traits are optional.</p></li>
+                <li><p>You should hide optional traits you are not taking data for by long pressing a column header then selecting “hide”.</p></li>
+                <li><p>We’ve included an easy calculator to determine “Days from Planting” in a separate tab.</p></li>
+                <li>
+                  <p>Special Interest Traits: <br />Add a column on the spreadsheet for any other trait you are interested in collecting data for. <br />
+                  When uploading you will be asked to provide a description including units or scale used to take the measurement.</p>
+                </li>
+              </ul>
+
+              <div id="container-resource-links">
+                <div>
+                  <h3>&raquo; To Collect Data:</h3>
+                  <a href="{{ to_collect }}/{{ search_form.project_id }}" target="_blank">Download Data Collection Spreadsheet File</a>                  
+                </div>
+                <div>
+                  <h3>&raquo; To Backup File:</h3>
+                  <a href="{{ to_backup }}">Backup Data Collection Spreadsheet File</a>
+                </div>
+                <div>
+                  <h3>&raquo; To Submit Data:</h3>
+                  <a href="{{ to_upload }}">Backup Data Collection Spreadsheet File</a>
+                </div>
+              </div>
+              <div class="clear-float">&nbsp;</div>
+            </div>
+            
+            <div id="fragment-2">
+              <h3>These traits are essential to this project and data should be collected for all genotypes sent to you.</h3>
+              {{ search_form.tbl_project_headers_essential }}
+              <h3>Further reference for Reproductive stages:</h3>
+              <em>Erskine et al. (1990) Stages of Development in Lentil. Experimental Agriculture. 26(3): 297-302.</em>
+              <ul>
+                <li><strong>R1 - First Bloom</strong><p>One open flower at any node</p></li>
+                <li><strong>R3 - Early Pod</strong><p>Pod on nodes 10-13 of the basal primary branch visible</p></li>
+                <li><strong>R5 - Full Seed</strong><p>Seeds in any single pod on nodes 10-13 of the basal primary branch are swollen and completely fill the pod cavity</p></li>
+                <li><strong>R7 - Physiological Maturity</strong><p>The leaves start yellowing and 50% of the pods have turned yellow</p></li>
+              </ul>
+              <a class="link-back-to-top" href="#project-panel">Go to top page</a>
+            </div>
+
+            {% if search_form.tbl_project_headers_optional %}              
+            <div id="fragment-3">              
+              <h3>
+                {% set projectname = search_form.active_project %}
+                {% if projectname == "AGILE: Application of Genetic Innovation in the Lentil Economy" %}
+                  These traits are optional. Please contact the Project Manager if you are interested in these traits.
+                {% else %}
+                  These traits are optional. We will be taking them in our location and have thus provided 
+                  our procedure in case you interested in taking these data in your location as well. 
+                  Feel free to record ANY data you are interested in (including traits not listed below 
+                  –just add a column to the accompanying data spreadsheet for traits not listed below).
+                {% endif %}
+              </h3>
+              {{ search_form.tbl_project_headers_optional }}
+              <a class="link-back-to-top" href="#project-panel">Go to top page</a>
+            </div>
+            {% endif %}
+
+            {% if search_form.tbl_project_headers_subset %}
+            <div id="fragment-4">
+              <h3>
+                The following traits require a fair amount of work and, as such, are completely optional. 
+                We will collect them in SK, if you are interested in these traits, please contact us to 
+                make sure we are collecting the same thing. Note: These columns are hidden by default. 
+                If you would like to record this data, select columns “X” and "AB" and either right-click 
+                (computer) or long-press (tablet) the column header then select “Unhide”. For the following 
+                “Subset Traits”, select 2 plants from the middle of each plot and randomly collect 10 
+                peduncles from each plant, ranging from the top to bottom, for a total of 20 peduncles. 
+                If 20 peduncles cannot be obtained, sample from a 3rd plant.
+              </h3>
+              {{ search_form.tbl_project_headers_subset }}
+              <a class="link-back-to-top" href="#project-panel">Go to top page</a>
+            </div>
+            {% endif %}
+
+            {% if search_form.tbl_project_headers_contributed %}
+            <div id="fragment-5">
+              <h3>
+                These traits are additional traits contributed by Phenotypic Data Collectors. 
+                Trait definition and method of collection were provided by the data collector.
+              </h3> 
+              {{ search_form.tbl_project_headers_contributed }}
+              <a class="link-back-to-top" href="#project-panel">Go to top page</a>
+            </div>
+            {% endif %}
+
+            <div id="fragment-6">
+              <h3>Topic: <select>
+                <option value="0">Tendrils</option>
+                <option value="1">Pods</option>
+              </select></h3>
+              <div id="photo-container">
+                <div id="gallery-container">
+                  <div class="side-nav nav-go-left"><a href="javascript:void();" class="a-left">&lang;</a></div>
+                  <div class="gallery-img">                
+                    <input type="hidden" id="cur-img" value="0">
+                    <img src="{{ path }}/images/appendix/01-tendrils-no-elongation.jpg">                    
+                    <br /><em>No elongation</em>
+                  </div>
+                  <div class="side-nav nav-go-right"><a href="javascript:void();" class="a-right">&rang;</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>

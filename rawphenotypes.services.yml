@@ -1,0 +1,18 @@
+# @file
+# Rawphenotypes Module Services Definition.
+
+services:
+  rawphenotypes.default_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesDefaultValueService  
+  rawphenotypes.term_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesTermService
+  rawphenotypes.project_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesProjectService  
+  rawphenotypes.logger_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesLoggerService  
+  rawphenotypes.mview_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesMviewService    
+  rawphenotypes.user_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesUserService 
+  rawphenotypes.envdata_service:
+    class: Drupal\rawphenotypes\Services\RawphenotypesEnvironmentDataService   

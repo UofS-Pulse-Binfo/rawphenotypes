@@ -1,0 +1,33 @@
+{#
+/**
+ * @file
+ * Theme backup page.
+ */
+#}
+{{ form.form_build_id }}
+{{ form.form_token }}
+{{ form.form_id }}
+
+<div class="container-header" style="background-color: {{ page.theme_colour }}">
+  {{ title }}
+</div>
+
+<div class="container-page" style="border-color: {{ page.theme_colour }}">
+  <div class="content-wrapper">
+    <div class="container-subtitle">
+      <div class="subtitle-left">{{ current_user }}</div>
+      <div class="subtitle-right">
+        <a href="{{ to_instructions }}" style="background-color: {{ page.theme_colour }}">Standard Procedure &#10095;</a>
+      </div>
+    </div>
+
+    <div id="container-backup">
+      <div id="container-add-file">
+        {{ upload_form }}
+      </div>
+      <div>
+        <h2>Manage My Files:</h2>
+      </div>
+    </div>
+  </div>
+</div>

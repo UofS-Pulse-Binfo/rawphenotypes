@@ -1,0 +1,135 @@
+# Routes for managing Rawphenotypes module (laid out in tabs).
+# @see rawphenotypes.links.task.yml
+
+# Configure Raw Phenotypes module.
+rawphenotypes.configure:
+  path: 'admin/tripal/extension/rawphenotypes'
+  defaults:
+    _title: 'Configure Raw Phenotypes Module'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesConfigurationForm'
+  requirements:
+    _permission: 'administer tripal'
+
+rawphenotypes.rtransform:
+  path: 'admin/tripal/extension/rawphenotypes/rtransform'
+  defaults:
+    _title: 'Configure R Tranformation Rules'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesRTransformForm'
+  requirements:
+    _permission: 'administer tripal'
+
+rawphenotypes.projects:
+  path: 'admin/tripal/extension/rawphenotypes/projects'
+  defaults:
+    _title: 'Manage Phenotyping Experiments'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesManageProjectForm'
+  requirements:
+    _permission: 'administer tripal'
+
+# Project assets management and operation.   
+rawphenotypes.manage_project:
+  path: 'admin/tripal/extension/rawphenotypes/projects/{asset_id}/{asset_type}/{action}'
+  defaults:
+    _title: 'Manage Phenotyping Experiments'
+    _form: '\Drupal\rawphenotypes\Form\RawphenotypesManageAssetForm'
+  requirements:
+    _permission: 'administer tripal'
+    asset_id: '[0-9]+'
+    asset_type: 'project|header|user|envdata'
+    action: 'manage|edit|delete'
+
+
+# Page routes.
+
+# Instructions page.
+rawphenotypes.page_instructions:
+  path: 'rawphenotypes/instructions/{project_id}'
+  defaults:
+    _title: 'Instructions'
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+    project_id: '0'
+  requirements:
+    _permission: 'admister tripal'
+    project_id: '[0-9]+'
+
+# Backup page.
+rawphenotypes.page_backup:
+  path: 'rawphenotypes/backup'
+  defaults:
+    _title: 'Backup'
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageBackupController:loadPage'
+  requirements:
+    _permission: 'admister tripal'
+
+# Download page.
+rawphenotypes.page_download:
+  path: 'rawphenotypes/download'
+  defaults:
+    _title: 'Download'
+    #_controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+  requirements:
+    _permission: 'admister tripal'
+
+# Upload page.
+rawphenotypes.page_upload:
+  path: 'rawphenotypes/upload'
+  defaults:
+    _title: 'Upload'
+    #_controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+  requirements:
+    _permission: 'admister tripal'
+
+# Rawdata page.
+rawphenotypes.page_summary:
+  path: 'rawphenotypes/summary'
+  defaults:
+    _title: 'Raw Data Summary'
+    #_controller: '\Drupal\rawphenotypes\Controller\RawphenotypesPageInstructionsController:loadPage'
+  requirements:
+    _permission: 'admister tripal'
+
+
+# Autocomplete routes.
+
+# Suggest users.
+rawphenotypes.autocomplete.user:
+  path: 'admin/tripal/extension/rawphenotypes/user'
+  defaults:
+    #_controller: '\Drupal\rawphenotypes\Controller\RawphenotypesAutocompleteController::autocompleteUser'
+    _format: json
+  requirements:
+    _permission: 'administer tripal'
+
+rawphenotypes.autocomplete.term:
+  path: 'admin/tripal/extension/rawphenotypes/term/{project_id}'
+  defaults:
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesAutocompleteController::autocompleteTerm'
+    _format: json
+  requirements:
+    _permission: 'administer tripal'
+    project_id: '[0-9]+'
+
+
+
+# Callback routes.
+
+# Generate project-specific data collection spreadsheet file.
+rawphenotypes.callback.generate_spreadsheet:
+  path: 'rawphenotypes/spreadsheet/{project_id}'
+  defaults:
+    _title: 'Data Collection Spreadsheet File'
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesCreateProjectSpreadsheet::createFile'
+    project_id: '0'
+  requirements:
+    _permission: 'administer tripal'
+    project_id: '[0-9]+'
+
+# Handle drag and drop file upload.
+rawphenotypes.callback.dragdropfile:
+  path: 'rawphenotypes/dragdropfile'
+  defaults:
+    _controller: '\Drupal\rawphenotypes\Controller\RawphenotypesDragdropFileController::upload'
+    _format: json
+  methods: [POST]
+  requirements:
+    _permission: 'administer tripal'

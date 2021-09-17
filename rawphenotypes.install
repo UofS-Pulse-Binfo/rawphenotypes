@@ -1,0 +1,866 @@
+<?php
+
+/**
+ * @file
+ * Contains all schema api and hook_install()/hook_uninstall()
+ * implementations required by this module.
+ * 
+ * This routine creates a controlled vocabularies and only during this
+ * stage that cvs are created.
+ * @see Drupal\tripal\Services\TripalVocabManager;
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_schema().
+ */
+function rawphenotypes_schema() {
+  // PHENO PLANT
+  // Since the plant can be described in many different ways, we are using a prop-like 
+  // table to describe the plant. This allows for the flexibility needed to describe both
+  // greenhouse and field pots.
+  $schema['pheno_plant'] = [
+    'description' => 'Table for phenotype plant.',
+    'fields' => [
+      'plant_id' => [
+        'description' => 'A unique ID for each row',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'stock_id' => [
+        'description' => 'A unique ID for a stock name.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+  ];
+
+  // PHENO PLANT PROP
+  // Type should include entry, plot, rep and location.
+  $schema['pheno_plantprop'] = [
+    'description' => 'Table for phenotype plantprop.',
+    'fields' => [
+      'plantprop_id' => [
+        'description' => 'Primary key: A unique ID for each plantprop record.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ],
+      'plant_id' => [
+        'description' => 'Holds plant ID number.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' =>  TRUE,
+      ],
+      'type_id' => [
+        'description' => 'Term ID number of trait inserted.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ],
+      'value' => [
+        'description' => 'The value of the trait measured.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['plantprop_id'],
+    'foreign keys' => [
+      'pheno_plant' => [
+        'table' => 'pheno_plant',
+        'columns' => ['plant_id' => 'plant_id']
+      ],
+    ],
+  ];
+
+  // PHENO SCALE MEMBER
+  // The scale code is what is written in the spreadsheet, whereas the value is what it actually represents.
+  $schema['pheno_scale_member'] = [
+    'description' => 'Table for pheno scale member.',
+    'fields' => [
+      'member_id' => [
+        'description' => 'Primary key: A unique ID for each scale value.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'scale_id' => [
+        'description' => 'Scale ID number of a scale value.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'code' => [
+        'description' => 'Corresponding code for each scale ID.',
+        'type' => 'varchar',
+        'length' => 255,
+      ],
+      'value' => [
+        'description' => 'Description of a scale value.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['member_id'],
+  ];
+
+  // PHENO MEASUREMENTS
+  // Modified is the timestamp that it was last modified. This allows us to determine when values were updated.
+  $schema['pheno_measurements'] = [
+    'description' => 'Table for phenotype measurements',
+    'fields' => [
+      'measurement_id' => [
+        'description' => 'Primary key: A unique ID for each trait measured.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'plant_id' => [
+        'description' => 'Holds plant ID number.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'type_id' => [
+        'description' => 'Term ID number of trait inserted.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'unit_id' => [
+        'description' => 'Unit ID number of trait inserted.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'value' => [
+        'description' => 'The value of the trait measured.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+      'cvalue_id' => [
+        'description' => 'Scale member code number when unit is scale.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+      ],
+      'modified' => [
+        'description' => 'timestamp of the last modification.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['measurement_id'],
+    'foreign keys' => [
+      'pheno_plant' => [
+        'table' => 'pheno_plant',
+        'columns' => ['plant_id' => 'plant_id']
+      ],
+    ],
+  ];
+  //
+
+  // PROJECT-CVTERM
+  // Group a set of traits/cvterm to a project.
+  $schema['pheno_project_cvterm'] = [
+    'description' => 'Table for grouping set of traits to a project.',
+    'fields' => [
+      'project_cvterm_id' => [
+        'description' => 'Primary key: A unique ID number.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'project_id' => [
+        'description' => 'ID number of a project from chado.project table',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'cvterm_id' => [
+        'description' => 'cvterm id number of a trait',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      // This option will allow for grouping of traits. In AGILE Project, types include:
+      // Essential Traits, Optional Traits, Subset Trait and Plant Property.
+      // Use this field to indicate as such.
+      
+      // A function in rawpheno.function.measurements lists possible types that can be made available
+      // to admin when adding traits in the admin control panel.
+      'type' => [
+        'description' => 'Indicate a column header is essential, not essential (optional), a plant property and other',
+        'type' => 'varchar',
+        'length' => 20,
+      ],
+    ],
+    'primary key' => ['project_cvterm_id'],
+  ];
+
+  // PROJECT-PLANT/STOCK
+  $schema['pheno_plant_project'] = [
+    'description' => 'Table for mapping stock to a project',
+    'fields' => [
+      'plant_project_id' => [
+        'description' => 'Primary key: A nunique ID number.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'project_id' => [
+        'description' => 'ID number of a project from chado.project table.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'plant_id' => [
+        'description' => 'ID number of stock from pheno_plant table.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['plant_project_id'],
+  ];
+
+  // PROJECT-USER
+  $schema['pheno_project_user'] = [
+    'description' => 'This table will hold information about user and project',
+    'fields' => [
+      'project_user_id' => [
+        'description' => 'Primary Key: A unique ID number',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'project_id' => [
+        'description' => 'ID number of project from chado.project table',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'uid' => [
+        'description' => 'ID number of logged in user from user table',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['project_user_id'],
+  ];
+
+  // PROJECT-BACKUP-FILE
+  $schema['pheno_backup_file'] = [
+    'description' => 'This table will hold information about files uploaded by user to a project',
+    'fields' => [
+      'file_id' => [
+        'description' => 'Primary Key: A unique ID number',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'project_user_id' => [
+        'description' => 'The project ID number from table pheno_project_user',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'fid' => [
+        'description' => 'File ID number from file_managed table',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'version' => [
+        'description' => 'The sequence number of the file in relation to a project',
+        'type' => 'int',
+      ],
+      'validation_result' => [
+        'description' => 'Stores the result of file validation performed',
+        'type' => 'text',
+      ],
+      'notes' => [
+        'description' => 'Notes, description and comments made to a file',
+        'type' => 'text',
+      ],
+      'archive' => [
+        'description' => 'Indicates whether a file is temporarily removed from a project.',
+        'type' => 'varchar',
+        'length' => 2,
+        'default' => 'n',
+      ],
+    ],
+    'primary key' => ['file_id'],
+  ];
+
+  // PHENO-ENVIRONMENT-DATA
+  $schema['pheno_environment_data'] = [
+    'description' => 'This table will hold information about environment data.',
+    'fields' => [
+      'environment_data_id' => [
+        'description' => 'Primary Key: A unique ID number',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'project_id' => [
+        'description' => 'The project ID number from table chado.project',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'fid' => [
+        'description' => 'File ID number from file_managed table',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'sequence_no' => [
+        'description' => 'The sequence number of the file.',
+        'type' => 'int',
+      ],
+      'location' => [
+        'description' => 'Location information of the file.',
+        'type' => 'text',
+      ],
+      'year' => [
+        'description' => 'Year information of the file.',
+        'type' => 'text',
+      ],
+    ],
+    'primary key' => ['environment_data_id'],
+  ];
+
+  // Create materialized view
+  // @TODO - remove when Tripal mview api is supported.
+  $schema['rawpheno_rawdata_mview'] = [
+    'description' => 'Temporary table while Tripal Mview is not available',
+    'fields' => [
+      'plant_id' => [
+        'description' => 'Plant id',
+        'type' => 'int'
+      ],
+      'location' => [
+        'description' => 'Location',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'rep' => [
+        'description' => 'Replicate',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'planting_date' => [
+        'description' => 'Planting date',
+        'type' => 'varchar',
+        'length' => 255
+      ],
+      'total_count' => [
+        'description' => 'Total count',
+        'type' => 'int'
+      ],
+      'all_traits' => [
+        'description' => 'All traits',
+        'type' => 'text'
+      ],
+    ],
+    'indexes' => [
+      'plant_id' => ['plant_id'],
+      'location' => ['location'],
+    ]
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function rawphenotypes_install() {  
+  // Add services.
+  $term_service    = \Drupal::service('rawphenotypes.term_service');
+  $mview_service   = \Drupal::service('rawphenotypes.mview_service');
+  $logger_service  = \Drupal::service('rawphenotypes.logger_service');
+  $default_service = \Drupal::service('rawphenotypes.default_service');
+  $project_service = \Drupal::service('rawphenotypes.project_service');
+
+  // Configuration setting values.
+  $settings = \Drupal::service('config.factory')
+    ->getEditable('rawphenotypes.settings');
+  
+  // Get variable names and default values.
+  $vars = $default_service::getDefaultValue('variables');
+  $config = $default_service::getDefaultValue('defaults');
+  
+  // # 1. INSERT CV.
+  // Insert all cvs required.
+  $cv = $default_service::getDefaultValue('vocabularies');
+
+  // Array to hold cv_id and cv_name.
+  // This will be used when creating cvterm relationships
+  // and add corresponding cvterm.
+  $arr_cvid_cvname = [];
+  // cv - cvterm mapping array.
+  $arr_map_cv_cvterm = [];
+  // CV to hold terms used to create relationships.
+  // term - unit, term - method, term - R.
+  $rawphenotypes_cv = $cv['cv_phenotypes'];
+
+  foreach($cv as $cv_i => $cv_name) {
+    $cv_exists = $term_service->getTermByName($cv_name, 'cv');
+    if ($cv_exists) continue;
+    
+    // A constraint in relation cvtermprop requires that
+    // cvtermprop.type_id is a row in chado.cvterm.
+
+    // First cv (rawphenotypes_terms) will be created that will hold cvterm.
+    // Each cv will become a cvterm and stored in this initial cv.
+    // This will be used in creating relationships (type_id) in relations
+    // cvtermprop and cvterm_relationships.
+    $cv_def = str_replace('_', ' ', ucfirst($cv_name));
+    $tmp = (function_exists('chado_insert_cv')) 
+        ? chado_insert_cv($cv_name, $cv_def)
+        : tripal_insert_cv($cv_name, $cv_def);
+    
+    
+    if($tmp) { 
+      if ($cv_name == $rawphenotypes_cv) continue; // Don not add as cvterm.
+      
+      $cv_cvterm = [
+        'id' => 'rawpheno_tripal:' . $cv_name,
+        'name' => $cv_name,
+        'definition' => $cv_def,
+        'cv_name' => $rawphenotypes_cv
+      ];
+      
+      $cvcvterm_id = $term_service->addTerm($cv_cvterm);
+      // Save the cvterm id based on the cv name for later when
+      // creating relationships.
+      $arr_map_cv_cvterm[ $cv_name ] = $cvcvterm_id->cvterm_id;
+    }
+    else {
+      $msg = 'Chado/Tripal failed to insert cv.';
+      $logger_service::postTripalReportError($msg);
+    }
+  }
+
+  // # 2. INSERT UNITS.
+  // Insert units and scale member used by scale.
+  // NOTE: Scale memeber is link to the column header Lodging (scale 1-5) and not to scale unit.
+  //       When the column header Lodging is inserted, only then we can insert the scale members.
+
+  // Array to hold scale members.
+  $arr_unit = $default_service::getDefaultValue('units');
+  // Array to hold cvterm_id of each inserted unit.
+  // This will be used when creating a cvterm relationship linking a cvterm to a unit.
+  $arr_cvtermid_unit = [];
+
+  foreach($arr_unit as $unit => $def) {
+    $unit_exists = $term_service->getTermByName($unit);
+    if ($unit_exists) continue;
+
+    $ins_unit = [
+      'id' => 'rawpheno_tripal:' . $unit,
+      'name' => $unit,
+      'definition' => $def,
+      'cv_name' => $cv['cv_unit']
+    ];
+
+    $tmp = $term_service->addTerm($ins_unit);
+
+    if ($tmp) {
+      $arr_cvtermid_unit[ $unit ] = $tmp->cvterm_id;
+    }
+    else {
+      $msg = 'Chado/Tripal failed to insert cvterm (trait unit).';
+      $logger_service::postTripalReportError($msg);
+    }
+  }
+
+  // # 3. INSERT COLUMN HEADERS/TRAITS.
+  // Insert column headers.
+  // When inserting column headers, generate the R Version, add collection method
+  // and map it to a AGILE (only when this project is available).
+
+  // Default Project.
+  // This is the default project, only when such project exists, otherwise, insert the column headers
+  // and make them available for use in admin control panel.
+  // @note project.name must be unique so no need to limit 1.
+  $default_project = $default_service::getDefaultValue('project');
+  $project = $project_service::getProjectByName($default_project);
+
+  if (isset($project)) {
+    $project_ID = $project->project_id;
+
+    // When AGILE is present in this site, add a user to this project.
+    $current_user = \Drupal::currentUser()->id();
+    $project_service::addUserToProject($current_user, $project_ID);
+
+    // If the user is not the superadmin, add superadmin as well.
+    if ($current_user != 1) {
+      $project_service::addUserToProject(1, $project_ID);
+    }
+  }
+
+  // Initialize R Transformation rules required in generating R version of header.
+  // The default rules are the rules required in generating R version of headers default to this module.
+  // Set default configurations.
+  $settings
+    ->set($vars[0], $config['colour'])
+    ->set($vars[1], $config['rawdata'])
+    ->set($vars[2], $config['download'])
+    ->set($vars[3], $config['instructions'])
+    ->set($vars[4], $config['upload'])
+    ->set($vars[5], $config['backup'])
+    ->set($vars[6], $config['r-words'])
+    ->set($vars[7], $config['r-chars'])
+    ->set($vars[8], $config['r-replace'])
+    ->save();
+
+  // Array to hold header types.
+  $trait_type = $default_service::getTraitTypes();
+
+  // Array to hold all column headers, plant property headers and essential headers.
+  $arr_allheaders = $default_service::getTraits('expected');
+  $arr_subsetheader = $default_service::getTraits('subset');
+  $arr_plantpropheader = $default_service::getTraits('plantprop');
+  $arr_essentialheader   = $default_service::getTraits('essential');
+
+  foreach($arr_allheaders as $header) {
+    $header_exists = $term_service->getTermByName($header);
+
+    // Skip when it is Name or if header was previously added.
+    if ($header == 'Name' || $header_exists) {
+      continue;
+    }
+
+    // Get the definition and collection method.
+    $cvterm_info = $default_service::defineTrait($header);
+    // When no information is retured, default the definition to the term itself.
+    $cvterm_definition = (!empty($cvterm_info['define'])) ? $cvterm_info['define'] : $header;
+    // Set the type of header.
+    $cvterm_type = (in_array($header, $arr_plantpropheader)) ? $cv['cv_prop'] : $cv['cv_type'];
+
+    $ins_term = [
+      'id'         => 'rawpheno_tripal:' . $header,
+      'name'       => $header,
+      'definition' => $cvterm_definition,
+      'cv_name'    => $cvterm_type
+    ];
+
+    // Insert the cvterm.
+    $cvterm = $term_service->addTerm($ins_term);
+
+    // Insert the cvterm data collection method.
+    if ($cvterm) {
+      $cvterm_info['method'] = $cvterm_info['method'] ?? $header; 
+      // Data collection method.
+      $term_service->saveTermProperty([
+        'cvterm_id' => $cvterm->cvterm_id,
+        // Refer to cv - cvterm mapping array.
+        'type_id'   => $arr_map_cv_cvterm[ $cv['cv_desc'] ],
+        'value'     => $cvterm_info['method'],
+        'rank'      => 0
+      ]);
+    }
+    else {
+      $msg = 'Chado/Tripal failed to insert cvterm (trait unit).';
+      $logger_service::postTripalReportError($msg);
+    }
+
+    // Relate cvterm and unit.
+    // No relationship when header is Plant Property Type.
+    if (!in_array($header, $arr_plantpropheader) && $cvterm) {
+      // Extract the unit part from the column header. Usually, the information enclosed in a parenthesis.
+      $header_unit = $term_service->getTermUnit($header);
+      $header_unit = (empty($header_unit)) ? 'text' : $header_unit;
+
+      $term_service->saveTermRelationship([
+        'subject_id' => $arr_cvtermid_unit[$header_unit],
+        // Refer to cv - cvterm mapping array.
+        'type_id'    => $arr_map_cv_cvterm[ $cv['cv_unit'] ],
+        'object_id'  => $cvterm->cvterm_id
+      ]);
+    }
+    
+    // R version. To be implemented to all column headers.
+    $r_version = $term_service->makeTermRCompatible($header);
+
+    if ($cvterm) {      
+      $term_service->saveTermProperty([
+        'cvterm_id' => $cvterm->cvterm_id,
+        // Refer to the cv - cvterm mapping array.
+        'type_id'   => $arr_map_cv_cvterm[ $cv['cv_rver'] ],
+        'value'     => $r_version,
+        'rank'      => 0
+      ]);
+    }
+
+    // Finally, map this particular header to project, again, only when default project is present.
+    if (isset($project_ID) && $project_ID > 0) {
+      // Indicate the type of header.
+      if (in_array($header, $arr_plantpropheader)) {
+        // Type is Plant Property.
+        $type = $trait_type['type4'];
+      }
+      elseif (in_array($header, $arr_essentialheader)) {
+        // Trait is essential (must be in the spreadsheet).
+        $type = $trait_type['type1'];
+      }
+      elseif (in_array($header, $arr_subsetheader)) {
+        // Subset Trait
+        $type = $trait_type['type3'];
+      }
+      else {
+        // Trait is optional
+        $type = $trait_type['type2'];
+      }
+
+      $term_service->saveTermToProject($cvterm->cvterm_id, $type, $project_ID); 
+    }
+  }
+  
+  // Lodging (scale 1-5) has been added, so the scale member table can now be generated.
+  $lodging = $default_service::getDefaultValue('scales');
+
+  $cl = ['name' => array_keys($lodging)[0], 'cv_id' => ['name' => $cv['cv_type']]];
+  $cvterm_lodging = $term_service->getTerm($cl);
+
+  // Insert scale values 1 - 5
+  $term_service->setTermScaleValues($cvterm_lodging->cvterm_id, array_values($lodging)[0]);  
+  
+  // # 4. MATERIALIZED VIEW.
+  // @TODO: CURRENLTY NOT SUPPORTED IN T4.
+  // Create materialized view used in phenotypes/rawdata.
+  $mview_service::createMview();
+
+  // #5. ADD DEFAULT SAMPLE SPREADSHEET
+  // Add data collection spreadsheet to public:// directory,
+  // and link this file for download in instructions page.
+  $destination = \Drupal::config('system.file')
+    ->get('default_scheme') . '://';
+  
+  $file_handler = \Drupal::service('file_system');
+  $file_dir = $file_handler
+    ->prepareDirectory($destination, FILE_MODIFY_PERMISSIONS);
+
+  if ($file_dir) {
+    // Add this file if directory is writable.
+    // File is in zip format as it is more friendly for download than xlsx.
+    $file = 'AGILE-PhenotypeDataCollection-v5.xlsx.zip';
+    
+    $source = \Drupal::service('module_handler')
+      ->getModule('rawphenotypes')
+      ->getPath();
+
+    $source .= '/theme/' . $file;
+    
+    // Copy file without creating an entry in drupal database.
+    // If file is present, replace it with the same file.
+    $file_handler
+      ->copy($source, $destination, FILE_EXISTS_REPLACE);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rawphenotypes_uninstall() {
+  $term_service    = \Drupal::service('rawphenotypes.term_service');
+  $mview_service   = \Drupal::service('rawphenotypes.mview_service');
+  $default_service = \Drupal::service('rawphenotypes.default_service');
+  
+  // # 1. UNREGISTER PERSISTENT VARIABLES.
+  $settings = \Drupal::service('config.factory')
+    ->getEditable('rawphenotypes.settings')
+    ->delete();
+
+  // # 2. DROP MATERIALIZED VIEW TABLE.
+  // Using tripal: tripal_delete_mview().
+  // Get mview id of materilaized view created by hook_install().
+  // @note tripal_mviews.mv_table must be unique (constraint).
+  $mview_service::dropMview();
+
+  // # 3. DELETE CV AND CVTERM.
+  $cv = $default_service::getDefaultValue('vocabularies');
+  $db = \Drupal::database(); 
+
+  foreach($cv as $cv_i => $cv_name) {
+    $cv = $term_service->getTerm(['name' => $cv_name], 'cv');
+    $args = [':cv_id' => $cv->cv_id];
+
+    // Delete relationships.
+    if ($cv_i == 'cv_unit') {
+      $del = "DELETE FROM chado.cvterm_relationship WHERE type_id = :cv_id";
+      $db->query($del, $args);
+    }
+
+    // Delete R version.
+    if ($cv_i == 'cv_rver') {
+      $del = "DELETE FROM chado.cvtermprop WHERE type_id = :cv_id";
+      $db->query($del, $args);
+    }
+
+    // Delete cvterms.
+    if ($cv_i == 'cv_type') {
+      $del = "DELETE FROM chado.cvterm WHERE cv_id = :cv_id";
+      $db->query($del, $args);
+    }
+
+    // Finally, delete the cv
+    $del = "DELETE FROM chado.cv WHERE cv_id = :cv_id";
+    $db->query($del, $args);
+  }  
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function rawphenotypes_requirements($phase) {
+  $requirements = [];
+
+  // On install of this module, check the following libraries.
+  if (($phase == 'install' || $phase == 'update') && function_exists('libraries_get_path')) {
+    $libraries = 'i.e., sites/all/libraries/';
+
+    $arr_req_libraries = [
+      // Libraries.
+      'excel_writer' =>
+        [
+          'is_in'  => libraries_get_path('PHP_XLSXWriter_plus'),
+          'source' => 'https://github.com/SystemDevil/PHP_XLSXWriter_plus/archive/master.zip',
+          'path'   => $libraries . 'PHP_XLSXWriter_plus'
+        ],
+
+      'excel_reader' =>
+        [
+          'is_in'  => libraries_get_path('spreadsheet-reader'),
+          'source' => 'https://github.com/nuovo/spreadsheet-reader/archive/master.zip',
+          'path'   => $libraries . 'spreadsheet-reader'
+        ],
+
+      'd3' =>
+        [
+          'is_in'  => libraries_get_path('d3'),
+          'source' => 'https://github.com/d3/d3/releases/download/v3.5.14/d3.zip',
+          'path'   => $libraries . 'd3'
+        ]
+    ];
+
+    foreach($arr_req_libraries as $i => $info) {
+      if (!$info['is_in']) {
+        $path = $info['path'];
+        $source = $info['source'];
+        
+        $link = Url::fromUri($source);
+        $requirements[$i] = [
+          'severity' => REQUIREMENT_ERROR,
+          'description' =>
+            t('This module uses @library, which is missing.
+              Please download and extract the entire contents of the archive into Libraries Directory %path directory on your server.',
+              ['@library' => \Drupal::l(strtoupper(str_replace('_',' ',$i)), $link), '%path' => $path]),
+        ];
+      }
+
+      // Check version of D3 and esure patch has been implemented.
+      if ($i == 'd3' && $info['is_in']) {
+        // @see library function below.
+        $ver = rawphenotypes_library_D3_get_version();
+        $v = explode('.', $ver);
+
+        if (trim($v[0]) != '3' OR (int)$v[1] < 4) {
+          $link = Url::fromUri('https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+          $link_ver = Url::fromUri('https://github.com/d3/d3/releases/download/v3.5.14/d3.zip');
+          $requirements['d3_version'] = [
+            'severity' => REQUIREMENT_ERROR,
+            'description' => t('The D3 (ver %ver) library installed is not supported by this module. Please review the module requirements (@rawpheno_module) or download D3 version 3.5.14 (@download).',
+              ['@rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link), '%ver' => $ver, '@download' => \Drupal::l('D3 3.5.14', $link_ver)]),
+          ];
+        }
+      }
+      elseif ($i == 'excel_reader' && $info['is_in']) {
+        // @see library function below.
+        $is_patched = rawphenotypes_library_reader_patch();
+
+        if (!$is_patched) {
+          $link = Url::fromUri('https://github.com/UofS-Pulse-Binfo/rawphenotypes');
+          $requirements['patch'] = [
+            'severity' => REQUIREMENT_ERROR,
+            'description' => t('The Spreadsheet Reader library patch was not implemented. Please review the module requirements (@rawpheno_module).',
+              ['@rawpheno_module' => \Drupal::l('Rawphenotypes Module', $link)]
+            ),
+          ];
+        }
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+
+// HELPER FUNCTIONS.
+
+
+/**
+ * Get the version of D3 library.
+ * 
+ * @see implementation of hook_libraries_info().
+ *      implementation of hook_requirements().
+ */
+function rawphenotypes_library_D3_get_version() {
+  if (libraries_get_path('d3')) {
+    $file = libraries_get_path('d3') . '/d3.js';
+    $f = fopen($file, 'r');
+  
+    if ($f === FALSE) {
+      $ver = 0;
+    }
+    else {
+      $c = fread($f, filesize($file));
+  
+      $lines = explode("\n", $c);
+      $i = 0;
+  
+      // Since the version is in the first 20-30 line, break loop past line #.
+      foreach($lines as $l) {
+        if ($i > 0 && stristr($l, 'version')) {
+          $ver = trim(str_replace(array('var version', 'version:', 'version', ':', '"', 'var', '=', ';'), '', strtolower($l)));
+          break;
+        }
+  
+        if ($i == 30) {
+          $ver = 0;
+          break;
+        }
+  
+        $i++;
+      }
+    }
+  
+    fclose($f);
+  }
+  else {
+    $ver = 0;
+  }
+  
+  return $ver;
+}
+
+/**
+ * Ensure that user applied the patch to spreadsheet reader library
+ */
+function rawphenotypes_library_reader_patch() {
+  $lib = [];
+
+  $lib['xlsx']  = libraries_get_path('spreadsheet-reader') . '/SpreadsheetReader_XLSX.php';
+  $lib['xls']   = libraries_get_path('spreadsheet-reader') . '/php-excel-reader/excel_reader2.php';
+
+  $patch['xlsx'] = '$Format[\'Code\'] = \'Y-m-d\'';
+  $patch['xls'] = '0xf => "M-d-Y"';
+
+  $pass = 0;
+  foreach($lib as $ver => $file) {
+    $f = fopen($file, 'r');
+    $line = fread($f, filesize($file));
+    fclose($f);
+
+    if (strpos($line, $patch[$ver])) {
+      $pass++;
+    }
+  }
+
+  return ($pass == 2) ? 1 : 0;
+}
