@@ -100,12 +100,12 @@
       // No project available.
     ?>
       <div id="container-no-info" class="messages warning">
-        There is no project available in this module. Please contact the administrator of this website.
+        There is no experiment available in this module. Please contact the administrator of this website.
       </div>
     <?php
       // Admin: Create and configure projects:
-      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
-      print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      $link_to_manage_project = l('Rawphenotypes: Manage experiments', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can create or configure Phenotyping Experiments by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
     elseif (!$has_data AND in_array($page_id, array('rawpheno_rawdata', 'rawpheno_download'))) {
@@ -113,23 +113,23 @@
       // Excempt pages upload, backup and instructions.
     ?>
       <div id="container-no-info" class="messages warning">
-        There is no project with data available in this module.
+        There is no experiment with data available in this module.
       </div>
     <?php
       // Admin: Create and configure projects:
-      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
-      print tripal_set_message('Administrators, you can create or configure Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
+      $link_to_manage_project = l('Rawphenotypes: Manage Experiment', '/admin/tripal/extension/rawphenotypes');
+      print tripal_set_message('Administrators, you can create or configure Phenotyping Experiments by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
     elseif (count($my_projects) < 1) {
       // User is not appointed to project.
     ?>
       <div id="container-no-info" class="messages warning">
-        You have no projects assigned to your account. Please contact the administrator of this website.
+        You have no experiments assigned to your account. Please contact the administrator of this website.
       </div>
     <?php
       // Admin: Appoint user to upload data to project.
-      $link_to_manage_project = l('Rawphenotypes: Manage Project', '/admin/tripal/extension/rawphenotypes');
+      $link_to_manage_project = l('Rawphenotypes: Manage Experiments', '/admin/tripal/extension/rawphenotypes');
       print tripal_set_message('Administrators, you can appoint users to upload data to Phenotyping Projects by clicking the link below: <br />' . $link_to_manage_project, TRIPAL_INFO, array('return_html' => TRUE));
       unset($form);
     }
@@ -299,7 +299,7 @@
           ?>
 
             <div id="float-text" style="display: none;">
-              Please select a project <em><strong>before</strong></em> adding your spreadsheet file.
+              Please select an experiment <em><strong>before</strong></em> adding your spreadsheet file.
               <a href="" style="background-color: <?php print $theme_colour; ?>">Ok, got it!</a>
             </div>
 
@@ -357,7 +357,7 @@
         ?>
           <div id="container-project-panel">
             <?php print drupal_render($form['project_panel']); ?>
-            <span><a href="#">Change Project</a></span>
+            <span><a href="#">Change Experiment</a></span>
           </div>
 
           <div id="container-sel-project">

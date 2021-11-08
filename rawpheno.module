@@ -206,8 +206,8 @@ function rawpheno_menu() {
   // A page for managing project and traits.
   // List all projects and count traits available.
   $items['admin/tripal/extension/rawphenotypes/all_projects'] = array(
-    'title' => 'Manage Projects',
-    'description' => 'Create project, define column headers and appoint users to project.',
+    'title' => 'Manage Experiments',
+    'description' => 'Create experiment, define column headers and appoint users to experiment.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('rawpheno_admin_all_projects'),
     'access arguments' => array('access administration pages'),

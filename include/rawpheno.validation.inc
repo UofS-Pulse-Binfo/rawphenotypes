@@ -91,7 +91,7 @@ function rawpheno_rawpheno_validators() {
 
   // Ensure that a project is selected from the project select box
   $validators['project_selected'] = array(
-    'label' => 'Project is selected.',
+    'label' => 'Experiment is selected.',
     'scope' => 'project',
     'message callback' => NULL,
     'validation callback' => 'validator_is_project_selected',

@@ -15,8 +15,8 @@ function rawpheno_admin_main_page($form, &$form_state) {
   $links .= '<p>&bull; ' . l('Define R Transformation Rules', 'admin/tripal/extension/rawphenotypes/rawpheno_rheaders')
     . '<br />&nbsp; Define R Transfomation Rules to be applied when generating R Friendly alternative of column header.</p><hr />';
 
-  $links .= '<p>&bull; ' . l('Manage Projects', 'admin/tripal/extension/rawphenotypes/all_projects')
-    . '<br />&nbsp; Create project, define column headers and appoint users to project.</p>';
+  $links .= '<p>&bull; ' . l('Manage Experiments', 'admin/tripal/extension/rawphenotypes/all_projects')
+    . '<br />&nbsp; Create experiment, define column headers and appoint users to experiment.</p>';
 
   $form['rawphenotypes'] = array(
     '#markup' => '<h2>Rawphenotypes Module</h2>' . $links
@@ -220,13 +220,13 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   $breadcrumbs = array();
   $breadcrumbs[] = l('Home', '');
   $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
-  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+  $breadcrumbs[] = l('Manage Experiments', '/admin/tripal/extension/rawphenotypes/all_projects');
 
   drupal_set_breadcrumb($breadcrumbs);
 
   // Set the title of this page. This line will create a page title on upper left hand
   // corner of the page preceding the tabs.
-  drupal_set_title('Manage Projects');
+  drupal_set_title('Manage Experiments');
 
   // CONSTRUCT FORMS REQUIRED BY THIS INTERFACE.
 
@@ -246,7 +246,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // Add form elements.
   $form['fieldset_sel_project'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Create a New Project:'),
+    '#title' => t('Create a New Experiment:'),
     '#collapsed' => FALSE,
     '#collapsible' => TRUE,
   );
@@ -258,7 +258,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
     $form['fieldset_sel_project']['sel_project'] = array(
       '#type' => 'select',
-      '#title' => t('Please select a project:'),
+      '#title' => t('Please select an experiment:'),
       '#options' => $options,
       '#default_value' => array_keys($options)[0],
       '#id' => 'admin-sel-project',
@@ -267,13 +267,13 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
     $form['fieldset_sel_project']['add_project'] = array(
       '#type' => 'submit',
-      '#value' => t('Create Project'),
+      '#value' => t('Create Experiment'),
       '#id' => 'admin-add-project',
     );
   }
   else {
     $form['fieldset_sel_project']['no_project'] = array(
-      '#markup' => '<div class="messages warning">No projects available.</div>',
+      '#markup' => '<div class="messages warning">No experiments available.</div>',
     );
   }
 
@@ -322,7 +322,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // Page title.
   $form['all_project_info'] = array(
     '#type' => 'markup',
-    '#markup' => '<h2>' . $projects->rowCount() . ' Project(s)</h2>'
+    '#markup' => '<h2>' . $projects->rowCount() . ' Experiments(s)</h2>'
   );
 
   // Table rows.
@@ -338,11 +338,11 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       // list of column headers before it can process and store phenotypic data. The same for user.
       $warn_header = ($p->essential_count > 0)
         ? ''
-        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no essential column header" alt="Project has no essential column header" />';
+        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Experiment has no essential column header" alt="Experiment has no essential column header" />';
 
       $warn_user = ($p->user_count > 0)
         ? ''
-        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Project has no assigned user" alt="Project has no assigned user" />';
+        : '&nbsp;&nbsp;<img src="../../../../misc/message-16-warning.png" title="Experiment has no assigned user" alt="Experiment has no assigned user" />';
 
 
       // + 1 to account for Name column header.
@@ -351,11 +351,11 @@ function rawpheno_admin_all_projects($form, &$form_state) {
     }
   }
   else {
-    $empty_table_title = t('No project available');
+    $empty_table_title = t('No experiment available');
   }
 
   // Table headers.
-  array_push($arr_headers, '-', t('Project Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
+  array_push($arr_headers, '-', t('Experiment Name'), t('Column Headers'), t('Essential Headers'), t('Active User'), t('View'));
 
   $table = theme('table', array('header' => $arr_headers, 'rows' => $arr_rows, 'empty' => $empty_table_title));
 
@@ -379,7 +379,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 function rawpheno_admin_all_projects_validate($form, &$form_state) {
   $project_id = $form_state['values']['sel_project'];
   if ($project_id <= 0) {
-    form_set_error('sel_project', t('No project selected. Please select a project and try again'));
+    form_set_error('sel_project', t('No experiment selected. Please select an experiment and try again'));
   }
 }
 
@@ -554,7 +554,7 @@ function rawpheno_admin_project_management($form, &$form_state, $asset_id = NULL
             }
             elseif ($user_project_asset['project_data_count'] > 0) {
               // User is assigned to a project has has data.
-              drupal_set_message(t('Cannot @action this user. User is assigned to a project that has data.',
+              drupal_set_message(t('Cannot @action this user. User is assigned to an experiment that has data.',
                 array('@action' => $action)) . $goback, 'error');
             }
             elseif ($user_project_asset['user_id'] < 2) {
@@ -622,19 +622,19 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   $breadcrumbs = array();
   $breadcrumbs[] = l('Home', '');
   $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
-  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+  $breadcrumbs[] = l('Manage Experiments', '/admin/tripal/extension/rawphenotypes/all_projects');
 
   drupal_set_breadcrumb($breadcrumbs);
 
   // Set the title of this page. This line will create a page title on upper left hand
   // corner of the page preceding the tabs.
-  drupal_set_title('Manage Project Assets');
+  drupal_set_title('Manage Experiment Assets');
 
   // Construct page title and link back to projects form.
-  $markup = l('Go Back to Projects Table', 'admin/tripal/extension/rawphenotypes/all_projects');
+  $markup = l('Go Back to Experiments Table', 'admin/tripal/extension/rawphenotypes/all_projects');
 
   $project = chado_generate_var('project', array('project_id' => $project_id));
-  $markup .= '<h2>PROJECT: ' . $project->name . '</h2>';
+  $markup .= '<h2>EXPERIMENT: ' . $project->name . '</h2>';
 
   $form['project_info'] = array(
     '#type' => 'markup',
@@ -731,7 +731,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
     '#js_select' => FALSE,
     '#prefix' => '<p>' .
       t('The table below lists all column headers available in this module.
-      Please check the header(s) that you want to add to this project and click Add Selected Traits button.') . '</p>
+      Please check the header(s) that you want to add to this experiment and click Add Selected Traits button.') . '</p>
       <div class="container-table-data table-data">',
     '#suffix' => '</div><p>' .
       t('Check <span class="essential-trait">IS ESSENTIAL?</span> to ensure the header must exists in the spreadsheet file')
@@ -999,20 +999,20 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   }
   else {
     // When no records found, update the empty table property.
-    $arr_tbl_args['empty'] = t('No column headers in this project');
+    $arr_tbl_args['empty'] = t('No column headers in this experiment');
   }
 
   // Warn admin that project has no essential trait
   if ($count_essential < 1) {
     $form['message_no_essential'] = array(
-     '#markup' => '<div class="messages warning">Project has no Essential Column Header.</div>'
+     '#markup' => '<div class="messages warning">Experiment has no Essential Column Header.</div>'
     );
   }
 
   // Warn admin that project has no assigned user.
   if ($users->rowCount() < 1) {
     $form['message_no_essential'] = array(
-     '#markup' => '<div class="messages warning">Project has no active users.</div>'
+     '#markup' => '<div class="messages warning">Experiment has no active users.</div>'
     );
   }
 
@@ -1165,7 +1165,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   }
   else {
     // When no records found, update the empty table property.
-    $arr_tbl_args['empty'] = t('No active user in this project');
+    $arr_tbl_args['empty'] = t('No active user in this experiment');
   }
 
   // Table headers.
@@ -1214,7 +1214,7 @@ function rawpheno_admin_project($form, &$form_state, $project_id) {
   }
   else {
     // When no records found, update the empty table property.
-    $arr_tbl_args['empty'] = t('No environment data file in this project.');
+    $arr_tbl_args['empty'] = t('No environment data file in this experiment.');
   }
 
   // Update table properties.
@@ -1255,13 +1255,13 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
   $breadcrumbs = array();
   $breadcrumbs[] = l('Home', '');
   $breadcrumbs[] = l('Rawphenotypes', '/admin/tripal/extension/rawphenotypes');
-  $breadcrumbs[] = l('Manage Projects', '/admin/tripal/extension/rawphenotypes/all_projects');
+  $breadcrumbs[] = l('Manage Experiments', '/admin/tripal/extension/rawphenotypes/all_projects');
 
   drupal_set_breadcrumb($breadcrumbs);
 
   // Set the title of this page. This line will create a page title on upper left hand
   // corner of the page preceding the tabs.
-  drupal_set_title('Manage Project Assets / Update Header');
+  drupal_set_title('Manage Experiment Assets / Update Header');
 
   if ($action == 'edit') {
     if ($header_asset['name'] == 'Lodging (Scale: 1-5) upright - lodged' OR $header_asset['name'] == 'Comments') {
@@ -1344,7 +1344,7 @@ function rawpheno_admin_project_headers($form, $form_state, $header_asset, $acti
       // TABLE
       // Construct a table, as a summary, showing information about the header.
 
-      $markup = '<h2>SUMMARY: ' . $header_asset['name'] . '</h2> PROJECT: ' . $header_asset['in_project_name'];
+      $markup = '<h2>SUMMARY: ' . $header_asset['name'] . '</h2> EXPERIMENT: ' . $header_asset['in_project_name'];
 
       $header_cell = $header_asset['name'] . '<p class="r-ver">' . rawpheno_admin_mark_empty($header_asset['r_version']) . '</p>';
       $definition_cell = '<p><strong>DEFINITION:</strong><br /> ' . @rawpheno_admin_mark_empty($header_asset['definition']) .  '</p>' .
@@ -1738,7 +1738,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   // Determine if the header has data or is used in another project.
   if ($default['count_data'] > 0 OR $default['count_project'] > 0) {
     $form['fieldset_trait']['warning'] = array(
-      '#markup' => '<div class="messages warning">This column header has data associated to it or is used in another project.</div>',
+      '#markup' => '<div class="messages warning">This column header has data associated to it or is used in another experiment.</div>',
     );
 
     $disabled = TRUE;
@@ -1859,7 +1859,7 @@ function rawpheno_admin_render_form_trait($form, &$form_state, $default) {
   if (isset($a['type5']) && isset($default['sel_trait_type']) && $default['sel_trait_type'] == $a['type5']) {
     // The header is contributed. Indicate to user as such.
     $form['fieldset_trait']['warning_contributed'] = array(
-      '#markup' => '<div class="messages warning">This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Project. To include this trait, set the trait type to Essential or Optional.</div>',
+      '#markup' => '<div class="messages warning">This column header is a user contributed trait and is not incorporated in generating Data Collection Spreadsheet file for this Experiment. To include this trait, set the trait type to Essential or Optional.</div>',
     );
   }
 
@@ -1939,7 +1939,7 @@ function rawpheno_admin_submit_add_existing($form, &$form_state) {
       ->execute();
   }
 
-  drupal_set_message(t('You have successfully added column headers to this project.'), 'status');
+  drupal_set_message(t('You have successfully added column headers to this experiment.'), 'status');
 }
 
 
@@ -1978,7 +1978,7 @@ function rawpheno_admin_submit_add_user($form, $form_state) {
       'uid' => $u))
     ->execute();
 
-  drupal_set_message(t('You have successfully added users to this project.'), 'status');
+  drupal_set_message(t('You have successfully added users to this experiment.'), 'status');
 }
 
 
@@ -2078,7 +2078,7 @@ function rawpheno_admin_submit_upload_envdata($form, &$form_state) {
           'sequence_no' => $seq_no))
         ->execute();
 
-      drupal_set_message(t('You have successfully uploaded environment data file to this project.'), 'status');
+      drupal_set_message(t('You have successfully uploaded environment data file to this experiment.'), 'status');
     }
   }
 }
