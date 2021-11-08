@@ -236,6 +236,19 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // as well as, assign active users.
 
   // Query projects that dont have column headers.
+  $sql_type = "SELECT project_id, value, type_id FROM {projectprop} 
+    GROUP BY project_id, value, type_id 
+    ORDER BY value ASC";
+
+  $types = array(0 => 'All Experiments');
+  $types_project = array();
+  $t = chado_query($sql_type);
+  foreach($t as $type) {
+    $types[ $type->type_id ] = $type->value;
+    $types_project[ $type->type_id ][] = $type->project_id;
+  }
+
+  // Query projects that dont have column headers.
   $sql = "SELECT t1.project_id, t1.name
           FROM {project} AS t1 LEFT JOIN pheno_project_cvterm AS t2 USING(project_id)
           WHERE t2.project_id IS NULL
@@ -253,16 +266,25 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
   if ($p->rowCount() > 0) {
     // Make sure that the site has set up a project.
-    $projects = $p->fetchAllKeyed();
+    $project_options = $projects = $p->fetchAllKeyed();
     $options = array('0' => '---') + $projects;
 
+    $form['fieldset_sel_project']['sel_types'] = array(
+      '#type' => 'select',
+      '#title' => t('Experiment type:'),
+      '#options' => $types,
+      '#default_value' => array_keys($types)[0],
+      '#id' => 'admin-sel-types',
+      '#description' => t('Filter list of experiments to this type.'),
+    );
+    
     $form['fieldset_sel_project']['sel_project'] = array(
       '#type' => 'select',
       '#title' => t('Please select an experiment:'),
       '#options' => $options,
       '#default_value' => array_keys($options)[0],
       '#id' => 'admin-sel-project',
-      '#description' => t('Please note that column headers Plot, Entry, Rep, Name, Location and Planting Date (date) are added to project by default.'),
+      '#description' => t('Please note that column headers Plot, Entry, Rep, Name, Location and Planting Date (date) are added to experiment by default.'),
     );
 
     $form['fieldset_sel_project']['add_project'] = array(
@@ -367,6 +389,11 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // Attach css.
   $path = drupal_get_path('module', 'rawpheno') . '/theme/';
   $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
+  // Attach JS.
+  drupal_add_js(array('rawpheno' => array('types_project' => $types_project)), array('type' => 'setting'));
+  drupal_add_js(array('rawpheno' => array('all_project' => $project_options)), array('type' => 'setting'));
+  $form['#attached']['js']  = array($path . 'js/rawpheno.admin.projectfilter.script.js');
+
 
   return $form;
 }
