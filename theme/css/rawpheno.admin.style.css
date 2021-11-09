@@ -144,6 +144,7 @@ input[type=submit] {
 /* Select a project in main project management control panel */
 #admin-sel-types, #admin-sel-project  {
   width: 100%;
+  font-size: 1.2em;
 }
 
 /* Add project button */

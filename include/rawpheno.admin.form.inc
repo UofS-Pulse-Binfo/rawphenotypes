@@ -242,8 +242,15 @@ function rawpheno_admin_all_projects($form, &$form_state) {
 
   $types = array(0 => 'All Experiments');
   $types_project = array();
+  $default_type = 0;
+
   $t = chado_query($sql_type);
   foreach($t as $type) {
+    // Default to research experiment if it exists.
+    if ($default_type == 0 && strtolower($type->value) == 'research experiment') {
+      $default_type = $type->type_id;    
+    }
+
     $types[ $type->type_id ] = $type->value;
     $types_project[ $type->type_id ][] = $type->project_id;
   }
@@ -252,7 +259,7 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   $sql = "SELECT t1.project_id, t1.name
           FROM {project} AS t1 LEFT JOIN pheno_project_cvterm AS t2 USING(project_id)
           WHERE t2.project_id IS NULL
-          ORDER BY t1.project_id DESC";
+          ORDER BY t1.name ASC";
 
   $p = chado_query($sql);
 
@@ -391,9 +398,9 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   $form['#attached']['css'] = array($path . 'css/rawpheno.admin.style.css');
   // Attach JS.
   drupal_add_js(array('rawpheno' => array('types_project' => $types_project)), array('type' => 'setting'));
-  drupal_add_js(array('rawpheno' => array('all_project' => $project_options)), array('type' => 'setting'));
+  drupal_add_js(array('rawpheno' => array('all_project'   => $project_options)), array('type' => 'setting'));
+  drupal_add_js(array('rawpheno' => array('default_type'  => $default_type)), array('type' => 'setting'));
   $form['#attached']['js']  = array($path . 'js/rawpheno.admin.projectfilter.script.js');
-
 
   return $form;
 }
