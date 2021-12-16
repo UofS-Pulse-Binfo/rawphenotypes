@@ -6,10 +6,10 @@
  */
 
 // Additional Helper functions
-module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.helpers');
+module_load_include('inc', 'rawpheno', 'includes/rawpheno.upload.helpers');
 // Include functions required in processing spreadsheet file.
-module_load_include('inc', 'rawpheno', 'include/rawpheno.upload.excel');
-module_load_include('inc', 'rawpheno', 'include/rawpheno.validation');
+module_load_include('inc', 'rawpheno', 'includes/rawpheno.upload.excel');
+module_load_include('inc', 'rawpheno', 'includes/rawpheno.validation');
 
 /**
  * Master form constructor which calls an individual form for each stage.

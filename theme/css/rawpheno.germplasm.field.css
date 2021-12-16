@@ -1,0 +1,152 @@
+/**
+ * @file
+ * Style rawphenotypes in Germplasm field.
+ */
+
+#rawphenotypes-germplasm-raw-phenotypes-field img {
+  margin: 0 !important;
+}
+
+#rawphenotypes-germplasm-table-wrapper {
+  -moz-box-shadow: inset 0 -10px 20px -10px #EAEAEA;
+  -webkit-box-shadow: inset 0 -10px 20px -10px #EAEAEA;
+  box-shadow: inset 0 -10px 20px -10px #EAEAEA;
+  z-index: 1000;
+}
+
+#rawphenotypes-germplasm-field-header {
+  position: relative;
+  height: 45px;
+}
+
+#rawphenotypes-germplasm-field-header div:first-child {
+  float: left;
+  height: inherit;
+}
+
+#rawphenotypes-germplasm-field-header div:nth-child(2) {
+  float: right;
+  height: inherit;
+}
+
+#rawphenotypes-germplasm-field-header div:nth-child(2) div {
+  background-color: #314355; 
+  height: 40px; 
+  width: 190px; 
+  text-align:center; 
+  line-height: 40px;
+}
+
+.rawphenotypes-germplasm-nav a,
+.rawphenotypes-germplasm-nav a:link,
+.rawphenotypes-germplasm-nav a:active,
+.rawphenotypes-germplasm-nav a:visited {
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, sans-serif;
+  color: #FFFFFF;
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 0.9em;
+  text-decoration: none;
+}
+
+#rawphenotypes-germplasm-field-header div:nth-child(2) div:hover {
+  color: #FFFFFF;
+  text-decoration: none;
+
+  -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
+  -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
+  box-shadow:         1px 1px 5px 1px #CCCCCC;
+}
+
+#rawphenotypes-define-raw-container {
+  clear: both;
+}
+
+#rawphenotypes-germplasm-field-header div:last-child {
+  clear: both;
+  height: 1px;
+}
+
+#rawphenotypes-germplasm-raw-phenotypes-field h1 span {
+  color: #3A7F21;
+}
+
+#rawphenotypes-germplasm-field-table { 
+  padding: 0; 
+  margin: 0 !important; 
+} 
+
+#rawphenotypes-germplasm-field-table td select { 
+  min-width: 250px;
+  width: 300px; 
+} 
+
+#rawphenotypes-germplasm-field-table td { font-size: 1.2em; } 
+#rawphenotypes-germplasm-field-header img,
+#rawphenotypes-germplasm-field-table th img,
+#rawphenotypes-germplasm-field-table td img { 
+  border: none !important
+}
+
+#rawphenotypes-germplasm-field-table th:last-child,
+#rawphenotypes-germplasm-field-table td:last-child {
+  text-align: center ;
+  width: 10px;
+}
+
+#rawphenotypes-germplasm-field-table td:last-child img {
+  opacity: 0.5;
+}
+
+#rawphenotypes-germplasm-field-table td:first-child {
+  width: 100%;
+}
+
+#rawphenotypes-germplasm-export-table {
+  padding: 0; 
+  margin: 0; 
+  height: 215px; 
+  overflow-y: scroll; 
+  border: none;
+}
+
+#rawphenotypes-germplasm-export-table tr:nth-child(2n+2) {
+  background: #efefef;
+  background: rgba(0, 0, 0, 0.063);
+}
+
+#rawphenotypes-germplasm-export-table tbody tr {
+  cursor: pointer;
+}
+
+#rawphenotypes-germplasm-export-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+
+  -webkit-transition: background-color 0.9s ease-out;
+  -moz-transition: background-color 0.9s ease-out;
+  -o-transition: background-color 0.9s ease-out;
+  transition: background-color 0.9s ease-out;
+
+  border-left: 2px solid #314355;
+}
+
+#rawphenotypes-germplasm-raw-phenotypes-field small {
+  float: right;
+  margin: 10px 0 0 0;
+}
+
+#rawphenotypes-define-raw-container {
+  border-bottom: 1px solid #CCCCCC;
+  cursor: pointer;
+  margin: 20px 0;
+  padding: 0 0 15px 0;
+  text-align: center;
+  
+  -moz-box-shadow:    0 5px 7px -9px #333333;
+  -webkit-box-shadow: 0 5px 7px -9px #333333;
+  box-shadow:         0 5px 7px -9px #333333;
+}
+
+#rawphenotypes-germplasm-warning {
+  margin: 8px 0;
+}
