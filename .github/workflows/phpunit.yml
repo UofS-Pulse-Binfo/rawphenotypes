@@ -54,7 +54,7 @@ jobs:
     # 3) Install Drush/Drupal/Tripal
     - name: Setup Drush, Drupal 7.x, Tripal 3.x
       id: tripalsetup
-      uses: tripal/setup-tripal-action@7.x-3.x-1.0
+      uses: statonlab/tripal-test-suite
       with:
         postgres_user: tripaladmin
         postgres_pass: somesupersecurepassword
