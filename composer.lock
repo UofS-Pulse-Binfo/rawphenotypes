@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f47e5443e14a993518b825cf72363118",
+    "content-hash": "69cac23032897dac56256c18daaf9aff",
     "packages": [],
     "packages-dev": [
         {
@@ -1548,16 +1548,16 @@
         },
         {
             "name": "statonlab/tripal-test-suite",
-            "version": "1.1.2",
+            "version": "1.6.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/statonlab/TripalTestSuite.git",
-                "reference": "ca85284fc1da9c9f2863353dcb6eefe6d4b39343"
+                "url": "https://github.com/tripal/TripalTestSuite.git",
+                "reference": "3e877af0204c59b9aa6b7ef0324ca4b985a7e3b4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/statonlab/TripalTestSuite/zipball/ca85284fc1da9c9f2863353dcb6eefe6d4b39343",
-                "reference": "ca85284fc1da9c9f2863353dcb6eefe6d4b39343",
+                "url": "https://api.github.com/repos/tripal/TripalTestSuite/zipball/3e877af0204c59b9aa6b7ef0324ca4b985a7e3b4",
+                "reference": "3e877af0204c59b9aa6b7ef0324ca4b985a7e3b4",
                 "shasum": ""
             },
             "require": {
@@ -1592,7 +1592,11 @@
                     "email": "bcondon@utk.edu"
                 }
             ],
-            "time": "2018-06-28T17:01:37+00:00"
+            "support": {
+                "issues": "https://github.com/tripal/TripalTestSuite/issues",
+                "source": "https://github.com/tripal/TripalTestSuite/tree/1.6.1"
+            },
+            "time": "2019-04-09T18:52:51+00:00"
         },
         {
             "name": "symfony/console",
@@ -1949,5 +1953,6 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "2.1.0"
 }
