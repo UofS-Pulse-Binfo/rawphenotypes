@@ -1,5 +1,5 @@
 <?php
-namespace Tests;
+namespace Tests\install;
 
 use StatonLab\TripalTestSuite\DBTransaction;
 use StatonLab\TripalTestSuite\TripalTestCase;
@@ -33,6 +33,7 @@ class InstallTest extends TripalTestCase {
       'pheno_project_user',
       'pheno_backup_file',
     );
+    
     foreach($tables as $table) {
       $exists = db_table_exists($table);
       $this->assertTrue($exists, "Checking that $table table exists.");
