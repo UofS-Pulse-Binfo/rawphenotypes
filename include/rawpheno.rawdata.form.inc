@@ -38,7 +38,7 @@ function rawpheno_rawdata($form, &$form_state) {
   // Select project select box.
   $form['rawdata_sel_project'] = array(
     '#type' => 'select',
-    '#title' => t('Select project and trait:'),
+    '#title' => t('Select experiment and trait:'),
     '#options' => $project,
     '#id' => 'rawdata-sel-project',
   );

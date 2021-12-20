@@ -139,7 +139,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
       // Yes, user has at least a project in the account.
       $form['backup_sel_project'] = array(
         '#type' => 'select',
-        '#title' => t('Please select a project:'),
+        '#title' => t('Please select an experiment:'),
         '#options' => $project_options,
         '#default_value' => array_keys($project_options)[0],
         '#id' => 'backup_sel_project'
@@ -188,7 +188,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     else {
       // User has no project in the account.
       $form['no_data'] = array(
-        '#markup' => t('You have no project in your account. Please contact the administrator of this website.'),
+        '#markup' => t('You have no experiment in your account. Please contact the administrator of this website.'),
         '#prefix' => '<div id="container-no-info" class="messages warning">',
         '#suffix' => '</div>',
       );
@@ -197,11 +197,11 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
   else {
     // User is managing files in a project.
     // Upload is disabled. Display a summary,
-    $go_back_link = l('Go back to projects table', 'phenotypes/raw/backup');
+    $go_back_link = l('Go back to experiment table', 'phenotypes/raw/backup');
 
     if ($project_id > 0 AND isset($arr_my_project[$project_id])) {
       $form['summary'] = array(
-        '#markup' => $go_back_link . t('<h3>Project: @project</h3>', array('@project' => $arr_my_project[$project_id])),
+        '#markup' => $go_back_link . t('<h3>Experiment: @project</h3>', array('@project' => $arr_my_project[$project_id])),
       );
     }
   }
@@ -310,7 +310,7 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     }
     else {
       // No files in a project.
-      $arr_tbl_args['empty'] = t('No files in this project.');
+      $arr_tbl_args['empty'] = t('No files in this experiment.');
     }
 
     // Header.
@@ -350,11 +350,11 @@ function rawpheno_backup($form, &$form_state, $project_id = NULL, $command = 'de
     }
     else {
       // No project in the account.
-      $arr_tbl_args['empty'] = t('No project in your account.');
+      $arr_tbl_args['empty'] = t('No experiment in your account.');
     }
 
     // Header.
-    array_push($arr_headers, t('Project'), t('File'), t('View'));
+    array_push($arr_headers, t('Experiment'), t('File'), t('View'));
 
     // Table id.
     $attr_table_id = 'tbl-user-project';

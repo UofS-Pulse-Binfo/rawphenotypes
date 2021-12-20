@@ -274,7 +274,7 @@
         }
         else {
           panel.slideUp(speed, function() {
-            linkProject.text('Change Project');
+            linkProject.text('Change Experiment');
           });
         }
       });

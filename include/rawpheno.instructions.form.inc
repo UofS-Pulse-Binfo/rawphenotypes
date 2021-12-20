@@ -31,7 +31,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
     if (!in_array($project_id, array_keys($all_project))) {
       // Project does not exist.
       $form['message_invalid_project'] = array(
-        '#markup' => '<div class="messages error">Project does not exist.</div>'
+        '#markup' => '<div class="messages error">Experiment does not exist.</div>'
       );
     }
     else {
@@ -93,7 +93,7 @@ function rawpheno_instructions($form, &$form_state, $project_id = NULL) {
 
   $form['sel_project'] = array(
     '#type' => 'select',
-    '#options' => array(0 => 'Please select a project') + $all_project,
+    '#options' => array(0 => 'Please select an experiment') + $all_project,
     '#id' => 'rawpheno-ins-sel-project'
   );
 
@@ -496,11 +496,11 @@ function rawpheno_instructions_create_spreadsheet($project_id) {
     }
     else {
       // Here project not found.
-      print 'Project not found.';
+      print 'Experiment not found.';
     }
   }
   else {
     // Project id is not valid.
-    print 'Project ID number is invalid.';
+    print 'Experiment ID number is invalid.';
   }
 }

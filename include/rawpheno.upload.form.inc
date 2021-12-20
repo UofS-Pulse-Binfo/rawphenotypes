@@ -65,7 +65,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
       // When there is more than 1 project assigned to user, tell user to select a project
       // otherwise default to the only project available.
       if (count($my_project) > 1) {
-        $my_project = array(0 => 'Please select a project') + $my_project;
+        $my_project = array(0 => 'Please select an experiment') + $my_project;
       }
 
       // Default Project in project selector field.
@@ -106,7 +106,7 @@ function rawpheno_upload_form_master($form, &$form_state) {
     else {
       // No project is assigned to user.
       $form['no_project'] = array(
-        '#markup' => '<div class="messages warning">' . t('No project is assigned to this account. Please contact the administrator of this website.') . '</div>',
+        '#markup' => '<div class="messages warning">' . t('No experiment is assigned to this account. Please contact the administrator of this website.') . '</div>',
       );
     }
   }

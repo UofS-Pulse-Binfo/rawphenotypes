@@ -1,4 +1,3 @@
-
 name: Run PHPUnit Tests
 
 # Controls when the workflow will run.
@@ -22,7 +21,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres
+        image: postgres:10.10
         env:
           POSTGRES_USER: tripaladmin
           POSTGRES_PASSWORD: somesupersecurepassword
@@ -60,7 +59,7 @@ jobs:
         postgres_pass: somesupersecurepassword
         postgres_db: testdb
 
-
+    
     # LIBRARIES:
 
     # 4-a) Install Spreadsheet Reader Libraries
@@ -72,7 +71,7 @@ jobs:
       run: |
         cd $DRUPAL_ROOT/sites/all/libraries
         git clone https://github.com/nuovo/spreadsheet-reader
-
+   
     # 4-b) Install XLS Writter Libraries
     - name: Install XLS Writer Libraries
       id: installxlswriter
@@ -130,18 +129,26 @@ jobs:
         cp -R * $DRUPAL_ROOT/sites/all/modules/rawphenotypes
         cd $DRUPAL_ROOT/sites/all/libraries/spreadsheet-reader
         git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
+
+    # 6-a) Enable Raw Phenotypes
+    - name: Enable Raw Phenotypes
+      id: enablerawphenotypes
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: | 
         cd $DRUPAL_ROOT
         $DRUSH en -y rawpheno
 
     # 7) Runs the PHPUnit tests.
     # https://github.com/mheap/phpunit-github-actions-printer is used
     # to report PHPUnit fails in a meaningful way to github in PRs.
-    - name: PHPUnit Tests
-      env:
-        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
-        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
-      run: |
-        cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
-        composer require --dev mheap/phpunit-github-actions-printer --quiet
-        composer update --quiet
-        ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
+    # - name: PHPUnit Tests
+    #  env:
+    #    DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+    #    DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+    #  run: |
+    #    cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+    #    composer require --dev mheap/phpunit-github-actions-printer --ignore-platform-reqs
+    #    composer update --ignore-platform-reqs
+    #    ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer

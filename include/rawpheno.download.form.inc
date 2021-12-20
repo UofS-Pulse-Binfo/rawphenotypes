@@ -66,7 +66,7 @@ function rawpheno_download($form, &$form_state) {
 
   $form['ajax_container']['sel_project'] = array(
     '#type' => 'select',
-    '#title' => t('Project'),
+    '#title' => t('Experiment'),
     '#options' => $opt_project,
     '#multiple' => FALSE,
     '#id' => 'download-sel-project',
