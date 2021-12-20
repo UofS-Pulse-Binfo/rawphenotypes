@@ -150,5 +150,5 @@ jobs:
       run: |
         cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
         composer require --dev mheap/phpunit-github-actions-printer --quiet
-        composer update --quiet
+        composer update --ignore-platform-reqs
         ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
