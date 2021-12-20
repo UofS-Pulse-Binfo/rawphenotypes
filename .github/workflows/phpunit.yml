@@ -143,12 +143,12 @@ jobs:
     # 7) Runs the PHPUnit tests.
     # https://github.com/mheap/phpunit-github-actions-printer is used
     # to report PHPUnit fails in a meaningful way to github in PRs.
-    - name: PHPUnit Tests
-      env:
-        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
-        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
-      run: |
-        cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
-        composer require --dev mheap/phpunit-github-actions-printer --ignore-platform-reqs
-        composer update --ignore-platform-reqs
-        ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
+    # - name: PHPUnit Tests
+    #  env:
+    #    DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+    #    DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+    #  run: |
+    #    cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+    #    composer require --dev mheap/phpunit-github-actions-printer --ignore-platform-reqs
+    #    composer update --ignore-platform-reqs
+    #    ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
