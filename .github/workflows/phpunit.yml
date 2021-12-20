@@ -21,9 +21,9 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres
+        image: postgres:latest
         env:
-          POSTGRESQL_VERSION=9.5
+          POSTGRESQL_VERSION: 9.5
           POSTGRES_USER: tripaladmin
           POSTGRES_PASSWORD: somesupersecurepassword
           POSTGRES_DB: testdb
