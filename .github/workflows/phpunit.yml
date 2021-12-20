@@ -23,6 +23,7 @@ jobs:
         # Docker Hub image
         image: postgres
         env:
+          POSTGRESQL_VERSION=9.5
           POSTGRES_USER: tripaladmin
           POSTGRES_PASSWORD: somesupersecurepassword
           POSTGRES_DB: testdb
