@@ -58,3 +58,56 @@ jobs:
         postgres_user: tripaladmin
         postgres_pass: somesupersecurepassword
         postgres_db: testdb
+
+    # DEPENDENCIES:
+
+    # 5-a) Install Libraries Dependencies
+    - name: Install Libraries Dependencies
+      id: installlibraries
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: |
+        cd $DRUPAL_ROOT
+        $DRUSH en libraries -y
+
+    # 5-b) Install Drag and Drop Upload Dependencies
+    - name: Install Drag and Drop Upload Dependencies
+      id: installdraganddropupload
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: |
+        cd $DRUPAL_ROOT/sites/all/modules
+        drush pm-download dragndrop_upload
+        $DRUSH en dragndrop_upload dragndrop_upload_element -y
+
+
+    # 6) Install Raw Phenotypes.
+    - name: Install Raw Phenotypes
+      id: installrawphenotypes
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: |
+        mkdir -p $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+        cp -R * $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+        cd $DRUPAL_ROOT/sites/all/libraries/spreadsheet-reader
+        git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
+        cd $DRUPAL_ROOT
+        $DRUSH en -y rawpheno
+
+    # 7) Runs the PHPUnit tests.
+    # https://github.com/mheap/phpunit-github-actions-printer is used
+    # to report PHPUnit fails in a meaningful way to github in PRs.
+    - name: PHPUnit Tests
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: |
+        cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
+        composer require --dev mheap/phpunit-github-actions-printer --quiet
+        composer update --quiet
+        ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
+        
+        
