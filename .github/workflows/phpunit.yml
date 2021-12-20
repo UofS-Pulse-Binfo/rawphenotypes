@@ -10,7 +10,6 @@ jobs:
     # The type of system that the job will run on.
     runs-on: ubuntu-latest
     # Matrix Build for this job.
-    continue-on-error: true
     strategy:
       matrix:
         php-versions: ['7.1', '7.2']
@@ -22,7 +21,7 @@ jobs:
       # Label used to access the service container
       postgres:
         # Docker Hub image
-        image: postgres:latest
+        image: postgres:10.10
         env:
           POSTGRES_USER: tripaladmin
           POSTGRES_PASSWORD: somesupersecurepassword
