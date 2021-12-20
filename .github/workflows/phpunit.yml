@@ -130,6 +130,15 @@ jobs:
         cd $DRUPAL_ROOT/sites/all/libraries/spreadsheet-reader
         git apply $DRUPAL_ROOT/sites/all/modules/rawphenotypes/spreadsheet-reader.patch
 
+    # 6-a) Enable Raw Phenotypes
+    - name: Enable Raw Phenotypes
+      id: enablerawphenotypes
+      env:
+        DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
+        DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
+      run: | 
+        cd $DRUPAL_ROOT
+        $DRUSH en -y rawpheno
 
     # 7) Runs the PHPUnit tests.
     # https://github.com/mheap/phpunit-github-actions-printer is used
@@ -139,8 +148,6 @@ jobs:
         DRUSH: ${{ steps.tripalsetup.outputs.drush_path }}
         DRUPAL_ROOT: ${{ steps.tripalsetup.outputs.drupal_root }}
       run: |
-        cd $DRUPAL_ROOT
-        $DRUSH en -y rawpheno
         cd $DRUPAL_ROOT/sites/all/modules/rawphenotypes
         composer require --dev mheap/phpunit-github-actions-printer --quiet
         composer update --ignore-platform-reqs
