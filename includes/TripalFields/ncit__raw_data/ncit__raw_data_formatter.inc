@@ -92,7 +92,7 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
         foreach($germplasm_raw_phenotypes['traits'] as $trait => $exp_loc) {
           list($trait_id, $trait_name) = explode('_', $trait);
 
-          $select = $this->create_select($exp_loc, $germplasm_raw_phenotypes['user']['experiments']);
+          $select = $this->create_select($germplasm_raw_phenotypes['germplasm']['id'], $exp_loc, $germplasm_raw_phenotypes['user']['experiments']);
           $table_row[ $id ] = array(sprintf($icon_img, '', $germplasm_raw_phenotypes['icons']['leaf']) . ucfirst($trait_name), $select, sprintf($icon_img, $trait_id, $germplasm_raw_phenotypes['icons']['export'])); 
           $id++;
         }
@@ -126,20 +126,20 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
   /**
    * Create select field.
    * 
-   * @param $id
-   *   Id attribute of the final select field.
+   * @param $germplasm
+   *   Stock id number.
    * @param $items
    *   Associative array, where each item will be rendered as an option
    *   with key as the value and value as text.
    * @param $disable
    *   Array of items to match an item if it should be disabled.
    */
-  public function create_select($items, $disable) {
+  public function create_select($germplasm, $items, $disable) {
     $option = array();
     $cache_exp = [];
     foreach($items as $loc_exp) {
       list($trait_id, $project_id, $project_name, $location) = explode('#', $loc_exp);
-      $select_value = $trait_id . '#' . $project_id . '#' . $location;
+      $select_value = $trait_id . '#' . $project_id . '#' . $location . '#' . $germplasm;
       $cache_exp[] = $project_id;
 
       $disabled = (in_array($project_id, $disable)) ? '' : 'disabled';

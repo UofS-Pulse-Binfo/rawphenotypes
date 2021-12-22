@@ -209,7 +209,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
 
   $q = base64_decode($code);
-  list($project, $location, $traits, $r_version,,) = explode('&', $q);
+  list($project, $location, $traits, $r_version,,,$germplasm) = explode('&', $q);
 
   // Projects:
   $tmp = trim(str_replace('p=', '', $project));
@@ -261,14 +261,30 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     }
   }
 
-  // Sub-query to select plant_id given a location and project.
-  // NOTE: leading and trailing spaces are required.
-  $sub_sql = " (SELECT plant_id
+  // Germplasm/Stock id - request from germplasm field.
+  $germplasm = trim(str_replace('g=', '', $germplasm));
+  
+  if ($germplasm != '' && $gemplasm > 0) {
+    // Sub-query to select plant_id given a location and project and germplasm.
+    // NOTE: leading and trailing spaces are required.
+    $sub_sql = " (SELECT plant_id
+                FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
+                WHERE value IN (:location) AND project_id IN (:project)) 
+                AND plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :stock_id) ";
+
+    // Query values required by sub query.
+    $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits, ':stock_id' => $germplasm);
+  }
+  else {
+    // Sub-query to select plant_id given a location and project.
+    // NOTE: leading and trailing spaces are required.
+    $sub_sql = " (SELECT plant_id
                 FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
                 WHERE value IN (:location) AND project_id IN (:project)) ";
 
-  // Query values required by sub query.
-  $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
+    // Query values required by sub query.
+    $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
+  }
 
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,

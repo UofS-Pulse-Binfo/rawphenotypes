@@ -37,10 +37,11 @@ function rawpheno_download($form, &$form_state) {
       if (in_array($param_experiment, $user_experiment)) {
         $param_location = $query_vars['l'];
         $param_trait = (int) $query_vars['t'];
+        $param_stock = (int) $query_vars['g'];
 
         if ($param_experiment > 0 && $param_location && $param_trait > 0) {
           // Create query string.
-          $query_string = 'p=' . $param_experiment . '&l=' . $param_location . '&t=' . $param_trait . '&r=0&e=0&file=0';
+          $query_string = 'p=' . $param_experiment . '&l=' . $param_location . '&t=' . $param_trait . '&r=0&e=0&file=0&g=' . $param_stock;
           drupal_goto('/phenotypes/raw/csv', array('query' => array('code' => base64_encode($query_string))));
         }
       }
@@ -390,7 +391,7 @@ function rawpheno_download_submit($form, &$form_state) {
 
   // Contain all query parameters/string into one string.
   // Decode first when reading this string using base64_decode() function.
-  $url = 'p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env . '&file=' . $env_filename;
+  $url = 'p=' . $prj . '&l=' . $loc . '&t=' . $trt . '&r=' . $rvr . '&e=' . $env . '&file=' . $env_filename . '&g=0'; 
 
   // Format url for redirect.
   $form_state['redirect'] = array(

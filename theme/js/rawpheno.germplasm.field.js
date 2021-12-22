@@ -49,7 +49,7 @@
           imgOpacity = '1';
           var params = selectValue.split('#');
           // Project id & location & trait.
-          downloadLink = 'p=' + params[1] + '&l=' + params[2] + '&t=' + params[0];
+          downloadLink = 't=' + params[0] + '&p=' + params[1] + '&l=' + params[2] + '&g=' + params[3];
         }
 
         $('#' + selectId + '-img').css('opacity', imgOpacity);
