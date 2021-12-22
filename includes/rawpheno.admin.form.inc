@@ -129,7 +129,7 @@ function rawpheno_admin_page($form, &$form_state) {
 
 
 // Include function to manage column headers, cv terms and variable names.
-module_load_include('inc', 'rawpheno', 'include/rawpheno.function.measurements');
+module_load_include('inc', 'rawpheno', 'includes/rawpheno.function.measurements');
 
 
 /**

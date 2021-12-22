@@ -30,7 +30,7 @@ function rawpheno_register_trpdownload_type() {
       'get_format' => 'rawpheno_trpdownload_get_readable_format',
     ),
   );
-
+  
   return $types;
 }
 
@@ -191,7 +191,7 @@ function rawpheno_trpdownload_get_readable_format($vars) {
 /**
  * Function callback: generate csv file.
  */
-function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
+function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {    
   // Get query string and filename.
   $code = '';
   foreach($variables as $l => $v) {
