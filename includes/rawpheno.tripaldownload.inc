@@ -262,29 +262,21 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
 
   // Germplasm/Stock id - request from germplasm field.
-  $germplasm = trim(str_replace('g=', '', $germplasm));
-  
-  if ($germplasm != '' && $gemplasm > 0) {
-    // Sub-query to select plant_id given a location and project and germplasm.
-    // NOTE: leading and trailing spaces are required.
-    $sub_sql = " (SELECT plant_id
-                FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
-                WHERE value IN (:location) AND project_id IN (:project)) 
-                AND plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :stock_id) ";
-
-    // Query values required by sub query.
-    $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits, ':stock_id' => $germplasm);
+  $stock_id = trim(str_replace('g=', '', $germplasm));
+  $stock_name = '';
+  if ($stock_id != '' && $stock_id > 0) {
+    $stock_name = chado_query("SELECT name FROM {stock} WHERE stock_id = :stock_id", array(':stock_id' => $stock_id))
+      ->fetchField();
   }
-  else {
-    // Sub-query to select plant_id given a location and project.
-    // NOTE: leading and trailing spaces are required.
-    $sub_sql = " (SELECT plant_id
+
+  // Sub-query to select plant_id given a location and project.
+  // NOTE: leading and trailing spaces are required.
+  $sub_sql = " (SELECT plant_id
                 FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
                 WHERE value IN (:location) AND project_id IN (:project)) ";
 
-    // Query values required by sub query.
-    $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
-  }
+  // Query values required by sub query.
+  $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
 
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
@@ -378,7 +370,12 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     // Note: this first array will not have any missing data cells filled in.
     $rows = array();
     foreach($results as $r) {
-      $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
+      if ($stock_name != '' && $r->value == $stock_name) {
+        $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
+      }   
+      else {
+        $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
+      }
     }
 
     // Total lines;
