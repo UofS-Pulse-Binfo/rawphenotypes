@@ -263,20 +263,23 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
   // Germplasm/Stock id - request from germplasm field.
   $stock_id = trim(str_replace('g=', '', $germplasm));
-  $stock_name = '';
-  if ($stock_id != '' && $stock_id > 0) {
-    $stock_name = chado_query("SELECT name FROM {stock} WHERE stock_id = :stock_id", array(':stock_id' => $stock_id))
-      ->fetchField();
-  }
+  $limit_stock = '';
 
   // Sub-query to select plant_id given a location and project.
   // NOTE: leading and trailing spaces are required.
   $sub_sql = " (SELECT plant_id
                 FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
-                WHERE value IN (:location) AND project_id IN (:project)) ";
+                WHERE value IN (:location) AND project_id IN (:project) %s) ";
 
   // Query values required by sub query.
   $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
+
+  if ($stock_id != '' && (int) $stock_id > 0) {
+    $limit_stock = "AND plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :stock_id)";
+    $arr_q_string[':stock_id'] = $stock_id;
+  }
+  
+  $sub_sql = sprintf($sub_sql, $limit_stock);
 
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
@@ -370,12 +373,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     // Note: this first array will not have any missing data cells filled in.
     $rows = array();
     foreach($results as $r) {
-      if ($stock_name != '' && $r->value == $stock_name) {
-        $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
-      }   
-      else {
-        $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
-      }
+      $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
     }
 
     // Total lines;
