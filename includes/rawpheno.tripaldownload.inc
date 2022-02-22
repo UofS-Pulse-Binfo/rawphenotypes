@@ -215,6 +215,10 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   $tmp = trim(str_replace('p=', '', $project));
   $project = explode(',', $tmp);
 
+  if ($project[0]) {
+    $project_name = rawpheno_function_getproject($project[0]);
+  }
+
   // Locations:
   $location = trim(str_replace('l=', '', $location));
 
@@ -274,9 +278,16 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   // Query values required by sub query.
   $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
 
+  // Array to hold column headers.
+  // Add Name/Stock name column headers array.
+  $header = array('A0' => 'Name');
+
   if ($stock_id != '' && (int) $stock_id > 0) {
     $limit_stock = "AND plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :stock_id)";
     $arr_q_string[':stock_id'] = $stock_id;
+    
+    // Add experiment to header if request comes from field.
+    $header['D0'] = 'Experiment';
   }
   
   $sub_sql = sprintf($sub_sql, $limit_stock);
@@ -296,10 +307,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
           GROUP BY t2.cvterm_id, t2.definition";
 
   $result = db_query($sql, $arr_q_string);
-
-  // Array to hold column headers.
-  //Add Name/Stock name column headers array.
-  $header = array('A0' => 'Name');
 
   foreach ($result as $r) {
     $def = $r->name;
@@ -374,6 +381,11 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     $rows = array();
     foreach($results as $r) {
       $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
+
+      if ($stock_id != '' && (int) $stock_id > 0) {
+        // Add experiment name when request comes from field.
+        $rows[ $r->id ][ 'D0' ] = $project_name;
+      }
     }
 
     // Total lines;
