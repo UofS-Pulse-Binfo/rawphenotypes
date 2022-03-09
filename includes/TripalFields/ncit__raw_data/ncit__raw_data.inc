@@ -138,7 +138,9 @@ class ncit__raw_data extends TripalField {
 
     if ($count_permission == 2 || user_is_logged_in()) {
       // User appointed experiments.
-      // See api library in includes directory for this function definition.
+      // See includes/rawpheno.function.measurements.inc file for function definition
+      // Given the user id this function returns an array of chado projects keyed by project_id 
+      // that the user has permission to see.
       $user_experiment = rawpheno_function_user_project($user->uid);
       $user_experiment = array_keys($user_experiment);
   
