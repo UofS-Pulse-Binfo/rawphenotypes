@@ -1179,21 +1179,3 @@ function rawpheno_preprocess_block(&$vars) {
 
   return $vars;
 }
-
-
-// RAWPHENOTYPES IN GERMPLASM FIELD.
-
-
-/**
- * Implements hook_field_group_build_pre_render_alter().
- * Apply css and js.
- */
-function rawpheno_field_group_build_pre_render_alter(&$element) {
-  $rp_path = drupal_get_path('module', 'rawpheno') . '/theme/';
-
-  $element['#attached']['js'][]  = $rp_path . 'js/rawpheno.germplasm.field.js';
-  $element['#attached']['css'][] = $rp_path . 'css/rawpheno.germplasm.field.css';
-  
-  // Rawphenotypes download link:
-  drupal_add_js(array('rawpheno' => array('exportLink' =>  $GLOBALS['base_url'] . '/phenotypes/raw/download')), array('type' => 'setting'));
-}

@@ -44,8 +44,17 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
    *    hook_field_formatter_view() function.
    */
   public function view(&$element, $entity_type, $entity, $langcode, $items, $display) {
-    if ($items[0]['value']['NCIT:Raw Data']) {
-      $germplasm_raw_phenotypes = $items[0]['value']['NCIT:Raw Data'];
+    if ($items[0]['value']) {
+      // Icons.
+      $icon_path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'rawpheno') . '/includes/TripalFields/ncit__raw_data/theme/';
+      
+      $icons = array();
+      $icons['leaf'] = $icon_path . 'icon-leaf.png';
+      $icons['export'] = $icon_path . 'icon-export.png';
+      $icons['raw'] = $icon_path . 'icon-raw.jpg';
+      $icons['download'] = $icon_path . 'icon-download.jpg';
+
+      $germplasm_raw_phenotypes = $items[0]['value'];
 
       // Create markup.
       // Refer to this ID for CSS styling.
@@ -54,7 +63,7 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
         <div id="' . $id . '">
         <div id="rawphenotypes-germplasm-field-header">
           <div>
-            <img src="' . $germplasm_raw_phenotypes['icons']['raw'] . '" align="absmiddle"> &nbsp;&nbsp;<a href="#">What are Raw Phenotypes?</a>
+            <img src="' . $icons['raw'] . '" align="absmiddle"> &nbsp;&nbsp;<a href="#">What are Raw Phenotypes?</a>
           </div>
           <div>
             <div class="rawphenotypes-germplasm-nav">
@@ -93,13 +102,13 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
           list($trait_id, $trait_name) = explode('_', $trait);
 
           $select = $this->create_select($germplasm_raw_phenotypes['germplasm']['id'], $exp_loc, $germplasm_raw_phenotypes['user']['experiments']);
-          $table_row[ $id ] = array(sprintf($icon_img, '', $germplasm_raw_phenotypes['icons']['leaf']) . ucfirst($trait_name), $select, sprintf($icon_img, $trait_id, $germplasm_raw_phenotypes['icons']['export'])); 
+          $table_row[ $id ] = array(sprintf($icon_img, '', $icons['leaf']) . ucfirst($trait_name), $select, sprintf($icon_img, $trait_id, $icons['export'])); 
           $id++;
         }
        
         // Create markup.
         $summary_table = theme('table', array(
-          'header' => array('Trait', 'LOCATION/Experiment', sprintf($icon_img, '', $germplasm_raw_phenotypes['icons']['download'])),
+          'header' => array('Trait', 'LOCATION/Experiment', sprintf($icon_img, '', $icons['download'])),
           'rows' => $table_row,
           'sticky' => FALSE,
           'attributes' => array('id' => 'rawphenotypes-germplasm-field-table')
@@ -139,14 +148,14 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
     $cache_exp = [];
     foreach($items as $loc_exp) {
       list($trait_id, $project_id, $project_name, $location) = explode('#', $loc_exp);
-      $select_value = $trait_id . '#' . $project_id . '#' . $location . '#' . $germplasm;
-      $cache_exp[] = $project_id;
+      $select_value = $loc_exp['trait_id'] . '#' . $loc_exp['project_id'] . '#' . $loc_exp['location'] . '#' . $loc_exp['germplasm'];
+      $cache_exp[] = $loc_exp['project_id'];
 
-      $disabled = (in_array($project_id, $disable)) ? '' : 'disabled';
-      $option[] = '<option value ="' . $select_value . '" ' . $disabled . '>' . strtoupper($location) . '/' . $project_name . '</option>';
+      $disabled = (in_array($loc_exp['project_id'], $disable)) ? '' : 'disabled';
+      $option[] = '<option value ="' . $select_value . '" ' . $disabled . '>' . strtoupper($loc_exp['location']) . '/' . $loc_exp['project_name'] . '</option>';
     }
   
-    $select = '<select class="form-select" id="rawphenotypes-germplasm-field-trait-select-' . $trait_id . '">
+    $select = '<select class="form-select" id="rawphenotypes-germplasm-field-trait-select-' . $loc_exp['trait_id'] . '">
     <option value="0" selected>Select (' . count($items) . ' Locations, ' . count(array_unique($cache_exp)) . ' Experiments)</option>
     %s
     </select>';

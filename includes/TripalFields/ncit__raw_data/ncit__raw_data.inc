@@ -152,14 +152,6 @@ class ncit__raw_data extends TripalField {
       $germplasm['id'] = $entity->chado_record->stock_id;
       $germplasm['name'] = $entity->chado_record->name;
       
-      // Icons.
-      $icon_path = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'rawpheno') . '/includes/TripalFields/ncit__raw_data/theme/';
-
-      $icons['leaf'] = $icon_path . 'icon-leaf.png';
-      $icons['export'] = $icon_path . 'icon-export.png';
-      $icons['raw'] = $icon_path . 'icon-raw.jpg';
-      $icons['download'] = $icon_path . 'icon-download.jpg';
-      
       $traits = [];
       // This query is identical to the rawphenotypes download page.
       // Get all experiments (by plant id) where germplasm was used.
@@ -206,7 +198,12 @@ class ncit__raw_data extends TripalField {
         if ($trait_set) {
           foreach($trait_set as $trait_id => $trait_name) {
             // Trait id, project id and name + location:
-            $trait_experiment_location[ $trait_id . '_' . $trait_name ][] = $trait_id . '#' . $item->project_id . '#' . $item->name . '#' . $item->location;            
+            $trait_experiment_location[ $trait_id . '_' . $trait_name ][] = array(
+              'trait_id' => $trait_id,
+              'project_id' => $item->project_id, 
+              'project_name' => $item->name, 
+              'location' => $item->location,
+            );             
           }
         }
       }
@@ -218,12 +215,11 @@ class ncit__raw_data extends TripalField {
       $summary['experiments'] = count(array_unique($cache_exp));
       $summary['locations'] = count(array_unique($cache_loc));
 
-      $entity->{$field_name}['und'][0]['value']['NCIT:Raw Data'] = array(
+      $entity->{$field_name}['und'][0]['value'] = array(
         'user' => $current_user,
         'germplasm' => $germplasm,
         'summary'  => $summary,
         'traits'   => $trait_experiment_location,
-        'icons' => $icons
       );
     }
   }
