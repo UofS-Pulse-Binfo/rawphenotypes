@@ -30,7 +30,7 @@ print $variables['raw_data'];
   </div>
 
   <div>
-    <h1>GERMPLASM NAME: <span>5 Traits / 5 Experiments / 5 Locations</span></h1>
+    <h1>GERMPLASM NAME: <span><?php print $variables['header']['traits']; ?> Traits / <?php print $variables['header']['experiments']; ?> Experiments / <?php print $variables['header']['locations']; ?> Locations</span></h1>
   </div>
         
   <div id="rawphenotypes-germplasm-warning" class="messages warning">
@@ -39,7 +39,7 @@ print $variables['raw_data'];
 
   <div id="rawphenotypes-germplasm-table-wrapper">
     <div id="rawphenotypes-germplasm-export-table">
-      <div>%s</div>
+      <div><?php print $variables['summary_table']; ?></div>
     </div>
   </div>
 

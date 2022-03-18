@@ -44,18 +44,46 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
    *    hook_field_formatter_view() function.
    */
   public function view(&$element, $entity_type, $entity, $langcode, $items, $display) {
-    if ($items[0]['value']) {
-      $path_module = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'rawpheno'); 
+    if ($items[0]['value'] && $items[0]['value']['user']['permission']) {
+      $path_base = $GLOBALS['base_url'] . '/'; 
+      $path_module = drupal_get_path('module', 'rawpheno') . '/';
       
       // Add style and script.
+      drupal_add_css($path_module . 'theme/css/rawpheno.germplasmfield.style.css');  
+      drupal_add_js($path_base . $path_module . 'theme/js/rawpheno.germplasmfield.script.js');
 
-      drupal_add_css($path_module . '/theme/css/rawpheno.germplasmfield.css');  
-      drupal_add_js($path_module . '/theme/js/rawpheno.germplasm.field.js');
+      $germplasm_raw_phenotypes = $items[0]['value'];
 
+      // Export summary table.  
+      $table_row = array();  
+
+      $id = 0;
+      foreach($germplasm_raw_phenotypes['traits'] as $trait => $exp_loc) {
+        list($trait_id, $trait_name) = explode('_', $trait);
+
+        $select = $this->create_select($exp_loc, $germplasm_raw_phenotypes['user']['experiments']);
+        $table_row[ $id ] = array(sprintf($icon_img, '', $germplasm_raw_phenotypes['icons']['leaf']) . ucfirst($trait_name), $select, sprintf($icon_img, $trait_id, $germplasm_raw_phenotypes['icons']['export'])); 
+        $id++;
+      }
+
+      // Create markup.
+      $summary_table = theme('table', array(
+        'header' => array('Trait', 'LOCATION/Experiment', sprintf($icon_img, '', $germplasm_raw_phenotypes['icons']['download'])),
+        'rows' => $table_row,
+        'sticky' => FALSE,
+        'attributes' => array('id' => 'rawphenotypes-germplasm-field-table')
+      ));
+      
       // Render germplasm raw phenotypes.
       $variables = array(
         'element_id' =>  'rawphenotypes-germplasm-raw-phenotypes-field',
-        'path_img' => $path_module . '/theme/img/fields/'
+        'path_img' => $path_base . $path_module . 'theme/img/fields/',
+        'summary_table' => $summary_table,
+        'header' => array(
+          'traits' => $germplasm_raw_phenotypes['summary']['traits'], 
+          'experiments' => $germplasm_raw_phenotypes['summary']['experiments'], 
+          'locations' => $germplasm_raw_phenotypes['summary']['locations'],
+        )       
       );
 
       $markup = theme('rawpheno_germplasm_field', $variables);
@@ -71,15 +99,13 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
   /**
    * Create select field.
    * 
-   * @param $germplasm
-   *   Stock id number.
    * @param $items
    *   Associative array, where each item will be rendered as an option
    *   with key as the value and value as text.
    * @param $disable
    *   Array of items to match an item if it should be disabled.
    */
-  public function create_select($germplasm, $items, $disable) {
+  public function create_select($items, $disable) {
     $option = array();
     $cache_exp = [];
     foreach($items as $loc_exp) {
