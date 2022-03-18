@@ -487,6 +487,13 @@ function rawpheno_theme($existing, $type, $theme, $path) {
     ),
   );
 
+  // Raw data field.
+  $items['rawpheno_germplasm_field'] = array(
+    'template' => 'rawpheno_germplasm_field',
+    'path' => $path . '/theme',
+    'variables' => array('raw_data' => '')
+  );
+
   return $items;
 }
 

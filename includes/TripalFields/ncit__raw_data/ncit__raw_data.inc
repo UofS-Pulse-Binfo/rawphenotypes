@@ -111,6 +111,9 @@ class ncit__raw_data extends TripalField {
    *
    */
   public function load($entity) {
+    $path_module = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'rawpheno'); 
+    drupal_add_css($path_module . '/theme/css/abc.css', 'file');
+    
     // Arrays to hold phenotypes related to this germplasm.
     $germplasm = array();
     $icons = array();
