@@ -107,24 +107,10 @@ class ncit__raw_data extends TripalField {
    *   The array may contain as many other keys at the same level as 'value'
    *   but those keys are for internal field use and are not considered the
    *   value of the field.
-   *
-   *
    */
   public function load($entity) {
-    $path_module = $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'rawpheno'); 
-    drupal_add_css($path_module . '/theme/css/abc.css', 'file');
-    
-    // Arrays to hold phenotypes related to this germplasm.
-    $germplasm = array();
-    $icons = array();
-    $summary = array();
-    $current_user = array();
-    $traits = array();
-
-    // User profile.
     global $user;
-    $current_user['id'] = $user->uid;
-
+    
     // User permissions.
     $rawpheno_permission = array('access rawpheno', 'download rawpheno');
     $count_permission = 0;
@@ -146,16 +132,20 @@ class ncit__raw_data extends TripalField {
       // that the user has permission to see.
       $user_experiment = rawpheno_function_user_project($user->uid);
       $user_experiment = array_keys($user_experiment);
-  
-      // Current user.
+ 
+      // # USER PROFILE:
+      // user id, has permission to rawphenotypes and list of experiments user is aactive.
+      $current_user = array();
       $current_user['permission'] = TRUE;
       $current_user['experiments'] = $user_experiment;
 
-      // Germplasm.
+      // # GERMPLASM:  
+      $germplasm = array();
       $germplasm['id'] = $entity->chado_record->stock_id;
       $germplasm['name'] = $entity->chado_record->name;
       
-      $traits = [];
+      // # TRAITS/EXPERIMENT/LOCATION:
+      $traits = array();
       // This query is identical to the rawphenotypes download page.
       // Get all experiments (by plant id) where germplasm was used.
       $all_experiment_locations = chado_query("
@@ -201,7 +191,7 @@ class ncit__raw_data extends TripalField {
         if ($trait_set) {
           foreach($trait_set as $trait_id => $trait_name) {
             // Trait id, project id and name + location:
-            $trait_experiment_location[ $trait_id . '_' . $trait_name ][] = array(
+            $trait_experiment_location[ $trait_name . '_' . $trait_id ][] = array(
               'trait_id' => $trait_id,
               'project_id' => $item->project_id, 
               'project_name' => $item->name, 
@@ -213,16 +203,17 @@ class ncit__raw_data extends TripalField {
 
       ksort($trait_experiment_location);
 
-      // Summarize.
+      // # SUMMARY COUNT:
+      $summary = array();
       $summary['traits'] = count($trait_experiment_location);
       $summary['experiments'] = count(array_unique($cache_exp));
       $summary['locations'] = count(array_unique($cache_loc));
 
       $entity->{$field_name}['und'][0]['value'] = array(
-        'user' => $current_user,
+        'user'      => $current_user,
         'germplasm' => $germplasm,
-        'summary'  => $summary,
-        'traits'   => $trait_experiment_location,
+        'summary'   => $summary,
+        'traits'    => $trait_experiment_location,
       );
     }
   }

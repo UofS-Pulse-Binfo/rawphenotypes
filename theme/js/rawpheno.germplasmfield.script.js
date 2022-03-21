@@ -54,7 +54,7 @@
 
         $('#' + selectId + '-img').css('opacity', imgOpacity);
       });
-       
+
       // Listen to images clicked to launch data download.
       $('#rawphenotypes-germplasm-field-table td:last-child img').click(function(e) {
         var imgId = e.target.id;
