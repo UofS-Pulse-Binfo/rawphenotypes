@@ -1334,3 +1334,117 @@ function rawpheno_function_get_support_email() {
 
   return $support_email;
 }
+
+
+/**
+ * Function to test if data matches the unit it measuring.
+ *
+ * @param $value
+ *   The data/value of a cell in the spreadsheet file.
+ * @param $unit
+ *   String, the unit as indicated by the column header the data/value falls under.
+ * @param $column_header
+ *   String, the name of the column header.
+ *
+ * @return
+ *   Boolean TRUE unit matched of FALSE unit-data mismatched.
+ */
+function rawpheno_function_match_unit($value, $unit, $column_header) {
+  switch($unit) {
+    case 'date':
+      // Date must be YYYY-MM-DD format.
+      if (preg_match('/^([0-9]{4})-([0-9]{2})-([0-9]{2})/', $value, $matches)) {
+        // Check that the month/day are in the expected range.
+        $year  = $matches[1];
+        $month = $matches[2];
+        $day   = $matches[3];
+
+        if ($month >= 1 AND $month <= 12 AND $day >= 1 AND $day <= 31 AND $year > 1900) {
+          // Then check that it's not in the future.
+          $today = new DateTime();
+          $date = DateTime::createFromFormat('Y-m-d', $value);
+
+          if ($date <= $today) {
+            return TRUE;
+          }
+        }
+      }
+
+      break;
+
+    case 'count':
+    case 'days':
+      // First check that it's a number.
+      if (is_numeric($value)) {
+        // Then check it's a positive whole number.
+        if ((int)$value == $value AND $value > 0) {
+          return TRUE;
+        }
+      }
+
+      // Allow 0 for count.
+      if ($unit == 'count' AND strval($value) === '0') {
+        return TRUE;
+      }
+
+      break;
+
+    case 'cm':
+    case 'g':
+      // Measurements - if it is numeric, then it must be greater than 0.
+      if (is_numeric($value) && $value > 0) {
+        return TRUE;
+      }
+
+      // Allow 0
+      if (strval($value) === '0') {
+        return TRUE;
+      }
+
+      break;
+
+    case 'y/n/?':
+      // Yes or No - if it is char, length is one, then check if y, n, ? (question mark).
+      if (in_array(strtolower($value), array('y','n','?', 'yes', 'no'))) {
+        return TRUE;
+      }
+
+      break;
+
+    case 'scale':
+      // Scales are associated with the trait cvterm and each approved code is stored in pheno_scale_member.
+      // First retrieve the cvterm_id for the trait.
+      $trait_id = rawpheno_get_trait_id($column_header);
+
+      if ($trait_id) {
+        // Then check that the value is in the scale members
+        $present = db_query('SELECT true FROM {pheno_scale_member} WHERE scale_id=:trait_id AND code=:value',
+          array(':trait_id' => $trait_id, ':value' => $value))->fetchField();
+
+        if ($present) return TRUE;
+
+        // If not, make sure there are members.
+        $has_scale = db_query('SELECT count(*) FROM {pheno_scale_member} WHERE scale_id=:trait_id',
+          array(':trait_id' => $trait_id))->fetchField();
+
+        if (!$has_scale) return TRUE;
+      }
+      else {
+        // If this is a new trait/column then we don't know how to validate it, so we assume it's correct.
+        return TRUE;
+      }
+
+      break;
+
+    case 'text':
+      return TRUE;
+
+      break;
+
+    default:
+      return TRUE;
+  }
+
+
+  return FALSE;
+}
