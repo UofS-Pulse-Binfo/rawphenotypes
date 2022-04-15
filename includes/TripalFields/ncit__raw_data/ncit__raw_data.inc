@@ -132,17 +132,6 @@ class ncit__raw_data extends TripalField {
       // that the user has permission to see.
       $user_experiment = rawpheno_function_user_project($user->uid);
       $user_experiment = array_keys($user_experiment);
- 
-      // # USER PROFILE:
-      // user id, has permission to rawphenotypes and list of experiments user is aactive.
-      $current_user = array();
-      $current_user['permission'] = TRUE;
-      $current_user['experiments'] = $user_experiment;
-
-      // # GERMPLASM:  
-      $germplasm = array();
-      $germplasm['id'] = $entity->chado_record->stock_id;
-      $germplasm['name'] = $entity->chado_record->name;
       
       // # TRAITS/EXPERIMENT/LOCATION:
       $traits = array();
@@ -181,6 +170,7 @@ class ncit__raw_data extends TripalField {
       $trait_experiment_location = array();
       $cache_exp = array();
       $cache_loc = array();
+
       foreach($experiment_locations as $item) {
         $cache_exp[] = $item->project_id;
         $cache_loc[] = $item->location;
@@ -190,30 +180,29 @@ class ncit__raw_data extends TripalField {
         
         if ($trait_set) {
           foreach($trait_set as $trait_id => $trait_name) {
-            // Trait id, project id and name + location:
-            $trait_experiment_location[ $trait_name . '_' . $trait_id ][] = array(
-              'trait_id' => $trait_id,
-              'project_id' => $item->project_id, 
-              'project_name' => $item->name, 
-              'location' => $item->location,
-            );             
+            // Trait id, project id and project name + location:
+            $entity->{$field_name}['und'][0]['value']['hydra:member'][] = array(              
+              'phenotype_rawdatafield_terms:id' => $trait_id,
+              'phenotype_rawdatafield_terms:name' => $trait_name,   
+              'phenotype_rawdatafield_terms:experiment' => array(      
+                'phenotype_rawdatafield_terms:id' => $item->project_id, 
+                'phenotype_rawdatafield_terms:name' => $item->name,
+                'phenotype_rawdatafield_terms:location' => $item->location
+              )
+            );
           }
         }
       }
-
-      ksort($trait_experiment_location);
-
-      // # SUMMARY COUNT:
-      $summary = array();
-      $summary['traits'] = count($trait_experiment_location);
-      $summary['experiments'] = count(array_unique($cache_exp));
-      $summary['locations'] = count(array_unique($cache_loc));
-
+    
       $entity->{$field_name}['und'][0]['value'] = array(
-        'user'      => $current_user,
-        'germplasm' => $germplasm,
-        'summary'   => $summary,
-        'traits'    => $trait_experiment_location,
+        'phenotype_rawdatafield_terms:permission' => TRUE,
+        'phenotype_rawdatafield_terms:experiment' => $user_experiment,
+        
+        'phenotype_rawdatafield_terms:summary' => array(
+          'phenotype_rawdatafield_terms:trait' => count($entity->{$field_name}['und'][0]['value']['hydra:member']),
+          'phenotype_rawdatafield_terms:location' => count(array_unique($cache_loc)),
+          'phenotype_rawdatafield_terms:experiment' => count(array_unique($cache_exp)),
+        }
       );
     }
   }

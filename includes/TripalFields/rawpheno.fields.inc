@@ -36,13 +36,30 @@ function rawpheno_bundle_fields_info($entity_type, $bundle) {
 
   // IN GERMPLASM PAGE ONLY:
   if (isset($bundle->data_table) AND ($bundle->data_table == 'stock')) {
-    // Number of traits.
+    // Insert auxiliary terms used by Raw Data field.
+    // Create cv to hold terms.
+    $cv = 'phenotype_rawdatafield_terms';
+    chado_insert_cv($cv, 'vocabulary term to hold terms used by Raw Data field');
+    
+    // Insert terms to cv above.
+    $terms = array('experiment', 'id', 'location', 'name', 'permission', 'summary', 'trait');
+    foreach($terms as $term) {
+      tripal_insert_cvterm(array(
+        'id' => 'rawpheno_tripal:' . $term,
+        'name' => $term,
+        'definition' => $term,
+        'cv_name' => $cv
+      ));
+    }
+
+    // Raw Data term.
     tripal_insert_cvterm(array(
       'id' => 'NCIT:C142663',
       'name' => 'Raw Data',
       'cv_name' => 'NCIT',
       'definition' => 'The original information, collected from the primary source. Used in Germplasm Raw Phenotypes Field.',
     ));
+
     $field_name = 'ncit__raw_data';
     $field_type = 'ncit__raw_data';
     $fields[$field_name] = array(
