@@ -125,14 +125,7 @@ class ncit__raw_data extends TripalField {
     $field_name = $this->instance['field_name'];
     $entity->{$field_name}['und'][0]['value'] = array();
 
-    if ($count_permission == 2 || user_is_logged_in()) {
-      // User appointed experiments.
-      // See includes/rawpheno.function.measurements.inc file for function definition
-      // Given the user id this function returns an array of chado projects keyed by project_id 
-      // that the user has permission to see.
-      $user_experiment = rawpheno_function_user_project($user->uid);
-      $user_experiment = array_keys($user_experiment);
-      
+    if (user_is_logged_in() && $count_permission == 2) {
       // # TRAITS/EXPERIMENT/LOCATION:
       $traits = array();
       // This query is identical to the rawphenotypes download page.
@@ -147,63 +140,67 @@ class ncit__raw_data extends TripalField {
             WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types') AND
           plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :germplasm GROUP BY plant_id)
         GROUP BY p2.project_id, p2.name, value
-      ", array(':germplasm' => $germplasm['id']));
+      ", array(':germplasm' => $entity->chado_record->stock_id));
       $experiment_locations = $all_experiment_locations->fetchAll();
-
-      // All traits in experiment and location.
-      $sql_cvterm = "
-        SELECT c_j.cvterm_json->>'id', c_j.cvterm_json->>'name' FROM (
-          SELECT JSON_BUILD_OBJECT('id', cvterm_id, 'name', name) AS cvterm_json FROM {cvterm} WHERE cvterm_id = ANY ((
-            SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
-              SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
-              FROM {rawpheno_rawdata_mview}
-              WHERE
-                location IN(:location)
-                AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-            ) AS list_id
-          )::int[])
-        ) AS c_j
-        WHERE c_j.cvterm_json->>'name' NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
-        ORDER BY c_j.cvterm_json->>'name' ASC
-      ";
       
-      $trait_experiment_location = array();
-      $cache_exp = array();
-      $cache_loc = array();
+      // Only when germplasm returned rawphenotypic data.
+      if (count($experiment_locations) > 0) {
+        // User appointed experiments.
+        // See includes/rawpheno.function.measurements.inc file for function definition
+        // Given the user id this function returns an array of chado projects keyed by project_id 
+        // that the user has permission to see.
+        $user_experiment = rawpheno_function_user_project($user->uid);
+        $user_experiment = array_keys($user_experiment); 
+        // Save user experiments.     
+        $entity->{$field_name}['und'][0]['value']['phenotype_customfield_terms:user_experiment'] = $user_experiment;
 
-      foreach($experiment_locations as $item) {
-        $cache_exp[] = $item->project_id;
-        $cache_loc[] = $item->location;
-
-        $trait_set = chado_query($sql_cvterm, array(':location' => $item->location, ':project_id' => $item->project_id))
-          ->fetchAllKeyed(0, 1);
+        // All traits in experiment and location.
+        $sql_cvterm = "
+          SELECT c_j.cvterm_json->>'id', c_j.cvterm_json->>'name' FROM (
+            SELECT JSON_BUILD_OBJECT('id', cvterm_id, 'name', name) AS cvterm_json FROM {cvterm} WHERE cvterm_id = ANY ((
+              SELECT STRING_TO_ARRAY(list_id.all_traits, ',') FROM (
+                SELECT string_agg(DISTINCT all_traits, ',') AS all_traits
+                FROM {rawpheno_rawdata_mview}
+                WHERE
+                  location IN(:location)
+                  AND plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
+              ) AS list_id
+            )::int[])
+          ) AS c_j
+          WHERE c_j.cvterm_json->>'name' NOT IN ('Rep', 'Entry', 'Location', 'Name', 'Plot', 'Planting Date (date)', '# of Seeds Planted (count)')
+          ORDER BY c_j.cvterm_json->>'name' ASC
+        ";
         
-        if ($trait_set) {
-          foreach($trait_set as $trait_id => $trait_name) {
-            // Trait id, project id and project name + location:
-            $entity->{$field_name}['und'][0]['value']['hydra:member'][] = array(              
-              'phenotype_rawdatafield_terms:id' => $trait_id,
-              'phenotype_rawdatafield_terms:name' => $trait_name,   
-              'phenotype_rawdatafield_terms:experiment' => array(      
-                'phenotype_rawdatafield_terms:id' => $item->project_id, 
-                'phenotype_rawdatafield_terms:name' => $item->name,
-                'phenotype_rawdatafield_terms:location' => $item->location
-              )
-            );
+        $trait_experiment_location = array();
+        $cache_exp = array();
+        $cache_loc = array();
+
+        foreach($experiment_locations as $item) {
+          $cache_exp[] = $item->project_id;
+          $cache_loc[] = $item->location;
+
+          $trait_set = chado_query($sql_cvterm, array(':location' => $item->location, ':project_id' => $item->project_id))
+            ->fetchAllKeyed(0, 1);
+          
+          if ($trait_set) {
+            foreach($trait_set as $trait_id => $trait_name) {
+              // Save basic information about the trait (name + id key) and all experiment + location it was measured.
+              $entity->{$field_name}['und'][0]['value']['hydra:member'][ $trait_name . '_' . $trait_id ][] = array(                              
+                'phenotype_customfield_terms:id'  => $item->project_id,   // Project id number.
+                'phenotype_customfield_terms:name'  => $item->name,       // Project name. 
+                'phenotype_customfield_terms:location' => $item->location // Location in a project trait was measured.
+              );
+            }
           }
         }
-      }
-    
-      $entity->{$field_name}['und'][0]['value'] = array(
-        'phenotype_rawdatafield_terms:permission' => TRUE,
-        'phenotype_rawdatafield_terms:experiment' => $user_experiment,
         
-        'phenotype_rawdatafield_terms:summary' => array(
-          'phenotype_rawdatafield_terms:trait' => count($entity->{$field_name}['und'][0]['value']['hydra:member']),
-          'phenotype_rawdatafield_terms:location' => count(array_unique($cache_loc)),
-          'phenotype_rawdatafield_terms:experiment' => count(array_unique($cache_exp)),
-        }
-      );
+        // Save a complete summary count as a quick raw phenotypic data summary related to the germplasm. 
+        $entity->{$field_name}['und'][0]['value']['phenotype_customfield_terms:summary'] = array(        
+          'phenotype_customfield_terms:experiment' => count(array_unique($cache_exp)), // Summary count of experiments.
+          'phenotype_customfield_terms:location' => count(array_unique($cache_loc)),   // Summary count of locations.
+          'phenotype_customfield_terms:trait' => count($entity->{$field_name}['und'][0]['value']['hydra:member']), // Summary count of traits.
+        );
+      }
     }
   }
 

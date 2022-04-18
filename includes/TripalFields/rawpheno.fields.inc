@@ -38,11 +38,11 @@ function rawpheno_bundle_fields_info($entity_type, $bundle) {
   if (isset($bundle->data_table) AND ($bundle->data_table == 'stock')) {
     // Insert auxiliary terms used by Raw Data field.
     // Create cv to hold terms.
-    $cv = 'phenotype_rawdatafield_terms';
+    $cv = 'phenotype_customfield_terms';
     chado_insert_cv($cv, 'vocabulary term to hold terms used by Raw Data field');
     
     // Insert terms to cv above.
-    $terms = array('experiment', 'id', 'location', 'name', 'permission', 'summary', 'trait');
+    $terms = array('experiment', 'id', 'location', 'name', 'summary', 'trait', 'user_experiment');
     foreach($terms as $term) {
       tripal_insert_cvterm(array(
         'id' => 'rawpheno_tripal:' . $term,
