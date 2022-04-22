@@ -54,6 +54,16 @@ $table_header = $table['headers'];
   <div id="rawphenotypes-germplasm-warning" class="messages warning">
     Please note that <i>some experiments</i> appear disabled. Please contact KnowPulse if you need access.
   </div>
+  
+  <div id="rawphenotypes-germplasm-controls">
+    <span><input id="rawphenotypes-germplasm-controls-expand" type="checkbox"> Expand Table | <a id="rawphenotypes-germplasm-controls-search" href="#">Search</a></span>
+    <span id="rawphenotypes-germplasm-controls-selectby" style="float: right">Select by: Location + Experiment | <a href="#">Experiment</a></span>
+  
+    <div id="rawphenotypes-germplasm-controls-search-window">
+      <input type="text" value="">
+      <a href="#" alt="Close search window" title="Close search window">Close</a>
+    </div>
+  </div>
 
   <div id="rawphenotypes-germplasm-table-wrapper">
     <div id="rawphenotypes-germplasm-export-table">

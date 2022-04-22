@@ -67,4 +67,87 @@
           );
         }
       });
+
+      // Listen to controls search, expand and select by.
+      var tableWindow = $('#rawphenotypes-germplasm-export-table');
+      // Create border when scrolling.
+      tableWindow.scroll(function() {
+        var c = ($(this).scrollTop() <= 0) ? '#FFFFFF' : '#314355';
+        $('#rawphenotypes-germplasm-controls').css('border-bottom-color', c);
+      });
+
+      // Expand.
+      $('#rawphenotypes-germplasm-controls-expand').click(function(){
+        var h = ($(this).is(':checked')) ? 460 : 230;
+        tableWindow.css('height', h);
+      });
+
+      // Search.
+      $('#rawphenotypes-germplasm-controls-search').click(function(e) {
+        e.preventDefault();
+
+        $('#rawphenotypes-germplasm-controls-search-window')
+          .fadeIn('fast')
+          .find('input').val('').focus();
+
+        tableWindow.scrollTop(-1);
+      }); 
+        
+        // Close search window.
+        $('#rawphenotypes-germplasm-controls-search-window a').click(function(e) {
+          e.preventDefault();
+
+          $(this)
+            .parent().fadeOut('fast')
+            .find('input').val('');
+        });
+
+        // Search field when selected/on focus.
+        $('#rawphenotypes-germplasm-controls-search-window input')
+        .click(function() {
+          if ($(this).val()) {
+            $(this).select();
+          }
+        });
+
+        // Prepare search items (all traits currently displayed in the table).
+        var searchTerms = new Array();
+        $('#rawphenotypes-germplasm-export-table table td:nth-child(2)').each(function() {
+          searchTerms.push($(this).text());
+        });
+        
+        $('#rawphenotypes-germplasm-controls-search-window input')
+        .autocomplete({
+          select: function(event, ui) {
+            var foundIndex = searchTerms.indexOf(ui.item.value.trim());
+            var foundRow = $('#rawphenotypes-germplasm-export-table table tbody tr').eq(foundIndex);
+            tableWindow.scrollTop(foundRow.position().top);
+
+            var t = 0;
+            var timer = setInterval(function() {
+              if (t < 5) {
+                var o = (t%2 == 0) ? 0 : 1;
+                foundRow.css('opacity', o);
+              } 
+              else {
+                foundRow.css('opacity', 1);
+                clearInterval(timer);
+              }
+
+              t++;
+            }, 250);
+
+            $(this).parent().fadeOut();            
+          },
+          source: function(request, response) {
+            var results = $.ui.autocomplete.filter(searchTerms, request.term);
+            // Fist 5 results.
+            response(results.slice(0, 5));
+          }
+        }); 
+      
+      // Select by type.
+
+
+
 }};}(jQuery));

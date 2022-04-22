@@ -65,7 +65,7 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
       $theme_path  = $base_path . $module_path . '/includes/TripalFields/ncit__raw_data/theme/';
       
       // Append image as bullet points, header icon and export button or link.
-      $img = '<img id="rawphenotypes-germplasm-field-trait-select-%s-img" src="%s" border="0" align="absmiddle" alt="Download Raw Phenotypic Data" title="Download Raw Phenotypic Data" />';
+      $img = '<img id="rawphenotypes-germplasm-field-trait-select-%s-img" src="%s" border="0" align="absmiddle" title="%s" />';
       
 
       // CONSTRUCT SUMMARY TABLE:
@@ -73,7 +73,12 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
       // as a select box and download link (download icon header).
 
       // # TABLE HEADER:
-      $table_header = array('Trait', 'LOCATION/Experiment', sprintf($img, '', $theme_path . 'icon-download.jpg'));
+      $table_header = array(
+        sprintf($img, '', $theme_path . 'icon-download-all.jpg', 'Download all for this trait'), 
+        'Trait', 
+        'LOCATION + Experiment',
+        sprintf($img, '', $theme_path . 'icon-download.jpg', 'Download Location + Experiment')
+      );
       
       // # TABLE ROWS:
       $table_row = array();       
@@ -82,9 +87,10 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
         $trait = array('id' => $tmp[1], 'name' => $tmp[0]);
 
         $table_row[] = array(
-          sprintf($img, '', $theme_path . 'icon-leaf.png') . ucfirst($trait['name']), 
-          $this->create_select($germplasm_id, $trait, $exp_loc, $user_experiment), 
-          sprintf($img, $trait['id'], $theme_path . 'icon-export.png')
+          sprintf($img, $trait['id'] . '-all', $theme_path . 'icon-export.png', 'Download all for this trait'),
+          ucfirst($trait['name']), 
+          $this->create_select($germplasm_id, $trait, $exp_loc, $user_experiment),
+          sprintf($img, $trait['id'], $theme_path . 'icon-export.png', 'Download Location + Experiment')
         ); 
       }
       
@@ -114,6 +120,8 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
 
       // Rawphenotypes download link:
       drupal_add_js(array('rawpheno' => array('exportLink' => $base_path . '/phenotypes/raw/download')), array('type' => 'setting'));
+      // Autocomplete UI.
+      drupal_add_library('system', 'ui.autocomplete');
 
       // Construct field render array.
       $element[0] = array(
@@ -145,10 +153,68 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
    *   if experiment should be enabled or disabled to a user.
    */
   public function create_select($germplasm, $trait, $experiment, $user_experiment) {
-    $option = array();
-    $cache_exp = [];
-
+    // Array to hold select option for select field by location + experiment.
+    $option_loc_exp = array();
+    // Array to hold select option for select field by experiment.
+    $option_exp = array();
+    // Array to hold sorted values for select field by experiment.
+    $experiments = array();
+    // Store all experiments.
+    $cache_exp = array();
+    
+    // Create select by location + experiment at the same time
+    // prepare values for the other select (by experiment).
     foreach($experiment as $exp_loc) {
+      $experiment_name = $exp_loc['phenotype_customfield_terms:name'];
+      $experiment_id   = $exp_loc['phenotype_customfield_terms:id'];
+      $experiment_loc  = $exp_loc['phenotype_customfield_terms:location'];
+      
+      $disabled = (in_array($experiment_id, $user_experiment)) ? '' : 'disabled';
+      
+      // Select by Experiment.
+      if (!in_array($experiment_id, $cache_exp)) {
+        $experiments[ $experiment_id ] = array(
+          'disabled' => $disabled, 
+          'text' => $experiment_name,
+          'value' => $trait['id'] . '#' . $experiment_id . '#' . $germplasm . '#'
+        );  
+      }
+
+      $experiments[ $experiment_id ]['locations'][] = $experiment_loc;
+      $cache_exp[] = $experiment_id;
+      
+      // Select by Location + Experiment.
+      $select_value = $trait['id'] . '#' . $experiment_id . '#' . $germplasm . '#' . $experiment_loc;
+      $option_loc_exp[] = '<option value ="' . $select_value . '" ' . $disabled . '>' . strtoupper($experiment_loc) . '/' . $experiment_name . '</option>';
+    }
+
+    $select_location_experiment = '<select class="form-select" id="rawphenotypes-germplasm-field-trait-select-location-experiment-' . $trait['id'] . '">
+    <option value="0" selected>Select (' . count($experiment) . ' Locations, ' . count(array_unique($cache_exp)) . ' Experiments)</option>
+    %s
+    </select>';
+
+
+    // Construct select by experiment.
+    foreach($experiments as $experiment) {
+      $locations = implode('+', $experiment['locations']);
+      $select_value = $experiment['value'] . $locations;
+      
+      $option_exp[] = '<option value ="' . $select_value . '" ' . $experiment['disabled'] . '>' . $experiment['text'] . ' (' . count($experiment['locations']). ')' . '</option>';      
+    }
+
+    $select_experiment = '<select class="form-select" id="rawphenotypes-germplasm-field-trait-select-experiment-' . $trait['id'] . '">
+    <option value="0" selected>Select (' . count($experiments) . ' Experiments)</option>
+    %s
+    </select>';
+
+    return sprintf($select_location_experiment, implode('', $option_loc_exp)) . sprintf($select_experiment, implode('', $option_exp));
+  }
+}
+
+
+/**
+ 
+foreach($experiment as $exp_loc) {
       $experiment_name = $exp_loc['phenotype_customfield_terms:name'];
       $experiment_id   = $exp_loc['phenotype_customfield_terms:id'];
       $experiment_loc  = $exp_loc['phenotype_customfield_terms:location'];
@@ -157,15 +223,15 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
       $cache_exp[] = $experiment_id;
 
       $disabled = (in_array($experiment_id, $user_experiment)) ? '' : 'disabled';
-      $option[] = '<option value ="' . $select_value . '" ' . $disabled . '>' . strtoupper($experiment_loc) . '/' . $experiment_name . '</option>';
+      $option_loc_exp[] = '<option value ="' . $select_value . '" ' . $disabled . '>' . strtoupper($experiment_loc) . '/' . $experiment_name . '</option>';
+      
+      
+    
+    
     }
-  
-    $select = '<select class="form-select" id="rawphenotypes-germplasm-field-trait-select-' . $trait['id'] . '">
-    <option value="0" selected>Select (' . count($experiment) . ' Locations, ' . count(array_unique($cache_exp)) . ' Experiments)</option>
-    %s
-    </select>';
 
-    return sprintf($select, implode('', $option));
-  }
-}
 
+
+
+ * 
+ */

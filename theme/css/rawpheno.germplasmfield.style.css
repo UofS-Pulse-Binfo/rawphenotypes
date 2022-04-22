@@ -90,7 +90,7 @@
 
 #rawphenotypes-germplasm-field-table th:last-child,
 #rawphenotypes-germplasm-field-table td:last-child {
-  text-align: center ;
+  text-align: center;
   width: 10px;
 }
 
@@ -98,11 +98,18 @@
   opacity: 0.5;
 }
 
+#rawphenotypes-germplasm-field-table th:first-child,
 #rawphenotypes-germplasm-field-table td:first-child {
+  text-align: center;
+  width: 35px;
+}
+
+#rawphenotypes-germplasm-field-table td:nth-child(2) {
   width: 100%;
 }
 
 #rawphenotypes-germplasm-export-table {
+  position: relative;
   padding: 0; 
   margin: 0; 
   height: 238px; 
@@ -121,6 +128,7 @@
 
 #rawphenotypes-germplasm-export-table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.1);
+  text-decoration: underline;
 
   -webkit-transition: background-color 0.9s ease-out;
   -moz-transition: background-color 0.9s ease-out;
@@ -149,4 +157,69 @@
 
 #rawphenotypes-germplasm-warning {
   margin: 8px 0;
+}
+
+#rawphenotypes-germplasm-controls {
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  border-bottom-color: #FFFFFF;
+  margin: 7px 0 0 0;
+  padding-bottom: 10px;
+  position: relative;
+}
+
+#rawphenotypes-germplasm-controls span:first-child a {
+  padding-left: 17px;
+  padding-right: 3px;
+  background: url(../../includes/TripalFields/ncit__raw_data/theme/search.png) no-repeat left center;
+  background-size: 13px 16px;
+}
+
+#rawphenotypes-germplasm-controls-search-window {
+  display: none;
+  background-color: #EAEAEA;
+  height: 60px;
+  margin-top: 10px; 
+  padding-top: 10px;
+  padding-left: 20px; 
+  padding-bottom: 5px;
+  position: absolute;
+  left: 45px;  
+  width: 160px; 
+  z-index: 1;
+
+  -moz-box-shadow:    1px 1px 5px 1px #CCCCCC;
+  -webkit-box-shadow: 1px 1px 5px 1px #CCCCCC;
+  box-shadow:         outset 1px 1px 5px 1px #CCCCCC;
+}
+
+#rawphenotypes-germplasm-controls-search-window::after {
+  content: " ";
+  position: absolute;
+  bottom: 100%;  /* At the top of the tooltip */
+  left: 50%;
+  margin-left: -10px;
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent transparent #EAEAEA transparent;
+}
+
+#rawphenotypes-germplasm-controls-search-window input {
+  display: block;
+  font-weight: 300; 
+  font-size: 0.7em; 
+  padding: 2px !important; 
+  margin: 10px 0 5px 0 !important;
+  width: 80%;
+}
+
+#rawphenotypes-germplasm-controls-search-window a {
+  font-size: 0.9em;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 300;
+}
+
+.ui-autocomplete {
+  font-family:Arial, Helvetica, sans-serif !important;
+  font-size: 0.8em !important;
 }
