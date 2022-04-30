@@ -149,10 +149,8 @@ class ncit__raw_data extends TripalField {
         // See includes/rawpheno.function.measurements.inc file for function definition
         // Given the user id this function returns an array of chado projects keyed by project_id 
         // that the user has permission to see.
-        $user_experiment = rawpheno_function_user_project($user->uid);
+        $user_experiment = rawpheno_function_user_project($user->uid); 
         $user_experiment = array_keys($user_experiment); 
-        // Save user experiments.     
-        $entity->{$field_name}['und'][0]['value']['phenotype_customfield_terms:user_experiment'] = $user_experiment;
 
         // All traits in experiment and location.
         $sql_cvterm = "
@@ -183,12 +181,15 @@ class ncit__raw_data extends TripalField {
             ->fetchAllKeyed(0, 1);
           
           if ($trait_set) {
-            foreach($trait_set as $trait_id => $trait_name) {
+            foreach($trait_set as $trait_id => $trait_name) {     
+              $allow = (in_array($item->project_id, $user_experiment)) ? 1 : 0;
+
               // Save basic information about the trait (name + id key) and all experiment + location it was measured.
               $entity->{$field_name}['und'][0]['value']['hydra:member'][ $trait_name . '_' . $trait_id ][] = array(                              
-                'phenotype_customfield_terms:id'  => $item->project_id,   // Project id number.
-                'phenotype_customfield_terms:name'  => $item->name,       // Project name. 
-                'phenotype_customfield_terms:location' => $item->location // Location in a project trait was measured.
+                'phenotype_customfield_terms:id'  => $item->project_id,    // Project id number.
+                'phenotype_customfield_terms:name'  => $item->name,        // Project name. 
+                'phenotype_customfield_terms:location' => $item->location, // Location in a project trait was measured.
+                'phenotype_customfield_terms:user_experiment' => $allow    // Does user have permission? 
               );
             }
           }
