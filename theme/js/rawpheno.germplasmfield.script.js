@@ -57,7 +57,7 @@
 
         if (imgOpacity == 1) {
           window.open(
-            Drupal.settings.rawpheno.exportLink + '?code=' + btoa(downloadLink),
+            Drupal.settings.rawpheno.exportLink + '?code=' + encodeURIComponent(btoa(downloadLink)),
             '_blank'
           );
         }
@@ -67,13 +67,37 @@
       $('#rawphenotypes-germplasm-field-table td:first-child img').click(function(e) {
         var imgId = e.target.id;
         var i = imgId.split('-');
-        // rawphenotypes-germplasm-field-filterby-%s-img
-        var downloadLink = 't=' + i[4] + '&p=All&l=All&g=' + Drupal.settings.rawpheno.germ;
 
-        window.open(
-          Drupal.settings.rawpheno.exportLink + '?code=' + btoa(downloadLink),
-          '_blank'
-        );
+        // Trait data.
+        var key = Object.keys(Drupal.settings.rawpheno.germRawdata).filter(function(k) {
+          return k.indexOf(i[4]) !== -1;
+        });
+        
+        // All experiment user has access to in a trait.
+        var row = Drupal.settings.rawpheno.germRawdata[ key ]
+          .filter(function(e) {  return e['phenotype_customfield_terms:user_experiment'] == 1  });
+        
+        // Experiments.
+        var exp = row.map(e => e['phenotype_customfield_terms:id'])
+          .filter((value, index, self) => self.indexOf(value) === index);
+        
+        // Locations.
+        var loc = row.map(e => e['phenotype_customfield_terms:location'])
+          .filter((value, index, self) => self.indexOf(value) === index);
+        
+        if (exp.length > 0) {
+          // Export all.
+          var downloadLink = 't=' + i[4] + '&p=' + exp.join('%2B') + '&l=' + loc.join('%2B') + '&g=' + Drupal.settings.rawpheno.germ;
+
+          window.open(
+            Drupal.settings.rawpheno.exportLink + '?code=' + encodeURIComponent(btoa(downloadLink)),
+            '_blank'
+          );
+        }
+        else {
+          // None of the experiments in a trait is accessible to current user.
+          alert('You do not have access to experiments in this trait. Please contact us to request permission.');
+        }
       });
 
       // Listen to controls search, expand and select by.
@@ -194,6 +218,7 @@
       
       /**
        * Remove option element from a select field.
+       * 
        * @param select
        *   Object, reference to select element. 
        */
@@ -231,7 +256,7 @@
             });
           });
         }
-        else if(set == 'e') {
+        else if (set == 'e') {
           // EXPERIMENT:
           $.each(dataset.germRawdata, function(index, value){
             var expCache = new Array();
@@ -247,7 +272,7 @@
                 
                 var disabled = v['phenotype_customfield_terms:user_experiment'] == 1 ? '' : 'disabled';
                 element.append($('<option>', { 
-                  value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + ql.join('+') + '#' + germplasm, 
+                  value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + ql.join('%2B') + '#' + germplasm, 
                   text : v['phenotype_customfield_terms:name'] + ' (' + l.length + ' Locations)',
                   title: ql.join(' + '),
                   disabled: disabled
@@ -257,5 +282,4 @@
           });
         }
       }
-
 }};}(jQuery));

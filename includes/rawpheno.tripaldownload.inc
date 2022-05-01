@@ -213,11 +213,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
   // Projects:
   $tmp = trim(str_replace('p=', '', $project));
-  $project = explode(',', $tmp);
-
-  if ($project[0]) {
-    $project_name = rawpheno_function_getproject($project[0]);
-  }
+  $project = explode('+', $tmp);
 
   // Locations:
   $location = trim(str_replace('l=', '', $location));
@@ -245,6 +241,9 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
   else {
     $traits = explode(',', $traits);
+    // Backup trait selection to account for trait w/o plant id
+    // but is a trait in experiment trait list. 
+    $rd_field_trait = $traits;
   }
 
   // Rversion
@@ -266,8 +265,10 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
 
   // Germplasm/Stock id - request from germplasm field.
-  $stock_id = trim(str_replace('g=', '', $germplasm));
-  $limit_stock = '';
+  if ($germplasm) {
+    $stock_id = trim(str_replace('g=', '', $germplasm));
+    $limit_stock = '';
+  }
 
   // Sub-query to select plant_id given a location and project.
   // NOTE: leading and trailing spaces are required.
@@ -287,7 +288,7 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     $arr_q_string[':stock_id'] = $stock_id;
     
     // Add experiment to header if request comes from field.
-    $header['D0'] = 'Experiment';
+    $header['E0'] = 'Experiment';
   }
   
   $sub_sql = sprintf($sub_sql, $limit_stock);
@@ -320,9 +321,24 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       // When no equivalent R version is available, load the definition instead.
       $def = ($rfreindly == null) ? $r->name : $rfreindly;
     }
-
+    
     // Column headers array.
     $header[ $r->id ] = $def;
+  }
+
+  // When request is from field, it has additional filter to phenotypes
+  // by comparing stock id + plant id. In some case when a trait has no values,
+  // the final result will exclude this trait inspite this trait being part
+  // of trait set of the experiment, since it has no plant_id (stock_id) to compare.
+    
+  // Include the trait and the subsequent code will assign the value NA. This to show
+  // that trait is part of the experiment.
+  // NOTE: rversion is always off when request comes from field.
+  foreach($rd_field_trait as $exp_trait) {
+    if (!in_array($exp_trait, array_keys($header))) {
+      $t = chado_get_cvterm(array('cvterm_id' => $exp_trait));
+      $header[ 'C' . $t->cvterm_id ] = $t->name;
+    }
   }
 
   // Sort array by key.
@@ -334,8 +350,17 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   // row is Name - containing the stock name.
   // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
 
-  // Thus first we select the name. Note that  the tid is 0 because this doesn't have a cvterm (ie: not a trait).
-  $sql = "SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
+  // Thus first we select experiment and name. Note that the tid is 0 because this doesn't have a cvterm (ie: not a trait).
+  $sql = "SELECT t1.plant_id AS id, 0 AS tid, 'e' AS def, t2.name AS value, 'E' AS grp
+          FROM {pheno_plant_project} AS t1 
+          INNER JOIN {chado.project} AS t2 ON t1.project_id = t2.project_id
+          WHERE plant_id IN" . $sub_sql
+          
+          // Name - stock or germplasm.
+
+          . "UNION 
+
+          SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
           FROM {chado.stock} AS t1 INNER JOIN {pheno_plant} AS t2 USING(stock_id)
           WHERE t2.plant_id IN" . $sub_sql
 
@@ -381,11 +406,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     $rows = array();
     foreach($results as $r) {
       $rows[ $r->id ][ $r->grp . $r->tid ] = $r->value;
-
-      if ($stock_id != '' && (int) $stock_id > 0) {
-        // Add experiment name when request comes from field.
-        $rows[ $r->id ][ 'D0' ] = $project_name;
-      }
     }
 
     // Total lines;
