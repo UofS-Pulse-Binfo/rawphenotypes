@@ -45,7 +45,7 @@
           imgOpacity = '1';
           var params = selectValue.split('#');
           // Project id & location & trait.
-          downloadLink = 't=' + params[0] + '&p=' + params[1] + '&l=' + params[2] + '&g=' + params[3];
+          downloadLink = $.param({t:params[0], p:params[1], l:params[2], g:Drupal.settings.rawpheno.germ});
         }
 
         $('#' + selectId + '-img').css('opacity', imgOpacity);
@@ -57,7 +57,7 @@
 
         if (imgOpacity == 1) {
           window.open(
-            Drupal.settings.rawpheno.exportLink + '?code=' + encodeURIComponent(btoa(downloadLink)),
+            Drupal.settings.rawpheno.exportLink + '?code=' + btoa(downloadLink),
             '_blank'
           );
         }
@@ -78,7 +78,7 @@
           .filter(function(e) {  return e['phenotype_customfield_terms:user_experiment'] == 1  });
         
         // Experiments.
-        var exp = row.map(e => e['phenotype_customfield_terms:id'])
+        var exp = row.map(e => e['phenotype_customfield_terms:id'].toString())
           .filter((value, index, self) => self.indexOf(value) === index);
         
         // Locations.
@@ -87,10 +87,10 @@
         
         if (exp.length > 0) {
           // Export all.
-          var downloadLink = 't=' + i[4] + '&p=' + exp.join('%2B') + '&l=' + loc.join('%2B') + '&g=' + Drupal.settings.rawpheno.germ;
+          downloadLink = $.param({t:i[4], p:exp.join('+'), l:loc.join('+'), g:Drupal.settings.rawpheno.germ});
 
           window.open(
-            Drupal.settings.rawpheno.exportLink + '?code=' + encodeURIComponent(btoa(downloadLink)),
+            Drupal.settings.rawpheno.exportLink + '?code=' + btoa(downloadLink),
             '_blank'
           );
         }
@@ -249,7 +249,7 @@
             $.each(value, function(i, v) {
               var disabled = v['phenotype_customfield_terms:user_experiment'] == 1 ? '' : 'disabled'; 
               element.append($('<option>', { 
-                value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + v['phenotype_customfield_terms:location'] + '#' + germplasm, 
+                value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + v['phenotype_customfield_terms:location'], 
                 text : v['phenotype_customfield_terms:location'].toUpperCase() + '/' + v['phenotype_customfield_terms:name'],
                 disabled: disabled
               }));
@@ -272,7 +272,7 @@
                 
                 var disabled = v['phenotype_customfield_terms:user_experiment'] == 1 ? '' : 'disabled';
                 element.append($('<option>', { 
-                  value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + ql.join('%2B') + '#' + germplasm, 
+                  value: trait[1] + '#' + v['phenotype_customfield_terms:id'] + '#' + ql.join('+'), 
                   text : v['phenotype_customfield_terms:name'] + ' (' + l.length + ' Locations)',
                   title: ql.join(' + '),
                   disabled: disabled

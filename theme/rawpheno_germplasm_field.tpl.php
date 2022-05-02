@@ -56,7 +56,7 @@ $table_header = $table['headers'];
   </div>
   
   <div id="rawphenotypes-germplasm-controls">
-    <span><input id="rawphenotypes-germplasm-controls-expand" type="checkbox"> Expand Table | <a id="rawphenotypes-germplasm-controls-search" href="#">Search</a></span>
+    <span><input id="rawphenotypes-germplasm-controls-expand" type="checkbox"> Expand Table | <a id="rawphenotypes-germplasm-controls-search" href="#">Search Trait</a></span>
     <span id="rawphenotypes-germplasm-controls-selectby">Filter by: <span>Location + Experiment</span> | <a href="#">Experiment</a></span>
   
     <div id="rawphenotypes-germplasm-controls-search-window">

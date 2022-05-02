@@ -75,7 +75,7 @@ class ncit__raw_data_formatter extends TripalFieldFormatter {
         sprintf($img, '', $theme_path . 'icon-download-all.jpg', 'Download all for this trait'), 
         'Trait', 
         'Filter by:',
-        sprintf($img, '', $theme_path . 'icon-download.jpg', 'Download Location + Experiment')
+        sprintf($img, '', $theme_path . 'icon-download.jpg', 'Download')
       );
       
       // 2 select fields are required:

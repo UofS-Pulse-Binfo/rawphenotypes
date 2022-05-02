@@ -28,20 +28,29 @@ function rawpheno_download($form, &$form_state) {
 
     if ($vars) {
       parse_str($vars, $query_vars);
-      $param_experiment = (int) $query_vars['p'];
+      $param_experiment = $query_vars['p'];
       
       global $user;
       $user_experiment = rawpheno_function_user_project($user->uid);
       $user_experiment = array_keys($user_experiment);
+      $allowed_experiment = array();
 
-      if (in_array($param_experiment, $user_experiment)) {
+      $experiments = explode('+', $param_experiment);
+      foreach($experiments as $exp) {
+        if (in_array($exp, $user_experiment)) {
+          $allowed_experiment[] = $exp;
+        }
+      }
+      
+      if (count($allowed_experiment) > 0) {
         $param_location = $query_vars['l'];
+        // Expected single value only for trait and germplasm.
         $param_trait = (int) $query_vars['t'];
         $param_stock = (int) $query_vars['g'];
 
         if ($param_experiment > 0 && $param_location && $param_trait > 0) {
           // Create query string.
-          $query_string = 'p=' . $param_experiment . '&l=' . $param_location . '&t=' . $param_trait . '&r=0&e=0&file=0&g=' . $param_stock;
+          $query_string = 'p=' . implode('+', $allowed_experiment) . '&l=' . $param_location . '&t=' . $param_trait . '&r=0&e=0&file=0&g=' . $param_stock;
           drupal_goto('/phenotypes/raw/csv', array('query' => array('code' => base64_encode($query_string))));
         }
       }
