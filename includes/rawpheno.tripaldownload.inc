@@ -30,7 +30,7 @@ function rawpheno_register_trpdownload_type() {
       'get_format' => 'rawpheno_trpdownload_get_readable_format',
     ),
   );
-
+  
   return $types;
 }
 
@@ -54,7 +54,7 @@ function rawpheno_trpdownload_summarize_download($vars) {
   list($project, $location, $traits, $r_version, $envdata, $envfile) = explode('&', $q);
 
   $tmp = trim(str_replace('p=', '', $project));
-  $project = explode(',', $tmp);
+  $project = explode('+', $tmp);
 
   $sql = "SELECT name FROM {project} WHERE project_id IN (:project)";
   $args = array(':project' => $project);
@@ -191,7 +191,7 @@ function rawpheno_trpdownload_get_readable_format($vars) {
 /**
  * Function callback: generate csv file.
  */
-function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
+function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {    
   // Get query string and filename.
   $code = '';
   foreach($variables as $l => $v) {
@@ -209,12 +209,11 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
 
   $q = base64_decode($code);
-  list($project, $location, $traits, $r_version,,) = explode('&', $q);
-
+  list($project, $location, $traits, $r_version,,,$germplasm) = explode('&', $q);
   // Projects:
   $tmp = trim(str_replace('p=', '', $project));
-  $project = explode(',', $tmp);
-
+  $project = explode('+', $tmp);
+  
   // Locations:
   $location = trim(str_replace('l=', '', $location));
 
@@ -241,6 +240,9 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   }
   else {
     $traits = explode(',', $traits);
+    // Backup trait selection to account for trait w/o plant id
+    // but is a trait in experiment trait list. 
+    $rd_field_trait = $traits;
   }
 
   // Rversion
@@ -261,14 +263,39 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
     }
   }
 
+  // Germplasm/Stock id - request from germplasm field.
+  if ($germplasm) {
+    $stock_id = trim(str_replace('g=', '', $germplasm));
+    $limit_stock = '';
+  }
+
   // Sub-query to select plant_id given a location and project.
   // NOTE: leading and trailing spaces are required.
   $sub_sql = " (SELECT plant_id
                 FROM {pheno_plantprop} INNER JOIN {pheno_plant_project} USING(plant_id)
-                WHERE value IN (:location) AND project_id IN (:project)) ";
+                WHERE value IN (:location) AND project_id IN (:project) %s) ";
 
   // Query values required by sub query.
   $arr_q_string = array(':project' => $project, ':location' => $location, ':traits' => $traits);
+
+  // Array to hold column headers.
+  // Add Name/Stock name column headers array.
+  $header = array('A0' => 'Name');
+
+  // Filter by germplasm.
+  if ($stock_id != '' && (int) $stock_id > 0) {
+    // Additional filter to limit datapoints to only those that match stock/germplasm. 
+    $limit_stock = "AND plant_id IN (SELECT plant_id FROM pheno_plant WHERE stock_id = :stock_id)";
+    $arr_q_string[':stock_id'] = $stock_id;
+    
+    // Experiment name is added to the result as export from multiple
+    // experiments is supported by the field.
+
+    // Query below is also updated to correspond to this header.
+    $header['E0'] = 'Experiment';
+  }
+  
+  $sub_sql = sprintf($sub_sql, $limit_stock);
 
   // First we need to get the header. This will allow us to ensure that the data
   // downloaded all matches up with the trait it is associated with. Furthermore,
@@ -286,10 +313,6 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
 
   $result = db_query($sql, $arr_q_string);
 
-  // Array to hold column headers.
-  //Add Name/Stock name column headers array.
-  $header = array('A0' => 'Name');
-
   foreach ($result as $r) {
     $def = $r->name;
 
@@ -302,13 +325,40 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
       // When no equivalent R version is available, load the definition instead.
       $def = ($rfreindly == null) ? $r->name : $rfreindly;
     }
-
+    
     // Column headers array.
     $header[ $r->id ] = $def;
   }
 
+  // When request is from field, it has additional filter to phenotypes
+  // by comparing stock id + plant id. In some case when a trait has no values,
+  // the final result will exclude this trait inspite this trait being part
+  // of trait set of the experiment, since it has no plant_id (stock_id) to compare.
+    
+  // Include the trait and the subsequent code will assign the value NA. This to show
+  // that trait is part of the experiment.
+  // NOTE: rversion is always off when request comes from field.
+  foreach($rd_field_trait as $exp_trait) {
+    if (!in_array($exp_trait, array_keys($header))) {
+      $t = chado_get_cvterm(array('cvterm_id' => $exp_trait));
+      $header[ 'C' . $t->cvterm_id ] = $t->name;
+    }
+  }
+
   // Sort array by key.
   ksort($header);
+
+  // Filter by germplasm.
+  $sql_experiment = '';
+  if ($stock_id != '' && (int) $stock_id > 0) {
+    // Include a query to mark datapoints at to which experiment to correspond
+    // to experiment header.
+    $sql_experiment = "
+      SELECT t1.plant_id AS id, 0 AS tid, 'e' AS def, t2.name AS value, 'E' AS grp
+      FROM {pheno_plant_project} AS t1 
+      INNER JOIN {chado.project} AS t2 ON t1.project_id = t2.project_id
+      WHERE plant_id IN" . $sub_sql . "UNION ";
+  }
 
   // Query to join data from different tables.
   // Result: plant_id, trait_id, definition, data, and a grouping string
@@ -316,8 +366,10 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
   // row is Name - containing the stock name.
   // The result will be sorted into standard order: plot,entry,name,rep,location,traits.....
 
-  // Thus first we select the name. Note that  the tid is 0 because this doesn't have a cvterm (ie: not a trait).
-  $sql = "SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
+  // Thus first we select experiment and name. Note that the tid is 0 because this doesn't have a cvterm (ie: not a trait).
+  $sql = "%s
+
+          SELECT t2.plant_id AS id, '0' AS tid, 'Name' AS def, t1.name AS value, 'A' AS grp
           FROM {chado.stock} AS t1 INNER JOIN {pheno_plant} AS t2 USING(stock_id)
           WHERE t2.plant_id IN" . $sub_sql
 
@@ -340,7 +392,8 @@ function rawpheno_trpdownload_generate_file($variables, $job_id = NULL) {
           // Lastly we order the results by plant_id and grouping string, and tid.
           . "GROUP BY t1.plant_id, t1.type_id, t2.name
              ORDER BY id, grp, tid ASC";
-
+  
+  $sql = sprintf($sql, $sql_experiment);           
   $results = db_query($sql, $arr_q_string);
 
   if ($results) {
