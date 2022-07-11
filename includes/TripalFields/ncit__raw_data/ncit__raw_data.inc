@@ -1,10 +1,7 @@
 <?php
 /**
  * @class
- * Purpose: Provide quick browse functionality for entity pages
- *
- * Data: No data.
- * Assumptions:
+ * Purpose: Provide a summary of raw phenotypic data to a germplasm.
  */
 class ncit__raw_data extends TripalField {
   // --------------------------------------------------------------------------

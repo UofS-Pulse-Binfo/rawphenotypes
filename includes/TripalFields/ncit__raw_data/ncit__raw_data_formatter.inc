@@ -1,16 +1,7 @@
 <?php
 /**
  * @class
- * Purpose: Provide a quick search on entity pages which submits/redirects to a full search.
- *
- * Display: A simple textfield search form.
- * Configuration:
- *   - path to the full search.
- *   - the URL token (query parameter) the value applies to.
- *   - help text.
- *   - textfield placeholder.
- *   - search button text.
- *   - autocomplete path.
+ * Purpose: Provide a summary of raw phenotypic data to a germplasm.
  */
 class ncit__raw_data_formatter extends TripalFieldFormatter {
   // The default label for this field.
