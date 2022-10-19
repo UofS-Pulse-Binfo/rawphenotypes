@@ -21,10 +21,13 @@
         $('#admin-sel-types option[value="'+ defaultType +'"]').attr('selected', true);
         populateSelect(defaultType);
       }
+      else {
+        populateSelect(0);
+      }
 
       fldExperimentTypes.change(function(e) {
         // Seleted type.
-        var typeVal = parseInt(e.target.value);
+        var typeVal = e.target.value;
         populateSelect(typeVal);
       });
 
@@ -38,8 +41,9 @@
 
         // CONSTRUCT NEW SET OF OPTIONS.
         // Filtered/all projects.
-        var exp = (typeVal > 0) ? typesProject[ typeVal ].sort() : allProjectKeys;
-                
+        var exp = ''; 
+        exp = (typeVal != 0) ? typesProject[ typeVal ] : allProjectKeys;
+
         if (exp.length > 0) {
           // First option is a blank.
           fldExperiment.append($('<option>', {
@@ -48,16 +52,26 @@
             selected: true
           }));
           
-          // Experiments options.
-          exp.forEach(function(i) {
+          // Create an object of experiments.
+          var expObj = [];
+          exp.forEach(function(i) { 
             i = parseInt(i);
 
             if (allProject[ i ]) {
-              fldExperiment.append($('<option>', {
-                value: i,
-                text: allProject[ i ]
-              }));
+              expObj.push({'id': i, 'name': allProject[ i ]});  
             }
+          });
+
+          // Should name 1 be placed in name 2. 
+          // name 1 vs name 2 - sort 2 objects at a time and put name 1 in name 2 when 1.
+          sortName = expObj.sort((n1, n2) => (n1.name > n2.name) ? 1 : (n1.name < n2.name) ? -1 : 0);
+          
+          // Create options.
+          sortName.forEach(e => {
+            fldExperiment.append($('<option>', {
+              value: e['id'],
+              text: e['name']
+            }));
           });
         }
       }

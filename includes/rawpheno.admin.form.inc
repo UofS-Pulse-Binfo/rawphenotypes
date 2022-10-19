@@ -236,9 +236,14 @@ function rawpheno_admin_all_projects($form, &$form_state) {
   // as well as, assign active users.
 
   // Query projects that dont have column headers.
+  
+  // This query will provide experiment field an option to filter selections
+  // based on [rdfs:type] (cv name:cvterm name) projectprop value.
+  $sql_rdfstype = "SELECT cvterm_id FROM {cv} INNER JOIN {cvterm} USING(cv_id)
+  WHERE cv.name = 'rdfs' AND cvterm.name = 'type' LIMIT 1";
+
   $sql_type = "SELECT project_id, value, type_id FROM {projectprop} 
-    GROUP BY project_id, value, type_id 
-    ORDER BY value ASC";
+    WHERE type_id = ($sql_rdfstype) ORDER BY value ASC";
 
   $types = array(0 => 'All Experiments');
   $types_project = array();
@@ -251,8 +256,8 @@ function rawpheno_admin_all_projects($form, &$form_state) {
       $default_type = $type->type_id;    
     }
 
-    $types[ $type->type_id ] = $type->value;
-    $types_project[ $type->type_id ][] = $type->project_id;
+    $types[ $type->value ] = $type->value;
+    $types_project[ $type->value ][] = $type->project_id;
   }
 
   // Query projects that dont have column headers.
