@@ -1149,7 +1149,7 @@ function rawpheno_download_r_compatible($cvterm_id) {
  * The value returned will help determine if a plant_id should be re-used or a new plant_id id
  * should be created/inserted when processing a row in the spreadsheet file.
  *
- * @param $plot
+ * @param $row_identifier
  *   A string composed of stock_id, plot, rep, location and year - concatinated as a single string.
  * @param $project_id
  *   An integer containing the current active project id number.
@@ -1157,32 +1157,48 @@ function rawpheno_download_r_compatible($cvterm_id) {
  * @return integer
  *   Plant Id number of the record that matched or 0 if no match was found.
  */
-function rawpheno_function_plot_exists($plot, $project_id) {
-  // TODO: move the condition in the where clause of this query.
+function rawpheno_function_plot_exists($row_identifier, $project_id) {
+
+  // First break the plot variable into it's component parts.
+  // This takes the string comparison out of the query and allows it to use indices.
+  list($stock_id, $plot, $rep, $location, $planting_date) = explode('-', $row_identifier);
+
   $sql = "
     SELECT
       t1.plant_id
     FROM
       pheno_plant AS t1
+      INNER JOIN pheno_plant_project AS t1b USING(plant_id)
       INNER JOIN pheno_plantprop AS t2 USING(plant_id)
       INNER JOIN pheno_plantprop AS t3 USING(plant_id)
       INNER JOIN pheno_plantprop AS t4 USING(plant_id)
       INNER JOIN pheno_measurements AS t5 USING(plant_id)
     WHERE
-      t1.plant_id IN (SELECT plant_id FROM pheno_plant_project WHERE project_id = :project_id)
-      AND t2.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Plot' AND cv.name = 'phenotype_plant_property_types')
-      AND t3.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Rep' AND cv.name = 'phenotype_plant_property_types')
-      AND t4.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} cv ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Location' AND cv.name = 'phenotype_plant_property_types')
-      AND t5.type_id = (SELECT cvterm_id FROM {cvterm} cvt LEFT JOIN {cv} ON cv.cv_id=cvt.cv_id WHERE cvt.name = 'Planting Date (date)' AND cv.name = 'phenotype_measurement_types')
-      AND
-        t1.stock_id || '-' ||
-        t2.value    || '-' ||
-        t3.value    || '-' ||
-        t4.value    || '-' ||
-        SUBSTRING(t5.value, 1, 4) = :plot
+      t1.stock_id = :stock_id
+      AND t1b.project_id = :project_id
+      AND t2.type_id = :plot_cvterm_id
+      AND t3.type_id = :rep_cvterm_id
+      AND t4.type_id = :loc_cvterm_id
+      AND t5.type_id = :plantdate_cvterm_id
+      AND t2.value = :plot
+      AND t3.value = :rep
+      AND t4.value = :location
+      AND SUBSTRING(t5.value, 1, 4) = :planting_date
     LIMIT 1";
 
-  $args = array(':project_id' => $project_id, ':plot' => $plot);
+  $args = array(
+    ':stock_id' => $stock_id,
+    ':project_id' => $project_id,
+    ':plot' => $plot,
+    ':rep' => $rep,
+    ':location' => $location,
+    ':planting_date' => $planting_date,
+    // these are hardcoded to KnowPulse... we need to switch this to variable get/set
+    ':plot_cvterm_id' => 3986,
+    ':rep_cvterm_id' => 3988,
+    ':loc_cvterm_id' => 3989,
+    ':plantdate_cvterm_id' => 3990,
+  );
   $m = chado_query($sql, $args);
 
   return $m->fetchField(0);
